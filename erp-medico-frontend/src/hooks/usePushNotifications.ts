@@ -1,11 +1,9 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { getFirebaseMessaging, getToken, onMessage } from '@/lib/firebase/config';
 import { getSupabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
-const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
 export function usePushNotifications() {
   const [token, setToken] = useState<string | null>(null);
