@@ -1,0 +1,159 @@
+Quiero una corrección de jerarquía y visibilidad por roles que no modifique innecesariamente el código existente. El sistema ya funciona y el menú es completo; el problema es que algunos usuarios ven secciones/configuraciones que no deberían (a veces como “no disponible”), y esas cosas directamente no deben aparecer.
+
+Objetivo
+
+Mantener todo lo ya construido (estructura, nombres, rutas, componentes).
+
+Aplicar jerarquía y visibilidad estricta por rol/alcance sin reescribir el proyecto.
+
+Evitar “placeholders” deshabilitados: si un rol no puede ver un recurso, no se muestra.
+
+Fortalecer protección en rutas y datos (server/BD) sin romper integración actual.
+
+Reglas de trabajo (no destructivas)
+
+No renombres componentes, rutas, claves de menú ni ids existentes.
+
+No cambies contratos públicos ni props de componentes ya usados.
+
+Implementa todo mediante adaptadores, wrappers o banderas de característica.
+
+Cambios atómicos y reversibles en una rama separada, con un “feature flag” global:
+
+Nombre sugerido: RBAC_STRICT_NAV (activado por defecto solo en entorno de prueba).
+
+La jerarquía del menú actual debe respetarse; solo oculta lo que no corresponda.
+
+Procedimiento (descubrir → verificar → corregir → validar)
+
+Descubrir (solo lectura)
+
+Localiza la fuente real del menú (matriz, árbol o generador): archivo(s) de navegación, mapeos de rutas a secciones y cualquier “guard” existente.
+
+Detecta de dónde salen los permisos actualmente (claims, roles, policies, helpers, contextos).
+
+Identifica si ya existe alguna función de autorización (por ejemplo, can(...), has(...) o similar). No la elimines; si hace falta, envuélvela con un adaptador.
+
+Verificar
+
+Lista todos los ítems de primer nivel y subsecciones tal y como están hoy.
+
+Por cada ítem, identifica si actualmente depende de alguna condición de permiso. Documenta qué condición y en qué punto se evalúa (en el generador del menú, en el componente, en la ruta, etc.).
+
+Señala los casos donde hoy se muestra “no disponible / deshabilitado”. Esos deben convertirse en no renderizar.
+
+Corregir (mínima intervención)
+
+Crea (si no existe) una capa central de autorización con tres utilidades compatibles con tu código:
+
+has(resource) → “¿puede ver este recurso?”
+
+can(action, resource) → “¿puede ejecutar esta acción sobre el recurso?”
+
+canAny([acciones], resource) → “¿puede al menos una de estas acciones?”
+
+Si ya existen utilidades equivalentes, no las reemplaces: agrega un wrapper que traduzca la interfaz sin romper usos actuales.
+
+En el generador del menú: cada ítem debe declarar su recurso (y, si aplica, una acción mínima como view). Reglas:
+
+Si has(recurso) es falso, el ítem no se inserta en el árbol final.
+
+Si una sección queda vacía porque se ocultaron todos sus hijos, se oculta la sección.
+
+Quita cualquier estado de “deshabilitado/no disponible”.
+
+En componentes y botones de acciones sensibles:
+
+Envuélvelos con un wrapper de visibilidad (p. ej. <IfCan action="edit" resource="pacientes">…</IfCan>) o su equivalente sin renombrar lo existente.
+
+Regla: acciones sin permiso no se renderizan (no se dejan deshabilitadas).
+
+En rutas:
+
+Añade (sin romper lo actual) una metainformación ligera por ruta que indique resource y requiredAction (por defecto view).
+
+Implementa un guard de ruta que consulte can(requiredAction, resource) y redirija a /403 si no procede.
+
+Si ya hay guards, adáptalos para respetar esta convención sin reescribirlos.
+
+Validar (sin sorpresas)
+
+Implementa un recálculo de permisos al hacer login, al cambiar de empresa/sede y al activar/desactivar “impersonar”.
+
+Para evitar parpadeos, usa una carga breve con skeleton antes de pintar la UI dependiente de permisos.
+
+Crea un reporte temporal de auditoría visual (solo en modo desarrollo) que liste:
+
+Ítems que se ocultaron por falta de view.
+
+Componentes de acción omitidos por falta de can.
+
+Rutas redirigidas a /403 en la sesión de prueba.
+
+Este reporte debe apagarse con la bandera RBAC_STRICT_NAV en producción.
+
+Jerarquía esperada (aplicar sobre el menú existente)
+
+Nivel 1: secciones principales ya existentes (Dashboard, Pacientes, Agenda, Recepción, ECE, Recetas/Órdenes, Lab/Imagen, Inventario/Farmacia, Caja/CFDI, CRM, Reportes/BI, Configuración, Seguridad, Integraciones).
+
+Nivel 2: subsecciones actuales bajo cada principal.
+
+Regla de visibilidad: un principal se muestra si al menos una subsección visible queda tras aplicar permisos. Si no, se oculta el principal.
+
+Comportamiento por rol (sin cambiar definiciones actuales)
+
+Admin: ve todo lo que ya ve hoy; no limitar salvo que un ítem declare explícitamente otra cosa.
+
+Médico: no debe ver Configuración, Seguridad, Inventario, Caja/CFDI; solo aparece lo que su permiso actual le autoriza (Agenda, Pacientes, ECE, Recetas/Órdenes, Resultados, Reportes personales).
+
+Paciente (portal): únicamente sus secciones del portal; cualquier ruta interna debe redirigir a /403.
+
+Roles personalizados: respetar exactamente lo que indiquen sus permisos actuales; si un recurso no tiene view, ni principal ni hijos se muestran.
+
+Datos y servidor (sin reescritura)
+
+Mantén las políticas de seguridad en BD que ya existen. Si detectas que alguna tabla sensible no valida empresa/sede/rol, añade política sin romper esquemas.
+
+En endpoints del servidor, agrega un verificador no-intrusivo de resource/action antes de ejecutar la lógica. Si ya existe, extiéndelo para cubrir las rutas faltantes.
+
+Banderas, ramas y reversión
+
+Implementa todo en una rama: fix/rbac-jerarquia-nav.
+
+Activa el comportamiento nuevo tras un feature flag RBAC_STRICT_NAV.
+
+Entrega un diff mínimo y documentación breve: cómo activar/desactivar, qué se oculta por rol, y dónde quedaron los wrappers/guards.
+
+Pruebas (sin forzar tu stack)
+
+Añade pruebas ligeras por rol que verifiquen:
+
+Ítems invisibles realmente no están en el DOM.
+
+Rutas internas sin permiso van a /403.
+
+Acciones sensibles no aparecen en menús contextuales si el rol no las tiene.
+
+No exijas herramientas concretas; emplea las que ya tenga el repo (si no hay, crea pruebas mínimas de smoke sin introducir dependencias pesadas).
+
+Criterios de aceptación
+
+Ningún usuario vuelve a ver “secciones no disponibles”: simplemente no existen en su UI.
+
+Navegación coherente: una sección principal no aparece si todas sus subsecciones quedaron ocultas.
+
+Las rutas internas sin permiso no son accesibles; devuelven /403.
+
+El cambio no rompe contratos ni estilos; el layout (header fijo + menú lateral fijo) se mantiene.
+
+El flag RBAC_STRICT_NAV permite activar/desactivar el nuevo comportamiento sin re-deploy complejo.
+
+Entrega:
+
+Rama con cambios mínimos.
+
+Instrucciones breves de activación del flag.
+
+Reporte de auditoría visual en dev (apagado por defecto en prod).
+
+Lista de ítems del menú ocultados por rol en la demo.

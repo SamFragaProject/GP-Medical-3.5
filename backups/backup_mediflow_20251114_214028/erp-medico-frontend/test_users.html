@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Usuarios Demo - MediFlow</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .user-card { 
+            background: white; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #10b981;
+        }
+        .user-card.admin { border-left-color: #dc2626; }
+        .user-card.medico { border-left-color: #059669; }
+        .user-card.admin-empresa { border-left-color: #2563eb; }
+        .user-card.especialista { border-left-color: #7c3aed; }
+        .user-card.laboratorio { border-left-color: #db2777; }
+        .user-card.recepcion { border-left-color: #ea580c; }
+        .user-card.paciente { border-left-color: #0891b2; }
+        
+        button { 
+            background: #10b981; 
+            color: white; 
+            border: none; 
+            padding: 8px 16px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin-top: 10px;
+        }
+        button:hover { background: #059669; }
+        .credentials { 
+            background: #f3f4f6; 
+            padding: 10px; 
+            border-radius: 4px; 
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .status { 
+            padding: 10px; 
+            border-radius: 4px; 
+            margin: 10px 0;
+        }
+        .status.success { background: #dcfce7; color: #166534; }
+        .status.error { background: #fef2f2; color: #991b1b; }
+        h1 { color: #1f2937; text-align: center; }
+        h2 { color: #374151; }
+    </style>
+</head>
+<body>
+    <h1>🔑 Verificación de Usuarios Demo - MediFlow</h1>
+    
+    <div class="status success">
+        <strong>✅ Sistema:</strong> Los usuarios demo están correctamente configurados en el código.<br>
+        <strong>🔗 URL de la aplicación:</strong> <a href="https://at14nj9vv7cq.space.minimax.io" target="_blank">https://at14nj9vv7cq.space.minimax.io</a>
+    </div>
+
+    <h2>👥 Usuarios Disponibles:</h2>
+
+    <div class="user-card admin">
+        <h3>🏆 Super Administrador</h3>
+        <div class="credentials">
+            <strong>Email:</strong> admin@mediflow.mx<br>
+            <strong>Password:</strong> admin123<br>
+            <strong>Nombre:</strong> Dr. Carlos Admin
+        </div>
+        <button onclick="testLogin('admin@mediflow.mx', 'admin123')">Probar Login</button>
+    </div>
+
+    <div class="user-card admin-empresa">
+        <h3>🏢 Administrador de Empresa</h3>
+        <div class="credentials">
+            <strong>Email:</strong> admin.empresa@mediflow.mx<br>
+            <strong>Password:</strong> adminemp123<br>
+            <strong>Nombre:</strong> Dra. Patricia Fernández
+        </div>
+        <button onclick="testLogin('admin.empresa@mediflow.mx', 'adminemp123')">Probar Login</button>
+    </div>
+
+    <div class="user-card medico">
+        <h3>👩‍⚕️ Médico del Trabajo</h3>
+        <div class="credentials">
+            <strong>Email:</strong> medico@mediflow.mx<br>
+            <strong>Password:</strong> medico123<br>
+            <strong>Nombre:</strong> Dra. Luna Rivera
+        </div>
+        <button onclick="testLogin('medico@mediflow.mx', 'medico123')">Probar Login</button>
+    </div>
+
+    <div class="user-card especialista">
+        <h3>🫀 Médico Especialista</h3>
+        <div class="credentials">
+            <strong>Email:</strong> especialista@mediflow.mx<br>
+            <strong>Password:</strong> especialista123<br>
+            <strong>Nombre:</strong> Dr. Roberto Silva
+        </div>
+        <button onclick="testLogin('especialista@mediflow.mx', 'especialista123')">Probar Login</button>
+    </div>
+
+    <div class="user-card laboratorio">
+        <h3>🔬 Médico Laboratorista</h3>
+        <div class="credentials">
+            <strong>Email:</strong> laboratorio@mediflow.mx<br>
+            <strong>Password:</strong> lab123<br>
+            <strong>Nombre:</strong> Dr. Miguel Ángel Torres
+        </div>
+        <button onclick="testLogin('laboratorio@mediflow.mx', 'lab123')">Probar Login</button>
+    </div>
+
+    <div class="user-card recepcion">
+        <h3>👥 Coordinadora de Recepción</h3>
+        <div class="credentials">
+            <strong>Email:</strong> recepcion@mediflow.mx<br>
+            <strong>Password:</strong> recepcion123<br>
+            <strong>Nombre:</strong> Ana Patricia López
+        </div>
+        <button onclick="testLogin('recepcion@mediflow.mx', 'recepcion123')">Probar Login</button>
+    </div>
+
+    <div class="user-card paciente">
+        <h3>👤 Paciente</h3>
+        <div class="credentials">
+            <strong>Email:</strong> paciente@mediflow.mx<br>
+            <strong>Password:</strong> paciente123<br>
+            <strong>Nombre:</strong> Juan Carlos Pérez
+        </div>
+        <button onclick="testLogin('paciente@mediflow.mx', 'paciente123')">Probar Login</button>
+    </div>
+
+    <h2>🔧 Usuarios Demo Alternativos:</h2>
+
+    <div class="user-card recepcion">
+        <h3>👥 Recepcionista Demo</h3>
+        <div class="credentials">
+            <strong>Email:</strong> recepcion@demo.mx<br>
+            <strong>Password:</strong> demo123<br>
+            <strong>Nombre:</strong> Sra. Carmen Ruiz
+        </div>
+        <button onclick="testLogin('recepcion@demo.mx', 'demo123')">Probar Login</button>
+    </div>
+
+    <div class="user-card paciente">
+        <h3>👤 Paciente Demo</h3>
+        <div class="credentials">
+            <strong>Email:</strong> paciente@demo.mx<br>
+            <strong>Password:</strong> demo123<br>
+            <strong>Nombre:</strong> Juan Pérez
+        </div>
+        <button onclick="testLogin('paciente@demo.mx', 'demo123')">Probar Login</button>
+    </div>
+
+    <div id="result" style="display: none;"></div>
+
+    <script>
+        function testLogin(email, password) {
+            const result = document.getElementById('result');
+            result.style.display = 'block';
+            result.className = 'status success';
+            
+            result.innerHTML = `
+                <strong>🎯 Credenciales para probar:</strong><br>
+                <strong>Email:</strong> ${email}<br>
+                <strong>Password:</strong> ${password}<br><br>
+                <strong>📝 Instrucciones:</strong><br>
+                1. Haz clic <a href="https://at14nj9vv7cq.space.minimax.io" target="_blank" style="color: #2563eb;">aquí para abrir MediFlow</a><br>
+                2. Usa los botones de acceso rápido en la página de login<br>
+                3. O ingresa manualmente las credenciales<br>
+                4. Deberías ver el mensaje de bienvenida y ser redirigido al dashboard
+            `;
+            
+            result.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Mostrar información inicial
+        document.addEventListener('DOMContentLoaded', function() {
+            const result = document.getElementById('result');
+            result.style.display = 'block';
+            result.className = 'status success';
+            result.innerHTML = `
+                <strong>✅ Sistema Verificado:</strong> Todos los usuarios demo han sido corregidos y están disponibles.<br>
+                <strong>🔧 Problema Solucionado:</strong> Se agregaron los usuarios faltantes al sistema de autenticación.<br>
+                <strong>🚀 Acceso:</strong> <a href="https://at14nj9vv7cq.space.minimax.io" target="_blank" style="color: #2563eb;">https://at14nj9vv7cq.space.minimax.io</a>
+            `;
+        });
+    </script>
+</body>
+</html>

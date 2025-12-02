@@ -1,0 +1,239 @@
+“Esquema Supabase + RLS + Storage + Seeds + Seguridad (idempotente)”
+
+Quiero que construyas o completes el modelo de datos en Supabase/Postgres para mi ERP clínico-administrativo multi-empresa/multi-sede SIN telemedicina. El proyecto ya está conectado a Supabase. Necesito:
+
+No romper nada de lo que ya existe.
+
+Generar migraciones idempotentes (CREATE IF NOT EXISTS, ALTER ADD COLUMN IF NOT EXISTS, CREATE INDEX IF NOT EXISTS…).
+
+Activar y comprobar RLS en todas las tablas sensibles.
+
+Crear buckets de Storage con políticas seguras.
+
+Incluir funciones utilitarias, triggers, vistas útiles, y seeds mínimos para pruebas.
+
+Entregar scripts de verificación de seguridad (SQL) y una checklist.
+
+A. Descubrimiento (no destructivo)
+
+Detecta si ya existen tablas/índices/funciones. No renombres ni borres nada.
+
+Si hay tablas con nombres distintos a los sugeridos, mapea y reúsalas.
+
+Todo cambio debe ir en una migración nueva (ej. YYYYMMDDHH_supabase_schema.sql) con operaciones idempotentes.
+
+B. Extensiones necesarias
+
+Habilita si faltan (idempotente): uuid-ossp, pgcrypto, pg_trgm.
+
+Usa uuid como PK por defecto (DEFAULT gen_random_uuid()).
+
+C. Esquema multi-tenant (tablas mínimas)
+
+Crea o completa con estas columnas (usa empresa_id y sede_id donde aplique):
+
+empresas: id uuid PK, nombre text, rfc text, direccion_fiscal jsonb, logo_url text, config jsonb, created_at, updated_at.
+
+sedes: id, empresa_id FK, nombre, direccion jsonb, horario jsonb, timestamps.
+
+usuarios_perfil (perfil app vinculado a auth.users): user_id uuid PK, nombre, telefono, foto_url, activo bool.
+
+roles: id uuid PK, nombre text UNIQUE, descripcion text, permissions_jsonb jsonb.
+
+usuarios_roles: user_id, role_id, empresa_id, sede_id, PK compuesta; índices por user_id, empresa_id, sede_id.
+
+pacientes: id, empresa_id, sede_id, nombre, apellidos, curp, rfc, sexo, fecha_nac, email, telefono, domicilio jsonb, alergias jsonb, antecedentes jsonb, contactos_emergencia jsonb, etiquetas text[], timestamps.
+
+documentos: id, paciente_id, tipo, storage_path, created_by, timestamps.
+
+consentimientos: id, paciente_id, tipo, texto, firmado_por, fecha_firma.
+
+citas: id, empresa_id, sede_id, paciente_id, medico_user_id, sala_id, fecha_hora timestamptz, estado text CHECK (valores: nueva, confirmada, en_espera, atendida, no_asistio, cancelada), motivo, notas, timestamps.
+
+encuentros: id, cita_id, paciente_id, medico_user_id, fecha, estado, timestamps.
+
+notas_clinicas: id, encuentro_id, tipo, soap jsonb, dx_cie10 text[], plan text, firmada bool, version int, bloqueada bool, adjuntos text[], timestamps.
+
+recetas: id, encuentro_id, paciente_id, medico_user_id, items jsonb, indicaciones text, pdf_path text, qr_code text, timestamps.
+
+ordenes_estudio: id, encuentro_id, paciente_id, tipo text, parametros jsonb, instrucciones text, pdf_path text, timestamps.
+
+resultados_estudio: id, orden_id, paciente_id, storage_path text, comentarios text, visto_por_medico bool, fecha_carga.
+
+productos: id, empresa_id, nombre, sku, categoria, presentacion, impuesto numeric, precio numeric, min_stock int, timestamps.
+
+lotes: id, producto_id, num_lote, caducidad date, existencias int.
+
+movimientos_inventario: id, producto_id, lote_id, tipo text (entrada/salida/ajuste/dispensacion), cantidad int, referencia text, usuario_id, fecha timestamptz.
+
+ordenes_cobro: id, paciente_id, empresa_id, sede_id, conceptos jsonb, subtotal numeric, impuestos numeric, total numeric, estado text (abierta/pagada/parcial), referencia_cita uuid, timestamps.
+
+pagos: id, orden_cobro_id, metodo text, monto numeric, fecha timestamptz, referencia text, status text.
+
+facturas: id, orden_cobro_id, uuid text, xml_path text, pdf_path text, estatus text (emitida/cancelada), uso_cfdi text, regimen text, forma_pago text, metodo_pago text, timestamps.
+
+complementos_pago: id, factura_id, pago_id, xml_path text, pdf_path text, timestamps.
+
+campañas: id, empresa_id, tipo, segmento jsonb, plantilla text, estado text, metricas jsonb, timestamps.
+
+mensajes: id, campaña_id, paciente_id, canal text, estado text, fecha_envio timestamptz.
+
+tareas_crm: id, asignado_a uuid, tipo, descripcion, fecha_venc date, estado, empresa_id, sede_id.
+
+auditoria: id, actor_user_id, accion, recurso, recurso_id uuid, payload jsonb, ip text, user_agent text, fecha timestamptz.
+
+webhooks: id, empresa_id, nombre, url, secreto, eventos text[], activo bool.
+
+Índices recomendados (idempotentes):
+
+Búsquedas: pacientes(nombre, apellidos), pacientes(email), citas(medico_user_id, fecha_hora), ordenes_cobro(empresa_id, sede_id, estado).
+
+Texto: extensiones pg_trgm en pacientes(nombre, apellidos, email) para búsqueda rápida.
+
+FKs y cascadas donde corresponda.
+
+D. Funciones utilitarias para seguridad/tenancy (JWT)
+
+Crea funciones seguras para usar en políticas RLS:
+
+current_user_id() → auth.uid().
+
+jwt_claims() → current_setting('request.jwt.claims', true)::json.
+
+current_empresa_id() y current_sede_id() leyendo de claims (si existen).
+
+is_admin(empresa_id, sede_id) → true si el usuario tiene rol “Admin” en esa empresa/sede.
+
+has_permission(resource text, action text, empresa uuid, sede uuid) → lee el agregado de permissions_jsonb de todos los roles del usuario para esa empresa/sede y retorna boolean. Optimiza con una VIEW materializada effective_permissions si lo ves necesario.
+
+Importante: estas funciones deben ser STABLE y sin privilegios superfluos.
+
+E. RLS (Row Level Security) — activar y proteger
+
+Activa RLS en todas las tablas con datos de empresa/sede/pacientes.
+
+SELECT: permitir solo si:
+
+empresa_id coincide con el claim/rol del usuario,
+
+y has_permission(resource, 'view', empresa_id, sede_id) sea true.
+
+INSERT: permitir solo si:
+
+El empresa_id/sede_id del payload coincide con el contexto del usuario,
+
+y has_permission(resource, 'create', …) sea true.
+
+UPDATE/DELETE: igual con edit / delete.
+
+Excepción Admin: si is_admin(empresa_id, sede_id) es true, permitir todo.
+
+En tablas sin sede_id (catálogos globales por empresa), valida solo empresa_id.
+
+Políticas mínimas a crear: pacientes, citas, notas_clinicas, recetas, ordenes_estudio, resultados_estudio, productos, lotes, movimientos_inventario, ordenes_cobro, pagos, facturas, campañas, mensajes, tareas_crm, auditoria (solo Admin), webhooks (solo Admin).
+
+F. Storage (buckets + políticas)
+
+Crea buckets:
+
+clinical-docs (privado), lab-results (privado), invoices (privado), public-assets (público).
+Para storage.objects, define políticas que:
+
+Permitan subir/ver si el usuario tiene acceso a la empresa/sede del archivo.
+
+Exijan metadata en el objeto con empresa_id, sede_id, y opcional paciente_id.
+
+Paciente solo puede leer archivos donde metadata.paciente_id = su id (vía tabla relacional paciente↔usuario).
+
+Prohibir DELETE salvo roles con permiso explícito.
+
+G. Triggers útiles
+
+set_default_tenant() BEFORE INSERT: si el registro no trae empresa_id/sede_id, completarlos desde claims para evitar “huérfanos”.
+
+inventario_after_mov(): ajusta existencias del lote tras movimiento y alerta si queda bajo mínimos (insertar en tareas_crm o auditoria).
+
+resultado_notifica(): al insertar en resultados_estudio, crear evento en auditoria para notificar a médico/paciente (la notificación real se hará con tu adaptador de mensajería).
+
+orden_factura_guardar(): al emitir/cancelar CFDI (cuando registres el evento), guarda xml_path/pdf_path y audita.
+
+H. Vistas prácticas (read-only)
+
+v_agenda_medico_dia(medico_user_id, fecha) → citas con estados y tiempos.
+
+v_kpis_sede(empresa_id, sede_id, rango_fecha) → ocupación, no-shows, ticket promedio.
+
+v_recetas_pendientes_dispensa(empresa_id) → para farmacia.
+
+I. Seeds (datos demo seguros)
+
+empresas/sedes: Clínica Demo con Roma, Polanco.
+
+roles: Admin (“ALL”), Medico, Recepcion, Caja con permissions_jsonb realista.
+
+usuarios (solo en local/dev; usar service key):
+
+admin@demo.mx, dr.luna@demo.mx, recepcion@demo.mx, caja@demo.mx, carlos.paciente@demo.mx.
+
+usuarios_roles por sede.
+
+pacientes: ~50 con Faker; citas del día; algunas notas firmadas/no firmadas; recetas/órdenes/resultados; inventario con lotes y 5 próximos a caducar; ordenes_cobro/pagos/facturas con casos abiertos/pagados/parciales/cancelables.
+
+Seeds deben ser idempotentes (UPSERT por llave natural).
+
+J. Pruebas de seguridad (SQL + guía manual)
+
+Genera un archivo security_checks.sql con pruebas que:
+
+Simulen JWT cambiando request.jwt.claims (solo en SQL de pruebas) e intenten:
+
+SELECT de pacientes de otra empresa ⇒ 0 filas.
+
+INSERT pacientes con empresa_id distinto ⇒ bloqueado.
+
+UPDATE/DELETE sin permiso ⇒ bloqueado.
+
+Verifiquen que RLS está ON en todas las tablas sensibles (ALTER TABLE … FORCE ROW LEVEL SECURITY si aplica).
+
+Comprueben que Storage no permite leer objetos de otra empresa/paciente.
+Además, redacta una checklist manual:
+
+Entrar como Recepción: no puede acceder a Configuración/Seguridad (403) ni ver acciones no permitidas.
+
+Entrar como Médico: no ve Inventario/Caja/CFDI; puede firmar sus notas.
+
+Entrar como Paciente: solo portal y sus documentos.
+
+K. Entregables
+
+/supabase/migrations/xxxx_schema.sql (idempotente).
+
+/supabase/seeds/xxxx_seed.sql (idempotente).
+
+/supabase/security/security_checks.sql.
+
+Documentación breve README_SUPABASE.md con:
+
+Cómo correr migraciones/seeds (supabase db push o scripts).
+
+Variables relevantes (.env).
+
+Lista de tablas con RLS y políticas por recurso/acción.
+
+Buckets creados y sus políticas.
+
+Cómo simular JWT en SQL para probar RLS.
+
+L. Criterios de aceptación (go/no-go)
+
+Todas las tablas sensibles tienen RLS ON y políticas por empresa_id/sede_id + permisos.
+
+Buckets privados solo accesibles por empresa/sede y paciente dueño.
+
+Seeds generan usuarios/roles/datos demo listos para pruebas sin colisiones.
+
+security_checks.sql demuestra que accesos indebidos fallan.
+
+No se renombró ni rompió nada existente; cambios mínimos y reversibles.
+
+Al terminar, ejecuta migraciones y seeds en el entorno conectado y comparte el resumen de lo creado/alterado, más el resultado de security_checks.sql.

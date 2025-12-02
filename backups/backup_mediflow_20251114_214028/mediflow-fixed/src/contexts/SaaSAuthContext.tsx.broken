@@ -1,0 +1,807 @@
+// Contexto de autenticación SaaS con Supabase Auth Real
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
+import toast from 'react-hot-toast'
+import { supabase } from '@/lib/supabase'
+import { SaaSHierarchy } from '@/types/saas'
+
+// Cache de permisos en localStorage
+interface PermissionCache {
+  permissions: string[]
+  timestamp: number
+  enterpriseId: string
+  sedeId: string
+  hierarchy: string
+}
+
+const PERMISSION_CACHE_KEY = 'mediflow_saas_permissions_cache'
+const PERMISSION_CACHE_DURATION = 5 * 60 * 1000 // 5 minutos
+
+interface EmpresaSedeInfo {
+  empresaId: string
+  empresaNombre: string
+  sedeId: string
+  sedeNombre: string
+  configuracion?: any
+}
+
+interface SaaSUser {
+  id: string
+  email: string
+  name: string
+  hierarchy: string
+  enterpriseId: string
+  enterpriseName: string
+  sede: string
+  sedeNombre?: string
+  empresaSede?: EmpresaSedeInfo
+  phone?: string
+  permissions: string[]
+  status: string
+  loginCount: number
+  createdAt: Date
+  updatedAt: Date
+  metadata: any
+  preferences: any
+  lastActivity?: Date
+  sessionInfo?: {
+    sessionId: string
+    loginTime: Date
+    lastActivity: Date
+    ipAddress?: string
+  }
+}
+
+interface SaaSAuthContextType {
+  user: SaaSUser | null
+  loading: boolean
+  isAuthenticated: boolean
+  signIn: (email: string, password: string) => Promise<void>
+  signOut: () => Promise<void>
+  hasPermission: (resource: string, action: string) => boolean
+  hasRole: (role: string) => boolean
+  hasHierarchyRole: (roles: string[]) => boolean
+  canManagePatients: () => boolean
+  canViewMedicalHistory: () => boolean
+  canAccessBilling: () => boolean
+  // Nuevas funciones de cache de permisos
+  getCachedPermissions: () => PermissionCache | null
+  setCachedPermissions: (permissions: string[]) => void
+  invalidatePermissionsCache: () => void
+  getUserPermissions: () => string[]
+}
+
+const SaaSAuthContext = createContext<SaaSAuthContextType | undefined>(undefined)
+
+export function useSaaSAuth() {
+  const context = useContext(SaaSAuthContext)
+  if (context === undefined) {
+    throw new Error('useSaaSAuth debe ser usado dentro de un SaaSAuthProvider')
+  }
+  return context
+}
+
+interface SaaSAuthProviderProps {
+  children: ReactNode
+}
+
+// Usuarios demo actualizados con permisos correctos
+const DEMO_USERS = [
+  {
+    id: 'admin-001',
+    email: 'admin@mediflow.mx',
+    password: 'admin123',
+    name: 'Dr. Carlos Admin',
+    hierarchy: 'super_admin',
+    enterpriseId: 'empresa-001',
+    enterpriseName: 'MediFlow Corporativo',
+    sede: 'Matriz CDMX',
+    phone: '+52 55 1234-5678',
+    permissions: ['*'], // Super admin tiene acceso a todo
+    status: 'active',
+    loginCount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    metadata: {
+      cedula_profesional: '1234567',
+      especialidad: 'Medicina del Trabajo',
+      certificaciones: ['NOM-006-STPS', 'NOM-017-STPS'],
+      ultimo_acceso: new Date().toISOString()
+    },
+    preferences: {
+      theme: 'light',
+      language: 'es',
+      timezone: 'America/Mexico_City',
+      notifications: { email: true, push: true, sms: false, appointmentReminders: true, systemAlerts: true, auditNotifications: true },
+      dashboard: { widgets: ['pacientes', 'citas', 'examenes', 'alertas', 'ingresos'], layout: 'grid', refreshInterval: 300 }
+    }
+  },
+  {
+    id: 'medico-001',
+    email: 'medico@mediflow.mx',
+    password: 'medico123',
+    name: 'Dra. Luna Rivera',
+    hierarchy: 'medico_trabajo',
+    enterpriseId: 'empresa-001',
+    enterpriseName: 'MediFlow Corporativo',
+    sede: 'Sucursal Polanco',
+    phone: '+52 55 8765-4321',
+    permissions: ['patients_manage', 'medical_view', 'medical_manage', 'exams_manage', 'reports_view', 'agenda_manage', 'billing_view', 'certifications_view'],
+    status: 'active',
+    loginCount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    metadata: {
+      cedula_profesional: '2345678',
+      especialidad: 'Medicina del Trabajo e Higiene Industrial',
+      certificaciones: ['NOM-006-STPS', 'NOM-017-STPS', 'ISO 45001'],
+      turno: 'Matutino'
+    },
+    preferences: {
+      theme: 'light',
+      language: 'es',
+      timezone: 'America/Mexico_City',
+      notifications: { email: true, push: true, sms: false, appointmentReminders: true, systemAlerts: true, auditNotifications: false },
+      dashboard: { widgets: ['pacientes_hoy', 'examenes_pendientes', 'agenda'], layout: 'grid', refreshInterval: 180 }
+    }
+  },
+  {
+    id: 'medico-002',
+    email: 'especialista@mediflow.mx',
+    password: 'especialista123',
+    name: 'Dr. Roberto Silva',
+    hierarchy: 'medico_especialista',
+    enterpriseId: 'empresa-001',
+    enterpriseName: 'MediFlow Corporativo',
+    sede: 'Sucursal Roma',
+    phone: '+52 55 5567-8901',
+    permissions: ['patients_manage', 'medical_view', 'exams_manage', 'reports_view', 'agenda_view'],
+    status: 'active',
+    loginCount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    metadata: {
+      cedula_profesional: '3456789',
+      especialidad: 'Cardiología y Medicina Interna',
+      certificaciones: ['Consejo Mexicano de Cardiología'],
+      turno: 'Vespertino'
+    },
+    preferences: {
+      theme: 'light',
+      language: 'es',
+      timezone: 'America/Mexico_City',
+      notifications: { email: true, push: true, sms: false, appointmentReminders: true, systemAlerts: false, auditNotifications: false },
+      dashboard: { widgets: ['consultas_hoy', 'estudios_pendientes'], layout: 'grid', refreshInterval: 240 }
+    }
+  },
+  {
+    id: 'recepcion-001',
+    email: 'recepcion@mediflow.mx',
+    password: 'recepcion123',
+    name: 'Ana Patricia López',
+    hierarchy: 'recepcion',
+    enterpriseId: 'empresa-001',
+    enterpriseName: 'MediFlow Corporativo',
+    sede: 'Matriz CDMX',
+    phone: '+52 55 3344-5566',
+    permissions: ['patients_manage', 'billing_view', 'agenda_manage', 'scheduling_view'],
+    status: 'active',
+    loginCount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    metadata: {
+      puesto: 'Coordinadora de Recepción',
+      turnos_rotativos: true,
+      certificacion_atencion_cliente: true
+    },
+    preferences: {
+      theme: 'light',
+      language: 'es',
+      timezone: 'America/Mexico_City',
+      notifications: { email: true, push: true, sms: true, appointmentReminders: true, systemAlerts: true, auditNotifications: false },
+      dashboard: { widgets: ['citas_hoy', 'pacientes_pendientes', 'cobranza'], layout: 'grid', refreshInterval: 120 }
+    }
+  },
+  {
+    id: 'paciente-001',
+    email: 'paciente@mediflow.mx',
+    password: 'paciente123',
+    name: 'Juan Carlos Pérez',
+    hierarchy: 'paciente',
+    enterpriseId: 'empresa-001',
+    enterpriseName: 'MediFlow Corporativo',
+    sede: 'Paciente Externo',
+    phone: '+52 55 7788-9900',
+    permissions: ['medical_view', 'appointments_view', 'reports_view'],
+    status: 'active',
+    loginCount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    metadata: {
+      fecha_nacimiento: '1985-03-15',
+      empresa_trabajo: 'Tech Solutions SA de CV',
+      tipo_examen: 'Periódico Anual',
+      grupo_sanguineo: 'O+'
+    },
+    preferences: {
+      theme: 'light',
+      language: 'es',
+      timezone: 'America/Mexico_City',
+      notifications: { email: true, push: true, sms: false, appointmentReminders: true, systemAlerts: false, auditNotifications: false },
+      dashboard: { widgets: ['mis_citas', 'mi_historial', 'proximos_examenes'], layout: 'grid', refreshInterval: 300 }
+    }
+  },
+  {
+    id: 'bot-001',
+    email: 'bot@mediflow.mx',
+    password: 'bot123',
+    name: 'MediBot Asistente',
+    hierarchy: 'bot',
+    enterpriseId: 'empresa-001',
+    enterpriseName: 'MediFlow Corporativo',
+    sede: 'Sistema Central',
+    phone: '',
+    permissions: ['help_center', 'system_support', 'medical_info', 'tutorials_view'],
+    status: 'active',
+    loginCount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    metadata: {
+      tipo: 'asistente_inteligente',
+      version: '1.2.3',
+      capacidades: ['chat_support', 'faq', 'tutoriales', 'documentacion'],
+      temas_soporte: ['sistema', 'medico_especialista', 'procedimientos']
+    },
+    preferences: {
+      theme: 'light',
+      language: 'es',
+      timezone: 'America/Mexico_City',
+      notifications: { email: false, push: false, sms: false, appointmentReminders: false, systemAlerts: true, auditNotifications: false },
+      dashboard: { widgets: ['tickets_activos', 'faq_populares', 'estadisticas_uso'], layout: 'grid', refreshInterval: 60 }
+    }
+  },
+  {
+    id: 'laboratorista-001',
+    email: 'laboratorio@mediflow.mx',
+    password: 'lab123',
+    name: 'Dr. Miguel Ángel Torres',
+    hierarchy: 'medico_industrial',
+    enterpriseId: 'empresa-001',
+    enterpriseName: 'MediFlow Corporativo',
+    sede: 'Laboratorio Central',
+    phone: '+52 55 1122-3344',
+    permissions: ['patients_manage', 'medical_view', 'exams_manage', 'laboratory_manage', 'reports_view'],
+    status: 'active',
+    loginCount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    metadata: {
+      cedula_profesional: '4567890',
+      especialidad: 'Medicina de Laboratorio',
+      acreditaciones: ['COFEPRIS', 'CLIA'],
+      laboratorio_principal: true
+    },
+    preferences: {
+      theme: 'light',
+      language: 'es',
+      timezone: 'America/Mexico_City',
+      notifications: { email: true, push: true, sms: false, appointmentReminders: false, systemAlerts: true, auditNotifications: true },
+      dashboard: { widgets: ['muestras_pendientes', 'resultados_hoy', 'control_calidad'], layout: 'grid', refreshInterval: 90 }
+    }
+  },
+  {
+    id: 'admin-002',
+    email: 'admin.empresa@mediflow.mx',
+    password: 'adminemp123',
+    name: 'Dra. Patricia Fernández',
+    hierarchy: 'admin_empresa',
+    enterpriseId: 'empresa-001',
+    enterpriseName: 'MediFlow Corporativo',
+    sede: 'Dirección General',
+    phone: '+52 55 9988-7766',
+    permissions: ['patients_manage', 'medical_view', 'exams_manage', 'billing_manage', 'reports_view', 'inventory_manage', 'agenda_manage', 'system_admin'],
+    status: 'active',
+    loginCount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    metadata: {
+      cedula_profesional: '5678901',
+      especialidad: 'Administración en Salud',
+      certificaciones: ['Green Belt Six Sigma', 'PMP'],
+      nivel_acceso: 'gerencial'
+    },
+    preferences: {
+      theme: 'light',
+      language: 'es',
+      timezone: 'America/Mexico_City',
+      notifications: { email: true, push: true, sms: false, appointmentReminders: true, systemAlerts: true, auditNotifications: true },
+      dashboard: { widgets: ['kpis_generales', 'rentabilidad', 'alertas_gerenciales'], layout: 'grid', refreshInterval: 600 }
+    }
+  }
+]
+
+// Mapeo de hierarchy a permisos (desde Supabase permisos_rol)
+const HIERARCHY_PERMISSIONS: Record<string, string[]> = {
+  super_admin: ['*'], // Acceso total
+  admin_empresa: ['patients_manage', 'medical_view', 'exams_manage', 'billing_manage', 'reports_view', 'inventory_manage', 'agenda_manage', 'system_admin'],
+  medico_trabajo: ['patients_manage', 'medical_view', 'medical_manage', 'exams_manage', 'reports_view', 'agenda_manage', 'billing_view'],
+  medico_especialista: ['patients_manage', 'medical_view', 'exams_manage', 'reports_view'],
+  medico_industrial: ['patients_manage', 'medical_view', 'exams_manage', 'reports_view'],
+  recepcion: ['patients_manage', 'billing_view', 'agenda_manage'],
+  paciente: ['medical_view', 'appointments_view', 'reports_view'],
+  bot: ['help_center', 'system_support', 'medical_info', 'tutorials_view']
+}
+
+export function SaaSAuthProvider({ children }: SaaSAuthProviderProps) {
+  const [user, setUser] = useState<SaaSUser | null>(null)
+  const [loading, setLoading] = useState(true)
+  // TEMPORAL: Forzar modo demo hasta que se apliquen políticas RLS
+  const [useSupabaseAuth, setUseSupabaseAuth] = useState(false)
+  const [permissionsCache, setPermissionsCache] = useState<string[]>([])
+
+  // Funciones de cache de permisos
+  const getCachedPermissions = useCallback((): PermissionCache | null => {
+    try {
+      const cached = localStorage.getItem(PERMISSION_CACHE_KEY)
+      if (!cached) return null
+
+      const parsed = JSON.parse(cached)
+      const now = Date.now()
+
+      // Verificar si el cache está expirado
+      if (now - parsed.timestamp > PERMISSION_CACHE_DURATION) {
+        localStorage.removeItem(PERMISSION_CACHE_KEY)
+        return null
+      }
+
+      // Verificar si la empresa/sede/jerarquía coincide
+      if (parsed.enterpriseId !== user?.enterpriseId || 
+          parsed.sedeId !== user?.sede ||
+          parsed.hierarchy !== user?.hierarchy) {
+        localStorage.removeItem(PERMISSION_CACHE_KEY)
+        return null
+      }
+
+      return parsed
+    } catch (error) {
+      console.error('Error leyendo cache de permisos:', error)
+      return null
+    }
+  }, [user?.enterpriseId, user?.sede, user?.hierarchy])
+
+  const setCachedPermissions = useCallback((permissions: string[]) => {
+    try {
+      if (!user) return
+      
+      const cacheData: PermissionCache = {
+        permissions,
+        timestamp: Date.now(),
+        enterpriseId: user.enterpriseId,
+        sedeId: user.sede || '',
+        hierarchy: user.hierarchy
+      }
+      localStorage.setItem(PERMISSION_CACHE_KEY, JSON.stringify(cacheData))
+    } catch (error) {
+      console.error('Error guardando cache de permisos:', error)
+    }
+  }, [user])
+
+  const invalidatePermissionsCache = useCallback(() => {
+    localStorage.removeItem(PERMISSION_CACHE_KEY)
+  }, [])
+
+  // Verificar sesión guardada al cargar
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // TEMPORAL: Aviso de modo demo
+        console.warn('⚠️  MODO DEMO ACTIVADO')
+        console.warn('    Las políticas RLS de Supabase necesitan ser aplicadas')
+        console.warn('    Ver: SOLUCION_ACCESO_DENEGADO.md')
+        console.warn('    Para habilitar Supabase Auth, cambia useSupabaseAuth a true')
+        
+        // Intentar obtener sesión de Supabase Auth
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (session && !error) {
+          console.log('✅ Sesión de Supabase encontrada')
+          // Obtener perfil del usuario desde la tabla profiles
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle()
+
+          if (profile && !profileError) {
+            // Obtener permisos basados en hierarchy
+            const permissions = HIERARCHY_PERMISSIONS[profile.hierarchy] || []
+            
+            // Obtener información de empresa y sede
+            const { data: empresaData } = await supabase
+              .from('saas_enterprises')
+              .select('nombre')
+              .eq('id', profile.empresa_id)
+              .single()
+
+            const { data: sedeData } = await supabase
+              .from('sedes')
+              .select('nombre')
+              .eq('id', profile.sede_id)
+              .single()
+
+            const saasUser: SaaSUser = {
+              id: profile.id,
+              email: profile.email,
+              name: `${profile.nombre} ${profile.apellido_paterno || ''}`.trim(),
+              hierarchy: profile.hierarchy,
+              enterpriseId: profile.empresa_id,
+              enterpriseName: empresaData?.nombre || 'Empresa',
+              sede: profile.sede_id || '',
+              sedeNombre: sedeData?.nombre,
+              empresaSede: {
+                empresaId: profile.empresa_id,
+                empresaNombre: empresaData?.nombre || 'Empresa',
+                sedeId: profile.sede_id || '',
+                sedeNombre: sedeData?.nombre || ''
+              },
+              phone: profile.telefono,
+              permissions,
+              status: profile.status,
+              loginCount: profile.login_count,
+              createdAt: new Date(profile.created_at),
+              updatedAt: new Date(profile.updated_at),
+              metadata: profile.metadata,
+              preferences: profile.preferences,
+              lastActivity: new Date(),
+              sessionInfo: {
+                sessionId: crypto.randomUUID(),
+                loginTime: new Date(),
+                lastActivity: new Date()
+              }
+            }
+            
+            setUser(saasUser)
+            setPermissionsCache(permissions)
+            setUseSupabaseAuth(true)
+          } else {
+            console.warn('⚠️ No se encontró perfil, usando fallback')
+            throw new Error('No profile found')
+          }
+        } else {
+          // Fallback a localStorage (modo demo)
+          console.log('ℹ️ No hay sesión de Supabase, revisando localStorage')
+          const savedUser = localStorage.getItem('mediflow_saas_user')
+          if (savedUser) {
+            const parsedUser = JSON.parse(savedUser)
+            parsedUser.createdAt = new Date(parsedUser.createdAt)
+            parsedUser.updatedAt = new Date(parsedUser.updatedAt)
+            setUser(parsedUser)
+            setUseSupabaseAuth(false)
+          }
+        }
+      } catch (error) {
+        console.error('Error verificando autenticación:', error)
+        // Intentar con localStorage como fallback
+        const savedUser = localStorage.getItem('mediflow_saas_user')
+        if (savedUser) {
+          try {
+            const parsedUser = JSON.parse(savedUser)
+            parsedUser.createdAt = new Date(parsedUser.createdAt)
+            parsedUser.updatedAt = new Date(parsedUser.updatedAt)
+            setUser(parsedUser)
+            setUseSupabaseAuth(false)
+          } catch (e) {
+            localStorage.removeItem('mediflow_saas_user')
+          }
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkAuth()
+
+    // Suscribirse a cambios de auth de Supabase
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth state change:', event)
+      if (event === 'SIGNED_IN' && session) {
+        await checkAuth()
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null)
+        localStorage.removeItem('mediflow_saas_user')
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      setLoading(true)
+      
+      if (useSupabaseAuth) {
+        // Intentar login con Supabase Auth
+        console.log('🔐 Intentando login con Supabase Auth...')
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        })
+        
+        if (error) {
+          console.warn('⚠️ Error con Supabase Auth, usando modo demo:', error.message)
+          throw error
+        }
+        
+        if (data.session) {
+          // Obtener perfil
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .maybeSingle()
+
+          if (!profile || profileError) {
+            throw new Error('Perfil no encontrado')
+          }
+
+          const permissions = HIERARCHY_PERMISSIONS[profile.hierarchy] || []
+          
+          // Obtener información de empresa y sede
+          const { data: empresaData } = await supabase
+            .from('saas_enterprises')
+            .select('nombre')
+            .eq('id', profile.empresa_id)
+            .single()
+
+          const { data: sedeData } = await supabase
+            .from('sedes')
+            .select('nombre')
+            .eq('id', profile.sede_id)
+            .single()
+
+          const saasUser: SaaSUser = {
+            id: profile.id,
+            email: profile.email,
+            name: `${profile.nombre} ${profile.apellido_paterno || ''}`.trim(),
+            hierarchy: profile.hierarchy,
+            enterpriseId: profile.empresa_id,
+            enterpriseName: empresaData?.nombre || 'Empresa',
+            sede: profile.sede_id || '',
+            sedeNombre: sedeData?.nombre,
+            empresaSede: {
+              empresaId: profile.empresa_id,
+              empresaNombre: empresaData?.nombre || 'Empresa',
+              sedeId: profile.sede_id || '',
+              sedeNombre: sedeData?.nombre || ''
+            },
+            phone: profile.telefono,
+            permissions,
+            status: profile.status,
+            loginCount: profile.login_count + 1,
+            createdAt: new Date(profile.created_at),
+            updatedAt: new Date(profile.updated_at),
+            metadata: profile.metadata,
+            preferences: profile.preferences,
+            lastActivity: new Date(),
+            sessionInfo: {
+              sessionId: crypto.randomUUID(),
+              loginTime: new Date(),
+              lastActivity: new Date()
+            }
+          }
+          
+          setUser(saasUser)
+          toast.success(`¡Bienvenido ${saasUser.name}!`)
+          
+          // ✅ IMPORTANTE: Return explícito para completar el signIn exitosamente
+          return
+        }
+      }
+    } catch (error: any) {
+      console.warn('⚠️ Supabase Auth no disponible, usando modo demo')
+      // Fallback a usuarios demo
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      const demoUser = DEMO_USERS.find(
+        u => u.email === email && u.password === password
+      )
+      
+      if (!demoUser) {
+        // ✅ Re-lanzar el error original de Supabase si falló, o error de credenciales demo
+        throw error
+      }
+      
+      const { password: _, ...userWithoutPassword } = demoUser
+      const demoUserWithSession: SaaSUser = {
+        ...userWithoutPassword as SaaSUser,
+        lastActivity: new Date(),
+        sessionInfo: {
+          sessionId: crypto.randomUUID(),
+          loginTime: new Date(),
+          lastActivity: new Date()
+        }
+      }
+      setUser(demoUserWithSession)
+      localStorage.setItem('mediflow_saas_user', JSON.stringify(demoUserWithSession))
+      
+      // Cache de permisos para usuarios demo
+      setCachedPermissions(demoUserWithSession.permissions)
+      setUseSupabaseAuth(false)
+      toast.success(`¡Bienvenido ${demoUserWithSession.name}! (Modo Demo)`)
+      
+      // ✅ IMPORTANTE: Return explícito para evitar continue al finally
+      return
+  }
+
+  const signOut = async () => {
+    try {
+      setLoading(true)
+      
+      if (useSupabaseAuth) {
+        await supabase.auth.signOut()
+      }
+      
+      setUser(null)
+      setPermissionsCache([])
+      localStorage.removeItem('mediflow_saas_user')
+      localStorage.removeItem('mediflow_saas_enterprise')
+      localStorage.removeItem(PERMISSION_CACHE_KEY)
+      toast.success('Sesión cerrada correctamente')
+    } catch (error: any) {
+      console.error('Error en logout:', error)
+      toast.error('Error al cerrar sesión')
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const hasPermission = (resource: string, action: string): boolean => {
+    if (!user?.permissions) return false
+    
+    // Super admin tiene todos los permisos
+    if (user.permissions.includes('*')) return true
+    
+    return user.permissions.includes(`${resource}_${action}`) || 
+           user.permissions.includes(`${resource}_manage`) ||
+           user.permissions.includes(`${resource}_*`)
+  }
+
+  const hasRole = (role: string): boolean => {
+    return user?.hierarchy === role
+  }
+
+  const hasHierarchyRole = (roles: string[]): boolean => {
+    return user?.hierarchy ? roles.includes(user.hierarchy) : false
+  }
+
+  const canManagePatients = (): boolean => {
+    return hasPermission('patients', 'manage')
+  }
+
+  const canViewMedicalHistory = (): boolean => {
+    return hasPermission('medical', 'view')
+  }
+
+  const canAccessBilling = (): boolean => {
+    return hasPermission('billing', 'view') || hasPermission('billing', 'manage')
+  }
+
+  const isAuthenticated = !!user && user.status === 'active'
+
+  // Cargar permisos con cache
+  useEffect(() => {
+    if (!user) {
+      setPermissionsCache([])
+      return
+    }
+
+    const loadPermissions = async () => {
+      try {
+        // Intentar usar cache primero
+        const cached = getCachedPermissions()
+        if (cached) {
+          setPermissionsCache(cached.permissions)
+          return
+        }
+
+        // Si no hay cache, usar permisos del usuario o jerarquía
+        let userPermissions = user.permissions
+        if (userPermissions.length === 0) {
+          userPermissions = HIERARCHY_PERMISSIONS[user.hierarchy] || []
+        }
+        
+        setPermissionsCache(userPermissions)
+        setCachedPermissions(userPermissions)
+      } catch (error) {
+        console.error('Error cargando permisos:', error)
+        setPermissionsCache([])
+      }
+    }
+
+    loadPermissions()
+  }, [user, getCachedPermissions, setCachedPermissions])
+
+  // Actualizar permisos cuando cambien
+  useEffect(() => {
+    if (user) {
+      setCachedPermissions(permissionsCache)
+    }
+  }, [permissionsCache, user, setCachedPermissions])
+
+  // Sincronizar cambios de permisos en tiempo real
+  useEffect(() => {
+    if (!user) return
+
+    // Escuchar cambios de permisos (implementación futura con Supabase Realtime)
+    const handlePermissionChange = (event: CustomEvent) => {
+      const { permissions, enterpriseId, sedeId } = event.detail
+      
+      if (enterpriseId === user.enterpriseId && sedeId === user.sede) {
+        setPermissionsCache(permissions)
+        setUser(prev => prev ? { ...prev, permissions } : null)
+      }
+    }
+
+    window.addEventListener('permissionsChanged', handlePermissionChange as EventListener)
+    return () => {
+      window.removeEventListener('permissionsChanged', handlePermissionChange as EventListener)
+    }
+  }, [user])
+
+  const value: SaaSAuthContextType = {
+    user,
+    loading,
+    isAuthenticated,
+    signIn,
+    signOut,
+    hasPermission,
+    hasRole,
+    hasHierarchyRole,
+    canManagePatients,
+    canViewMedicalHistory,
+    canAccessBilling,
+    // Nuevas funciones de cache
+    getCachedPermissions,
+    setCachedPermissions,
+    invalidatePermissionsCache,
+    getUserPermissions: () => permissionsCache
+  }
+
+  return (
+    <SaaSAuthContext.Provider value={value}>
+      {children}
+    </SaaSAuthContext.Provider>
+  )
+}
+
+// Hook para permisos (compatibilidad con Layout.tsx)
+export function useSaaSPermissions() {
+  const { 
+    user, 
+    hasPermission, 
+    hasRole, 
+    hasHierarchyRole,
+    canManagePatients, 
+    canViewMedicalHistory, 
+    canAccessBilling 
+  } = useSaaSAuth()
+
+  return {
+    user,
+    hasRole,
+    hasHierarchyRole,
+    hasPermission,
+    isSuperAdmin: hasRole('super_admin'),
+    isAdminEmpresa: hasRole('admin_empresa'),
+    isMedico: hasHierarchyRole(['medico_trabajo', 'medico_especialista']),
+    isAdmin: hasHierarchyRole(['super_admin', 'admin_empresa']),
+    canManagePatients,
+    canViewMedicalHistory,
+    canAccessBilling,
+    canViewAuditLogs: hasPermission('audits', 'read'),
+    getUserHierarchy: () => user?.hierarchy || 'paciente',
+    canManageUser: hasRole('super_admin') || hasRole('admin_empresa')
+  }
+}

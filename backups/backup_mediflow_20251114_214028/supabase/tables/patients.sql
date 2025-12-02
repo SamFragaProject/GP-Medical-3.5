@@ -1,0 +1,20 @@
+CREATE TABLE patients (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    employee_id UUID,
+    company_id UUID,
+    full_name VARCHAR(255) NOT NULL,
+    cedula VARCHAR(20) UNIQUE,
+    email VARCHAR(255),
+    phone VARCHAR(20),
+    birth_date DATE,
+    gender VARCHAR(10),
+    department VARCHAR(100),
+    position VARCHAR(100),
+    hire_date DATE,
+    medical_history TEXT,
+    emergency_contact_name VARCHAR(255),
+    emergency_contact_phone VARCHAR(20),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
