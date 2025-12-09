@@ -5,11 +5,11 @@ import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
 import { useCarrito } from '@/contexts/CarritoContext';
-import { 
-  Search, 
-  ShoppingCart, 
-  Grid3X3, 
-  List, 
+import {
+  Search,
+  ShoppingCart,
+  Grid3X3,
+  List,
   Filter,
   Star,
   Plus,
@@ -202,8 +202,8 @@ const TiendaFarmacia: React.FC = () => {
   const [busqueda, setBusqueda] = useState('');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('todos');
   const [vistaGrid, setVistaGrid] = useState(true);
-  const [filtroPrecio, setFiltroPrecio] = useState('');
-  const [filtroMarca, setFiltroMarca] = useState('');
+  const [filtroPrecio, setFiltroPrecio] = useState('todos');
+  const [filtroMarca, setFiltroMarca] = useState('todas');
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [productosFavoritos, setProductosFavoritos] = useState<number[]>([]);
 
@@ -211,21 +211,21 @@ const TiendaFarmacia: React.FC = () => {
   const productosFiltrados = useMemo(() => {
     let resultado = productos.filter(producto => {
       const coincideBusqueda = producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-                              producto.marca.toLowerCase().includes(busqueda.toLowerCase()) ||
-                              producto.descripcion.toLowerCase().includes(busqueda.toLowerCase());
-      
+        producto.marca.toLowerCase().includes(busqueda.toLowerCase()) ||
+        producto.descripcion.toLowerCase().includes(busqueda.toLowerCase());
+
       const coincideCategoria = categoriaSeleccionada === 'todos' || producto.categoria === categoriaSeleccionada;
-      
-      const coincidePrecio = !filtroPrecio || 
+
+      const coincidePrecio = !filtroPrecio || filtroPrecio === 'todos' ||
         (filtroPrecio === 'bajo' && producto.precio < 20) ||
         (filtroPrecio === 'medio' && producto.precio >= 20 && producto.precio <= 50) ||
         (filtroPrecio === 'alto' && producto.precio > 50);
-      
-      const coincideMarca = !filtroMarca || producto.marca === filtroMarca;
-      
+
+      const coincideMarca = !filtroMarca || filtroMarca === 'todas' || producto.marca === filtroMarca;
+
       return coincideBusqueda && coincideCategoria && coincidePrecio && coincideMarca;
     });
-    
+
     return resultado;
   }, [productos, busqueda, categoriaSeleccionada, filtroPrecio, filtroMarca]);
 
@@ -248,7 +248,7 @@ const TiendaFarmacia: React.FC = () => {
   };
 
   const toggleFavorito = (productoId: number) => {
-    setProductosFavoritos(prev => 
+    setProductosFavoritos(prev =>
       prev.includes(productoId)
         ? prev.filter(id => id !== productoId)
         : [...prev, productoId]
@@ -279,7 +279,7 @@ const TiendaFarmacia: React.FC = () => {
                 <p className="text-gray-600">Productos de salud y bienestar</p>
               </div>
             </div>
-            
+
             {/* Carrito */}
             <div className="relative">
               <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white relative">
@@ -340,7 +340,7 @@ const TiendaFarmacia: React.FC = () => {
                 className="pl-10 border-green-200 focus:border-green-400 focus:ring-green-400"
               />
             </div>
-            
+
             {/* Controles de vista */}
             <div className="flex items-center space-x-2">
               <Button
@@ -389,11 +389,10 @@ const TiendaFarmacia: React.FC = () => {
                   <Button
                     key={categoria.id}
                     variant={categoriaSeleccionada === categoria.id ? "default" : "ghost"}
-                    className={`w-full justify-start ${
-                      categoriaSeleccionada === categoria.id 
-                        ? "bg-gradient-to-r from-green-600 to-blue-600 text-white" 
-                        : "text-gray-700 hover:bg-green-50"
-                    }`}
+                    className={`w-full justify-start ${categoriaSeleccionada === categoria.id
+                      ? "bg-gradient-to-r from-green-600 to-blue-600 text-white"
+                      : "text-gray-700 hover:bg-green-50"
+                      }`}
                     onClick={() => setCategoriaSeleccionada(categoria.id)}
                   >
                     {categoria.icono}
@@ -417,7 +416,7 @@ const TiendaFarmacia: React.FC = () => {
                       <SelectValue placeholder="Todos los precios" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos los precios</SelectItem>
+                      <SelectItem value="todos">Todos los precios</SelectItem>
                       <SelectItem value="bajo">Menos de €20</SelectItem>
                       <SelectItem value="medio">€20 - €50</SelectItem>
                       <SelectItem value="alto">Más de €50</SelectItem>
@@ -433,7 +432,7 @@ const TiendaFarmacia: React.FC = () => {
                       <SelectValue placeholder="Todas las marcas" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas las marcas</SelectItem>
+                      <SelectItem value="todas">Todas las marcas</SelectItem>
                       {marcas.map(marca => (
                         <SelectItem key={marca} value={marca}>{marca}</SelectItem>
                       ))}
@@ -442,12 +441,12 @@ const TiendaFarmacia: React.FC = () => {
                 </div>
 
                 {/* Limpiar filtros */}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
-                    setFiltroPrecio('');
-                    setFiltroMarca('');
+                    setFiltroPrecio('todos');
+                    setFiltroMarca('todas');
                   }}
                   className="w-full border-green-200 text-green-700 hover:bg-green-50"
                 >
@@ -480,16 +479,15 @@ const TiendaFarmacia: React.FC = () => {
               </Card>
             ) : (
               <div className={
-                vistaGrid 
+                vistaGrid
                   ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                   : "space-y-4"
               }>
                 {productosFiltrados.map(producto => (
-                  <Card 
-                    key={producto.id} 
-                    className={`group hover:shadow-lg transition-all duration-200 border-green-100 ${
-                      vistaGrid ? '' : 'flex flex-row'
-                    }`}
+                  <Card
+                    key={producto.id}
+                    className={`group hover:shadow-lg transition-all duration-200 border-green-100 ${vistaGrid ? '' : 'flex flex-row'
+                      }`}
                   >
                     <div className={`relative ${vistaGrid ? '' : 'w-48 h-48 flex-shrink-0'}`}>
                       <div className="bg-gray-100 h-48 flex items-center justify-center rounded-t-lg">
@@ -511,16 +509,15 @@ const TiendaFarmacia: React.FC = () => {
                         className="absolute top-2 right-2 mt-8 bg-white/80 hover:bg-white"
                         onClick={() => toggleFavorito(producto.id)}
                       >
-                        <Heart 
-                          className={`h-4 w-4 ${
-                            productosFavoritos.includes(producto.id) 
-                              ? 'text-red-500 fill-current' 
-                              : 'text-gray-400'
-                          }`} 
+                        <Heart
+                          className={`h-4 w-4 ${productosFavoritos.includes(producto.id)
+                            ? 'text-red-500 fill-current'
+                            : 'text-gray-400'
+                            }`}
                         />
                       </Button>
                     </div>
-                    
+
                     <div className={vistaGrid ? '' : 'flex-1 flex flex-col justify-between'}>
                       <CardHeader className={vistaGrid ? 'pb-2' : 'pb-2'}>
                         <div className="flex items-center justify-between">
@@ -540,12 +537,12 @@ const TiendaFarmacia: React.FC = () => {
                         </h3>
                         <p className="text-sm text-gray-600">{producto.marca}</p>
                       </CardHeader>
-                      
+
                       <CardContent className={vistaGrid ? 'pt-0' : 'pt-0 flex-1'}>
                         <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                           {producto.descripcion}
                         </p>
-                        
+
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center space-x-2">
                             {producto.descuento ? (
@@ -567,8 +564,8 @@ const TiendaFarmacia: React.FC = () => {
                             {producto.stock} disponibles
                           </Badge>
                         </div>
-                        
-                        <Button 
+
+                        <Button
                           className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
                           onClick={() => agregarAlCarrito(producto)}
                           disabled={producto.stock === 0}

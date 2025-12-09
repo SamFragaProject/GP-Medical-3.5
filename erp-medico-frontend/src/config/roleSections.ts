@@ -17,7 +17,16 @@ export const ROLE_SECTIONS: Record<UserRole, Section[]> = {
   super_admin: getNavigationForRole('super_admin'),
   admin_empresa: getNavigationForRole('admin_empresa'),
   medico: getNavigationForRole('medico'),
-  paciente: getNavigationForRole('paciente')
+  paciente: getNavigationForRole('paciente'),
+  medico_especialista: getNavigationForRole('medico_especialista'),
+  medico_trabajo: getNavigationForRole('medico_trabajo'),
+  enfermera: getNavigationForRole('enfermera'),
+  audiometrista: getNavigationForRole('audiometrista'),
+  psicologo_laboral: getNavigationForRole('psicologo_laboral'),
+  tecnico_ergonomico: getNavigationForRole('tecnico_ergonomico'),
+  recepcion: getNavigationForRole('recepcion'),
+  medico_industrial: getNavigationForRole('medico_industrial'),
+  bot: getNavigationForRole('bot')
 }
 
 export function getSectionsForRole(role: UserRole) {

@@ -1,13 +1,13 @@
 // Inventario personalizado por rol de usuario
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Package, 
-  Plus, 
-  Eye, 
-  ShoppingCart, 
-  Clock, 
-  CheckCircle, 
+import {
+  Package,
+  Plus,
+  Eye,
+  ShoppingCart,
+  Clock,
+  CheckCircle,
   XCircle,
   AlertTriangle,
   TrendingUp,
@@ -50,14 +50,14 @@ interface SolicitudProducto {
 
 export function InventarioPersonalizado() {
   const user = {
-  id: 'demo-user',
-  email: 'demo@mediflow.com',
-  hierarchy: 'super_admin' as const,
-  empresa: { nombre: 'MediFlow Demo Corp' },
-  sede: { nombre: 'Sede Principal' }
-}
+    id: 'demo-user',
+    email: 'demo@mediflow.com',
+    hierarchy: 'super_admin' as const,
+    empresa: { nombre: 'MediFlow Demo Corp' },
+    sede: { nombre: 'Sede Principal' }
+  }
 
-const hasRole = () => true
+  const hasRole = (role?: string) => true
   const [activeTab, setActiveTab] = useState('vista')
   const [productos, setProductos] = useState<ProductoInventario[]>([])
   const [solicitudes, setSolicitudes] = useState<SolicitudProducto[]>([])
@@ -144,19 +144,19 @@ const hasRole = () => true
 
   const handleAprobarSolicitud = (solicitudId: string) => {
     // Simular aprobación
-    setSolicitudes(prev => prev.map(s => 
+    setSolicitudes(prev => prev.map(s =>
       s.id === solicitudId ? { ...s, estado: 'aprobada' } : s
     ))
   }
 
   const handleRechazarSolicitud = (solicitudId: string) => {
     // Simular rechazo
-    setSolicitudes(prev => prev.map(s => 
+    setSolicitudes(prev => prev.map(s =>
       s.id === solicitudId ? { ...s, estado: 'rechazada' } : s
     ))
   }
 
-  const filteredProductos = productos.filter(p => 
+  const filteredProductos = productos.filter(p =>
     p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.categoria.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -240,7 +240,7 @@ const hasRole = () => true
                       <td className="p-2">
                         <Badge variant={
                           producto.estado === 'disponible' ? 'default' :
-                          producto.estado === 'stock_bajo' ? 'secondary' : 'destructive'
+                            producto.estado === 'stock_bajo' ? 'secondary' : 'destructive'
                         }>
                           {producto.estado}
                         </Badge>
@@ -270,18 +270,16 @@ const hasRole = () => true
         <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
           <button
             onClick={() => setActiveTab('vista')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium ${
-              activeTab === 'vista' ? 'bg-white text-green-600' : 'text-gray-600'
-            }`}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium ${activeTab === 'vista' ? 'bg-white text-green-600' : 'text-gray-600'
+              }`}
           >
             <Eye className="h-4 w-4 inline mr-2" />
             Ver Inventario
           </button>
           <button
             onClick={() => setActiveTab('solicitar')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium ${
-              activeTab === 'solicitar' ? 'bg-white text-green-600' : 'text-gray-600'
-            }`}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium ${activeTab === 'solicitar' ? 'bg-white text-green-600' : 'text-gray-600'
+              }`}
           >
             <ShoppingCart className="h-4 w-4 inline mr-2" />
             Solicitar Productos
@@ -314,13 +312,13 @@ const hasRole = () => true
                         <td className="p-2">
                           <Badge variant={
                             producto.estado === 'disponible' ? 'default' :
-                            producto.estado === 'stock_bajo' ? 'secondary' : 'destructive'
+                              producto.estado === 'stock_bajo' ? 'secondary' : 'destructive'
                           }>
                             {producto.estado}
                           </Badge>
                         </td>
                         <td className="p-2">
-                          <Button 
+                          <Button
                             size="sm"
                             onClick={() => handleSolicitarProducto(producto.id)}
                             disabled={producto.stock === 0}
@@ -378,7 +376,7 @@ const hasRole = () => true
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Motivo de la Solicitud
                   </label>
-                  <textarea 
+                  <textarea
                     className="w-full p-2 border border-gray-300 rounded-md h-20"
                     placeholder="Explique por qué necesita este producto..."
                   />
@@ -408,18 +406,16 @@ const hasRole = () => true
         <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
           <button
             onClick={() => setActiveTab('vista')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium ${
-              activeTab === 'vista' ? 'bg-white text-purple-600' : 'text-gray-600'
-            }`}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium ${activeTab === 'vista' ? 'bg-white text-purple-600' : 'text-gray-600'
+              }`}
           >
             <Package className="h-4 w-4 inline mr-2" />
             Productos
           </button>
           <button
             onClick={() => setActiveTab('solicitudes')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium ${
-              activeTab === 'solicitudes' ? 'bg-white text-purple-600' : 'text-gray-600'
-            }`}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium ${activeTab === 'solicitudes' ? 'bg-white text-purple-600' : 'text-gray-600'
+              }`}
           >
             <Bell className="h-4 w-4 inline mr-2" />
             Solicitudes ({solicitudes.filter(s => s.estado === 'pendiente').length})
@@ -454,7 +450,7 @@ const hasRole = () => true
                         <td className="p-2">
                           <Badge variant={
                             producto.estado === 'disponible' ? 'default' :
-                            producto.estado === 'stock_bajo' ? 'secondary' : 'destructive'
+                              producto.estado === 'stock_bajo' ? 'secondary' : 'destructive'
                           }>
                             {producto.estado}
                           </Badge>
@@ -497,7 +493,7 @@ const hasRole = () => true
                       </div>
                       <Badge variant={
                         solicitud.estado === 'pendiente' ? 'secondary' :
-                        solicitud.estado === 'aprobada' ? 'default' : 'destructive'
+                          solicitud.estado === 'aprobada' ? 'default' : 'destructive'
                       }>
                         {solicitud.estado}
                       </Badge>
@@ -511,16 +507,16 @@ const hasRole = () => true
                       </span>
                       {solicitud.estado === 'pendiente' && (
                         <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             onClick={() => handleAprobarSolicitud(solicitud.id)}
                             className="bg-green-600 hover:bg-green-700"
                           >
                             <CheckCircle className="h-4 w-4 mr-1" />
                             Aprobar
                           </Button>
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="destructive"
                             onClick={() => handleRechazarSolicitud(solicitud.id)}
                           >

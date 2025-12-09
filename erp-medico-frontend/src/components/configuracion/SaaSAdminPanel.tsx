@@ -1,12 +1,12 @@
 // Panel de Administración SaaS con Jerarquías Completas
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Monitor, 
-  Building, 
-  Users, 
-  Shield, 
-  Activity, 
+import {
+  Monitor,
+  Building,
+  Users,
+  Shield,
+  Activity,
   TrendingUp,
   Crown,
   UserCheck,
@@ -32,9 +32,9 @@ import {
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { 
-  HIERARCHY_CONSTANTS, 
-  HIERARCHY_LEVELS, 
+import {
+  HIERARCHY_CONSTANTS,
+  HIERARCHY_LEVELS,
   UserHierarchy,
   SaaSEnterprise,
   Department
@@ -87,7 +87,7 @@ function MetricCard({ title, value, icon: Icon, color, trend, description }: Met
           <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
           {trend && (
             <div className="flex items-center mt-2">
-              <TrendingUp 
+              <TrendingUp
                 className={`w-4 h-4 ${trend.isPositive ? 'text-green-500' : 'text-red-500'}`}
               />
               <span className={`text-sm ml-1 ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
@@ -162,16 +162,16 @@ function HierarchyLevelCard({ hierarchy, stats, level, maxLevel }: HierarchyLeve
             {stats.count}
           </Badge>
         </div>
-        
+
         {/* Barra de progreso visual */}
         <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
+          <div
             className={`h-2 rounded-full bg-gradient-to-r ${getGradientForLevel(level, maxLevel)}`}
             style={{ width: `${(stats.count / 5) * 100}%` }}
           ></div>
         </div>
       </Card>
-      
+
       {/* Línea conectora (excepto el último nivel) */}
       {level < maxLevel && (
         <div className="flex justify-center my-2">
@@ -208,20 +208,20 @@ function SecurityStatus() {
           Seguro
         </Badge>
       </div>
-      
+
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-600">Uptime del Sistema</span>
           <span className="font-semibold text-green-600">{DEMO_STATISTICS.systemUptime}</span>
         </div>
-        
+
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-600">Último Backup</span>
           <span className="font-semibold text-gray-900">
             {DEMO_STATISTICS.lastBackup.toLocaleString()}
           </span>
         </div>
-        
+
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-600">Eventos de Seguridad</span>
           <div className="flex items-center space-x-2">
@@ -229,7 +229,7 @@ function SecurityStatus() {
             <span className="font-semibold text-yellow-600">{securityEvents}</span>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-600">Score de Cumplimiento</span>
           <div className="flex items-center space-x-2">
@@ -249,18 +249,18 @@ function EnterpriseInfo({ enterprise }: { enterprise: SaaSEnterprise }) {
         <Building className="w-5 h-5 text-blue-500" />
         <h3 className="font-semibold text-gray-900">Información de la Empresa</h3>
       </div>
-      
+
       <div className="space-y-3">
         <div>
           <p className="text-sm text-gray-600">Nombre Comercial</p>
           <p className="font-semibold text-gray-900">{enterprise.name}</p>
         </div>
-        
+
         <div>
           <p className="text-sm text-gray-600">RFC</p>
           <p className="font-semibold text-gray-900">{enterprise.rfc}</p>
         </div>
-        
+
         <div>
           <p className="text-sm text-gray-600">Plan de Suscripción</p>
           <div className="flex items-center space-x-2">
@@ -272,7 +272,7 @@ function EnterpriseInfo({ enterprise }: { enterprise: SaaSEnterprise }) {
             </span>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-4 pt-2">
           <div>
             <p className="text-sm text-gray-600">Empleados</p>
@@ -320,7 +320,7 @@ function UserActivity() {
           Ver Todo
         </Button>
       </div>
-      
+
       <div className="space-y-3">
         {activity.map((item) => (
           <div key={item.id} className="flex items-start space-x-3 p-2 rounded-lg hover:bg-gray-50">
@@ -348,7 +348,7 @@ export function SaaSAdminPanel() {
     empresa: { nombre: 'MediFlow Demo Corp' },
     sede: { nombre: 'Sede Principal' }
   }
-  const hasPermission = () => true
+  const hasPermission = (resource?: string, action?: string) => true
   const canViewAuditLogs = true
   const getUserHierarchy = () => 5
   const getEnterpriseUsers = () => [] // Mock function
@@ -440,7 +440,7 @@ export function SaaSAdminPanel() {
           <h2 className="text-xl font-bold text-gray-900">Jerarquía de Usuarios</h2>
           <Badge variant="outline">Nivel {userLevel}</Badge>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {Object.entries(HIERARCHY_STATS).map(([hierarchy, stats]) => (
             <HierarchyLevelCard
@@ -457,10 +457,10 @@ export function SaaSAdminPanel() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Información de la empresa */}
         {/* {enterprise && <EnterpriseInfo enterprise={enterprise} />} */}
-        
+
         {/* Estado de seguridad */}
         <SecurityStatus />
-        
+
         {/* Actividad reciente */}
         <UserActivity />
       </div>
@@ -471,12 +471,12 @@ export function SaaSAdminPanel() {
           <BarChart3 className="w-6 h-6 text-blue-500" />
           <h2 className="text-xl font-bold text-gray-900">Distribución por Jerarquía</h2>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {Object.entries(HIERARCHY_LEVELS).map(([hierarchy, level]) => {
             const count = users.filter(u => u.hierarchy === hierarchy).length
             const percentage = users.length > 0 ? (count / users.length) * 100 : 0
-            
+
             return (
               <div key={hierarchy} className="text-center p-4 border rounded-lg">
                 <div className={`w-12 h-12 mx-auto rounded-full bg-gradient-to-r ${getGradientForLevel(level, maxLevel)} flex items-center justify-center mb-3`}>
@@ -501,7 +501,7 @@ export function SaaSAdminPanel() {
           <Zap className="w-6 h-6 text-yellow-500" />
           <h2 className="text-xl font-bold text-gray-900">Acciones Rápidas</h2>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {hasPermission('users', 'create') && (
             <Button className="flex items-center space-x-2 h-auto p-4">
@@ -512,7 +512,7 @@ export function SaaSAdminPanel() {
               </div>
             </Button>
           )}
-          
+
           {hasPermission('users', 'read') && (
             <Button variant="outline" className="flex items-center space-x-2 h-auto p-4">
               <Users className="w-5 h-5" />
@@ -522,7 +522,7 @@ export function SaaSAdminPanel() {
               </div>
             </Button>
           )}
-          
+
           {canViewAuditLogs && (
             <Button variant="outline" className="flex items-center space-x-2 h-auto p-4">
               <Shield className="w-5 h-5" />
@@ -532,7 +532,7 @@ export function SaaSAdminPanel() {
               </div>
             </Button>
           )}
-          
+
           <Button variant="outline" className="flex items-center space-x-2 h-auto p-4">
             <Settings className="w-5 h-5" />
             <div className="text-left">

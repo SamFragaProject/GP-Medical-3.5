@@ -178,7 +178,7 @@ export function AlertasMedicas() {
             value={alertasVencidas.length}
             subtitle="Acción inmediata"
             icon={Clock}
-            gradient="orange"
+            gradient="amber"
           />
 
           <PremiumMetricCard

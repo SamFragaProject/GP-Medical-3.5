@@ -1,13 +1,13 @@
 // Componente de Gestión de Usuarios con Jerarquías SaaS
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Users, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Shield, 
-  Search, 
+import {
+  Users,
+  Plus,
+  Edit,
+  Trash2,
+  Shield,
+  Search,
   Filter,
   MoreVertical,
   UserCheck,
@@ -28,9 +28,9 @@ import {
   Clock
 } from 'lucide-react'
 
-import { 
-  SaaSUser, 
-  UserHierarchy, 
+import {
+  SaaSUser,
+  UserHierarchy,
   SaaSEnterprise,
   Department,
   Clinic,
@@ -334,21 +334,21 @@ function HierarchyInfo({ hierarchy, department, clinic, reportsTo }: HierarchyIn
           {getHierarchyLabel(hierarchy)}
         </Badge>
       </div>
-      
+
       {department && (
         <div className="flex items-center space-x-2 text-sm text-gray-600">
           <Building className="w-3 h-3" />
           <span>{department.name}</span>
         </div>
       )}
-      
+
       {clinic && (
         <div className="flex items-center space-x-2 text-sm text-gray-600">
           <Activity className="w-3 h-3" />
           <span>{clinic.name}</span>
         </div>
       )}
-      
+
       {reportsTo && (
         <div className="flex items-center space-x-2 text-sm text-gray-600">
           <TrendingUp className="w-3 h-3" />
@@ -359,21 +359,22 @@ function HierarchyInfo({ hierarchy, department, clinic, reportsTo }: HierarchyIn
   )
 }
 
-function UserForm({ user, onSave, onCancel }: { 
+function UserForm({ user, onSave, onCancel }: {
   user?: SaaSUser
   onSave: (data: UserFormData) => void
-  onCancel: () => void 
+  onCancel: () => void
 }) {
   const currentUser = {
     id: 'demo-user',
     email: 'demo@mediflow.com',
     hierarchy: 'super_admin' as const,
     empresa: { nombre: 'MediFlow Demo Corp' },
-    sede: { nombre: 'Sede Principal' }
+    sede: { nombre: 'Sede Principal' },
+    enterpriseId: 'enterprise_1'
   }
-  const hasPermission = () => true
+  const hasPermission = (module?: string, action?: string) => true
   const [users, setUsers] = useState<SaaSUser[]>([])
-  
+
   const [formData, setFormData] = useState<UserFormData>({
     name: user?.name || '',
     email: user?.email || '',
@@ -414,16 +415,16 @@ function UserForm({ user, onSave, onCancel }: {
     onSave(formData)
   }
 
-  const departments = DEMO_DEPARTMENTS.filter(d => 
+  const departments = DEMO_DEPARTMENTS.filter(d =>
     d.enterpriseId === currentUser?.enterpriseId && d.isActive
   )
 
-  const clinics = formData.departmentId 
+  const clinics = formData.departmentId
     ? DEMO_CLINICS.filter(c => c.departmentId === formData.departmentId && c.isActive)
     : []
 
-  const possibleManagers = users.filter(u => 
-    u.id !== user?.id && 
+  const possibleManagers = users.filter(u =>
+    u.id !== user?.id &&
     u.hierarchy !== HIERARCHY_CONSTANTS.PACIENTE &&
     HIERARCHY_LEVELS[u.hierarchy] > HIERARCHY_LEVELS[formData.hierarchy]
   )
@@ -442,7 +443,7 @@ function UserForm({ user, onSave, onCancel }: {
             required
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Email *
@@ -455,7 +456,7 @@ function UserForm({ user, onSave, onCancel }: {
             required
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Teléfono
@@ -466,7 +467,7 @@ function UserForm({ user, onSave, onCancel }: {
             placeholder="+52 55 1234 5678"
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Jerarquía *
@@ -484,15 +485,15 @@ function UserForm({ user, onSave, onCancel }: {
             ))}
           </select>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Departamento
           </label>
           <select
             value={formData.departmentId || ''}
-            onChange={(e) => setFormData({ 
-              ...formData, 
+            onChange={(e) => setFormData({
+              ...formData,
               departmentId: e.target.value || undefined,
               clinicId: undefined // Reset clinic when department changes
             })}
@@ -506,7 +507,7 @@ function UserForm({ user, onSave, onCancel }: {
             ))}
           </select>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Clínica
@@ -525,7 +526,7 @@ function UserForm({ user, onSave, onCancel }: {
             ))}
           </select>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Supervisor
@@ -543,7 +544,7 @@ function UserForm({ user, onSave, onCancel }: {
             ))}
           </select>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Estado
@@ -582,17 +583,18 @@ export function SaaSUserManagement() {
     name: 'Usuario Demo',
     hierarchy: 'super_admin' as const,
     empresa: { nombre: 'MediFlow Demo Corp' },
-    sede: { nombre: 'Sede Principal' }
+    sede: { nombre: 'Sede Principal' },
+    enterpriseId: 'enterprise_1'
   }
-  const hasPermission = () => true
+  const hasPermission = (module?: string, action?: string) => true
   const canViewAuditLogs = true
   const getUserHierarchy = () => 5
   const canManageUser = true
   const getEnterpriseUsers = () => Promise.resolve([]) // Mock function
   const createUser = (data: any) => Promise.resolve(data) // Mock function
-  const updateUser = (id: string, data: any) => Promise.resolve({id, ...data}) // Mock function
-  const deleteUser = (id: string) => Promise.resolve({id}) // Mock function
-  
+  const updateUser = (id: string, data: any) => Promise.resolve({ id, ...data }) // Mock function
+  const deleteUser = (id: string) => Promise.resolve({ id }) // Mock function
+
   const [users, setUsers] = useState<SaaSUser[]>([])
   const [loading, setLoading] = useState(false)
   const [busqueda, setBusqueda] = useState('')
@@ -695,7 +697,7 @@ export function SaaSUserManagement() {
   }
 
   const usersFiltrados = users.filter(user => {
-    const matchesSearch = 
+    const matchesSearch =
       user.name.toLowerCase().includes(busqueda.toLowerCase()) ||
       user.email.toLowerCase().includes(busqueda.toLowerCase()) ||
       (user.metadata?.specialization && user.metadata.specialization.toLowerCase().includes(busqueda.toLowerCase()))
@@ -734,7 +736,7 @@ export function SaaSUserManagement() {
     }
     const labels = {
       active: 'Activo',
-      inactive: 'Inactivo', 
+      inactive: 'Inactivo',
       suspended: 'Suspendido',
       pending: 'Pendiente'
     }
@@ -777,7 +779,7 @@ export function SaaSUserManagement() {
               className="pl-10"
             />
           </div>
-          
+
           <select
             value={filtroJerarquia.join(',')}
             onChange={(e) => setFiltroJerarquia(e.target.value ? [e.target.value as UserHierarchy] : [])}
@@ -790,7 +792,7 @@ export function SaaSUserManagement() {
               </option>
             ))}
           </select>
-          
+
           <select
             value={filtroEstado.join(',')}
             onChange={(e) => setFiltroEstado(e.target.value ? [e.target.value] : [])}
@@ -802,7 +804,7 @@ export function SaaSUserManagement() {
             <option value="suspended">Suspendido</option>
             <option value="pending">Pendiente</option>
           </select>
-          
+
           <div className="text-sm text-gray-600 flex items-center">
             {getStatusIcon('active')}
             <span className="ml-2">{usersFiltrados.length} usuarios encontrados</span>

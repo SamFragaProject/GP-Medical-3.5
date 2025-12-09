@@ -757,3 +757,467 @@ Use the Continue extension to watch this file for real-time errors, route change
   }
 }
 ```
+
+
+### 2025-12-03T22:16:04.294Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18927:28)\n    at flushSyncCallbacks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:9166:30)"
+}
+```
+
+
+### 2025-12-03T22:16:04.297Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at recoverFromConcurrentError (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18786:28)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18932:28)"
+}
+```
+
+
+### 2025-12-03T22:16:04.301Z • ERROR (error)
+
+- path: /dashboard
+- message: React componentDidCatch
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at recoverFromConcurrentError (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18786:28)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18932:28)",
+  "info": {
+    "componentStack": "\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at ErrorBoundary (http://localhost:3000/src/components/ErrorBoundary.tsx:14:5)"
+  }
+}
+```
+
+
+### 2025-12-03T22:16:04.294Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18927:28)\n    at flushSyncCallbacks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:9166:30)"
+}
+```
+
+
+### 2025-12-03T22:16:04.294Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18927:28)\n    at flushSyncCallbacks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:9166:30)"
+}
+```
+
+
+### 2025-12-03T22:16:04.295Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18927:28)\n    at flushSyncCallbacks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:9166:30)"
+}
+```
+
+
+### 2025-12-03T22:16:04.296Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at recoverFromConcurrentError (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18786:28)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18932:28)"
+}
+```
+
+
+### 2025-12-03T22:16:04.297Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at recoverFromConcurrentError (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18786:28)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18932:28)"
+}
+```
+
+
+### 2025-12-03T22:16:04.298Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at recoverFromConcurrentError (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18786:28)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18932:28)"
+}
+```
+
+
+### 2025-12-03T22:16:04.302Z • ERROR (error)
+
+- path: /reportes
+- message: React componentDidCatch
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at recoverFromConcurrentError (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18786:28)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18932:28)",
+  "info": {
+    "componentStack": "\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at ErrorBoundary (http://localhost:3000/src/components/ErrorBoundary.tsx:14:5)"
+  }
+}
+```
+
+
+### 2025-12-03T22:16:04.309Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18927:28)\n    at flushSyncCallbacks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:9166:30)"
+}
+```
+
+
+### 2025-12-03T22:16:04.310Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18927:28)\n    at flushSyncCallbacks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:9166:30)"
+}
+```
+
+
+### 2025-12-03T22:16:04.311Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at recoverFromConcurrentError (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18786:28)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18932:28)"
+}
+```
+
+
+### 2025-12-03T22:16:04.312Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at recoverFromConcurrentError (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18786:28)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18932:28)"
+}
+```
+
+
+### 2025-12-03T22:16:04.318Z • ERROR (error)
+
+- path: /reportes
+- message: React componentDidCatch
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at recoverFromConcurrentError (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18786:28)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18932:28)",
+  "info": {
+    "componentStack": "\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at ErrorBoundary (http://localhost:3000/src/components/ErrorBoundary.tsx:14:5)"
+  }
+}
+```
+
+
+### 2025-12-03T22:16:04.321Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18927:28)\n    at flushSyncCallbacks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:9166:30)"
+}
+```
+
+
+### 2025-12-03T22:16:04.322Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18927:28)\n    at flushSyncCallbacks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:9166:30)"
+}
+```
+
+
+### 2025-12-03T22:16:04.324Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at recoverFromConcurrentError (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18786:28)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18932:28)"
+}
+```
+
+
+### 2025-12-03T22:16:04.325Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at recoverFromConcurrentError (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18786:28)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18932:28)"
+}
+```
+
+
+### 2025-12-03T22:16:04.331Z • ERROR (error)
+
+- path: /dashboard
+- message: React componentDidCatch
+- data: ```json
+{
+  "error": "ExtractorMedico is not defined\nReferenceError: ExtractorMedico is not defined\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)\n    at renderRootSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19169:15)\n    at recoverFromConcurrentError (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18786:28)\n    at performSyncWorkOnRoot (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:18932:28)",
+  "info": {
+    "componentStack": "\n    at AppNew (http://localhost:3000/src/AppNew.tsx?t=1764800164113:192:92)\n    at ErrorBoundary (http://localhost:3000/src/components/ErrorBoundary.tsx:14:5)"
+  }
+}
+```
+
+
+### 2025-12-03T22:16:17.060Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.060Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.062Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.060Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.062Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.062Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.061Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.062Z • ERROR (error)
+
+- path: /reportes
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.068Z • ERROR (error)
+
+- path: /reportes
+- message: React componentDidCatch
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)",
+  "info": {
+    "componentStack": "\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:56:37)\n    at div\n    at aside\n    at MotionDOMComponent (http://localhost:3000/node_modules/.vite/deps/framer-motion.js?v=3d5ca471:5395:40)\n    at div\n    at Layout (http://localhost:3000/src/components/Layout.tsx:52:26)\n    at RenderedRoute (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:4088:5)\n    at Routes (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:4558:5)\n    at div\n    at Router (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:4501:15)\n    at BrowserRouter (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:5247:5)\n    at CarritoProvider (http://localhost:3000/src/contexts/CarritoContext.tsx:139:35)\n    at SystemProvider (http://localhost:3000/src/contexts/SystemIntegrationContext.tsx:124:34)\n    at AuthProvider (http://localhost:3000/src/contexts/AuthContext.tsx:23:32)\n    at AppNew\n    at ErrorBoundary (http://localhost:3000/src/components/ErrorBoundary.tsx:14:5)"
+  }
+}
+```
+
+
+### 2025-12-03T22:16:17.068Z • ERROR (error)
+
+- path: /reportes
+- message: React componentDidCatch
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)",
+  "info": {
+    "componentStack": "\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:56:37)\n    at div\n    at aside\n    at MotionDOMComponent (http://localhost:3000/node_modules/.vite/deps/framer-motion.js?v=3d5ca471:5395:40)\n    at div\n    at Layout (http://localhost:3000/src/components/Layout.tsx:52:26)\n    at RenderedRoute (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:4088:5)\n    at Routes (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:4558:5)\n    at div\n    at Router (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:4501:15)\n    at BrowserRouter (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:5247:5)\n    at CarritoProvider (http://localhost:3000/src/contexts/CarritoContext.tsx:139:35)\n    at SystemProvider (http://localhost:3000/src/contexts/SystemIntegrationContext.tsx:124:34)\n    at AuthProvider (http://localhost:3000/src/contexts/AuthContext.tsx:23:32)\n    at AppNew\n    at ErrorBoundary (http://localhost:3000/src/components/ErrorBoundary.tsx:14:5)"
+  }
+}
+```
+
+
+### 2025-12-03T22:16:17.104Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.106Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.104Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.106Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.106Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.106Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.107Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.108Z • ERROR (error)
+
+- path: /dashboard
+- message: React render error
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)"
+}
+```
+
+
+### 2025-12-03T22:16:17.120Z • ERROR (error)
+
+- path: /dashboard
+- message: React componentDidCatch
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)",
+  "info": {
+    "componentStack": "\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:56:37)\n    at div\n    at aside\n    at MotionDOMComponent (http://localhost:3000/node_modules/.vite/deps/framer-motion.js?v=3d5ca471:5395:40)\n    at div\n    at Layout (http://localhost:3000/src/components/Layout.tsx:52:26)\n    at RenderedRoute (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:4088:5)\n    at Routes (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:4558:5)\n    at div\n    at Router (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:4501:15)\n    at BrowserRouter (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:5247:5)\n    at CarritoProvider (http://localhost:3000/src/contexts/CarritoContext.tsx:139:35)\n    at SystemProvider (http://localhost:3000/src/contexts/SystemIntegrationContext.tsx:124:34)\n    at AuthProvider (http://localhost:3000/src/contexts/AuthContext.tsx:23:32)\n    at AppNew\n    at ErrorBoundary (http://localhost:3000/src/components/ErrorBoundary.tsx:14:5)"
+  }
+}
+```
+
+
+### 2025-12-03T22:16:17.125Z • ERROR (error)
+
+- path: /dashboard
+- message: React componentDidCatch
+- data: ```json
+{
+  "error": "Cannot read properties of null (reading 'useContext')\nTypeError: Cannot read properties of null (reading 'useContext')\n    at Object.useContext (http://localhost:3000/node_modules/.vite/deps/chunk-Q44RETAM.js?v=1cd59942:1062:29)\n    at useInRouterContext (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3818:16)\n    at useLocation (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=1cd59942:3821:4)\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:58:20)\n    at renderWithHooks (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:11596:26)\n    at updateFunctionComponent (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:14630:28)\n    at beginWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:15972:22)\n    at beginWork$1 (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19806:22)\n    at performUnitOfWork (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19251:20)\n    at workLoopSync (http://localhost:3000/node_modules/.vite/deps/chunk-TJJJJMDN.js?v=3d5ca471:19190:13)",
+  "info": {
+    "componentStack": "\n    at MenuPersonalizado (http://localhost:3000/src/components/navigation/MenuPersonalizado.tsx?t=1764800168793:56:37)\n    at div\n    at aside\n    at MotionDOMComponent (http://localhost:3000/node_modules/.vite/deps/framer-motion.js?v=3d5ca471:5395:40)\n    at div\n    at Layout (http://localhost:3000/src/components/Layout.tsx:52:26)\n    at RenderedRoute (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:4088:5)\n    at Routes (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:4558:5)\n    at div\n    at Router (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:4501:15)\n    at BrowserRouter (http://localhost:3000/node_modules/.vite/deps/react-router-dom.js?v=3d5ca471:5247:5)\n    at CarritoProvider (http://localhost:3000/src/contexts/CarritoContext.tsx:139:35)\n    at SystemProvider (http://localhost:3000/src/contexts/SystemIntegrationContext.tsx:124:34)\n    at AuthProvider (http://localhost:3000/src/contexts/AuthContext.tsx:23:32)\n    at AppNew\n    at ErrorBoundary (http://localhost:3000/src/components/ErrorBoundary.tsx:14:5)"
+  }
+}
+```

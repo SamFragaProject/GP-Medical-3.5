@@ -2,46 +2,46 @@ import React, { useRef } from 'react';
 import { FileCheck, Printer, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-interface AptitudeCertificateData {
-    patient: {
-        name: string;
-        age: number;
-        gender: string;
-        employeeNumber: string;
-        department: string;
-        position: string;
-    };
-    doctor: {
-        name: string;
-        license: string;
-        specialty: string;
-    };
-    date: string;
-    evaluation: {
-        type: string; // 'Ingreso', 'Periódica', 'Reingreso', 'Cambio de puesto'
-        result: 'Apto' | 'Apto con restricciones' | 'No apto';
-        restrictions?: string[];
-        validUntil?: string;
-    };
-    examinations: string[];
-    observations?: string;
+export interface AptitudeCertificateData {
+  patient: {
+    name: string;
+    age: number;
+    gender: string;
+    employeeNumber: string;
+    department: string;
+    position: string;
+  };
+  doctor: {
+    name: string;
+    license: string;
+    specialty: string;
+  };
+  date: string;
+  evaluation: {
+    type: string; // 'Ingreso', 'Periódica', 'Reingreso', 'Cambio de puesto'
+    result: 'Apto' | 'Apto con restricciones' | 'No apto';
+    restrictions?: string[];
+    validUntil?: string;
+  };
+  examinations: string[];
+  observations?: string;
 }
 
 interface AptitudeCertificatePDFProps {
-    data: AptitudeCertificateData;
+  data: AptitudeCertificateData;
 }
 
 export function AptitudeCertificatePDF({ data }: AptitudeCertificatePDFProps) {
-    const printRef = useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
 
-    const handlePrint = () => {
-        const printContent = printRef.current;
-        if (!printContent) return;
+  const handlePrint = () => {
+    const printContent = printRef.current;
+    if (!printContent) return;
 
-        const printWindow = window.open('', '', 'width=800,height=600');
-        if (!printWindow) return;
+    const printWindow = window.open('', '', 'width=800,height=600');
+    if (!printWindow) return;
 
-        printWindow.document.write(`
+    printWindow.document.write(`
       <html>
         <head>
           <title>Certificado de Aptitud - ${data.patient.name}</title>
@@ -193,164 +193,164 @@ export function AptitudeCertificatePDF({ data }: AptitudeCertificatePDFProps) {
       </html>
     `);
 
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 250);
-    };
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
 
-    const getResultClass = () => {
-        switch (data.evaluation.result) {
-            case 'Apto': return 'result-apto';
-            case 'Apto con restricciones': return 'result-restricciones';
-            case 'No apto': return 'result-no-apto';
-            default: return 'result-apto';
-        }
-    };
+  const getResultClass = () => {
+    switch (data.evaluation.result) {
+      case 'Apto': return 'result-apto';
+      case 'Apto con restricciones': return 'result-restricciones';
+      case 'No apto': return 'result-no-apto';
+      default: return 'result-apto';
+    }
+  };
 
-    return (
-        <div className="space-y-4">
-            {/* Action Buttons */}
-            <div className="flex gap-2 justify-end print:hidden">
-                <Button onClick={handlePrint} variant="outline" className="gap-2">
-                    <Printer className="w-4 h-4" />
-                    Imprimir
-                </Button>
-                <Button onClick={handlePrint} className="gap-2">
-                    <Download className="w-4 h-4" />
-                    Descargar PDF
-                </Button>
-            </div>
+  return (
+    <div className="space-y-4">
+      {/* Action Buttons */}
+      <div className="flex gap-2 justify-end print:hidden">
+        <Button onClick={handlePrint} variant="outline" className="gap-2">
+          <Printer className="w-4 h-4" />
+          Imprimir
+        </Button>
+        <Button onClick={handlePrint} className="gap-2">
+          <Download className="w-4 h-4" />
+          Descargar PDF
+        </Button>
+      </div>
 
-            {/* PDF Preview */}
-            <div ref={printRef} className="certificate-container bg-white border-4 border-emerald-500 rounded-lg shadow-lg p-8">
-                {/* Header */}
-                <div className="header">
-                    <div className="logo">MediFlow</div>
-                    <div className="text-sm text-gray-600">Sistema de Medicina del Trabajo</div>
-                    <div className="certificate-title">Certificado de Aptitud Laboral</div>
-                    <div className="certificate-number">
-                        Folio: CERT-{new Date(data.date).getFullYear()}-{data.patient.employeeNumber}
-                    </div>
-                </div>
-
-                {/* Patient Information */}
-                <div className="section">
-                    <div className="section-title">Datos del Trabajador</div>
-                    <div className="patient-info">
-                        <div className="info-row">
-                            <div className="info-label">Nombre Completo:</div>
-                            <div>{data.patient.name}</div>
-                        </div>
-                        <div className="info-row">
-                            <div className="info-label">Edad:</div>
-                            <div>{data.patient.age} años</div>
-                        </div>
-                        <div className="info-row">
-                            <div className="info-label">Género:</div>
-                            <div>{data.patient.gender}</div>
-                        </div>
-                        <div className="info-row">
-                            <div className="info-label">No. Empleado:</div>
-                            <div>{data.patient.employeeNumber}</div>
-                        </div>
-                        <div className="info-row">
-                            <div className="info-label">Departamento:</div>
-                            <div>{data.patient.department}</div>
-                        </div>
-                        <div className="info-row">
-                            <div className="info-label">Puesto:</div>
-                            <div>{data.patient.position}</div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Evaluation Type */}
-                <div className="section">
-                    <div className="section-title">Tipo de Evaluación</div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                        <strong>{data.evaluation.type}</strong> - Fecha: {new Date(data.date).toLocaleDateString('es-MX', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                        })}
-                    </div>
-                </div>
-
-                {/* Examinations */}
-                <div className="section">
-                    <div className="section-title">Exámenes Realizados</div>
-                    <div className="examinations-list">
-                        <ul>
-                            {data.examinations.map((exam, index) => (
-                                <li key={index}>{exam}</li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-
-                {/* Result */}
-                <div className={`result-box ${getResultClass()}`}>
-                    {data.evaluation.result.toUpperCase()}
-                </div>
-
-                {/* Restrictions */}
-                {data.evaluation.restrictions && data.evaluation.restrictions.length > 0 && (
-                    <div className="section">
-                        <div className="section-title">Restricciones Laborales</div>
-                        <div className="restrictions-list">
-                            <ul>
-                                {data.evaluation.restrictions.map((restriction, index) => (
-                                    <li key={index}>{restriction}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    </div>
-                )}
-
-                {/* Validity */}
-                {data.evaluation.validUntil && (
-                    <div className="validity">
-                        Válido hasta: {new Date(data.evaluation.validUntil).toLocaleDateString('es-MX', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                        })}
-                    </div>
-                )}
-
-                {/* Observations */}
-                {data.observations && (
-                    <div className="section">
-                        <div className="section-title">Observaciones</div>
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                            {data.observations}
-                        </div>
-                    </div>
-                )}
-
-                {/* Signature */}
-                <div className="signature">
-                    <div className="signature-line">
-                        <div className="font-bold text-gray-900">{data.doctor.name}</div>
-                        <div className="doctor-info">Cédula Profesional: {data.doctor.license}</div>
-                        <div className="doctor-info">{data.doctor.specialty}</div>
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="footer">
-                    <div>Este certificado es válido únicamente con firma y sello del médico tratante.</div>
-                    <div className="mt-2">
-                        Emitido conforme a la NOM-030-STPS-2009 y NOM-024-SSA3-2012
-                    </div>
-                    <div className="mt-2">
-                        MediFlow - Sistema de Medicina del Trabajo
-                    </div>
-                </div>
-            </div>
+      {/* PDF Preview */}
+      <div ref={printRef} className="certificate-container bg-white border-4 border-emerald-500 rounded-lg shadow-lg p-8">
+        {/* Header */}
+        <div className="header">
+          <div className="logo">MediFlow</div>
+          <div className="text-sm text-gray-600">Sistema de Medicina del Trabajo</div>
+          <div className="certificate-title">Certificado de Aptitud Laboral</div>
+          <div className="certificate-number">
+            Folio: CERT-{new Date(data.date).getFullYear()}-{data.patient.employeeNumber}
+          </div>
         </div>
-    );
+
+        {/* Patient Information */}
+        <div className="section">
+          <div className="section-title">Datos del Trabajador</div>
+          <div className="patient-info">
+            <div className="info-row">
+              <div className="info-label">Nombre Completo:</div>
+              <div>{data.patient.name}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-label">Edad:</div>
+              <div>{data.patient.age} años</div>
+            </div>
+            <div className="info-row">
+              <div className="info-label">Género:</div>
+              <div>{data.patient.gender}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-label">No. Empleado:</div>
+              <div>{data.patient.employeeNumber}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-label">Departamento:</div>
+              <div>{data.patient.department}</div>
+            </div>
+            <div className="info-row">
+              <div className="info-label">Puesto:</div>
+              <div>{data.patient.position}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Evaluation Type */}
+        <div className="section">
+          <div className="section-title">Tipo de Evaluación</div>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <strong>{data.evaluation.type}</strong> - Fecha: {new Date(data.date).toLocaleDateString('es-MX', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
+          </div>
+        </div>
+
+        {/* Examinations */}
+        <div className="section">
+          <div className="section-title">Exámenes Realizados</div>
+          <div className="examinations-list">
+            <ul>
+              {data.examinations.map((exam, index) => (
+                <li key={index}>{exam}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Result */}
+        <div className={`result-box ${getResultClass()}`}>
+          {data.evaluation.result.toUpperCase()}
+        </div>
+
+        {/* Restrictions */}
+        {data.evaluation.restrictions && data.evaluation.restrictions.length > 0 && (
+          <div className="section">
+            <div className="section-title">Restricciones Laborales</div>
+            <div className="restrictions-list">
+              <ul>
+                {data.evaluation.restrictions.map((restriction, index) => (
+                  <li key={index}>{restriction}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Validity */}
+        {data.evaluation.validUntil && (
+          <div className="validity">
+            Válido hasta: {new Date(data.evaluation.validUntil).toLocaleDateString('es-MX', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
+          </div>
+        )}
+
+        {/* Observations */}
+        {data.observations && (
+          <div className="section">
+            <div className="section-title">Observaciones</div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              {data.observations}
+            </div>
+          </div>
+        )}
+
+        {/* Signature */}
+        <div className="signature">
+          <div className="signature-line">
+            <div className="font-bold text-gray-900">{data.doctor.name}</div>
+            <div className="doctor-info">Cédula Profesional: {data.doctor.license}</div>
+            <div className="doctor-info">{data.doctor.specialty}</div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="footer">
+          <div>Este certificado es válido únicamente con firma y sello del médico tratante.</div>
+          <div className="mt-2">
+            Emitido conforme a la NOM-030-STPS-2009 y NOM-024-SSA3-2012
+          </div>
+          <div className="mt-2">
+            MediFlow - Sistema de Medicina del Trabajo
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

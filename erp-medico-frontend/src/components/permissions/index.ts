@@ -4,7 +4,7 @@
 export { PermissionGuard } from '../auth/PermissionGuard'
 export { NavigationGuard } from '../auth/NavigationGuard'
 export { AccessDeniedPage } from '../auth/AccessDeniedPage'
-export { PermissionIntegrationTester } from '../PermissionIntegrationTester'
+export { default as PermissionIntegrationTester } from '../PermissionIntegrationTester'
 
 // Componentes de navegación
 export { MenuPersonalizado, MenuHierarchyIndicator } from '../navigation/MenuPersonalizado'
@@ -14,7 +14,7 @@ export const usePermissionCheck = () => ({
   canAccess: () => true,
   canAccessMultiple: () => true,
   getUserPermissions: () => ['*'],
-  invalidatePermissionsCache: () => {},
+  invalidatePermissionsCache: () => { },
   logUnauthorizedAccess: () => Promise.resolve(),
   loading: false
 })

@@ -1,5 +1,4 @@
 import { StrictMode } from 'react'
-console.log('Main.tsx executing')
 
 import { createRoot } from 'react-dom/client'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
@@ -10,6 +9,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
       <AppNew />
+      {/* <h1>Hello World - React is working</h1> */}
     </ErrorBoundary>
   </StrictMode>,
 )

@@ -62,6 +62,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(userData as User)
             localStorage.setItem('mediflow_user', JSON.stringify(userData))
           }
+        } else {
+          // Si no hay sesión, crear usuario demo automáticamente
+          console.log('AuthProvider: no session found, creating demo user')
+          const demoUser: User = {
+            id: 'demo-super-admin',
+            email: 'demo@mediflow.com',
+            nombre: 'Usuario',
+            apellido_paterno: 'Demo',
+            rol: 'super_admin',
+            created_at: new Date().toISOString()
+          }
+          setUser(demoUser)
+          localStorage.setItem('mediflow_user', JSON.stringify(demoUser))
         }
       } catch (error) {
         console.error('Error cargando usuario:', error)

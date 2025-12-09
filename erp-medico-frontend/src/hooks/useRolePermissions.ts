@@ -11,7 +11,7 @@ export function useRolePermissions() {
   // Verificar si puede realizar una acción en un módulo
   const can = (
     module: keyof RoleViewConfig['modules'],
-    action: 'canViewAll' | 'canViewOwn' | 'canCreate' | 'canEdit' | 'canDelete' | 'canExport' | 'canPrint' | 'canDigitalSign' | 'canCertify' | 'canCancel' | 'canReschedule' | 'canAddNotes' | 'canManage' | 'canOrder' | 'canGenerate' | 'canApprove' | 'showAdvancedFilters'
+    action: 'canView' | 'canViewAll' | 'canViewOwn' | 'canViewFull' | 'canCreate' | 'canEdit' | 'canDelete' | 'canExport' | 'canPrint' | 'canDigitalSign' | 'canCertify' | 'canCancel' | 'canReschedule' | 'canAddNotes' | 'canManage' | 'canOrder' | 'canGenerate' | 'canApprove' | 'showAdvancedFilters' | 'canAccess' | 'canUseAssistant' | 'canPurchase' | 'canManageProducts' | 'canUpload' | 'canAnnotate' | 'canReceive'
   ): boolean => {
     return canPerformAction(role, module, action)
   }
@@ -19,7 +19,7 @@ export function useRolePermissions() {
   // Verificar si puede realizar una acción general
   const canAction = (action: 'create' | 'read' | 'update' | 'delete' | 'export' | 'import', resource?: string): boolean => {
     if (!resource) return false
-    
+
     const actions = config.actions
     const actionMap: Record<string, keyof typeof actions> = {
       'create': 'canCreate',

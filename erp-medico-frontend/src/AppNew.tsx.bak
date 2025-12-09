@@ -5,7 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { CarritoProvider } from '@/contexts/CarritoContext'
 import { SystemProvider } from '@/contexts/SystemIntegrationContext'
-import { LayoutPremium as Layout } from '@/components/LayoutPremium'
+import { Layout } from '@/components/LayoutTest'
 import { LoginNew } from '@/pages/LoginNew'
 import { PanelMenuConfig } from '@/components/admin/PanelMenuConfig'
 import { AdminDashboardWrapper, EmpresasView } from '@/components/admin'
@@ -29,11 +29,13 @@ import { PerfilUsuario } from '@/pages/PerfilUsuario'
 import { AlertasMedicas } from '@/pages/AlertasMedicas'
 import Tienda from '@/pages/Tienda'
 import Home from '@/pages/Home'
-import ExtractorMedico from '@/pages/apps/ExtractorMedico'
 import './App.css'
 import '@/components/medicina/hc_rx_v2.css'
 
+console.log('AppNew module executing')
+
 function AppNew() {
+  console.log('AppNew component rendering')
   return (
     <AuthProvider>
       <SystemProvider>
@@ -49,7 +51,6 @@ function AppNew() {
                 <Route path="/" element={<Layout />}>
                   {/* Redirección principal */}
                   <Route index element={<StartRedirect />} />
-                  {/* <Route index element={<h1>Dashboard Placeholder</h1>} /> */}
 
                   {/* Dashboard */}
                   <Route path="dashboard" element={<Dashboard />} />
@@ -77,7 +78,6 @@ function AppNew() {
                   {/* IA y análisis */}
                   <Route path="ia" element={<IA />} />
                   <Route path="analytics" element={<IA />} />
-                  <Route path="extractor" element={<ExtractorMedico />} />
 
                   {/* Gestión financiera */}
                   <Route path="facturacion" element={<Facturacion />} />
@@ -106,7 +106,7 @@ function AppNew() {
                   <Route path="sedes" element={<Configuracion />} />
 
                   {/* Ruta 404 */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Route>
               </Routes>
 

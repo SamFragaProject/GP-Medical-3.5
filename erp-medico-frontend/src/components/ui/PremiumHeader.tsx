@@ -7,7 +7,7 @@ interface PremiumHeaderProps {
     subtitle?: string;
     badges?: Array<{
         text: string;
-        variant: 'success' | 'info' | 'warning' | 'danger';
+        variant: 'success' | 'info' | 'warning' | 'danger' | 'purple';
         icon?: ReactNode;
     }>;
     gradient?: boolean;
@@ -19,6 +19,7 @@ const badgeVariants = {
     info: 'bg-gradient-to-r from-blue-500 to-indigo-600 shadow-blue-500/30',
     warning: 'bg-gradient-to-r from-amber-500 to-orange-600 shadow-amber-500/30',
     danger: 'bg-gradient-to-r from-rose-500 to-pink-600 shadow-rose-500/30',
+    purple: 'bg-gradient-to-r from-purple-500 to-violet-600 shadow-purple-500/30',
 };
 
 export function PremiumHeader({

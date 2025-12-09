@@ -1,5 +1,5 @@
 // Sistema de autenticación y roles para MediFlow
-export type UserRole = 'super_admin' | 'admin_empresa' | 'medico' | 'paciente'
+export type UserRole = 'super_admin' | 'admin_empresa' | 'medico' | 'paciente' | 'medico_especialista' | 'medico_trabajo' | 'enfermera' | 'audiometrista' | 'psicologo_laboral' | 'tecnico_ergonomico' | 'recepcion' | 'medico_industrial' | 'bot'
 
 export interface User {
   id: string
@@ -95,7 +95,55 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: 'examenes', actions: ['read'] },
     { resource: 'reportes', actions: ['read'] },
     { resource: 'perfil', actions: ['read', 'update'] }
-  ]
+  ],
+  medico_especialista: [
+    { resource: 'dashboard', actions: ['read'] },
+    { resource: 'pacientes', actions: ['read', 'update'] },
+    { resource: 'citas', actions: ['read', 'update'] },
+    { resource: 'examenes', actions: ['create', 'read', 'update'] }
+  ],
+  medico_trabajo: [
+    { resource: 'dashboard', actions: ['read'] },
+    { resource: 'pacientes', actions: ['read', 'update'] },
+    { resource: 'citas', actions: ['read', 'update'] },
+    { resource: 'examenes', actions: ['create', 'read', 'update'] },
+    { resource: 'reportes', actions: ['create', 'read'] }
+  ],
+  enfermera: [
+    { resource: 'dashboard', actions: ['read'] },
+    { resource: 'pacientes', actions: ['read', 'update'] },
+    { resource: 'citas', actions: ['read', 'update'] },
+    { resource: 'examenes', actions: ['read'] }
+  ],
+  audiometrista: [
+    { resource: 'dashboard', actions: ['read'] },
+    { resource: 'pacientes', actions: ['read'] },
+    { resource: 'citas', actions: ['read'] },
+    { resource: 'examenes', actions: ['create', 'read', 'update'] }
+  ],
+  psicologo_laboral: [
+    { resource: 'dashboard', actions: ['read'] },
+    { resource: 'pacientes', actions: ['read'] },
+    { resource: 'citas', actions: ['read'] },
+    { resource: 'examenes', actions: ['create', 'read', 'update'] }
+  ],
+  tecnico_ergonomico: [
+    { resource: 'dashboard', actions: ['read'] },
+    { resource: 'pacientes', actions: ['read'] },
+    { resource: 'citas', actions: ['read'] },
+    { resource: 'examenes', actions: ['create', 'read', 'update'] }
+  ],
+  recepcion: [
+    { resource: 'dashboard', actions: ['read'] },
+    { resource: 'pacientes', actions: ['create', 'read', 'update'] },
+    { resource: 'citas', actions: ['create', 'read', 'update', 'delete'] }
+  ],
+  medico_industrial: [
+    { resource: 'dashboard', actions: ['read'] },
+    { resource: 'pacientes', actions: ['read'] },
+    { resource: 'reportes', actions: ['read'] }
+  ],
+  bot: []
 }
 
 // Función para verificar permisos
@@ -106,9 +154,9 @@ export function hasPermission(
 ): boolean {
   const rolePermissions = ROLE_PERMISSIONS[userRole]
   const resourcePermission = rolePermissions.find(p => p.resource === resource)
-  
+
   if (!resourcePermission) return false
-  
+
   return resourcePermission.actions.includes(action)
 }
 
@@ -117,7 +165,16 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: 'Super Administrador',
   admin_empresa: 'Administrador de Empresa',
   medico: 'Médico',
-  paciente: 'Paciente'
+  paciente: 'Paciente',
+  medico_especialista: 'Médico Especialista',
+  medico_trabajo: 'Médico del Trabajo',
+  enfermera: 'Enfermera',
+  audiometrista: 'Audiometrista',
+  psicologo_laboral: 'Psicólogo Laboral',
+  tecnico_ergonomico: 'Técnico Ergonómico',
+  recepcion: 'Recepcionista',
+  medico_industrial: 'Médico Industrial',
+  bot: 'Bot'
 }
 
 // Colores por rol
@@ -125,5 +182,14 @@ export const ROLE_COLORS: Record<UserRole, string> = {
   super_admin: 'bg-purple-500',
   admin_empresa: 'bg-blue-500',
   medico: 'bg-green-500',
-  paciente: 'bg-orange-500'
+  paciente: 'bg-orange-500',
+  medico_especialista: 'bg-green-600',
+  medico_trabajo: 'bg-green-700',
+  enfermera: 'bg-pink-500',
+  audiometrista: 'bg-yellow-500',
+  psicologo_laboral: 'bg-indigo-500',
+  tecnico_ergonomico: 'bg-teal-500',
+  recepcion: 'bg-cyan-500',
+  medico_industrial: 'bg-slate-500',
+  bot: 'bg-gray-500'
 }

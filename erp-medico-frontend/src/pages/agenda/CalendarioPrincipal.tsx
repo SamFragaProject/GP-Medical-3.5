@@ -182,8 +182,8 @@ export function CalendarioPrincipal({
       <Calendar
         localizer={localizer}
         events={eventos}
-        startAccessor="start"
-        endAccessor="end"
+        startAccessor={(e: CalendarioEvent) => e.start}
+        endAccessor={(e: CalendarioEvent) => e.end}
         style={{ height: '100%' }}
         view={vistaActual}
         onView={manejarCambioVista}

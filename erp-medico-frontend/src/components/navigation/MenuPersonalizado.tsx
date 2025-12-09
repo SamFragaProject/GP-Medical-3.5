@@ -36,6 +36,7 @@ import {
 } from 'lucide-react'
 
 import { NavigationItem } from '@/types/saas'
+import { UserRole } from '@/types/auth'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import toast from 'react-hot-toast'
@@ -47,18 +48,18 @@ interface MenuPersonalizadoProps {
 export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
   const location = useLocation()
   const user = {
-  id: 'demo-user',
-  email: 'demo@mediflow.com',
-  hierarchy: 'super_admin' as const,
-  empresa: { nombre: 'MediFlow Demo Corp' },
-  sede: { nombre: 'Sede Principal' },
-  name: 'Usuario Demo'
-}
+    id: 'demo-user',
+    email: 'demo@mediflow.com',
+    hierarchy: 'super_admin' as UserRole,
+    empresa: { nombre: 'MediFlow Demo Corp' },
+    sede: { nombre: 'Sede Principal' },
+    name: 'Usuario Demo'
+  }
 
-const signOut = () => {}
-const currentUser = user
-const canAccess = () => true
-  
+  const signOut = () => { }
+  const currentUser = user
+  const canAccess = (resource?: string, action?: string) => true
+
   const [expandedSections, setExpandedSections] = useState<string[]>(['dashboard'])
   const [expandedItems, setExpandedItems] = useState<string[]>([])
   const [userMenuItems, setUserMenuItems] = useState<NavigationItem[]>([])
@@ -76,7 +77,7 @@ const canAccess = () => true
         icon: 'Home',
         order: 1
       },
-      
+
       // Módulo de Pacientes
       {
         id: 'pacientes',
@@ -165,7 +166,23 @@ const canAccess = () => true
         name: 'IA & Análisis',
         href: '/ia',
         icon: 'Brain',
-        order: 40
+        order: 40,
+        children: [
+          {
+            id: 'ia-dashboard',
+            name: 'Dashboard IA',
+            href: '/ia',
+            icon: 'Brain',
+            order: 1
+          },
+          {
+            id: 'ia-extractor',
+            name: 'Extractor Médico',
+            href: '/extractor',
+            icon: 'FileText',
+            order: 2
+          }
+        ]
       },
 
       // Módulo de Reportes
@@ -339,7 +356,7 @@ const canAccess = () => true
     const filteredItems = availableItems.filter(item => {
       // Dashboard siempre visible
       if (item.id === 'dashboard') return true
-      
+
       // Verificar permisos del recurso principal
       const resource = item.href.split('/')[1] as any
       return canAccess(resource, 'read')
@@ -392,12 +409,12 @@ const canAccess = () => true
 
       try {
         setLoading(true)
-        
+
         // Cargar desde la base de datos usando el hook
         // Por ahora usamos la configuración estática filtrada por permisos
-        
+
         console.log(`✅ Menú cargado para usuario ${user.hierarchy}`)
-        
+
       } catch (error) {
         console.error('❌ Error cargando menú:', error)
       } finally {
@@ -412,7 +429,7 @@ const canAccess = () => true
   const canViewMenuItem = (item: NavigationItem): boolean => {
     // Dashboard siempre visible
     if (item.id === 'dashboard') return true
-    
+
     // Verificar permisos del recurso
     const resource = item.href.split('/')[1] as any
     return canAccess(resource, 'read')
@@ -421,25 +438,25 @@ const canAccess = () => true
   // Función para verificar si un item está activo
   const isItemActive = (item: NavigationItem): boolean => {
     if (location.pathname === item.href) return true
-    
+
     // Verificar sub-items activos
     if (item.children) {
       return item.children.some(child => {
         if (child.href.includes('?')) {
-          return location.pathname === child.href.split('?')[0] && 
-                 location.search.includes(child.href.split('?')[1])
+          return location.pathname === child.href.split('?')[0] &&
+            location.search.includes(child.href.split('?')[1])
         }
         return location.pathname === child.href
       })
     }
-    
+
     return false
   }
 
   // Toggle secciones expandibles
   const toggleSection = (sectionId: string) => {
-    setExpandedSections(prev => 
-      prev.includes(sectionId) 
+    setExpandedSections(prev =>
+      prev.includes(sectionId)
         ? prev.filter(id => id !== sectionId)
         : [...prev, sectionId]
     )
@@ -447,8 +464,8 @@ const canAccess = () => true
 
   // Toggle items expandibles
   const toggleItem = (itemId: string) => {
-    setExpandedItems(prev => 
-      prev.includes(itemId) 
+    setExpandedItems(prev =>
+      prev.includes(itemId)
         ? prev.filter(id => id !== itemId)
         : [...prev, itemId]
     )
@@ -548,7 +565,7 @@ const canAccess = () => true
             </div>
           </div>
         </div>
-        
+
         {/* Badge del rol y botón de refresh */}
         <div className="mt-2 flex items-center justify-between">
           <Badge variant="secondary" className="text-xs">
@@ -577,7 +594,7 @@ const canAccess = () => true
         <nav className="space-y-1">
           {menuSections.map((section) => {
             const visibleItems = getVisibleItems(section.items)
-            
+
             if (visibleItems.length === 0) return null
 
             const sectionExpanded = expandedSections.includes(section.id)
@@ -591,10 +608,9 @@ const canAccess = () => true
                   className="w-full flex items-center justify-between p-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-700"
                 >
                   <span>{section.title}</span>
-                  <ChevronDown 
-                    className={`w-4 h-4 transition-transform ${
-                      sectionExpanded ? 'rotate-180' : ''
-                    }`} 
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${sectionExpanded ? 'rotate-180' : ''
+                      }`}
                   />
                 </button>
 
@@ -620,24 +636,23 @@ const canAccess = () => true
                               to={item.href}
                               className={`
                                 group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors
-                                ${isActive 
-                                  ? 'bg-primary text-white' 
+                                ${isActive
+                                  ? 'bg-primary text-white'
                                   : 'text-gray-700 hover:bg-primary/5 hover:text-primary'
                                 }
                               `}
                             >
-                              <Icon className={`mr-3 h-5 w-5 ${
-                                isActive ? 'text-white' : 'text-gray-400 group-hover:text-primary'
-                              }`} />
+                              <Icon className={`mr-3 h-5 w-5 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-primary'
+                                }`} />
                               <span className="flex-1">{item.name}</span>
-                              
+
                               {/* Badge */}
                               {item.badge && (
                                 <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                   {item.badge}
                                 </span>
                               )}
-                              
+
                               {/* Indicador de hijos */}
                               {hasChildren && (
                                 <button
@@ -648,10 +663,9 @@ const canAccess = () => true
                                   }}
                                   className="ml-2 p-1 hover:bg-white/20 rounded"
                                 >
-                                  <ChevronRight 
-                                    className={`w-4 h-4 transition-transform ${
-                                      childrenVisible ? 'rotate-90' : ''
-                                    }`} 
+                                  <ChevronRight
+                                    className={`w-4 h-4 transition-transform ${childrenVisible ? 'rotate-90' : ''
+                                      }`}
                                   />
                                 </button>
                               )}
@@ -670,12 +684,12 @@ const canAccess = () => true
                                   >
                                     {item.children.map((child) => {
                                       if (!canViewMenuItem(child)) return null
-                                      
-                                      const childIsActive = child.href.includes('?') ? 
+
+                                      const childIsActive = child.href.includes('?') ?
                                         location.search.includes(child.href.split('?')[1]) :
                                         location.pathname === child.href
                                       const ChildIcon = getIcon(child.icon)
-                                      
+
                                       return (
                                         <Link
                                           key={child.id}
@@ -688,9 +702,8 @@ const canAccess = () => true
                                             }
                                           `}
                                         >
-                                          <ChildIcon className={`mr-3 h-4 w-4 ${
-                                            childIsActive ? 'text-primary' : 'text-gray-400'
-                                          }`} />
+                                          <ChildIcon className={`mr-3 h-4 w-4 ${childIsActive ? 'text-primary' : 'text-gray-400'
+                                            }`} />
                                           <span>{child.name}</span>
                                         </Link>
                                       )
@@ -742,7 +755,7 @@ export function MenuHierarchyIndicator() {
   }
   const loading = false
   const level = currentUser?.hierarchy || 'paciente'
-  
+
   const getLevelInfo = (hierarchy: string) => {
     const levelMap: Record<string, { level: number; icon: any; color: string }> = {
       'super_admin': { level: 5, icon: Crown, color: 'text-purple-600' },
@@ -756,10 +769,10 @@ export function MenuHierarchyIndicator() {
     }
     return levelMap[hierarchy] || levelMap.paciente
   }
-  
+
   const levelInfo = getLevelInfo(level)
   const Icon = levelInfo.icon
-  
+
   if (loading) {
     return (
       <div className="bg-gray-50 p-3 rounded-lg mb-4 animate-pulse">
@@ -770,7 +783,7 @@ export function MenuHierarchyIndicator() {
       </div>
     )
   }
-  
+
   return (
     <div className="bg-gray-50 p-3 rounded-lg mb-4">
       <div className="flex items-center space-x-2">
@@ -783,7 +796,7 @@ export function MenuHierarchyIndicator() {
           {level.replace('_', ' ').toUpperCase()}
         </span>
       </div>
-      
+
       {/* Información de permisos */}
       <div className="flex items-center justify-between mt-2 text-xs text-gray-600">
         <span>Permisos activos</span>
@@ -792,15 +805,14 @@ export function MenuHierarchyIndicator() {
           <span>Sincronizado</span>
         </div>
       </div>
-      
+
       {/* Indicadores visuales de nivel */}
       <div className="flex items-center space-x-1 mt-2">
         {Array.from({ length: 5 }, (_, i) => (
           <div
             key={i}
-            className={`w-2 h-2 rounded-full ${
-              i < levelInfo.level ? levelInfo.color.replace('text-', 'bg-') : 'bg-gray-300'
-            }`}
+            className={`w-2 h-2 rounded-full ${i < levelInfo.level ? levelInfo.color.replace('text-', 'bg-') : 'bg-gray-300'
+              }`}
           />
         ))}
       </div>

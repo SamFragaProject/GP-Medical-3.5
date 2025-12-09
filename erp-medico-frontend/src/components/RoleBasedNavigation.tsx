@@ -1,6 +1,7 @@
 // Componente para navegación con permisos por rol
 import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { UserRole } from '@/types/auth'
 
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -80,9 +81,10 @@ export function RoleBasedNavigation({ navigationItems, sidebarOpen = true }: Rol
     id: 'demo-user',
     email: 'demo@mediflow.com',
     name: 'Usuario Demo',
-    hierarchy: 'super_admin' as const,
+    hierarchy: 'super_admin' as UserRole,
     empresa: { nombre: 'MediFlow Demo Corp' },
-    sede: { nombre: 'Sede Principal' }
+    sede: { nombre: 'Sede Principal' },
+    permissions: ['*']
   }
   const navigate = useNavigate()
   const location = useLocation()
@@ -100,7 +102,7 @@ export function RoleBasedNavigation({ navigationItems, sidebarOpen = true }: Rol
       hasBillingView: user?.permissions?.includes('billing_view'),
       hasPatientsManage: user?.permissions?.includes('patients_manage')
     })
-    
+
     // DEBUG ESPECÍFICO PARA MÉDICO TRABAJO
     if (user?.hierarchy === 'medico_trabajo') {
       console.log('👨‍⚕️ MÉDICO TRABAJO CARGADO - Verificando permisos:')
@@ -126,7 +128,7 @@ export function RoleBasedNavigation({ navigationItems, sidebarOpen = true }: Rol
   // Función para verificar si el usuario tiene alguno de los permisos requeridos
   const hasAnyPermission = (permissions: string[]): boolean => {
     if (!user?.permissions || permissions.length === 0) return true
-    
+
     const result = permissions.some(perm => user.permissions.includes(perm))
     return result
   }
@@ -137,43 +139,43 @@ export function RoleBasedNavigation({ navigationItems, sidebarOpen = true }: Rol
       console.log('⚠️ No hay usuario autenticado')
       return false
     }
-    
+
     // SUPER ADMIN tiene acceso a TODO sin restricciones
     if (user.hierarchy === 'super_admin' || user.permissions.includes('*')) {
       console.log(`✅ Super admin tiene acceso total a ${path}`)
       return true
     }
-    
+
     // DEBUG DETALLADO: Log completo del usuario y el path
     console.log(`🔍 Verificando acceso para usuario ${user.hierarchy} a ${path}`)
     console.log('  - Hierarchy:', user.hierarchy)
     console.log('  - Permisos:', user.permissions)
-    
+
     // LÓGICA ESPECIAL PARA MÉDICO TRABAJO - MÁS PERMISIVO
     if (user.hierarchy === 'medico_trabajo') {
       console.log('👨‍⚕️ MÉDICO TRABAJO - Aplicando lógica permisiva especial')
-      
+
       // Si es médico trabajo y tiene medical_view, permitir acceso a TODAS las secciones médicas
       const isMedicalRoute = ['dashboard', 'pacientes', 'agenda', 'examenes', 'rayos-x', 'evaluaciones', 'ia', 'certificaciones', 'reportes'].includes(path.replace('/dashboard/', '').replace('/dashboard', 'dashboard'))
-      
+
       if (isMedicalRoute && (user.permissions.includes('medical_view') || user.permissions.includes('patients_manage') || user.permissions.includes('exams_manage'))) {
         console.log('✅ MÉDICO TRABAJO: Acceso permitido por lógica médica especial')
         return true
       }
-      
+
       // Para facturación, verificar billing_view
       if (path.includes('facturacion') && user.permissions.includes('billing_view')) {
         console.log('✅ MÉDICO TRABAJO: Acceso a facturación permitido por billing_view')
         return true
       }
     }
-    
+
     // Mapear path a key de permisos - eliminar /dashboard/ prefix si existe
     let pathKey = path.replace('/dashboard/', '').replace('/dashboard', 'dashboard')
     if (pathKey === '' || pathKey === '/') pathKey = 'dashboard'
-    
+
     const moduleConfig = MODULE_PERMISSIONS[pathKey as keyof typeof MODULE_PERMISSIONS]
-    
+
     if (!moduleConfig) {
       // Si no hay configuración específica, permitir acceso por defecto para usuarios autenticados
       console.log(`✅ Permitiendo acceso a ${path} (sin config específica)`)
@@ -191,7 +193,7 @@ export function RoleBasedNavigation({ navigationItems, sidebarOpen = true }: Rol
     // Verificar permisos específicos
     if (moduleConfig.permissions.length > 0) {
       const hasRequiredPermissions = hasAnyPermission(moduleConfig.permissions)
-      
+
       if (!hasRequiredPermissions) {
         console.log(`❌ Usuario no tiene permisos para ${path}. Permisos requeridos:`, moduleConfig.permissions, 'Usuario tiene:', user.permissions)
         return false
@@ -237,7 +239,7 @@ export function RoleBasedNavigation({ navigationItems, sidebarOpen = true }: Rol
       hierarchy: user.hierarchy,
       permissions: user.permissions
     })
-    
+
     // FALLBACK: Mostrar menú básico para cualquier usuario autenticado
     console.log('🔄 Mostrando menú básico como fallback')
     const basicItems = navigationItems.map(section => ({
@@ -247,7 +249,7 @@ export function RoleBasedNavigation({ navigationItems, sidebarOpen = true }: Rol
         path: item.path // Mantener paths originales
       }))
     })).filter(section => section.items.length > 0)
-    
+
     return (
       <div className="space-y-6">
         {basicItems.map((section) => (
@@ -315,11 +317,10 @@ export function RoleBasedNavigation({ navigationItems, sidebarOpen = true }: Rol
                   onClick={() => navigate(item.path)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'bg-primary text-white shadow-md'
-                      : 'text-gray-700 hover:bg-primary/5 hover:text-primary'
-                  }`}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
+                    ? 'bg-primary text-white shadow-md'
+                    : 'text-gray-700 hover:bg-primary/5 hover:text-primary'
+                    }`}
                   title={!sidebarOpen ? item.name : undefined}
                 >
                   <div className="flex items-center space-x-3">
@@ -338,16 +339,15 @@ export function RoleBasedNavigation({ navigationItems, sidebarOpen = true }: Rol
                       )}
                     </AnimatePresence>
                   </div>
-                  
+
                   <AnimatePresence>
                     {item.badge && sidebarOpen && (
                       <motion.span
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.8 }}
-                        className={`px-2 py-0.5 text-xs rounded-full font-medium ${
-                          isActive ? 'bg-white/20 text-white' : 'bg-primary text-white'
-                        }`}
+                        className={`px-2 py-0.5 text-xs rounded-full font-medium ${isActive ? 'bg-white/20 text-white' : 'bg-primary text-white'
+                          }`}
                       >
                         {item.badge}
                       </motion.span>
@@ -369,9 +369,10 @@ export function useModulePermission(modulePath: string) {
     id: 'demo-user',
     email: 'demo@mediflow.com',
     name: 'Usuario Demo',
-    hierarchy: 'super_admin' as const,
+    hierarchy: 'super_admin' as UserRole,
     empresa: { nombre: 'MediFlow Demo Corp' },
-    sede: { nombre: 'Sede Principal' }
+    sede: { nombre: 'Sede Principal' },
+    permissions: ['*']
   }
 
   // Función auxiliar para verificar múltiples roles
@@ -382,42 +383,42 @@ export function useModulePermission(modulePath: string) {
 
   const canAccess = React.useCallback((): boolean => {
     if (!user) return false
-    
+
     // SUPER ADMIN tiene acceso a TODO sin restricciones
     if (user.hierarchy === 'super_admin' || user.permissions.includes('*')) {
       console.log(`✅ Hook useModulePermission: Super admin acceso total a ${modulePath}`)
       return true
     }
-    
+
     // LÓGICA ESPECIAL PARA MÉDICO TRABAJO
     if (user.hierarchy === 'medico_trabajo') {
       // Si es médico trabajo y tiene medical_view, permitir acceso a TODAS las secciones médicas
       const pathKey = modulePath.replace('/dashboard/', '').replace('/dashboard', 'dashboard')
       const isMedicalRoute = ['dashboard', 'pacientes', 'agenda', 'examenes', 'rayos-x', 'evaluaciones', 'ia', 'certificaciones', 'reportes'].includes(pathKey)
-      
+
       if (isMedicalRoute && (user.permissions.includes('medical_view') || user.permissions.includes('patients_manage') || user.permissions.includes('exams_manage'))) {
         console.log(`✅ Hook useModulePermission: MÉDICO TRABAJO acceso especial a ${modulePath}`)
         return true
       }
-      
+
       // Para facturación
       if (pathKey === 'facturacion' && user.permissions.includes('billing_view')) {
         console.log(`✅ Hook useModulePermission: MÉDICO TRABAJO acceso a facturación ${modulePath}`)
         return true
       }
     }
-    
+
     // Mapear path a key de permisos - eliminar /dashboard/ prefix si existe
     let pathKey = modulePath.replace('/dashboard/', '').replace('/dashboard', 'dashboard')
     if (pathKey === '' || pathKey === '/') pathKey = 'dashboard'
-    
+
     const moduleConfig = MODULE_PERMISSIONS[pathKey as keyof typeof MODULE_PERMISSIONS]
-    
+
     if (!moduleConfig) {
       return true // Permitir acceso si no hay configuración específica
     }
 
-    const hasRequiredRole = moduleConfig.roles.length === 0 || 
+    const hasRequiredRole = moduleConfig.roles.length === 0 ||
       hasAnyRole(moduleConfig.roles)
 
     if (!hasRequiredRole) {
@@ -426,7 +427,7 @@ export function useModulePermission(modulePath: string) {
     }
 
     if (moduleConfig.permissions.length > 0) {
-      const hasPermission = moduleConfig.permissions.some(permission => 
+      const hasPermission = moduleConfig.permissions.some(permission =>
         user.permissions.includes(permission)
       )
       if (!hasPermission) {
@@ -437,7 +438,7 @@ export function useModulePermission(modulePath: string) {
 
     console.log(`✅ Hook useModulePermission: Acceso permitido a ${modulePath}`)
     return true
-  }, [modulePath, user, hasRole])
+  }, [modulePath, user, hasAnyRole])
 
   return { canAccess }
 }
