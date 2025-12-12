@@ -152,15 +152,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Logout
   const logout = async () => {
     try {
-      await supabase.auth.signOut()
+      // Limpiar localStorage primero (siempre funciona)
       setUser(null)
       setOriginalUser(null)
       localStorage.removeItem('mediflow_user')
       localStorage.removeItem('mediflow_original_user')
+
+      // Intentar cerrar sesión en Supabase (no crítico)
+      try {
+        await Promise.race([
+          supabase.auth.signOut(),
+          new Promise((_, reject) => setTimeout(() => reject('timeout'), 2000))
+        ])
+      } catch {
+        // Ignorar errores de Supabase, ya limpiamos localStorage
+        console.log('Supabase signOut skipped (no connection)')
+      }
+
       toast.success('Sesión cerrada correctamente')
+      window.location.href = '/GP-Medical-3.5/login'
     } catch (error: any) {
       console.error('Error en logout:', error)
-      toast.error('Error al cerrar sesión')
+      // Aún así redirigir al login
+      window.location.href = '/GP-Medical-3.5/login'
     }
   }
 

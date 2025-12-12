@@ -31,7 +31,8 @@ import {
   Plus,
   Search,
   Filter,
-  Sparkles
+  Sparkles,
+  Briefcase
 } from 'lucide-react'
 
 export interface RoleViewConfig {
@@ -149,6 +150,14 @@ export interface RoleViewConfig {
       canManage: boolean
       canReceive: boolean
     }
+    rrhh: {
+      canView: boolean
+      canManageEmpleados: boolean
+      canManageAsistencia: boolean
+      canManageVacaciones: boolean
+      canManageIncidencias: boolean
+      canViewOrganigrama: boolean
+    }
   }
 }
 
@@ -167,7 +176,8 @@ const SUPER_ADMIN_CONFIG: RoleViewConfig = {
     { title: 'IA Asistente', path: '/ia', resource: 'ia', icon: Sparkles, gradient: 'from-violet-500 to-fuchsia-500', visible: true },
     { title: 'Tienda', path: '/tienda', resource: 'tienda', icon: Package, gradient: 'from-orange-500 to-red-500', visible: true },
     { title: 'Rayos X', path: '/rayos-x', resource: 'rayos_x', icon: Activity, gradient: 'from-blue-600 to-cyan-600', visible: true },
-    { title: 'Alertas', path: '/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: true }
+    { title: 'Alertas', path: '/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: true },
+    { title: 'RRHH', path: '/rrhh', resource: 'rrhh', icon: Briefcase, gradient: 'from-violet-500 to-purple-600', visible: true }
   ],
   dashboard: {
     showKPIs: true,
@@ -204,7 +214,8 @@ const SUPER_ADMIN_CONFIG: RoleViewConfig = {
     ia: { canAccess: true, canUseAssistant: true },
     tienda: { canView: true, canPurchase: true, canManageProducts: true },
     rayos_x: { canView: true, canUpload: true, canAnnotate: true },
-    alertas: { canView: true, canManage: true, canReceive: true }
+    alertas: { canView: true, canManage: true, canReceive: true },
+    rrhh: { canView: true, canManageEmpleados: true, canManageAsistencia: true, canManageVacaciones: true, canManageIncidencias: true, canViewOrganigrama: true }
   }
 }
 
@@ -261,7 +272,8 @@ const ADMIN_EMPRESA_CONFIG: RoleViewConfig = {
     ia: { canAccess: true, canUseAssistant: true },
     tienda: { canView: true, canPurchase: true, canManageProducts: true },
     rayos_x: { canView: true, canUpload: true, canAnnotate: false },
-    alertas: { canView: true, canManage: true, canReceive: true }
+    alertas: { canView: true, canManage: true, canReceive: true },
+    rrhh: { canView: true, canManageEmpleados: true, canManageAsistencia: true, canManageVacaciones: true, canManageIncidencias: true, canViewOrganigrama: true }
   }
 }
 
@@ -315,7 +327,8 @@ const MEDICO_CONFIG: RoleViewConfig = {
     ia: { canAccess: true, canUseAssistant: true },
     tienda: { canView: true, canPurchase: true, canManageProducts: false },
     rayos_x: { canView: true, canUpload: true, canAnnotate: true },
-    alertas: { canView: true, canManage: true, canReceive: true }
+    alertas: { canView: true, canManage: true, canReceive: true },
+    rrhh: { canView: false, canManageEmpleados: false, canManageAsistencia: false, canManageVacaciones: false, canManageIncidencias: false, canViewOrganigrama: false }
   }
 }
 
@@ -367,7 +380,8 @@ const PACIENTE_CONFIG: RoleViewConfig = {
     ia: { canAccess: false, canUseAssistant: false },
     tienda: { canView: true, canPurchase: true, canManageProducts: false },
     rayos_x: { canView: true, canUpload: false, canAnnotate: false },
-    alertas: { canView: true, canManage: false, canReceive: true }
+    alertas: { canView: true, canManage: false, canReceive: true },
+    rrhh: { canView: false, canManageEmpleados: false, canManageAsistencia: false, canManageVacaciones: false, canManageIncidencias: false, canViewOrganigrama: false }
   }
 }
 
@@ -414,7 +428,8 @@ const ENFERMERA_CONFIG: RoleViewConfig = {
     ia: { canAccess: false, canUseAssistant: false },
     tienda: { canView: false, canPurchase: false, canManageProducts: false },
     rayos_x: { canView: false, canUpload: false, canAnnotate: false },
-    alertas: { canView: true, canManage: false, canReceive: true }
+    alertas: { canView: true, canManage: false, canReceive: true },
+    rrhh: { canView: false, canManageEmpleados: false, canManageAsistencia: false, canManageVacaciones: false, canManageIncidencias: false, canViewOrganigrama: false }
   }
 }
 
@@ -461,7 +476,8 @@ const RECEPCION_CONFIG: RoleViewConfig = {
     ia: { canAccess: false, canUseAssistant: false },
     tienda: { canView: false, canPurchase: false, canManageProducts: false },
     rayos_x: { canView: false, canUpload: false, canAnnotate: false },
-    alertas: { canView: true, canManage: false, canReceive: true }
+    alertas: { canView: true, canManage: false, canReceive: true },
+    rrhh: { canView: false, canManageEmpleados: false, canManageAsistencia: false, canManageVacaciones: false, canManageIncidencias: false, canViewOrganigrama: false }
   }
 }
 

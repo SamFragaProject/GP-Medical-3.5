@@ -30,6 +30,7 @@ import Home from '@/pages/Home'
 import './App.css'
 import ExtractorMedico from '@/pages/apps/ExtractorMedico'
 import GeneradorReportes from '@/pages/apps/GeneradorReportes'
+import { RRHH } from '@/pages/rrhh'
 
 function App() {
   return (
@@ -253,6 +254,17 @@ function App() {
                       />
 
                       {/* Rutas administrativas */}
+                      <Route
+                        path="/rrhh"
+                        element={
+                          <ProtectedRoute resource="rrhh">
+                            <Layout>
+                              <RRHH />
+                            </Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+
                       <Route
                         path="/admin/menu-config"
                         element={

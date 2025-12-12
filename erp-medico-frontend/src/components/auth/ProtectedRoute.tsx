@@ -46,7 +46,8 @@ export function ProtectedRoute({ children, resource, requireAction = 'read' }: P
             'ia': 'ia',
             'tienda': 'tienda',
             'rayos_x': 'rayos_x',
-            'alertas': 'alertas'
+            'alertas': 'alertas',
+            'rrhh': 'rrhh'
         }
 
         const moduleKey = moduleMap[resource]

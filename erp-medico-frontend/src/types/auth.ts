@@ -61,7 +61,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: 'inventario', actions: ['create', 'read', 'update', 'delete', 'manage'] },
     { resource: 'configuracion', actions: ['create', 'read', 'update', 'delete', 'manage'] },
     { resource: 'analytics', actions: ['read', 'manage'] },
-    { resource: 'sistema', actions: ['manage'] }
+    { resource: 'sistema', actions: ['manage'] },
+    { resource: 'rrhh', actions: ['create', 'read', 'update', 'delete', 'manage'] }
   ],
   admin_empresa: [
     // Dashboard de gestión para empresa
@@ -75,7 +76,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: 'facturacion', actions: ['create', 'read', 'update'] },
     { resource: 'inventario', actions: ['create', 'read', 'update', 'delete'] },
     { resource: 'configuracion', actions: ['read', 'update'] },
-    { resource: 'analytics', actions: ['read'] }
+    { resource: 'analytics', actions: ['read'] },
+    { resource: 'rrhh', actions: ['create', 'read', 'update', 'delete', 'manage'] }
   ],
   medico: [
     // Dashboard personal del médico
