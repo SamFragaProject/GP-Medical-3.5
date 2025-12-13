@@ -170,11 +170,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       toast.success('Sesión cerrada correctamente')
-      window.location.href = '/GP-Medical-3.5/login'
+      // Usar ruta relativa para compatibilidad con Vercel
+      window.location.href = '/login'
     } catch (error: any) {
       console.error('Error en logout:', error)
       // Aún así redirigir al login
-      window.location.href = '/GP-Medical-3.5/login'
+      window.location.href = '/login'
     }
   }
 
