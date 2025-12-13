@@ -37,13 +37,13 @@ export function UpcomingAppointments() {
     ]
 
     return (
-        <Card className="h-full border-none shadow-lg bg-white/50 backdrop-blur-xl">
+        <Card className="h-full border-none shadow-lg bg-white">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xl font-bold text-gray-800 flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-indigo-600" />
                     Próximas Citas
                 </CardTitle>
-                <Button variant="ghost" size="sm" className="text-indigo-600 hover:bg-indigo-50">
+                <Button variant="default" size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700">
                     Ver todas
                 </Button>
             </CardHeader>

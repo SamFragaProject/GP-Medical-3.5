@@ -110,7 +110,7 @@ export default function DashboardPaciente() {
       {/* Quick Stats */}
       <Grid numItems={1} numItemsSm={2} numItemsLg={4} className="gap-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card className="ring-0 border-l-4 border-blue-500 shadow-lg">
+          <Card className="ring-0 border-l-4 border-blue-500 shadow-lg bg-white">
             <Flex justifyContent="start" className="space-x-4">
               <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
                 <Calendar size={24} />
@@ -123,7 +123,7 @@ export default function DashboardPaciente() {
           </Card>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card className="ring-0 border-l-4 border-orange-500 shadow-lg">
+          <Card className="ring-0 border-l-4 border-orange-500 shadow-lg bg-white">
             <Flex justifyContent="start" className="space-x-4">
               <div className="p-2 bg-orange-100 rounded-lg text-orange-600">
                 <AlertCircle size={24} />
@@ -136,7 +136,7 @@ export default function DashboardPaciente() {
           </Card>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <Card className="ring-0 border-l-4 border-purple-500 shadow-lg">
+          <Card className="ring-0 border-l-4 border-purple-500 shadow-lg bg-white">
             <Flex justifyContent="start" className="space-x-4">
               <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
                 <FileText size={24} />
@@ -149,7 +149,7 @@ export default function DashboardPaciente() {
           </Card>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <Card className="ring-0 border-l-4 border-emerald-500 shadow-lg">
+          <Card className="ring-0 border-l-4 border-emerald-500 shadow-lg bg-white">
             <Flex justifyContent="start" className="space-x-4">
               <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
                 <Activity size={24} />
@@ -165,7 +165,7 @@ export default function DashboardPaciente() {
 
       <Grid numItems={1} numItemsLg={2} className="gap-6">
         {/* Próximas Citas */}
-        <Card className="ring-0 shadow-lg">
+        <Card className="ring-0 shadow-lg bg-white">
           <Flex className="mb-6">
             <Title>Mis Próximas Citas</Title>
             <Button size="xs" variant="secondary" icon={Plus} onClick={() => setIsOpen(true)}>
@@ -201,7 +201,7 @@ export default function DashboardPaciente() {
         </Card>
 
         {/* Recomendaciones */}
-        <Card className="ring-0 shadow-lg">
+        <Card className="ring-0 shadow-lg bg-white">
           <Title className="mb-6">Recomendaciones Médicas</Title>
           <div className="space-y-4">
             {RECOMENDACIONES.map((rec) => (
@@ -224,7 +224,7 @@ export default function DashboardPaciente() {
       </Grid>
 
       {/* Historial */}
-      <Card className="ring-0 shadow-lg">
+      <Card className="ring-0 shadow-lg bg-white">
         <Title className="mb-6">Historial Médico Reciente</Title>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">

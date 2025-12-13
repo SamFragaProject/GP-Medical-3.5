@@ -266,8 +266,8 @@ export function SuperAdminView() {
                         </div>
                     </Card>
 
-                    <Card className="ring-0 shadow-lg border-none">
-                        <Title className="mb-4">Alertas del Sistema</Title>
+                    <Card className="ring-0 shadow-lg border-none bg-white">
+                        <Title className="mb-4 text-lg font-bold text-slate-800">Alertas del Sistema</Title>
                         <div className="space-y-4">
                             <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl flex gap-3">
                                 <AlertCircle className="text-amber-600 shrink-0" size={20} />

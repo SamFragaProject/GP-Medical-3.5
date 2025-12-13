@@ -212,7 +212,7 @@ export function AdminView() {
                 >
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-bold text-gray-900">Transacciones Recientes</h3>
-                        <button className="text-sm text-primary font-medium hover:underline">Ver todas</button>
+                        <button className="px-4 py-2 text-sm bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors">Ver todas</button>
                     </div>
 
                     <div className="overflow-x-auto">
