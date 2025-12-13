@@ -6,7 +6,7 @@ import { defineConfig } from "vite"
 
 
 export default defineConfig({
-  base: '/GP-Medical-3.5/',
+  base: '/',
   plugins: [
     react(),
     /* sourceIdentifierPlugin({
