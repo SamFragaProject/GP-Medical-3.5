@@ -39,6 +39,7 @@ import { NavigationItem } from '@/types/saas'
 import { UserRole } from '@/types/auth'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { useAuth } from '@/contexts/AuthContext'
 import toast from 'react-hot-toast'
 
 interface MenuPersonalizadoProps {
@@ -47,7 +48,17 @@ interface MenuPersonalizadoProps {
 
 export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
   const location = useLocation()
-  const user = {
+  const { user: authUser, logout } = useAuth()
+
+  // Usar usuario del AuthContext o fallback demo
+  const user = authUser ? {
+    id: authUser.id,
+    email: authUser.email,
+    hierarchy: authUser.rol as UserRole,
+    empresa: { nombre: 'MediFlow' },
+    sede: { nombre: 'Sede Principal' },
+    name: authUser.nombre || 'Usuario'
+  } : {
     id: 'demo-user',
     email: 'demo@mediflow.com',
     hierarchy: 'super_admin' as UserRole,
@@ -56,7 +67,7 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
     name: 'Usuario Demo'
   }
 
-  const signOut = () => { }
+  const signOut = logout
   const currentUser = user
   const canAccess = (resource?: string, action?: string) => true
 

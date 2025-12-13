@@ -340,6 +340,46 @@ export function Login() {
                     <div className="text-xs text-purple-600 font-medium">Portal</div>
                   </div>
                 </button>
+
+                {/* 5. Enfermera */}
+                <button
+                  onClick={() => usarCuentaDemo({ email: 'enfermera@mediflow.mx', password: 'enfermera123', nombre: 'María García', rol: 'enfermera' })}
+                  className="w-full text-left p-3 rounded-lg border-2 border-pink-200 hover:border-pink-400 hover:bg-pink-50 transition-all group"
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center group-hover:bg-pink-200 transition-colors">
+                        <Heart className="w-5 h-5 text-pink-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">María García</p>
+                        <p className="text-xs text-pink-600 font-medium">Enfermera</p>
+                        <p className="text-xs text-gray-500">enfermera@mediflow.mx</p>
+                      </div>
+                    </div>
+                    <div className="text-xs text-pink-600 font-medium">Asistencia</div>
+                  </div>
+                </button>
+
+                {/* 6. Recepción */}
+                <button
+                  onClick={() => usarCuentaDemo({ email: 'recepcion@mediflow.mx', password: 'recepcion123', nombre: 'Laura Sánchez', rol: 'recepcion' })}
+                  className="w-full text-left p-3 rounded-lg border-2 border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all group"
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+                        <Users className="w-5 h-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">Laura Sánchez</p>
+                        <p className="text-xs text-orange-600 font-medium">Recepción</p>
+                        <p className="text-xs text-gray-500">recepcion@mediflow.mx</p>
+                      </div>
+                    </div>
+                    <div className="text-xs text-orange-600 font-medium">Atención</div>
+                  </div>
+                </button>
               </div>
 
               <div className="mt-4 p-3 bg-green-50 rounded-lg">

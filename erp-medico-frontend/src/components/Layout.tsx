@@ -1,4 +1,4 @@
-// Layout principal del ERP Médico - SIN AUTENTICACIÓN - Acceso directo
+// Layout principal del ERP Médico - Con AuthContext
 import React, { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -14,31 +14,15 @@ import {
   ChevronRight,
   Heart,
   Loader2,
-  Shield
+  Shield,
+  LogOut
 } from 'lucide-react'
 import { MenuPersonalizado, MenuHierarchyIndicator } from '@/components/navigation/MenuPersonalizado'
 import { ChatbotSuperinteligente } from '@/components/ChatbotSuperinteligente'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { useAuth } from '@/contexts/AuthContext'
 import toast from 'react-hot-toast'
-
-// Usuario demo con acceso completo
-const demoUser = {
-  id: 'demo',
-  name: 'Usuario Demo',
-  email: 'demo@mediflow.com',
-  hierarchy: 'super_admin'
-}
-
-const empresaInfo = {
-  nombre: 'MediFlow Demo Corp',
-  id: 'demo-empresa'
-}
-
-const sedeInfo = {
-  nombre: 'Sede Principal',
-  id: 'demo-sede'
-}
 
 // Función para verificar permisos - siempre true (acceso completo)
 const canAccess = (resource: string, action: string) => true
@@ -48,6 +32,31 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
+  const { user: authUser, logout } = useAuth()
+
+  // Usuario del AuthContext o fallback demo
+  const currentUser = authUser ? {
+    id: authUser.id,
+    name: authUser.nombre || 'Usuario',
+    email: authUser.email,
+    hierarchy: authUser.rol || 'paciente'
+  } : {
+    id: 'demo',
+    name: 'Usuario Demo',
+    email: 'demo@mediflow.com',
+    hierarchy: 'super_admin'
+  }
+
+  const empresaInfo = {
+    nombre: 'MediFlow',
+    id: 'demo-empresa'
+  }
+
+  const sedeInfo = {
+    nombre: 'Sede Principal',
+    id: 'demo-sede'
+  }
+
   // Estado del sidebar y UI
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('mediflow_sidebar_open')
@@ -56,9 +65,6 @@ export function Layout({ children }: LayoutProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [notifications] = useState(3)
-
-  // Usuario demo con acceso completo - sin autenticación
-  const currentUser = demoUser
 
   const navigate = useNavigate()
   const location = useLocation()
