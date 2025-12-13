@@ -6,10 +6,9 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kbbnxcbsbusatsddrpaw.supabase.co'
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYm54Y2JzYnVzYXRzZGRycGF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4NjMzOTIsImV4cCI6MjA3NzQzOTM5Mn0.9vnb0Jzuy4WO4xBX1Zx1fwsviazBZsp5ogKPtwKFCJQ'
 
-// Validar que las variables estén configuradas (solo en producción)
+// Validar que las variables estén configuradas (solo muestra warning en producción)
 if (import.meta.env.PROD && (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY)) {
-  console.error('⚠️ Variables de entorno de Supabase no configuradas en producción')
-  throw new Error('Variables de entorno de Supabase requeridas')
+  console.warn('⚠️ Variables de entorno de Supabase no configuradas, usando valores por defecto')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -70,8 +69,8 @@ export const chatbot = {
   async escalarConversacion(conversacionId: string, motivo: string) {
     // Simulación básica
     console.log('Escalando conversación:', conversacionId, motivo)
-    return { 
-      success: true, 
+    return {
+      success: true,
       ticket_id: 'demo-ticket-1',
       numero_ticket: 'DEMO-001'
     }
