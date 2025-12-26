@@ -31,6 +31,7 @@ import './App.css'
 import ExtractorMedico from '@/pages/apps/ExtractorMedico'
 import GeneradorReportes from '@/pages/apps/GeneradorReportes'
 import { RRHH } from '@/pages/rrhh'
+import { Empresas } from '@/pages/admin/Empresas'
 
 function App() {
   return (
@@ -134,6 +135,17 @@ function App() {
                           <ProtectedRoute resource="rayos_x">
                             <Layout>
                               <RayosX />
+                            </Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+
+                      <Route
+                        path="/empresas"
+                        element={
+                          <ProtectedRoute resource="empresas">
+                            <Layout>
+                              <Empresas />
                             </Layout>
                           </ProtectedRoute>
                         }

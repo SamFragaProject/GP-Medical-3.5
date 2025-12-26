@@ -246,7 +246,62 @@ export const examenesService = {
             .single()
 
         if (error) throw error
-        return data as Examen
+    }
+}
+
+// ============================================
+// SERVICIO DE EMPRESAS (SAAS)
+// ============================================
+
+export interface Empresa {
+    id: string
+    nombre: string
+    rfc?: string
+    razon_social?: string
+    direccion?: string
+    telefono?: string
+    email?: string
+    plan: 'basico' | 'profesional' | 'enterprise'
+    activo: boolean
+    created_at: string
+}
+
+export const empresasService = {
+    // Obtener todas las empresas (Solo Super Admin)
+    async getAll() {
+        // En producción, RLS debería permitir esto solo a super admins
+        const { data, error } = await supabase
+            .from('empresas')
+            .select('*')
+            .order('created_at', { ascending: false })
+
+        if (error) throw error
+        return data as Empresa[]
+    },
+
+    // Crear empresa
+    async create(empresa: Omit<Empresa, 'id' | 'created_at'>) {
+        const { data, error } = await supabase
+            .from('empresas')
+            .insert(empresa)
+            .select()
+            .single()
+
+        if (error) throw error
+        return data as Empresa
+    },
+
+    // Actualizar empresa
+    async update(id: string, updates: Partial<Empresa>) {
+        const { data, error } = await supabase
+            .from('empresas')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .single()
+
+        if (error) throw error
+        return data as Empresa
     }
 }
 
