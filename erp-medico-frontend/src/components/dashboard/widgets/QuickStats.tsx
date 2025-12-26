@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { TrendingUp, TrendingDown, Users, Calendar, DollarSign, Activity } from 'lucide-react'
+import { TrendingUp, TrendingDown, Users, Calendar, DollarSign, Activity, Loader2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { statsService } from '@/services/dataService'
 
 interface StatCardProps {
     title: string
@@ -10,9 +11,10 @@ interface StatCardProps {
     icon: React.ElementType
     color: string
     delay: number
+    loading?: boolean
 }
 
-function StatCard({ title, value, trend, icon: Icon, color, delay }: StatCardProps) {
+function StatCard({ title, value, trend, icon: Icon, color, delay, loading }: StatCardProps) {
     const isPositive = trend > 0
 
     return (
@@ -38,7 +40,11 @@ function StatCard({ title, value, trend, icon: Icon, color, delay }: StatCardPro
 
                     <div className="space-y-1 relative z-10">
                         <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">{title}</h3>
-                        <div className="text-2xl font-bold text-gray-800">{value}</div>
+                        <div className="text-2xl font-bold text-gray-800">
+                            {loading ? (
+                                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                            ) : value}
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -47,42 +53,66 @@ function StatCard({ title, value, trend, icon: Icon, color, delay }: StatCardPro
 }
 
 export function QuickStats() {
-    const stats = [
+    const [stats, setStats] = useState({
+        totalPacientes: 0,
+        citasHoy: 0,
+        examenesPendientes: 0
+    })
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const loadStats = async () => {
+            try {
+                setLoading(true)
+                const data = await statsService.getDashboardStats()
+                setStats(data)
+                console.log('✅ Stats cargadas desde Supabase:', data)
+            } catch (error) {
+                console.error('Error cargando stats:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+        loadStats()
+    }, [])
+
+    const statsConfig = [
         {
             title: 'Pacientes Totales',
-            value: '1,284',
+            value: stats.totalPacientes.toLocaleString(),
             trend: 12.5,
             icon: Users,
             color: 'blue'
         },
         {
             title: 'Citas Hoy',
-            value: '42',
+            value: stats.citasHoy.toString(),
             trend: 8.2,
             icon: Calendar,
             color: 'purple'
         },
         {
-            title: 'Ingresos Mes',
-            value: '$45.2k',
-            trend: 15.3,
-            icon: DollarSign,
-            color: 'emerald'
+            title: 'Exámenes Pendientes',
+            value: stats.examenesPendientes.toString(),
+            trend: -2.4,
+            icon: Activity,
+            color: 'amber'
         },
         {
             title: 'Eficiencia',
             value: '94%',
-            trend: -2.4,
-            icon: Activity,
-            color: 'amber'
+            trend: 5.1,
+            icon: DollarSign,
+            color: 'emerald'
         }
     ]
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat, index) => (
-                <StatCard key={index} {...stat} delay={index * 0.1} />
+            {statsConfig.map((stat, index) => (
+                <StatCard key={index} {...stat} delay={index * 0.1} loading={loading} />
             ))}
         </div>
     )
 }
+
