@@ -55,15 +55,20 @@ export function Login() {
     }
   }
 
-  // Función para usar cuenta demo SaaS actualizada
-  const usarCuentaDemo = async (cuenta: { email: string; password: string; nombre: string; rol: string }) => {
+  // Función para pre-llenar credenciales de prueba
+  const prefillCuentaDemo = (cuenta: { email: string; password: string; nombre: string; rol: string }) => {
     setEmail(cuenta.email)
     setPassword(cuenta.password)
-    try {
-      await login(cuenta.email, cuenta.password)
-    } catch (error) {
-      console.error(error)
-    }
+    toast.dismiss()
+    toast(
+      (t) => (
+        <span className='flex flex-col gap-1'>
+          <span className='font-bold'>Datos cargados</span>
+          <span className='text-xs'>Asegúrate de haber creado este usuario en Supabase Auth primero.</span>
+        </span>
+      ),
+      { icon: '📝', duration: 4000 }
+    )
   }
 
   return (
@@ -157,12 +162,7 @@ export function Login() {
               <p className="text-gray-600 mb-4">
                 Accede a tu cuenta de MediFlow
               </p>
-              <button
-                onClick={() => navigate('/home')}
-                className="text-sm text-primary hover:text-primary-700 font-medium flex items-center justify-center gap-1 mx-auto transition-colors"
-              >
-                ← Volver al Inicio
-              </button>
+              {/* Eliminado botón 'Volver al Inicio' redundante */}
             </div>
 
             {/* Formulario */}
@@ -252,19 +252,20 @@ export function Login() {
             {/* Cuentas demo - Usuarios reales */}
             <div className="mt-8 pt-6 border-t border-gray-200">
               <div className="text-center mb-4">
-                <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  <Heart className="w-3 h-3 mr-1" />
-                  Usuarios de Prueba
+                <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <Users className="w-3 h-3 mr-1" />
+                  Credenciales de Prueba (Requiere registro previo)
                 </div>
               </div>
               <h3 className="text-sm font-medium text-gray-700 mb-4 text-center">
-                Acceso Rápido - Cuentas Demo
+                Pre-llenar datos para pruebas
               </h3>
               <div className="space-y-2">
                 {/* 1. Super Admin (Nuevo) */}
                 <button
-                  onClick={() => usarCuentaDemo({ email: 'super@mediflow.mx', password: 'super123', nombre: 'Admin Global', rol: 'super_admin' })}
+                  onClick={() => prefillCuentaDemo({ email: 'super@mediflow.mx', password: 'super123', nombre: 'Admin Global', rol: 'super_admin' })}
                   className="w-full text-left p-3 rounded-lg border-2 border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50 transition-all group"
+                  type="button"
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-3">
@@ -277,14 +278,14 @@ export function Login() {
                         <p className="text-xs text-gray-500">super@mediflow.mx</p>
                       </div>
                     </div>
-                    <div className="text-xs text-indigo-600 font-medium">Global</div>
                   </div>
                 </button>
 
                 {/* 2. Administrador Empresa */}
                 <button
-                  onClick={() => usarCuentaDemo({ email: 'admin@mediflow.mx', password: 'admin123', nombre: 'Dr. Carlos Ramírez', rol: 'admin_empresa' })}
+                  onClick={() => prefillCuentaDemo({ email: 'admin@mediflow.mx', password: 'admin123', nombre: 'Dr. Carlos Ramírez', rol: 'admin_empresa' })}
                   className="w-full text-left p-3 rounded-lg border-2 border-red-200 hover:border-red-400 hover:bg-red-50 transition-all group"
+                  type="button"
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-3">
@@ -292,100 +293,20 @@ export function Login() {
                         <Building className="w-5 h-5 text-red-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">Dr. Carlos Ramírez</p>
-                        <p className="text-xs text-red-600 font-medium">Director Clínica</p>
+                        <p className="text-sm font-semibold text-gray-900">Admin Clínica</p>
+                        <p className="text-xs text-red-600 font-medium">Gerencia</p>
                         <p className="text-xs text-gray-500">admin@mediflow.mx</p>
                       </div>
                     </div>
-                    <div className="text-xs text-red-600 font-medium">Gerencia</div>
-                  </div>
-                </button>
-
-                {/* 3. Médico */}
-                <button
-                  onClick={() => usarCuentaDemo({ email: 'medico@mediflow.mx', password: 'medico123', nombre: 'Dra. Ana López', rol: 'medico' })}
-                  className="w-full text-left p-3 rounded-lg border-2 border-green-200 hover:border-green-400 hover:bg-green-50 transition-all group"
-                >
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                        <Heart className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">Dra. Ana López</p>
-                        <p className="text-xs text-green-600 font-medium">Médico Laboral</p>
-                        <p className="text-xs text-gray-500">medico@mediflow.mx</p>
-                      </div>
-                    </div>
-                    <div className="text-xs text-green-600 font-medium">Clínico</div>
-                  </div>
-                </button>
-
-                {/* 4. Paciente */}
-                <button
-                  onClick={() => usarCuentaDemo({ email: 'paciente@mediflow.mx', password: 'paciente123', nombre: 'Juan Pérez', rol: 'paciente' })}
-                  className="w-full text-left p-3 rounded-lg border-2 border-purple-200 hover:border-purple-400 hover:bg-purple-50 transition-all group"
-                >
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                        <User className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">Juan Pérez</p>
-                        <p className="text-xs text-purple-600 font-medium">Paciente</p>
-                        <p className="text-xs text-gray-500">paciente@mediflow.mx</p>
-                      </div>
-                    </div>
-                    <div className="text-xs text-purple-600 font-medium">Portal</div>
-                  </div>
-                </button>
-
-                {/* 5. Enfermera */}
-                <button
-                  onClick={() => usarCuentaDemo({ email: 'enfermera@mediflow.mx', password: 'enfermera123', nombre: 'María García', rol: 'enfermera' })}
-                  className="w-full text-left p-3 rounded-lg border-2 border-pink-200 hover:border-pink-400 hover:bg-pink-50 transition-all group"
-                >
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center group-hover:bg-pink-200 transition-colors">
-                        <Heart className="w-5 h-5 text-pink-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">María García</p>
-                        <p className="text-xs text-pink-600 font-medium">Enfermera</p>
-                        <p className="text-xs text-gray-500">enfermera@mediflow.mx</p>
-                      </div>
-                    </div>
-                    <div className="text-xs text-pink-600 font-medium">Asistencia</div>
-                  </div>
-                </button>
-
-                {/* 6. Recepción */}
-                <button
-                  onClick={() => usarCuentaDemo({ email: 'recepcion@mediflow.mx', password: 'recepcion123', nombre: 'Laura Sánchez', rol: 'recepcion' })}
-                  className="w-full text-left p-3 rounded-lg border-2 border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all group"
-                >
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-200 transition-colors">
-                        <Users className="w-5 h-5 text-orange-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">Laura Sánchez</p>
-                        <p className="text-xs text-orange-600 font-medium">Recepción</p>
-                        <p className="text-xs text-gray-500">recepcion@mediflow.mx</p>
-                      </div>
-                    </div>
-                    <div className="text-xs text-orange-600 font-medium">Atención</div>
                   </div>
                 </button>
               </div>
 
-              <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                <p className="text-xs text-green-800 font-medium">✨ Sistema Simplificado</p>
-                <p className="text-xs text-green-700 mt-1">
-                  Usa cualquiera de estas cuentas para acceder al sistema de medicina del trabajo.
+              <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
+                <p className="text-xs text-yellow-800 font-medium">⚠️ Nota Importante</p>
+                <p className="text-xs text-yellow-700 mt-1">
+                  Estas cuentas deben existir en tu proyecto de Supabase (Authentication).
+                  El sistema creará automáticamente su perfil al primer inicio de sesión.
                 </p>
               </div>
             </div>

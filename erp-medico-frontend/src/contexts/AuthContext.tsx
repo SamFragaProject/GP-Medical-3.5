@@ -30,28 +30,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     console.log('AuthProvider: useEffect start')
     const loadUser = async () => {
-      console.log('AuthProvider: loadUser start')
       try {
-        // Intentar cargar desde localStorage primero (sesión demo)
-        const savedUser = localStorage.getItem('mediflow_user')
-        const savedOriginalUser = localStorage.getItem('mediflow_original_user')
-
-        if (savedUser) {
-          console.log('AuthProvider: loaded from localStorage')
-          setUser(JSON.parse(savedUser))
-          if (savedOriginalUser) {
-            setOriginalUser(JSON.parse(savedOriginalUser))
-          }
-          setLoading(false)
-          return
-        }
-
-        // Intentar cargar desde Supabase
-        console.log('AuthProvider: checking supabase session')
+        // Intentar cargar desde Supabase primero
         const { data: { session } } = await supabase.auth.getSession()
-        console.log('AuthProvider: session retrieved', session)
+
         if (session?.user) {
-          // Obtener datos completos del usuario desde la base de datos
+          // Obtener datos del usuario de la DB pública
           const { data: userData, error } = await supabase
             .from('usuarios')
             .select('*')
@@ -61,25 +45,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (userData && !error) {
             setUser(userData as User)
             localStorage.setItem('mediflow_user', JSON.stringify(userData))
+          } else {
+            // Si el usuario existe en Auth pero no en tabla usuarios, crearlo (JIT Provisioning)
+            console.log('Usuario nuevo detectado, creando perfil...')
+            const newUserProfile: User = {
+              id: session.user.id,
+              email: session.user.email!,
+              nombre: session.user.user_metadata.nombre || 'Nuevo Usuario',
+              apellido_paterno: session.user.user_metadata.apellido_paterno || '',
+              rol: 'paciente', // Rol por defecto seguro
+              created_at: new Date().toISOString()
+            }
+
+            const { data: newProfile, error: createError } = await supabase
+              .from('usuarios')
+              .insert(newUserProfile)
+              .select()
+              .single()
+
+            if (!createError && newProfile) {
+              setUser(newProfile as User)
+              localStorage.setItem('mediflow_user', JSON.stringify(newProfile))
+              toast.success('Perfil de usuario creado exitosamente')
+            }
           }
         } else {
-          // Si no hay sesión, crear usuario demo automáticamente
-          console.log('AuthProvider: no session found, creating demo user')
-          const demoUser: User = {
-            id: 'demo-super-admin',
-            email: 'demo@mediflow.com',
-            nombre: 'Usuario',
-            apellido_paterno: 'Demo',
-            rol: 'super_admin',
-            created_at: new Date().toISOString()
-          }
-          setUser(demoUser)
-          localStorage.setItem('mediflow_user', JSON.stringify(demoUser))
+          // Si no hay sesión, limpiar estado (NO crear demo users)
+          setUser(null)
+          localStorage.removeItem('mediflow_user')
         }
       } catch (error) {
         console.error('Error cargando usuario:', error)
       } finally {
-        console.log('AuthProvider: loadUser finally, setting loading false')
         setLoading(false)
       }
     }
@@ -89,6 +86,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Suscribirse a cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
+        // Reutilizar lógica de carga o forzar recarga
+        // Simplemente recargar la página para limpiar estado es una estrategia segura a veces, 
+        // pero aquí intentaremos cargar el perfil directamente
         const { data: userData } = await supabase
           .from('usuarios')
           .select('*')
@@ -98,6 +98,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (userData) {
           setUser(userData as User)
           localStorage.setItem('mediflow_user', JSON.stringify(userData))
+        } else {
+          // Crear perfil si no existe (manejado en loadUser también, pero bueno aquí también por si acaso es un sign in directo)
+          const newUserProfile: User = {
+            id: session.user.id,
+            email: session.user.email!,
+            nombre: session.user.user_metadata.nombre || 'Nuevo Usuario',
+            apellido_paterno: session.user.user_metadata.apellido_paterno || '',
+            rol: 'paciente',
+            created_at: new Date().toISOString()
+          }
+          const { data: newProfile } = await supabase.from('usuarios').insert(newUserProfile).select().single()
+          if (newProfile) setUser(newProfile as User)
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
