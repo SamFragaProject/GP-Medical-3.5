@@ -309,8 +309,16 @@ export function useAgenda() {
         notas: formulario.notas,
         empresa_id: currentUser.empresa_id
       }
-
-      await mockDataService.createCita(nuevaCitaData)
+      // Usar servicio real de Supabase
+      await citasService.create({
+        empresa_id: currentUser.empresa_id,
+        paciente_id: formulario.pacienteId,
+        fecha: formulario.fechaHora.toISOString().split('T')[0],
+        hora_inicio: formulario.fechaHora.toTimeString().slice(0, 5),
+        tipo: 'consulta_general',
+        estado: 'programada',
+        notas: formulario.motivoConsulta
+      })
       toast.success('Cita programada exitosamente')
       obtenerCitas() // Recargar
       return null // El servicio devuelve la cita pero aquí recargamos todo
@@ -328,7 +336,7 @@ export function useAgenda() {
   const actualizarCita = useCallback(async (citaId: string, datos: Partial<Cita>) => {
     setLoading(true)
     try {
-      await mockDataService.updateCita(citaId, datos as any)
+      await citasService.updateStatus(citaId, datos.estado || 'actualizada')
       toast.success('Cita actualizada exitosamente')
       obtenerCitas()
       return true
@@ -346,7 +354,7 @@ export function useAgenda() {
   const cancelarCita = useCallback(async (citaId: string, motivo?: string) => {
     setLoading(true)
     try {
-      await mockDataService.updateCita(citaId, { estado: 'cancelada' })
+      await citasService.cancel(citaId)
       toast.success('Cita cancelada exitosamente')
       obtenerCitas()
       return true

@@ -216,7 +216,7 @@ export function Pacientes() {
 
                               <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
                                 <Badge variant="secondary" className="text-xs font-normal bg-gray-100 text-gray-600">
-                                  {patient.puesto_trabajo?.nombre || 'Sin puesto'}
+                                  {patient.puesto || 'Sin puesto'}
                                 </Badge>
                                 <span>•</span>
                                 <span className="text-xs">{patient.numero_empleado}</span>
