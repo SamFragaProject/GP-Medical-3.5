@@ -280,13 +280,6 @@ export function RoleBasedNavigation({ navigationItems, sidebarOpen = true }: Rol
             </div>
           </div>
         ))}
-        {/* Mensaje de debug discreto */}
-        {user?.hierarchy === 'super_admin' && (
-          <div className="mt-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-            <p className="font-semibold">🔧 Modo Debug: Sistema de permisos en mantenimiento</p>
-            <p>Super admin tiene acceso completo</p>
-          </div>
-        )}
       </div>
     )
   }

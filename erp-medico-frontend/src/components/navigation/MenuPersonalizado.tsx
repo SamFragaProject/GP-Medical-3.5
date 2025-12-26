@@ -264,39 +264,25 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
         ]
       },
 
-      // Módulo de Tienda
-      {
-        id: 'tienda',
-        name: 'Tienda',
-        href: '/tienda',
-        icon: 'ShoppingCart',
-        order: 80,
-        children: [
-          {
-            id: 'tienda-vista',
-            name: 'Ver Productos',
-            href: '/tienda?tab=vista',
-            icon: 'ShoppingCart',
-            order: 1
-          },
-          {
-            id: 'tienda-solicitar',
-            name: 'Solicitar Productos',
-            href: '/tienda?tab=solicitar',
-            icon: 'Plus',
-            order: 2
-          }
-        ]
-      },
-
-      // Módulo de Inventario
-      {
-        id: 'inventario',
-        name: 'Inventario',
-        href: '/inventario',
-        icon: 'Database',
-        order: 85
-      },
+      // ==========================================
+      // MÓDULOS DESHABILITADOS TEMPORALMENTE
+      // Tienda e Inventario no están funcionales
+      // ==========================================
+      // {
+      //   id: 'tienda',
+      //   name: 'Tienda',
+      //   href: '/tienda',
+      //   icon: 'ShoppingCart',
+      //   order: 80,
+      //   children: [...]
+      // },
+      // {
+      //   id: 'inventario',
+      //   name: 'Inventario',
+      //   href: '/inventario',
+      //   icon: 'Database',
+      //   order: 85
+      // },
 
       // Módulo de Configuración (solo para admins)
       ...(currentUser?.hierarchy === 'super_admin' || currentUser?.hierarchy === 'admin_empresa' ? [{
@@ -770,13 +756,14 @@ export function MenuHierarchyIndicator() {
   const getLevelInfo = (hierarchy: string) => {
     const levelMap: Record<string, { level: number; icon: any; color: string }> = {
       'super_admin': { level: 5, icon: Crown, color: 'text-purple-600' },
+      'admin_saas': { level: 4, icon: Crown, color: 'text-indigo-600' },
+      'contador_saas': { level: 4, icon: CreditCard, color: 'text-blue-600' },
       'admin_empresa': { level: 4, icon: Building, color: 'text-blue-600' },
-      'medico_trabajo': { level: 3, icon: Activity, color: 'text-green-600' },
-      'medico_especialista': { level: 3, icon: Stethoscope, color: 'text-green-600' },
-      'medico_industrial': { level: 3, icon: TestTube, color: 'text-green-600' },
+      'medico': { level: 3, icon: Stethoscope, color: 'text-green-600' },
+      'enfermera': { level: 2, icon: Activity, color: 'text-pink-600' },
       'recepcion': { level: 2, icon: UserCog, color: 'text-orange-600' },
-      'paciente': { level: 1, icon: User, color: 'text-teal-600' },
-      'bot': { level: 0, icon: HelpCircle, color: 'text-gray-600' }
+      'asistente': { level: 2, icon: User, color: 'text-yellow-600' },
+      'paciente': { level: 1, icon: User, color: 'text-teal-600' }
     }
     return levelMap[hierarchy] || levelMap.paciente
   }
