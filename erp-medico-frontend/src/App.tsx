@@ -51,15 +51,10 @@ function App() {
                   <div className="App">
                     <Routes>
                       {/* Rutas Protegidas */}
+                      {/* Rutas Protegidas */}
                       <Route
                         path="/"
-                        element={
-                          <ProtectedRoute>
-                            <Layout>
-                              <Dashboard />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
+                        element={<Home />}
                       />
 
                       <Route
