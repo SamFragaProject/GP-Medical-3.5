@@ -11,7 +11,7 @@ import {
   CalendarioEvent
 } from '@/types/agenda'
 import toast from 'react-hot-toast'
-import { mockDataService } from '@/services/mockDataService'
+import { citasService } from '@/services/dataService'
 
 // Datos demo/mock para desarrollo
 const PACIENTES_DEMO: Paciente[] = [
@@ -211,26 +211,47 @@ export function useAgenda() {
   const obtenerCitas = useCallback(async (filtros?: FiltroCitas) => {
     setLoading(true)
     try {
-      const data = await mockDataService.getCitas(currentUser)
+      // Usar servicio real de Supabase
+      const today = new Date().toISOString().split('T')[0]
+      const nextMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const data = await citasService.getByDateRange(today, nextMonth)
 
-      // Mapear datos del servicio al formato interno si es necesario
-      // Por ahora asumimos compatibilidad directa o hacemos un map simple
+      console.log('✅ Citas cargadas desde Supabase:', data.length)
+
+      // Mapear datos del servicio al formato interno
       const citasMapeadas = data.map(c => ({
-        ...c,
-        fechaHora: new Date(c.fechaHora),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        // Reconstruir relaciones (en una app real esto vendría del join)
-        paciente: pacientes.find(p => p.id === c.paciente_id) || PACIENTES_DEMO[0],
-        doctor: doctores.find(d => d.id === c.medico_id) || DOCTORES_DEMO[0],
-        tipoConsulta: tiposConsulta.find(t => t.nombre === c.tipo) || TIPOS_CONSULTA_DEMO[0],
-        // Campos faltantes en el servicio pero requeridos por la UI
+        id: c.id,
         pacienteId: c.paciente_id,
-        doctorId: c.medico_id,
-        tipoConsultaId: '1', // Default
-        duracionMinutos: c.duracion,
-        motivoConsulta: c.motivo
-      })) as unknown as Cita[] // Cast forzado por diferencias de tipo temporales
+        doctorId: c.medico_id || '1',
+        tipoConsultaId: '1',
+        fechaHora: new Date(`${c.fecha}T${c.hora_inicio}`),
+        duracionMinutos: 30,
+        estado: c.estado as EstadoCita,
+        motivoConsulta: c.notas || '',
+        notas: c.notas || '',
+        recordatorioEnviado: false,
+        creadaPor: '1',
+        createdAt: new Date(c.created_at),
+        updatedAt: new Date(c.created_at),
+        // Relaciones
+        paciente: c.paciente ? {
+          id: c.paciente.id,
+          nombre: c.paciente.nombre,
+          apellidoPaterno: c.paciente.apellido_paterno,
+          apellidoMaterno: c.paciente.apellido_materno || '',
+          email: '',
+          telefono: '',
+          empresa: '',
+          puesto: '',
+          numEmpleado: '',
+          fechaNacimiento: new Date(),
+          genero: 'M',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        } : PACIENTES_DEMO[0],
+        doctor: DOCTORES_DEMO[0],
+        tipoConsulta: TIPOS_CONSULTA_DEMO.find(t => t.nombre.toLowerCase().includes(c.tipo)) || TIPOS_CONSULTA_DEMO[0]
+      })) as Cita[]
 
       let citasFiltradas = citasMapeadas
 
