@@ -481,20 +481,125 @@ const RECEPCION_CONFIG: RoleViewConfig = {
   }
 }
 
+// Configuración para Admin SaaS (socio) - igual que super pero sin config técnica
+const ADMIN_SAAS_CONFIG: RoleViewConfig = {
+  ...SUPER_ADMIN_CONFIG,
+  navigation: SUPER_ADMIN_CONFIG.navigation.filter(n => n.resource !== 'sistema'),
+  settings: {
+    ...SUPER_ADMIN_CONFIG.settings,
+    canViewBackup: false
+  }
+}
+
+// Configuración para Contador SaaS - solo finanzas
+const CONTADOR_SAAS_CONFIG: RoleViewConfig = {
+  navigation: [
+    { title: 'Dashboard', path: '/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-indigo-500 to-purple-500', visible: true },
+    { title: 'Empresas', path: '/empresas', resource: 'empresas', icon: Building2, gradient: 'from-blue-500 to-cyan-500', visible: true },
+    { title: 'Facturación', path: '/facturacion', resource: 'facturacion', icon: CreditCard, gradient: 'from-yellow-500 to-amber-500', visible: true },
+    { title: 'Reportes', path: '/reportes', resource: 'reportes', icon: BarChart3, gradient: 'from-violet-500 to-purple-500', visible: true }
+  ],
+  dashboard: {
+    showKPIs: true,
+    showCharts: true,
+    showRecentActivity: false,
+    showAlerts: false,
+    customWidgets: ['facturacion', 'empresas']
+  },
+  actions: {
+    canCreate: ['facturacion'],
+    canRead: ['empresas', 'facturacion', 'reportes', 'analytics'],
+    canUpdate: ['facturacion'],
+    canDelete: [],
+    canExport: ['facturacion', 'reportes'],
+    canImport: []
+  },
+  settings: {
+    canViewGeneral: false,
+    canViewSecurity: false,
+    canViewBilling: true,
+    canViewIntegrations: false,
+    canViewNotifications: true,
+    canViewBackup: false
+  },
+  modules: {
+    pacientes: { canViewAll: false, canViewOwn: false, canEdit: false, canDelete: false, canExport: false, showAdvancedFilters: false },
+    citas: { canViewAll: false, canViewOwn: false, canCreate: false, canEdit: false, canCancel: false, canReschedule: false },
+    examenes: { canViewAll: false, canViewOwn: false, canCreate: false, canEdit: false, canCertify: false },
+    recetas: { canCreate: false, canView: false, canEdit: false, canPrint: false, canDigitalSign: false },
+    historial: { canViewFull: false, canViewOwn: false, canAddNotes: false, canEdit: false },
+    facturacion: { canView: true, canCreate: true, canEdit: true, canApprove: true },
+    inventario: { canView: false, canManage: false, canOrder: false },
+    reportes: { canView: true, canGenerate: true, canExport: true },
+    ia: { canAccess: false, canUseAssistant: false },
+    tienda: { canView: false, canPurchase: false, canManageProducts: false },
+    rayos_x: { canView: false, canUpload: false, canAnnotate: false },
+    alertas: { canView: false, canManage: false, canReceive: false },
+    rrhh: { canView: false, canManageEmpleados: false, canManageAsistencia: false, canManageVacaciones: false, canManageIncidencias: false, canViewOrganigrama: false }
+  }
+}
+
+// Configuración para Asistente
+const ASISTENTE_CONFIG: RoleViewConfig = {
+  navigation: [
+    { title: 'Dashboard', path: '/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-teal-500 to-cyan-500', visible: true },
+    { title: 'Pacientes', path: '/pacientes', resource: 'pacientes', icon: Users, gradient: 'from-green-500 to-emerald-500', visible: true },
+    { title: 'Agenda', path: '/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
+    { title: 'Reportes', path: '/reportes', resource: 'reportes', icon: BarChart3, gradient: 'from-violet-500 to-purple-500', visible: true }
+  ],
+  dashboard: {
+    showKPIs: false,
+    showCharts: false,
+    showRecentActivity: true,
+    showAlerts: true,
+    customWidgets: ['citas_hoy', 'pendientes']
+  },
+  actions: {
+    canCreate: [],
+    canRead: ['pacientes', 'citas', 'reportes'],
+    canUpdate: ['citas'],
+    canDelete: [],
+    canExport: [],
+    canImport: []
+  },
+  settings: {
+    canViewGeneral: true,
+    canViewSecurity: false,
+    canViewBilling: false,
+    canViewIntegrations: false,
+    canViewNotifications: true,
+    canViewBackup: false
+  },
+  modules: {
+    pacientes: { canViewAll: true, canViewOwn: false, canEdit: false, canDelete: false, canExport: false, showAdvancedFilters: false },
+    citas: { canViewAll: true, canViewOwn: false, canCreate: false, canEdit: true, canCancel: false, canReschedule: false },
+    examenes: { canViewAll: false, canViewOwn: false, canCreate: false, canEdit: false, canCertify: false },
+    recetas: { canCreate: false, canView: false, canEdit: false, canPrint: false, canDigitalSign: false },
+    historial: { canViewFull: false, canViewOwn: false, canAddNotes: false, canEdit: false },
+    facturacion: { canView: false, canCreate: false, canEdit: false, canApprove: false },
+    inventario: { canView: false, canManage: false, canOrder: false },
+    reportes: { canView: true, canGenerate: false, canExport: false },
+    ia: { canAccess: false, canUseAssistant: false },
+    tienda: { canView: false, canPurchase: false, canManageProducts: false },
+    rayos_x: { canView: false, canUpload: false, canAnnotate: false },
+    alertas: { canView: true, canManage: false, canReceive: true },
+    rrhh: { canView: false, canManageEmpleados: false, canManageAsistencia: false, canManageVacaciones: false, canManageIncidencias: false, canViewOrganigrama: false }
+  }
+}
+
+// Mapeo de roles a configuraciones - SaaS Multi-Tenant
 export const ROLE_CONFIG: Record<UserRole, RoleViewConfig> = {
+  // Nivel Plataforma
   super_admin: SUPER_ADMIN_CONFIG,
+  admin_saas: ADMIN_SAAS_CONFIG,
+  contador_saas: CONTADOR_SAAS_CONFIG,
+  // Nivel Empresa
   admin_empresa: ADMIN_EMPRESA_CONFIG,
   medico: MEDICO_CONFIG,
-  paciente: PACIENTE_CONFIG,
-  medico_especialista: MEDICO_CONFIG,
-  medico_trabajo: MEDICO_CONFIG,
   enfermera: ENFERMERA_CONFIG,
-  audiometrista: MEDICO_CONFIG,
-  psicologo_laboral: MEDICO_CONFIG,
-  tecnico_ergonomico: MEDICO_CONFIG,
   recepcion: RECEPCION_CONFIG,
-  medico_industrial: MEDICO_CONFIG,
-  bot: PACIENTE_CONFIG
+  asistente: ASISTENTE_CONFIG,
+  paciente: PACIENTE_CONFIG
 }
 
 // Helper para obtener configuración de rol

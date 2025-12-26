@@ -24,30 +24,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { mockDataService } from '@/services/mockDataService'
+import { pacientesService, Paciente } from '@/services/dataService'
 import { AnatomyViewer } from '@/components/dashboard/AnatomyViewer'
 import { PrescriptionEditor } from '@/components/medicina/PrescriptionEditor'
 import { ClinicalRecordView } from '@/components/medicina/ClinicalRecordView'
 import { WorkHistoryTimeline } from '@/components/dashboard/WorkHistoryTimeline'
 import { PatientStats } from '@/components/patients/PatientStats'
 import toast from 'react-hot-toast'
-
-// Tipos
-interface Paciente {
-  id: string
-  numero_empleado: string
-  nombre: string
-  apellido_paterno: string
-  apellido_materno: string
-  genero: string
-  fecha_nacimiento: string
-  estatus: string
-  foto_url?: string
-  puesto_trabajo?: {
-    nombre: string
-    departamento: string
-  }
-}
 
 export function Pacientes() {
   const [pacientes, setPacientes] = useState<Paciente[]>([])
@@ -57,22 +40,17 @@ export function Pacientes() {
   const [viewMode, setViewMode] = useState<'details' | 'prescription' | 'history'>('details')
   const [activeFilter, setActiveFilter] = useState('all')
 
-  // Simulación de usuario actual
-  const currentUser = {
-    role: 'super_admin' as const,
-    id: 'user-admin-1',
-    empresa_id: 'empresa-demo-1'
-  }
-
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true)
-        const data = await mockDataService.getPacientes(currentUser)
+        // Usar servicio real de Supabase
+        const data = await pacientesService.getAll()
         setPacientes(data)
+        console.log('✅ Pacientes cargados desde Supabase:', data.length)
       } catch (error) {
-        console.error(error)
-        toast.error('Error al cargar pacientes')
+        console.error('Error al cargar pacientes:', error)
+        toast.error('Error al cargar pacientes desde la base de datos')
       } finally {
         setLoading(false)
       }

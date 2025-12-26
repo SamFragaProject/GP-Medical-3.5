@@ -24,50 +24,50 @@ interface RoleBasedNavigationProps {
   sidebarOpen?: boolean
 }
 
-// Configuración de permisos por módulo
+// Configuración de permisos por módulo - SaaS Multi-Tenant
 const MODULE_PERMISSIONS = {
   dashboard: {
-    roles: ['super_admin', 'admin_empresa', 'medico_trabajo', 'medico_industrial', 'recepcion', 'paciente'],
+    roles: ['super_admin', 'admin_saas', 'contador_saas', 'admin_empresa', 'medico', 'enfermera', 'recepcion', 'asistente', 'paciente'],
     permissions: []
   },
   pacientes: {
-    roles: ['super_admin', 'admin_empresa', 'medico_trabajo', 'medico_industrial', 'recepcion'],
+    roles: ['super_admin', 'admin_saas', 'admin_empresa', 'medico', 'enfermera', 'recepcion', 'asistente'],
     permissions: ['patients_manage']
   },
   agenda: {
-    roles: ['super_admin', 'admin_empresa', 'medico_trabajo', 'medico_industrial', 'recepcion'],
+    roles: ['super_admin', 'admin_saas', 'admin_empresa', 'medico', 'enfermera', 'recepcion', 'asistente'],
     permissions: []
   },
   examenes: {
-    roles: ['super_admin', 'admin_empresa', 'medico_trabajo', 'medico_industrial'],
+    roles: ['super_admin', 'admin_saas', 'admin_empresa', 'medico'],
     permissions: ['exams_manage']
   },
   'rayos-x': {
-    roles: ['super_admin', 'admin_empresa', 'medico_trabajo', 'medico_industrial'],
+    roles: ['super_admin', 'admin_saas', 'admin_empresa', 'medico'],
     permissions: ['medical_view', 'exams_manage']
   },
   evaluaciones: {
-    roles: ['super_admin', 'admin_empresa', 'medico_trabajo', 'medico_industrial'],
+    roles: ['super_admin', 'admin_saas', 'admin_empresa', 'medico'],
     permissions: ['exams_manage']
   },
   ia: {
-    roles: ['super_admin', 'admin_empresa', 'medico_trabajo', 'medico_industrial'],
+    roles: ['super_admin', 'admin_saas', 'admin_empresa', 'medico'],
     permissions: ['medical_view']
   },
   certificaciones: {
-    roles: ['super_admin', 'admin_empresa', 'medico_trabajo', 'medico_industrial'],
+    roles: ['super_admin', 'admin_saas', 'admin_empresa', 'medico'],
     permissions: ['exams_manage']
   },
   inventario: {
-    roles: ['super_admin', 'admin_empresa'],
+    roles: ['super_admin', 'admin_saas', 'admin_empresa'],
     permissions: ['inventory_manage']
   },
   facturacion: {
-    roles: ['super_admin', 'admin_empresa', 'medico_trabajo', 'recepcion'],
+    roles: ['super_admin', 'admin_saas', 'contador_saas', 'admin_empresa', 'recepcion'],
     permissions: ['billing_view']
   },
   reportes: {
-    roles: ['super_admin', 'admin_empresa', 'medico_trabajo', 'medico_industrial'],
+    roles: ['super_admin', 'admin_saas', 'contador_saas', 'admin_empresa', 'medico'],
     permissions: ['reports_view']
   },
   configuracion: {
@@ -97,15 +97,15 @@ export function RoleBasedNavigation({ navigationItems, sidebarOpen = true }: Rol
       name: user?.name,
       isSuperAdmin: user?.hierarchy === 'super_admin',
       hasStarPermission: user?.permissions.includes('*'),
-      isMedicoTrabajo: user?.hierarchy === 'medico_trabajo',
+      isMedico: user?.hierarchy === 'medico',
       hasMedicalView: user?.permissions?.includes('medical_view'),
       hasBillingView: user?.permissions?.includes('billing_view'),
       hasPatientsManage: user?.permissions?.includes('patients_manage')
     })
 
-    // DEBUG ESPECÍFICO PARA MÉDICO TRABAJO
-    if (user?.hierarchy === 'medico_trabajo') {
-      console.log('👨‍⚕️ MÉDICO TRABAJO CARGADO - Verificando permisos:')
+    // DEBUG ESPECÍFICO PARA MÉDICO
+    if (user?.hierarchy === 'medico') {
+      console.log('👨‍⚕️ MÉDICO CARGADO - Verificando permisos:')
       console.log('  ✅ Tiene medical_view:', user.permissions.includes('medical_view'))
       console.log('  ✅ Tiene patients_manage:', user.permissions.includes('patients_manage'))
       console.log('  ✅ Tiene exams_manage:', user.permissions.includes('exams_manage'))
@@ -151,21 +151,21 @@ export function RoleBasedNavigation({ navigationItems, sidebarOpen = true }: Rol
     console.log('  - Hierarchy:', user.hierarchy)
     console.log('  - Permisos:', user.permissions)
 
-    // LÓGICA ESPECIAL PARA MÉDICO TRABAJO - MÁS PERMISIVO
-    if (user.hierarchy === 'medico_trabajo') {
-      console.log('👨‍⚕️ MÉDICO TRABAJO - Aplicando lógica permisiva especial')
+    // LÓGICA ESPECIAL PARA MÉDICO - MÁS PERMISIVO
+    if (user.hierarchy === 'medico') {
+      console.log('👨‍⚕️ MÉDICO - Aplicando lógica permisiva especial')
 
-      // Si es médico trabajo y tiene medical_view, permitir acceso a TODAS las secciones médicas
+      // Si es médico y tiene medical_view, permitir acceso a TODAS las secciones médicas
       const isMedicalRoute = ['dashboard', 'pacientes', 'agenda', 'examenes', 'rayos-x', 'evaluaciones', 'ia', 'certificaciones', 'reportes'].includes(path.replace('/dashboard/', '').replace('/dashboard', 'dashboard'))
 
       if (isMedicalRoute && (user.permissions.includes('medical_view') || user.permissions.includes('patients_manage') || user.permissions.includes('exams_manage'))) {
-        console.log('✅ MÉDICO TRABAJO: Acceso permitido por lógica médica especial')
+        console.log('✅ MÉDICO: Acceso permitido por lógica médica especial')
         return true
       }
 
       // Para facturación, verificar billing_view
       if (path.includes('facturacion') && user.permissions.includes('billing_view')) {
-        console.log('✅ MÉDICO TRABAJO: Acceso a facturación permitido por billing_view')
+        console.log('✅ MÉDICO: Acceso a facturación permitido por billing_view')
         return true
       }
     }
@@ -390,20 +390,20 @@ export function useModulePermission(modulePath: string) {
       return true
     }
 
-    // LÓGICA ESPECIAL PARA MÉDICO TRABAJO
-    if (user.hierarchy === 'medico_trabajo') {
-      // Si es médico trabajo y tiene medical_view, permitir acceso a TODAS las secciones médicas
+    // LÓGICA ESPECIAL PARA MÉDICO
+    if (user.hierarchy === 'medico') {
+      // Si es médico y tiene medical_view, permitir acceso a TODAS las secciones médicas
       const pathKey = modulePath.replace('/dashboard/', '').replace('/dashboard', 'dashboard')
       const isMedicalRoute = ['dashboard', 'pacientes', 'agenda', 'examenes', 'rayos-x', 'evaluaciones', 'ia', 'certificaciones', 'reportes'].includes(pathKey)
 
       if (isMedicalRoute && (user.permissions.includes('medical_view') || user.permissions.includes('patients_manage') || user.permissions.includes('exams_manage'))) {
-        console.log(`✅ Hook useModulePermission: MÉDICO TRABAJO acceso especial a ${modulePath}`)
+        console.log(`✅ Hook useModulePermission: MÉDICO acceso especial a ${modulePath}`)
         return true
       }
 
       // Para facturación
       if (pathKey === 'facturacion' && user.permissions.includes('billing_view')) {
-        console.log(`✅ Hook useModulePermission: MÉDICO TRABAJO acceso a facturación ${modulePath}`)
+        console.log(`✅ Hook useModulePermission: MÉDICO acceso a facturación ${modulePath}`)
         return true
       }
     }

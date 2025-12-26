@@ -12,21 +12,19 @@ export type Section = {
   badge?: string | number
 }
 
-// Mantener compatibilidad con código existente
+// Mantener compatibilidad con código existente - SaaS Multi-Tenant
 export const ROLE_SECTIONS: Record<UserRole, Section[]> = {
+  // Nivel Plataforma
   super_admin: getNavigationForRole('super_admin'),
+  admin_saas: getNavigationForRole('admin_saas'),
+  contador_saas: getNavigationForRole('contador_saas'),
+  // Nivel Empresa
   admin_empresa: getNavigationForRole('admin_empresa'),
   medico: getNavigationForRole('medico'),
-  paciente: getNavigationForRole('paciente'),
-  medico_especialista: getNavigationForRole('medico_especialista'),
-  medico_trabajo: getNavigationForRole('medico_trabajo'),
   enfermera: getNavigationForRole('enfermera'),
-  audiometrista: getNavigationForRole('audiometrista'),
-  psicologo_laboral: getNavigationForRole('psicologo_laboral'),
-  tecnico_ergonomico: getNavigationForRole('tecnico_ergonomico'),
   recepcion: getNavigationForRole('recepcion'),
-  medico_industrial: getNavigationForRole('medico_industrial'),
-  bot: getNavigationForRole('bot')
+  asistente: getNavigationForRole('asistente'),
+  paciente: getNavigationForRole('paciente')
 }
 
 export function getSectionsForRole(role: UserRole) {

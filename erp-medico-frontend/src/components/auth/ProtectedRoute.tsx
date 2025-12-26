@@ -38,6 +38,8 @@ export function ProtectedRoute({ children, resource, requireAction = 'read' }: P
             'citas': 'citas',
             'agenda': 'citas', // Agenda usa permisos de citas
             'examenes': 'examenes',
+            'evaluaciones': 'examenes', // Evaluaciones usa permisos de examenes
+            'certificaciones': 'examenes', // Certificaciones usa permisos de examenes
             'recetas': 'recetas',
             'historial': 'historial',
             'facturacion': 'facturacion',
