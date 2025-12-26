@@ -164,19 +164,20 @@ export interface RoleViewConfig {
 const SUPER_ADMIN_CONFIG: RoleViewConfig = {
   navigation: [
     { title: 'Dashboard', path: '/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-purple-500 to-pink-500', visible: true },
-    { title: 'Empresas', path: '/empresas', resource: 'empresas', icon: Building2, gradient: 'from-blue-500 to-cyan-500', visible: true },
-    { title: 'Super Admin', path: '/super-admin', resource: 'sistema', icon: Crown, gradient: 'from-yellow-500 to-orange-500', visible: true },
+    // OCULTOS: Secciones sin funcionalidad real implementada
+    // { title: 'Empresas', path: '/empresas', resource: 'empresas', icon: Building2, gradient: 'from-blue-500 to-cyan-500', visible: false },
+    // { title: 'Super Admin', path: '/super-admin', resource: 'sistema', icon: Crown, gradient: 'from-yellow-500 to-orange-500', visible: false },
     { title: 'Usuarios', path: '/usuarios', resource: 'usuarios', icon: Users, gradient: 'from-green-500 to-emerald-500', visible: true },
     { title: 'Pacientes', path: '/pacientes', resource: 'pacientes', icon: Users, gradient: 'from-green-500 to-emerald-500', visible: true },
     { title: 'Agenda', path: '/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
     { title: 'Exámenes', path: '/examenes', resource: 'examenes', icon: Stethoscope, gradient: 'from-red-500 to-orange-500', visible: true },
-    { title: 'Analytics', path: '/analytics', resource: 'analytics', icon: BarChart3, gradient: 'from-indigo-500 to-purple-500', visible: true },
+    // { title: 'Analytics', path: '/analytics', resource: 'analytics', icon: BarChart3, gradient: 'from-indigo-500 to-purple-500', visible: false },
     { title: 'Configuración', path: '/configuracion', resource: 'configuracion', icon: Settings, gradient: 'from-gray-500 to-slate-600', visible: true },
-    // Nuevos
+    // Nuevos - algunos deshabilitados temporalmente
     { title: 'IA Asistente', path: '/ia', resource: 'ia', icon: Sparkles, gradient: 'from-violet-500 to-fuchsia-500', visible: true },
-    { title: 'Tienda', path: '/tienda', resource: 'tienda', icon: Package, gradient: 'from-orange-500 to-red-500', visible: true },
+    // { title: 'Tienda', path: '/tienda', resource: 'tienda', icon: Package, gradient: 'from-orange-500 to-red-500', visible: false },
     { title: 'Rayos X', path: '/rayos-x', resource: 'rayos_x', icon: Activity, gradient: 'from-blue-600 to-cyan-600', visible: true },
-    { title: 'Alertas', path: '/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: true },
+    // { title: 'Alertas', path: '/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: false },
     { title: 'RRHH', path: '/rrhh', resource: 'rrhh', icon: Briefcase, gradient: 'from-violet-500 to-purple-600', visible: true }
   ],
   dashboard: {
