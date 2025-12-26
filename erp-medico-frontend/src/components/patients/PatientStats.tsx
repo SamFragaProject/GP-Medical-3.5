@@ -1,13 +1,43 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Users, UserCheck, UserX, Activity } from 'lucide-react'
+import { Users, UserCheck, UserX, Activity, Loader2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { pacientesService } from '@/services/dataService'
 
 export function PatientStats() {
-    const stats = [
+    const [stats, setStats] = useState({
+        total: 0,
+        aptos: 0,
+        restricciones: 0,
+        noAptos: 0
+    })
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const loadStats = async () => {
+            try {
+                const pacientes = await pacientesService.getAll()
+                // Calcular estadísticas por estatus
+                const total = pacientes.length
+                const aptos = pacientes.filter(p => p.estatus === 'apto' || p.estatus === 'activo').length
+                const restricciones = pacientes.filter(p => p.estatus === 'restriccion').length
+                const noAptos = pacientes.filter(p => p.estatus === 'no_apto' || p.estatus === 'inactivo').length
+
+                setStats({ total, aptos: aptos || total, restricciones, noAptos })
+                console.log('✅ PatientStats cargadas desde Supabase:', { total, aptos, restricciones, noAptos })
+            } catch (error) {
+                console.error('Error cargando estadísticas de pacientes:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+        loadStats()
+    }, [])
+
+    const statsConfig = [
         {
             title: 'Total Pacientes',
-            value: '1,248',
+            value: loading ? '-' : stats.total.toLocaleString(),
             trend: '+12%',
             trendUp: true,
             icon: Users,
@@ -17,7 +47,7 @@ export function PatientStats() {
         },
         {
             title: 'Aptos',
-            value: '856',
+            value: loading ? '-' : stats.aptos.toLocaleString(),
             trend: '+5%',
             trendUp: true,
             icon: UserCheck,
@@ -27,7 +57,7 @@ export function PatientStats() {
         },
         {
             title: 'Con Restricciones',
-            value: '142',
+            value: loading ? '-' : stats.restricciones.toLocaleString(),
             trend: '-2%',
             trendUp: false,
             icon: Activity,
@@ -37,7 +67,7 @@ export function PatientStats() {
         },
         {
             title: 'No Aptos',
-            value: '24',
+            value: loading ? '-' : stats.noAptos.toLocaleString(),
             trend: '-8%',
             trendUp: false,
             icon: UserX,
@@ -49,7 +79,7 @@ export function PatientStats() {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {stats.map((stat, index) => (
+            {statsConfig.map((stat, index) => (
                 <motion.div
                     key={index}
                     initial={{ opacity: 0, y: 20 }}
@@ -61,7 +91,9 @@ export function PatientStats() {
                             <div>
                                 <p className="text-sm font-medium text-gray-500">{stat.title}</p>
                                 <div className="flex items-baseline gap-2 mt-1">
-                                    <h3 className="text-2xl font-bold text-gray-900">{stat.value}</h3>
+                                    <h3 className="text-2xl font-bold text-gray-900">
+                                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : stat.value}
+                                    </h3>
                                     <span className={`text-xs font-medium ${stat.trendUp ? 'text-emerald-600' : 'text-rose-600'}`}>
                                         {stat.trend}
                                     </span>
@@ -77,3 +109,4 @@ export function PatientStats() {
         </div>
     )
 }
+
