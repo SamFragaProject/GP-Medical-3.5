@@ -129,7 +129,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true)
 
-      // Intentar login con Supabase
+      // DEMO USERS - Verificar primero para que siempre funcionen
+      const demoUsers: Record<string, { password: string; user: User }> = {
+        'sam@mediflow.com': {
+          password: 'sam123',
+          user: {
+            id: 'demo-sam-id',
+            email: 'sam@mediflow.com',
+            nombre: 'Sam',
+            apellido_paterno: 'Fraga',
+            rol: 'super_admin',
+            created_at: new Date().toISOString()
+          }
+        },
+        'ana@mediflow.com': {
+          password: 'ana123',
+          user: {
+            id: 'demo-ana-id',
+            email: 'ana@mediflow.com',
+            nombre: 'Ana',
+            apellido_paterno: 'García',
+            rol: 'admin_empresa',
+            empresa_id: 'demo-empresa-1',
+            created_at: new Date().toISOString()
+          }
+        },
+        'dr.roberto@mediflow.com': {
+          password: 'roberto123',
+          user: {
+            id: 'demo-roberto-id',
+            email: 'dr.roberto@mediflow.com',
+            nombre: 'Dr. Roberto',
+            apellido_paterno: 'Méndez',
+            rol: 'medico',
+            empresa_id: 'demo-empresa-1',
+            created_at: new Date().toISOString()
+          }
+        },
+        'maria@mediflow.com': {
+          password: 'maria123',
+          user: {
+            id: 'demo-maria-id',
+            email: 'maria@mediflow.com',
+            nombre: 'María',
+            apellido_paterno: 'López',
+            rol: 'paciente',
+            empresa_id: 'demo-empresa-1',
+            created_at: new Date().toISOString()
+          }
+        }
+      }
+
+      // Verificar si es un usuario demo
+      const demoEntry = demoUsers[email.toLowerCase()]
+      if (demoEntry && demoEntry.password === password) {
+        console.log('✅ Demo user login:', email)
+        setUser(demoEntry.user)
+        localStorage.setItem('mediflow_user', JSON.stringify(demoEntry.user))
+        toast.success(`Bienvenido ${demoEntry.user.nombre} (Demo)`)
+        return
+      }
+
+      // Intentar login con Supabase para usuarios reales
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -159,30 +220,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         toast.success(`Bienvenido ${finalUser.nombre}`)
       }
     } catch (error: any) {
-      console.error('Error en Supabase login:', error)
-      const msg = error.message.toLowerCase()
-
-      // FALLBACK MODO OFFLINE / DEMO
-      if (msg.includes('fetch') || msg.includes('network') || msg.includes('connection')) {
-        console.warn('⚠️ Fallo conexión Supabase. Usando Modo Offline de Emergencia.')
-
-        // Verificar credenciales hardcodeadas para emergencias
-        if (email === 'sam@mediflow.com' && password === 'sam123') {
-          const mockUser: User = {
-            id: 'mock-sam-id',
-            email: 'sam@mediflow.com',
-            nombre: 'Sam (Offline)',
-            apellido_paterno: 'Fraga',
-            rol: 'super_admin',
-            created_at: new Date().toISOString()
-          }
-          setUser(mockUser)
-          localStorage.setItem('mediflow_user', JSON.stringify(mockUser))
-          toast.success('⚠️ Modo Offline Activado: Bienvenido Sam')
-          return
-        }
-      }
-
+      console.error('Error en login:', error)
       toast.error(error.message || 'Error al iniciar sesión')
       throw error
     } finally {
