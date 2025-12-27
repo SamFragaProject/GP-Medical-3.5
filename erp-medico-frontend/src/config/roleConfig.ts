@@ -164,24 +164,24 @@ export interface RoleViewConfig {
 const SUPER_ADMIN_CONFIG: RoleViewConfig = {
   navigation: [
     // Dashboard Principal
-    { title: 'Dashboard', path: '/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-purple-500 to-pink-500', visible: true },
+    { title: 'Dashboard', path: '/platform/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-purple-500 to-pink-500', visible: true },
 
     // Gestión SaaS (Nivel Plataforma)
-    { title: 'Empresas', path: '/empresas', resource: 'empresas', icon: Building2, gradient: 'from-blue-500 to-cyan-500', visible: true },
-    { title: 'Usuarios', path: '/usuarios', resource: 'usuarios', icon: Users, gradient: 'from-green-500 to-emerald-500', visible: true },
+    { title: 'Empresas', path: '/platform/empresas', resource: 'empresas', icon: Building2, gradient: 'from-blue-500 to-cyan-500', visible: true },
+    { title: 'Usuarios', path: '/platform/usuarios', resource: 'usuarios', icon: Users, gradient: 'from-green-500 to-emerald-500', visible: true },
 
     // Gestión Clínica (Nivel Operativo)
-    { title: 'Pacientes', path: '/pacientes', resource: 'pacientes', icon: Users, gradient: 'from-green-500 to-emerald-500', visible: true },
-    { title: 'Agenda', path: '/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
-    { title: 'Exámenes', path: '/examenes', resource: 'examenes', icon: Stethoscope, gradient: 'from-red-500 to-orange-500', visible: true },
-    { title: 'Rayos X', path: '/rayos-x', resource: 'rayos_x', icon: Activity, gradient: 'from-blue-600 to-cyan-600', visible: true },
+    { title: 'Pacientes', path: '/platform/pacientes', resource: 'pacientes', icon: Users, gradient: 'from-green-500 to-emerald-500', visible: true },
+    { title: 'Agenda', path: '/platform/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
+    { title: 'Exámenes', path: '/platform/examenes', resource: 'examenes', icon: Stethoscope, gradient: 'from-red-500 to-orange-500', visible: true },
+    { title: 'Rayos X', path: '/platform/rayos-x', resource: 'rayos_x', icon: Activity, gradient: 'from-blue-600 to-cyan-600', visible: true },
 
     // Administración Interna
-    { title: 'RRHH', path: '/rrhh', resource: 'rrhh', icon: Briefcase, gradient: 'from-violet-500 to-purple-600', visible: true },
-    { title: 'Configuración', path: '/configuracion', resource: 'configuracion', icon: Settings, gradient: 'from-gray-500 to-slate-600', visible: true },
+    { title: 'RRHH', path: '/platform/rrhh', resource: 'rrhh', icon: Briefcase, gradient: 'from-violet-500 to-purple-600', visible: true },
+    { title: 'Configuración', path: '/platform/configuracion', resource: 'configuracion', icon: Settings, gradient: 'from-gray-500 to-slate-600', visible: true },
 
     // Herramientas Avanzadas & IA
-    { title: 'IA Asistente', path: '/ia', resource: 'ia', icon: Sparkles, gradient: 'from-violet-500 to-fuchsia-500', visible: true },
+    { title: 'IA Asistente', path: '/platform/ia', resource: 'ia', icon: Sparkles, gradient: 'from-violet-500 to-fuchsia-500', visible: true },
     // { title: 'Tienda', path: '/tienda', resource: 'tienda', icon: Package, gradient: 'from-orange-500 to-red-500', visible: false },
     // { title: 'Alertas', path: '/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: false },
   ],
@@ -227,21 +227,21 @@ const SUPER_ADMIN_CONFIG: RoleViewConfig = {
 
 const ADMIN_EMPRESA_CONFIG: RoleViewConfig = {
   navigation: [
-    { title: 'Dashboard', path: '/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-blue-500 to-cyan-500', visible: true },
-    { title: 'Pacientes', path: '/pacientes', resource: 'pacientes', icon: Users, gradient: 'from-green-500 to-emerald-500', visible: true },
-    { title: 'Agenda', path: '/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
-    { title: 'Exámenes', path: '/examenes', resource: 'examenes', icon: Stethoscope, gradient: 'from-red-500 to-orange-500', visible: true },
-    { title: 'Personal Médico', path: '/medicos', resource: 'usuarios', icon: UserCheck, gradient: 'from-teal-500 to-cyan-500', visible: true },
-    { title: 'Sedes', path: '/sedes', resource: 'sedes', icon: Building2, gradient: 'from-indigo-500 to-blue-500', visible: true },
-    { title: 'Facturación', path: '/facturacion', resource: 'facturacion', icon: CreditCard, gradient: 'from-yellow-500 to-amber-500', visible: true },
-    { title: 'Inventario', path: '/inventario', resource: 'inventario', icon: Package, gradient: 'from-lime-500 to-green-500', visible: true },
-    { title: 'Reportes', path: '/reportes', resource: 'reportes', icon: BarChart3, gradient: 'from-violet-500 to-purple-500', visible: true },
-    { title: 'Configuración', path: '/configuracion', resource: 'configuracion', icon: Settings, gradient: 'from-gray-500 to-slate-600', visible: true },
+    { title: 'Dashboard', path: '/app/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-blue-500 to-cyan-500', visible: true },
+    { title: 'Pacientes', path: '/app/pacientes', resource: 'pacientes', icon: Users, gradient: 'from-green-500 to-emerald-500', visible: true },
+    { title: 'Agenda', path: '/app/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
+    { title: 'Exámenes', path: '/app/examenes', resource: 'examenes', icon: Stethoscope, gradient: 'from-red-500 to-orange-500', visible: true },
+    { title: 'Personal Médico', path: '/app/medicos', resource: 'usuarios', icon: UserCheck, gradient: 'from-teal-500 to-cyan-500', visible: true },
+    { title: 'Sedes', path: '/app/sedes', resource: 'sedes', icon: Building2, gradient: 'from-indigo-500 to-blue-500', visible: true },
+    { title: 'Facturación', path: '/app/facturacion', resource: 'facturacion', icon: CreditCard, gradient: 'from-yellow-500 to-amber-500', visible: true },
+    { title: 'Inventario', path: '/app/inventario', resource: 'inventario', icon: Package, gradient: 'from-lime-500 to-green-500', visible: true },
+    { title: 'Reportes', path: '/app/reportes', resource: 'reportes', icon: BarChart3, gradient: 'from-violet-500 to-purple-500', visible: true },
+    { title: 'Configuración', path: '/app/configuracion', resource: 'configuracion', icon: Settings, gradient: 'from-gray-500 to-slate-600', visible: true },
     // Nuevos
-    { title: 'IA Asistente', path: '/ia', resource: 'ia', icon: Sparkles, gradient: 'from-violet-500 to-fuchsia-500', visible: true },
-    { title: 'Tienda', path: '/tienda', resource: 'tienda', icon: Package, gradient: 'from-orange-500 to-red-500', visible: true },
-    { title: 'Rayos X', path: '/rayos-x', resource: 'rayos_x', icon: Activity, gradient: 'from-blue-600 to-cyan-600', visible: true },
-    { title: 'Alertas', path: '/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: true }
+    { title: 'IA Asistente', path: '/app/ia', resource: 'ia', icon: Sparkles, gradient: 'from-violet-500 to-fuchsia-500', visible: true },
+    { title: 'Tienda', path: '/app/tienda', resource: 'tienda', icon: Package, gradient: 'from-orange-500 to-red-500', visible: true },
+    { title: 'Rayos X', path: '/app/rayos-x', resource: 'rayos_x', icon: Activity, gradient: 'from-blue-600 to-cyan-600', visible: true },
+    { title: 'Alertas', path: '/app/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: true }
   ],
   dashboard: {
     showKPIs: true,
@@ -285,18 +285,18 @@ const ADMIN_EMPRESA_CONFIG: RoleViewConfig = {
 
 const MEDICO_CONFIG: RoleViewConfig = {
   navigation: [
-    { title: 'Mi Dashboard', path: '/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-green-500 to-emerald-500', visible: true },
-    { title: 'Mis Pacientes', path: '/pacientes', resource: 'pacientes', icon: Users, gradient: 'from-blue-500 to-cyan-500', visible: true },
-    { title: 'Mi Agenda', path: '/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
-    { title: 'Exámenes', path: '/examenes', resource: 'examenes', icon: Microscope, gradient: 'from-red-500 to-orange-500', visible: true },
-    { title: 'Evaluaciones', path: '/evaluaciones', resource: 'evaluaciones', icon: ClipboardCheck, gradient: 'from-teal-500 to-cyan-500', visible: true },
-    { title: 'Certificaciones', path: '/certificaciones', resource: 'certificaciones', icon: FileText, gradient: 'from-indigo-500 to-blue-500', visible: true },
-    { title: 'Mis Reportes', path: '/reportes', resource: 'reportes', icon: Activity, gradient: 'from-violet-500 to-purple-500', visible: true },
+    { title: 'Mi Dashboard', path: '/app/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-green-500 to-emerald-500', visible: true },
+    { title: 'Mis Pacientes', path: '/app/pacientes', resource: 'pacientes', icon: Users, gradient: 'from-blue-500 to-cyan-500', visible: true },
+    { title: 'Mi Agenda', path: '/app/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
+    { title: 'Exámenes', path: '/app/examenes', resource: 'examenes', icon: Microscope, gradient: 'from-red-500 to-orange-500', visible: true },
+    { title: 'Evaluaciones', path: '/app/evaluaciones', resource: 'evaluaciones', icon: ClipboardCheck, gradient: 'from-teal-500 to-cyan-500', visible: true },
+    { title: 'Certificaciones', path: '/app/certificaciones', resource: 'certificaciones', icon: FileText, gradient: 'from-indigo-500 to-blue-500', visible: true },
+    { title: 'Mis Reportes', path: '/app/reportes', resource: 'reportes', icon: Activity, gradient: 'from-violet-500 to-purple-500', visible: true },
     // Nuevos
-    { title: 'IA Asistente', path: '/ia', resource: 'ia', icon: Sparkles, gradient: 'from-violet-500 to-fuchsia-500', visible: true },
-    { title: 'Tienda', path: '/tienda', resource: 'tienda', icon: Package, gradient: 'from-orange-500 to-red-500', visible: true },
-    { title: 'Rayos X', path: '/rayos-x', resource: 'rayos_x', icon: Activity, gradient: 'from-blue-600 to-cyan-600', visible: true },
-    { title: 'Alertas', path: '/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: true }
+    { title: 'IA Asistente', path: '/app/ia', resource: 'ia', icon: Sparkles, gradient: 'from-violet-500 to-fuchsia-500', visible: true },
+    { title: 'Tienda', path: '/app/tienda', resource: 'tienda', icon: Package, gradient: 'from-orange-500 to-red-500', visible: true },
+    { title: 'Rayos X', path: '/app/rayos-x', resource: 'rayos_x', icon: Activity, gradient: 'from-blue-600 to-cyan-600', visible: true },
+    { title: 'Alertas', path: '/app/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: true }
   ],
   dashboard: {
     showKPIs: true,
@@ -340,16 +340,16 @@ const MEDICO_CONFIG: RoleViewConfig = {
 
 const PACIENTE_CONFIG: RoleViewConfig = {
   navigation: [
-    { title: 'Mi Panel', path: '/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-blue-500 to-cyan-500', visible: true },
-    { title: 'Mi Perfil', path: '/perfil', resource: 'perfil', icon: UserCheck, gradient: 'from-orange-500 to-red-500', visible: true },
-    { title: 'Mis Citas', path: '/citas', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
-    { title: 'Mis Exámenes', path: '/examenes', resource: 'examenes', icon: Stethoscope, gradient: 'from-blue-500 to-cyan-500', visible: true },
-    { title: 'Mis Resultados', path: '/resultados', resource: 'reportes', icon: FileText, gradient: 'from-green-500 to-emerald-500', visible: true },
-    { title: 'Mi Historial', path: '/historial', resource: 'reportes', icon: History, gradient: 'from-indigo-500 to-purple-500', visible: true },
+    { title: 'Mi Panel', path: '/app/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-blue-500 to-cyan-500', visible: true },
+    { title: 'Mi Perfil', path: '/app/perfil', resource: 'perfil', icon: UserCheck, gradient: 'from-orange-500 to-red-500', visible: true },
+    { title: 'Mis Citas', path: '/app/citas', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
+    { title: 'Mis Exámenes', path: '/app/examenes', resource: 'examenes', icon: Stethoscope, gradient: 'from-blue-500 to-cyan-500', visible: true },
+    { title: 'Mis Resultados', path: '/app/resultados', resource: 'reportes', icon: FileText, gradient: 'from-green-500 to-emerald-500', visible: true },
+    { title: 'Mi Historial', path: '/app/historial', resource: 'reportes', icon: History, gradient: 'from-indigo-500 to-purple-500', visible: true },
     // Nuevos
-    { title: 'Tienda', path: '/tienda', resource: 'tienda', icon: Package, gradient: 'from-orange-500 to-red-500', visible: true },
-    { title: 'Rayos X', path: '/rayos-x', resource: 'rayos_x', icon: Activity, gradient: 'from-blue-600 to-cyan-600', visible: true },
-    { title: 'Alertas', path: '/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: true }
+    { title: 'Tienda', path: '/app/tienda', resource: 'tienda', icon: Package, gradient: 'from-orange-500 to-red-500', visible: true },
+    { title: 'Rayos X', path: '/app/rayos-x', resource: 'rayos_x', icon: Activity, gradient: 'from-blue-600 to-cyan-600', visible: true },
+    { title: 'Alertas', path: '/app/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: true }
   ],
   dashboard: {
     showKPIs: false,
@@ -393,11 +393,11 @@ const PACIENTE_CONFIG: RoleViewConfig = {
 
 const ENFERMERA_CONFIG: RoleViewConfig = {
   navigation: [
-    { title: 'Mi Dashboard', path: '/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-pink-500 to-rose-500', visible: true },
-    { title: 'Pacientes', path: '/pacientes', resource: 'pacientes', icon: Users, gradient: 'from-blue-500 to-cyan-500', visible: true },
-    { title: 'Agenda', path: '/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
-    { title: 'Signos Vitales', path: '/examenes', resource: 'examenes', icon: Heart, gradient: 'from-red-500 to-pink-500', visible: true },
-    { title: 'Alertas', path: '/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: true }
+    { title: 'Mi Dashboard', path: '/app/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-pink-500 to-rose-500', visible: true },
+    { title: 'Pacientes', path: '/app/pacientes', resource: 'pacientes', icon: Users, gradient: 'from-blue-500 to-cyan-500', visible: true },
+    { title: 'Agenda', path: '/app/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
+    { title: 'Signos Vitales', path: '/app/examenes', resource: 'examenes', icon: Heart, gradient: 'from-red-500 to-pink-500', visible: true },
+    { title: 'Alertas', path: '/app/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: true }
   ],
   dashboard: {
     showKPIs: true,
@@ -441,11 +441,11 @@ const ENFERMERA_CONFIG: RoleViewConfig = {
 
 const RECEPCION_CONFIG: RoleViewConfig = {
   navigation: [
-    { title: 'Dashboard', path: '/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-cyan-500 to-blue-500', visible: true },
-    { title: 'Pacientes', path: '/pacientes', resource: 'pacientes', icon: Users, gradient: 'from-green-500 to-emerald-500', visible: true },
-    { title: 'Agenda', path: '/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
-    { title: 'Nueva Cita', path: '/agenda/nueva', resource: 'citas', icon: Plus, gradient: 'from-blue-500 to-cyan-500', visible: true },
-    { title: 'Facturación', path: '/facturacion', resource: 'facturacion', icon: CreditCard, gradient: 'from-yellow-500 to-amber-500', visible: true }
+    { title: 'Dashboard', path: '/app/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-cyan-500 to-blue-500', visible: true },
+    { title: 'Pacientes', path: '/app/pacientes', resource: 'pacientes', icon: Users, gradient: 'from-green-500 to-emerald-500', visible: true },
+    { title: 'Agenda', path: '/app/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
+    { title: 'Nueva Cita', path: '/app/agenda/nueva', resource: 'citas', icon: Plus, gradient: 'from-blue-500 to-cyan-500', visible: true },
+    { title: 'Facturación', path: '/app/facturacion', resource: 'facturacion', icon: CreditCard, gradient: 'from-yellow-500 to-amber-500', visible: true }
   ],
   dashboard: {
     showKPIs: true,
@@ -500,10 +500,10 @@ const ADMIN_SAAS_CONFIG: RoleViewConfig = {
 // Configuración para Contador SaaS - solo finanzas
 const CONTADOR_SAAS_CONFIG: RoleViewConfig = {
   navigation: [
-    { title: 'Dashboard', path: '/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-indigo-500 to-purple-500', visible: true },
-    { title: 'Empresas', path: '/empresas', resource: 'empresas', icon: Building2, gradient: 'from-blue-500 to-cyan-500', visible: true },
-    { title: 'Facturación', path: '/facturacion', resource: 'facturacion', icon: CreditCard, gradient: 'from-yellow-500 to-amber-500', visible: true },
-    { title: 'Reportes', path: '/reportes', resource: 'reportes', icon: BarChart3, gradient: 'from-violet-500 to-purple-500', visible: true }
+    { title: 'Dashboard', path: '/platform/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-indigo-500 to-purple-500', visible: true },
+    { title: 'Empresas', path: '/platform/empresas', resource: 'empresas', icon: Building2, gradient: 'from-blue-500 to-cyan-500', visible: true },
+    { title: 'Facturación', path: '/platform/facturacion', resource: 'facturacion', icon: CreditCard, gradient: 'from-yellow-500 to-amber-500', visible: true },
+    { title: 'Reportes', path: '/platform/reportes', resource: 'reportes', icon: BarChart3, gradient: 'from-violet-500 to-purple-500', visible: true }
   ],
   dashboard: {
     showKPIs: true,
@@ -548,10 +548,10 @@ const CONTADOR_SAAS_CONFIG: RoleViewConfig = {
 // Configuración para Asistente
 const ASISTENTE_CONFIG: RoleViewConfig = {
   navigation: [
-    { title: 'Dashboard', path: '/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-teal-500 to-cyan-500', visible: true },
-    { title: 'Pacientes', path: '/pacientes', resource: 'pacientes', icon: Users, gradient: 'from-green-500 to-emerald-500', visible: true },
-    { title: 'Agenda', path: '/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
-    { title: 'Reportes', path: '/reportes', resource: 'reportes', icon: BarChart3, gradient: 'from-violet-500 to-purple-500', visible: true }
+    { title: 'Dashboard', path: '/app/dashboard', resource: 'dashboard', icon: LayoutDashboard, gradient: 'from-teal-500 to-cyan-500', visible: true },
+    { title: 'Pacientes', path: '/app/pacientes', resource: 'pacientes', icon: Users, gradient: 'from-green-500 to-emerald-500', visible: true },
+    { title: 'Agenda', path: '/app/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
+    { title: 'Reportes', path: '/app/reportes', resource: 'reportes', icon: BarChart3, gradient: 'from-violet-500 to-purple-500', visible: true }
   ],
   dashboard: {
     showKPIs: false,

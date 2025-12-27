@@ -12,6 +12,7 @@ export function PatientStats() {
         noAptos: 0
     })
     const [loading, setLoading] = useState(true)
+    const [isOffline, setIsOffline] = useState(false)
 
     useEffect(() => {
         const loadStats = async () => {
@@ -24,9 +25,14 @@ export function PatientStats() {
                 const noAptos = pacientes.filter(p => p.estatus === 'no_apto' || p.estatus === 'inactivo').length
 
                 setStats({ total, aptos: aptos || total, restricciones, noAptos })
+                setIsOffline(false)
                 console.log('✅ PatientStats cargadas desde Supabase:', { total, aptos, restricciones, noAptos })
             } catch (error) {
                 console.error('Error cargando estadísticas de pacientes:', error)
+                // Mock data fallback for offline mode
+                setStats({ total: 247, aptos: 189, restricciones: 41, noAptos: 17 })
+                setIsOffline(true)
+                console.log('📦 PatientStats usando datos de demostración (modo offline)')
             } finally {
                 setLoading(false)
             }

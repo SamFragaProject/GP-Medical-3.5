@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -22,11 +23,45 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, loading, isAuthenticated, hasPermission } = useAuth()
   const location = useLocation()
+  const [showTimeout, setShowTimeout] = useState(false)
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout
+    if (loading) {
+      timer = setTimeout(() => {
+        setShowTimeout(true)
+      }, 5000)
+    }
+    return () => clearTimeout(timer)
+  }, [loading])
 
   if (loading) {
+    if (showTimeout) {
+      return (
+        <div className="flex flex-col h-screen w-full items-center justify-center space-y-4 p-4 text-center">
+          <Alert variant="destructive" className="max-w-md mx-auto">
+            <Lock className="h-4 w-4" />
+            <AlertDescription>
+              Tiempo de espera agotado verificando sesión.
+            </AlertDescription>
+          </Alert>
+          <button
+            onClick={() => {
+              // Limpiar estado y forzar recarga en login
+              localStorage.removeItem('mediflow_user')
+              window.location.href = '/login'
+            }}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg font-medium"
+          >
+            Forzar Salida / Login
+          </button>
+        </div>
+      )
+    }
     return (
-      <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex h-screen w-full items-center justify-center flex-col gap-3">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+        <p className="text-gray-500 animate-pulse font-medium">Conectando con Supabase...</p>
       </div>
     )
   }

@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 export interface Paciente {
     id: string
     empresa_id: string
+    sede_id?: string
     empresa_cliente_id?: string
     numero_empleado?: string
     nombre: string

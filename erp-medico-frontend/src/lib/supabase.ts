@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 
 // Usar variables de entorno con fallback a valores por defecto (para desarrollo)
 // ⚠️ IMPORTANTE: En producción, siempre usar variables de entorno
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kbbnxcbsbusatsddrpaw.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYm54Y2JzYnVzYXRzZGRycGF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4NjMzOTIsImV4cCI6MjA3NzQzOTM5Mn0.9vnb0Jzuy4WO4xBX1Zx1fwsviazBZsp5ogKPtwKFCJQ'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kftxftikoydldcexkady.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmdHhmdGlrb3lkbGRjZXhrYWR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2OTU2OTMsImV4cCI6MjA4MjI3MTY5M30.UvxYrETiFNil2eNKzJCVcgwOd-MCDBHABlql650y1NU'
 
 // Validar que las variables estén configuradas (solo muestra warning en producción)
 if (import.meta.env.PROD && (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY)) {

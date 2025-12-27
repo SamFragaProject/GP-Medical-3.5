@@ -5,10 +5,13 @@ import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { CarritoProvider } from '@/contexts/CarritoContext'
 import { SystemProvider } from '@/contexts/SystemIntegrationContext'
-import { LayoutPremium as Layout } from '@/components/LayoutPremium'
+import { AppLayout } from '@/layouts/AppLayout'
+import { PlatformLayout } from '@/layouts/PlatformLayout'
 import { LoginNew } from '@/pages/LoginNew'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { PanelMenuConfig } from '@/components/admin/PanelMenuConfig'
-import { AdminDashboardWrapper, EmpresasView } from '@/components/admin'
+import { EmpresasView } from '@/components/admin'
+import { SuperAdminView } from '@/components/dashboard/SuperAdminView'
 import { Dashboard } from '@/pages/Dashboard'
 import { Agenda } from '@/pages/Agenda'
 import { ExamenesOcupacionales } from '@/pages/ExamenesOcupacionales'
@@ -30,6 +33,7 @@ import { AlertasMedicas } from '@/pages/AlertasMedicas'
 import Tienda from '@/pages/Tienda'
 import Home from '@/pages/Home'
 import ExtractorMedico from '@/pages/apps/ExtractorMedico'
+import RRHH from '@/pages/rrhh/RRHH'
 import './App.css'
 import '@/components/medicina/hc_rx_v2.css'
 
@@ -42,72 +46,88 @@ function AppNew() {
             <div className="App">
               <Routes>
                 {/* Rutas Públicas */}
+                <Route path="/" element={<StartRedirect />} />
                 <Route path="/home" element={<Home />} />
                 <Route path="/login" element={<LoginNew />} />
 
-                {/* Rutas protegidas con Layout */}
-                <Route path="/" element={<Layout />}>
-                  {/* Redirección principal */}
-                  <Route index element={<StartRedirect />} />
-                  {/* <Route index element={<h1>Dashboard Placeholder</h1>} /> */}
+                {/* ======================================================== */}
+                {/* 🔧 PLATFORM ROUTES (SaaS Admin: Super Admin, Socios)    */}
+                {/* ======================================================== */}
+                <Route path="platform" element={
+                  <ProtectedRoute requiredRoles={['super_admin', 'admin_saas', 'contador_saas']}>
+                    <PlatformLayout />
+                  </ProtectedRoute>
+                }>
+                  {/* Redirección por defecto en plataforma */}
+                  <Route index element={<Navigate to="dashboard" replace />} />
 
-                  {/* Dashboard */}
-                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="dashboard" element={<SuperAdminView />} />
+                  <Route path="empresas" element={<EmpresasView />} />
+                  <Route path="usuarios" element={<UsuariosEmpresa />} />
+                  <Route path="rrhh" element={<RRHH />} />
+                  <Route path="configuracion" element={<Configuracion />} />
+                  <Route path="ia" element={<IA />} />
 
-                  {/* Gestión de pacientes */}
+                  {/* Módulos Clínicos (Acceso Administrativo) */}
                   <Route path="pacientes" element={<Pacientes />} />
                   <Route path="pacientes/:id/historial" element={<HistorialClinico />} />
-
-                  {/* Agenda y citas */}
                   <Route path="agenda" element={<Agenda />} />
-                  <Route path="agenda/nueva" element={<NuevaCita />} />
-                  {/* Temporalmente deshabilitado
-                  <Route path="citas" element={<Agenda />} />
-                  */}
-
-                  {/* Alertas médicas */}
+                  <Route path="examenes" element={<ExamenesOcupacionales />} />
+                  <Route path="rayos-x" element={<RayosX />} />
+                  <Route path="reportes" element={<Reportes />} />
+                  <Route path="facturacion" element={<Facturacion />} />
+                  <Route path="tienda" element={<Tienda />} />
                   <Route path="alertas" element={<AlertasMedicas />} />
 
-                  {/* Medicina del trabajo */}
+                  {/* Fallback platform */}
+                  <Route path="*" element={<Navigate to="dashboard" replace />} />
+                </Route>
+
+
+                {/* ======================================================== */}
+                {/* 🏥 APP ROUTES (Tenant: Clínicas, Médicos, Pacientes)   */}
+                {/* ======================================================== */}
+                <Route path="app" element={
+                  <ProtectedRoute requiredRoles={['admin_empresa', 'medico', 'enfermera', 'recepcion', 'paciente', 'asistente']}>
+                    <AppLayout />
+                  </ProtectedRoute>
+                }>
+                  {/* Redirección por defecto en app */}
+                  <Route index element={<Navigate to="dashboard" replace />} />
+
+                  <Route path="dashboard" element={<Dashboard />} />
+
+                  {/* Módulos Clínicos */}
+                  <Route path="pacientes" element={<Pacientes />} />
+                  <Route path="pacientes/:id/historial" element={<HistorialClinico />} />
+                  <Route path="agenda" element={<Agenda />} />
+                  <Route path="agenda/nueva" element={<NuevaCita />} />
                   <Route path="examenes" element={<ExamenesOcupacionales />} />
                   <Route path="rayos-x" element={<RayosX />} />
                   <Route path="evaluaciones" element={<EvaluacionesRiesgo />} />
                   <Route path="certificaciones" element={<Certificaciones />} />
 
-                  {/* IA y análisis */}
-                  <Route path="ia" element={<IA />} />
-                  <Route path="analytics" element={<IA />} />
-                  <Route path="extractor" element={<ExtractorMedico />} />
-
-                  {/* Gestión financiera */}
+                  {/* Módulos Administrativos */}
                   <Route path="facturacion" element={<Facturacion />} />
-                  <Route path="tienda" element={<Tienda />} />
                   <Route path="inventario" element={<Inventario />} />
-
-                  {/* Reportes */}
                   <Route path="reportes" element={<Reportes />} />
-                  <Route path="resultados" element={<Reportes />} />
-                  <Route path="historial" element={<Reportes />} />
+                  <Route path="ia" element={<IA />} />
+                  <Route path="tienda" element={<Tienda />} />
 
-                  {/* Configuración y perfil */}
-                  <Route path="configuracion" element={<Configuracion />} />
+                  {/* Módulos Personales */}
                   <Route path="perfil" element={<PerfilUsuario />} />
-                  <Route path="actividad" element={<PerfilUsuario />} />
+                  <Route path="alertas" element={<AlertasMedicas />} />
 
-                  {/* Rutas administrativas */}
-                  <Route path="admin/menu-config" element={<PanelMenuConfig />} />
-                  <Route path="admin/dashboard" element={<AdminDashboardWrapper />} />
-
-                  {/* Super Admin */}
-                  <Route path="super-admin" element={<AdminDashboardWrapper />} />
-                  <Route path="empresas" element={<EmpresasView />} />
-                  <Route path="usuarios" element={<UsuariosEmpresa />} />
+                  {/* Rutas Legacy (para compatibilidad interna si algo apunta mal) */}
                   <Route path="medicos" element={<Pacientes />} />
                   <Route path="sedes" element={<Configuracion />} />
 
-                  {/* Ruta 404 */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  {/* Fallback app */}
+                  <Route path="*" element={<Navigate to="dashboard" replace />} />
                 </Route>
+
+                {/* Catch-all global fuera de grupos */}
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
 
               {/* Toast notifications espectaculares */}
@@ -164,10 +184,19 @@ function AppNew() {
 
 export default AppNew
 
-// Redirección inicial basada en preferencias del usuario
+// Redirección inicial inteligente basada en rol
 function StartRedirect() {
-  const { user } = useAuth()
-  const { prefs } = usePreferences(user)
-  const target = prefs?.startPage || '/dashboard'
-  return <Navigate to={target} replace />
+  const { user, loading } = useAuth()
+
+  if (loading) return <div>Cargando...</div>
+  if (!user) return <LoginNew />
+
+  // Lógica de enrutamiento SaaS
+  const PLATFORM_ROLES = ['super_admin', 'admin_saas', 'contador_saas']
+
+  if (PLATFORM_ROLES.includes(user.rol)) {
+    return <Navigate to="/platform/dashboard" replace />
+  } else {
+    return <Navigate to="/app/dashboard" replace />
+  }
 }

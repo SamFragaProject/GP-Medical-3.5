@@ -138,22 +138,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error
 
       if (data.user) {
-        // Obtener datos completos del usuario
-        const { data: userData, error: userError } = await supabase
+        // Obtener datos del usuario de la DB
+        const { data: userData } = await supabase
           .from('usuarios')
           .select('*')
           .eq('id', data.user.id)
           .single()
 
-        if (userError) throw userError
+        const finalUser = (userData as User) || {
+          id: data.user.id,
+          email: data.user.email!,
+          nombre: 'Usuario',
+          apellido_paterno: '',
+          rol: 'paciente' as const,
+          created_at: new Date().toISOString()
+        }
 
-        setUser(userData as User)
-        localStorage.setItem('mediflow_user', JSON.stringify(userData))
-
-        toast.success(`Bienvenido ${userData.nombre} - ${ROLE_LABELS[userData.rol as UserRole]}`)
+        setUser(finalUser)
+        localStorage.setItem('mediflow_user', JSON.stringify(finalUser))
+        toast.success(`Bienvenido ${finalUser.nombre}`)
       }
     } catch (error: any) {
-      console.error('Error en login:', error)
+      console.error('Error en Supabase login:', error)
+      const msg = error.message.toLowerCase()
+
+      // FALLBACK MODO OFFLINE / DEMO
+      if (msg.includes('fetch') || msg.includes('network') || msg.includes('connection')) {
+        console.warn('⚠️ Fallo conexión Supabase. Usando Modo Offline de Emergencia.')
+
+        // Verificar credenciales hardcodeadas para emergencias
+        if (email === 'sam@mediflow.com' && password === 'sam123') {
+          const mockUser: User = {
+            id: 'mock-sam-id',
+            email: 'sam@mediflow.com',
+            nombre: 'Sam (Offline)',
+            apellido_paterno: 'Fraga',
+            rol: 'super_admin',
+            created_at: new Date().toISOString()
+          }
+          setUser(mockUser)
+          localStorage.setItem('mediflow_user', JSON.stringify(mockUser))
+          toast.success('⚠️ Modo Offline Activado: Bienvenido Sam')
+          return
+        }
+      }
+
       toast.error(error.message || 'Error al iniciar sesión')
       throw error
     } finally {

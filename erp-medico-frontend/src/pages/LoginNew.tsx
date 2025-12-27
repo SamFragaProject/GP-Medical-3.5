@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { supabase } from '@/lib/supabase'
 import {
   Heart,
   Mail,
@@ -21,17 +22,17 @@ import { UserRole, ROLE_LABELS, ROLE_COLORS } from '@/types/auth'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 
-// Usuarios demo para cada rol
+// Usuarios demo para cada rol (Deben crearse en Supabase Auth)
 const DEMO_USERS = [
   {
     rol: 'super_admin' as UserRole,
-    email: 'superadmin@mediflow.com',
-    password: 'admin123',
-    nombre: 'Carlos',
-    apellido_paterno: 'Administrador',
+    email: 'sam@mediflow.com',
+    password: 'sam123',
+    nombre: 'Sam',
+    apellido_paterno: 'Fraga',
     icon: Crown,
     gradient: 'from-purple-500 to-pink-500',
-    description: 'Acceso total al sistema'
+    description: 'Acceso total (Super Admin)'
   },
   {
     rol: 'admin_empresa' as UserRole,
@@ -71,55 +72,27 @@ export function LoginNew() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [selectedDemo, setSelectedDemo] = useState<UserRole | null>(null)
-  
+
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  // Login demo rápido (sin Supabase)
-  const handleDemoLogin = async (demoUser: typeof DEMO_USERS[0]) => {
-    setLoading(true)
-    
-    try {
-      // Crear usuario demo en localStorage
-      const user = {
-        id: `demo-${demoUser.rol}`,
-        email: demoUser.email,
-        nombre: demoUser.nombre,
-        apellido_paterno: demoUser.apellido_paterno,
-        rol: demoUser.rol,
-        empresa_id: 'demo-empresa',
-        sede_id: 'demo-sede'
-      }
+  // Pre-llenar credenciales (Login Manual)
+  const handleDemoLogin = (demoUser: typeof DEMO_USERS[0]) => {
+    setEmail(demoUser.email)
+    setPassword(demoUser.password)
+    setShowPassword(true) // Mostrar contraseña para que vea lo que se puso
 
-      localStorage.setItem('mediflow_user', JSON.stringify(user))
-      
-      toast.success(`¡Bienvenido ${demoUser.nombre}!`, {
-        icon: '👋',
-        duration: 3000
-      })
-
-      setTimeout(() => {
-        try {
-          const key = `mediflow_prefs_${user.id}`
-          const stored = localStorage.getItem(key)
-          const startPage = stored ? (JSON.parse(stored).startPage || '/dashboard') : '/dashboard'
-          window.location.href = startPage
-        } catch (_) {
-          window.location.href = '/dashboard'
-        }
-      }, 500)
-    } catch (error) {
-      console.error('Error en demo login:', error)
-      toast.error('Error al iniciar sesión demo')
-    } finally {
-      setLoading(false)
-    }
+    toast.success(`Credenciales de ${demoUser.nombre} cargadas. \n¡Haz clic en 'Iniciar Sesión' para entrar!`, {
+      icon: '🔑',
+      duration: 5000,
+      position: 'top-center'
+    })
   }
 
   // Login normal con Supabase
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!email || !password) {
       toast.error('Por favor completa todos los campos')
       return
@@ -132,9 +105,64 @@ export function LoginNew() {
       navigate('/dashboard')
     } catch (error: any) {
       console.error('Error en login:', error)
-      toast.error('Credenciales incorrectas')
+      const msg = error.message || ''
+      if (msg.includes('fetch') || msg.includes('network')) {
+        toast.error('Error de conexión con Supabase. \n¿El proyecto está pausado?', { duration: 5000 })
+      } else if (msg.includes('credential') || msg.includes('login')) {
+        toast.error('Usuario no encontrado o contraseña incorrecta.')
+      } else {
+        toast.error(`Error al iniciar sesión: ${msg}`)
+      }
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Función para registrar usuarios automáticamente (Ayuda al usuario)
+  const createDemoUsers = async () => {
+    const toastId = toast.loading('Intentando registrar usuarios en Supabase...')
+    let createdCount = 0
+    let errors = []
+
+    for (const user of DEMO_USERS) {
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: user.email,
+          password: user.password,
+          options: {
+            data: {
+              nombre: user.nombre,
+              apellido_paterno: user.apellido_paterno,
+              rol: user.rol
+            }
+          }
+        })
+
+        if (error) {
+          if (error.message.includes('already registered')) {
+            console.log(`${user.email} ya existe.`)
+          } else {
+            throw error
+          }
+        } else if (data.user) {
+          createdCount++
+        }
+      } catch (err: any) {
+        console.error(`Error creando ${user.email}:`, err)
+        errors.push(`${user.nombre}: ${err.message}`)
+      }
+    }
+
+    toast.dismiss(toastId)
+
+    if (errors.length > 0 && createdCount === 0) {
+      toast.error(`Error: ${errors[0]}. \n¿Tu proyecto Supabase está activo?`, { duration: 5000 })
+    } else {
+      toast.success(
+        `Proceso finalizado. ${createdCount} usuarios registrados.\n` +
+        (createdCount > 0 ? '⚠️ Revisa si Supabase pide confirmación de email.' : 'Los usuarios ya existían.'),
+        { duration: 6000 }
+      )
     }
   }
 
@@ -160,7 +188,7 @@ export function LoginNew() {
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary to-emerald-600 rounded-2xl mb-4 shadow-lg">
                 <Heart className="h-10 w-10 text-white" />
               </div>
-              
+
               <h1 className="text-4xl font-bold text-white mb-2">
                 MediFlow
               </h1>
@@ -231,10 +259,21 @@ export function LoginNew() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center space-y-4">
               <a href="#" className="text-sm text-gray-300 hover:text-white transition-colors">
                 ¿Olvidaste tu contraseña?
               </a>
+
+              {/* Botón de Auto-Setup para usuario desesperado */}
+              <div className="pt-4 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={createDemoUsers}
+                  className="text-xs text-blue-300 hover:text-blue-100 underline opacity-70 hover:opacity-100 transition-opacity"
+                >
+                  🛠️ Crear usuarios Demo en Supabase (Click aquí si no existen)
+                </button>
+              </div>
             </div>
           </motion.div>
 

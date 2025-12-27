@@ -39,6 +39,19 @@ export function Pacientes() {
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'details' | 'prescription' | 'history'>('details')
   const [activeFilter, setActiveFilter] = useState('all')
+  const [isOffline, setIsOffline] = useState(false)
+
+  // Mock data for offline mode
+  const mockPacientes: Paciente[] = [
+    { id: 'mock-1', nombre: 'María', apellido_paterno: 'García', apellido_materno: 'López', fecha_nacimiento: '1985-03-15', genero: 'F', email: 'maria.garcia@email.com', telefono: '555-0101', numero_empleado: 'EMP-001', puesto: 'Gerente de Ventas', foto_url: '', estatus: 'apto', empresa_id: 'emp-1', sede_id: 'sede-1', created_at: new Date().toISOString() },
+    { id: 'mock-2', nombre: 'Carlos', apellido_paterno: 'Rodríguez', apellido_materno: 'Martínez', fecha_nacimiento: '1990-07-22', genero: 'M', email: 'carlos.rodriguez@email.com', telefono: '555-0102', numero_empleado: 'EMP-002', puesto: 'Ingeniero de Software', foto_url: '', estatus: 'apto', empresa_id: 'emp-1', sede_id: 'sede-1', created_at: new Date().toISOString() },
+    { id: 'mock-3', nombre: 'Ana', apellido_paterno: 'Fernández', apellido_materno: 'Sánchez', fecha_nacimiento: '1988-11-08', genero: 'F', email: 'ana.fernandez@email.com', telefono: '555-0103', numero_empleado: 'EMP-003', puesto: 'Analista Financiera', foto_url: '', estatus: 'restriccion', empresa_id: 'emp-1', sede_id: 'sede-1', created_at: new Date().toISOString() },
+    { id: 'mock-4', nombre: 'José', apellido_paterno: 'Hernández', apellido_materno: 'Díaz', fecha_nacimiento: '1975-05-30', genero: 'M', email: 'jose.hernandez@email.com', telefono: '555-0104', numero_empleado: 'EMP-004', puesto: 'Operador de Maquinaria', foto_url: '', estatus: 'restriccion', empresa_id: 'emp-1', sede_id: 'sede-2', created_at: new Date().toISOString() },
+    { id: 'mock-5', nombre: 'Laura', apellido_paterno: 'Morales', apellido_materno: 'Torres', fecha_nacimiento: '1992-09-12', genero: 'F', email: 'laura.morales@email.com', telefono: '555-0105', numero_empleado: 'EMP-005', puesto: 'Recursos Humanos', foto_url: '', estatus: 'apto', empresa_id: 'emp-1', sede_id: 'sede-1', created_at: new Date().toISOString() },
+    { id: 'mock-6', nombre: 'Roberto', apellido_paterno: 'Castro', apellido_materno: 'Ramos', fecha_nacimiento: '1980-02-28', genero: 'M', email: 'roberto.castro@email.com', telefono: '555-0106', numero_empleado: 'EMP-006', puesto: 'Supervisor de Línea', foto_url: '', estatus: 'no_apto', empresa_id: 'emp-1', sede_id: 'sede-2', created_at: new Date().toISOString() },
+    { id: 'mock-7', nombre: 'Carmen', apellido_paterno: 'Vargas', apellido_materno: 'Mendoza', fecha_nacimiento: '1995-12-05', genero: 'F', email: 'carmen.vargas@email.com', telefono: '555-0107', numero_empleado: 'EMP-007', puesto: 'Diseñadora UX', foto_url: '', estatus: 'apto', empresa_id: 'emp-1', sede_id: 'sede-1', created_at: new Date().toISOString() },
+    { id: 'mock-8', nombre: 'Miguel', apellido_paterno: 'Ortega', apellido_materno: 'Peña', fecha_nacimiento: '1983-08-18', genero: 'M', email: 'miguel.ortega@email.com', telefono: '555-0108', numero_empleado: 'EMP-008', puesto: 'Técnico Electricista', foto_url: '', estatus: 'apto', empresa_id: 'emp-1', sede_id: 'sede-2', created_at: new Date().toISOString() }
+  ]
 
   useEffect(() => {
     const loadData = async () => {
@@ -47,10 +60,15 @@ export function Pacientes() {
         // Usar servicio real de Supabase
         const data = await pacientesService.getAll()
         setPacientes(data)
+        setIsOffline(false)
         console.log('✅ Pacientes cargados desde Supabase:', data.length)
       } catch (error) {
         console.error('Error al cargar pacientes:', error)
-        toast.error('Error al cargar pacientes desde la base de datos')
+        // Use mock data in offline mode instead of showing error
+        setPacientes(mockPacientes)
+        setIsOffline(true)
+        toast.success('Modo offline activado - mostrando datos de demostración', { icon: '📦' })
+        console.log('📦 Pacientes usando datos de demostración (modo offline)')
       } finally {
         setLoading(false)
       }

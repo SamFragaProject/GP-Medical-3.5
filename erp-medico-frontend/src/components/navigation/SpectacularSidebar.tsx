@@ -33,7 +33,7 @@ export function SpectacularSidebar() {
     <div className="w-64 h-screen flex flex-col bg-slate-900 text-white border-r border-slate-800 shadow-2xl shrink-0">
       {/* Header */}
       <div className="p-6 border-b border-slate-800">
-        <Link to="/dashboard" className="flex items-center space-x-3 group">
+        <Link to="/" className="flex items-center space-x-3 group">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg">
             <Heart className="w-6 h-6 text-white" />
           </div>
@@ -65,8 +65,8 @@ export function SpectacularSidebar() {
               key={item.path}
               to={item.path}
               className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive
-                  ? 'bg-blue-600 text-white shadow-lg'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-lg'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                 }`}
             >
               {Icon && <Icon className="h-5 w-5 shrink-0" />}
