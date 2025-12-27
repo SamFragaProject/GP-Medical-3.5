@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Users, UserCheck, UserX, Activity, Loader2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { pacientesService } from '@/services/dataService'
+import { getDemoDataForRole } from '@/data/mockDemoData'
 
 export function PatientStats() {
     const [stats, setStats] = useState({
@@ -17,20 +18,28 @@ export function PatientStats() {
     useEffect(() => {
         const loadStats = async () => {
             try {
-                // Check if user is demo user - always use mock data for demo users
+                // Check if user is demo user - use role-based stats
                 const storedUser = localStorage.getItem('mediflow_user')
-                const isDemoUser = storedUser && JSON.parse(storedUser).id?.startsWith('demo-')
+                if (storedUser) {
+                    const user = JSON.parse(storedUser)
+                    const isDemoUser = user.id?.startsWith('demo-')
 
-                if (isDemoUser) {
-                    console.log('📦 Demo user detected - using mock stats')
-                    setStats({ total: 247, aptos: 189, restricciones: 41, noAptos: 17 })
-                    setIsOffline(true)
-                    setLoading(false)
-                    return
+                    if (isDemoUser) {
+                        console.log('📦 PatientStats: Using role-based demo data for:', user.rol)
+                        const { patients, stats: demoStats } = getDemoDataForRole(user.id, user.rol)
+                        setStats({
+                            total: patients.length,
+                            aptos: patients.filter(p => p.estatus === 'activo').length,
+                            restricciones: patients.filter(p => p.estatus === 'incapacitado').length,
+                            noAptos: patients.filter(p => p.estatus === 'inactivo' || p.estatus === 'suspendido').length
+                        })
+                        setIsOffline(true)
+                        setLoading(false)
+                        return
+                    }
                 }
 
                 const pacientes = await pacientesService.getAll()
-                // Calcular estadísticas por estatus
                 const total = pacientes.length
                 const aptos = pacientes.filter(p => p.estatus === 'apto' || p.estatus === 'activo').length
                 const restricciones = pacientes.filter(p => p.estatus === 'restriccion').length
@@ -41,10 +50,22 @@ export function PatientStats() {
                 console.log('✅ PatientStats cargadas desde Supabase:', { total, aptos, restricciones, noAptos })
             } catch (error) {
                 console.error('Error cargando estadísticas de pacientes:', error)
-                // Mock data fallback for offline mode
-                setStats({ total: 247, aptos: 189, restricciones: 41, noAptos: 17 })
+                // Fallback to role-based demo stats
+                const storedUser = localStorage.getItem('mediflow_user')
+                if (storedUser) {
+                    const user = JSON.parse(storedUser)
+                    const { patients } = getDemoDataForRole(user.id || '', user.rol || 'paciente')
+                    setStats({
+                        total: patients.length,
+                        aptos: patients.filter(p => p.estatus === 'activo').length,
+                        restricciones: patients.filter(p => p.estatus === 'incapacitado').length,
+                        noAptos: 0
+                    })
+                } else {
+                    setStats({ total: 10, aptos: 8, restricciones: 1, noAptos: 1 })
+                }
                 setIsOffline(true)
-                console.log('📦 PatientStats usando datos de demostración (modo offline)')
+                console.log('📦 PatientStats usando datos demo')
             } finally {
                 setLoading(false)
             }

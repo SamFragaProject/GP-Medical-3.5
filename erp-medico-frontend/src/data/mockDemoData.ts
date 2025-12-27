@@ -657,6 +657,146 @@ export function getUserFullName(user: DemoUser): string {
     return `${user.nombre} ${user.apellidoPaterno} ${user.apellidoMaterno || ''}`.trim();
 }
 
+// ============================================
+// FUNCIONES DE FILTRADO POR ROL
+// ============================================
+
+/**
+ * Obtiene pacientes según el rol del usuario
+ * - super_admin/admin_empresa: todos los pacientes
+ * - medico: pacientes con citas asignadas a ellos
+ * - paciente: solo su propio perfil
+ */
+export function getDemoDataForRole(userId: string, userRole: string) {
+    let patients: DemoPatient[] = [];
+    let appointments: DemoAppointment[] = [];
+    let exams: DemoExam[] = [];
+    let alerts = DEMO_ALERTS;
+    let stats = { ...DEMO_DASHBOARD_STATS };
+
+    switch (userRole) {
+        case 'super_admin':
+            // Ve todo
+            patients = DEMO_PATIENTS;
+            appointments = DEMO_APPOINTMENTS;
+            exams = DEMO_EXAMS;
+            break;
+
+        case 'admin_empresa':
+            // Ve todos los de su empresa
+            patients = DEMO_PATIENTS;
+            appointments = DEMO_APPOINTMENTS;
+            exams = DEMO_EXAMS;
+            break;
+
+        case 'medico':
+        case 'medico_trabajo':
+        case 'medico_especialista':
+            // Ve solo pacientes con citas asignadas a él
+            const doctorAppts = DEMO_APPOINTMENTS.filter(a => a.medicoId === userId);
+            const patientIds = [...new Set(doctorAppts.map(a => a.pacienteId))];
+            patients = DEMO_PATIENTS.filter(p => patientIds.includes(p.id));
+            appointments = doctorAppts;
+            exams = DEMO_EXAMS.filter(e => e.medicoId === userId || patientIds.includes(e.pacienteId));
+            alerts = DEMO_ALERTS.filter(a => a.prioridad === 'critica' || a.prioridad === 'alta');
+            stats = {
+                ...stats,
+                totalPacientes: patients.length,
+                citasHoy: appointments.filter(a => a.fecha === new Date().toISOString().split('T')[0]).length,
+            };
+            break;
+
+        case 'enfermera':
+            // Ve pacientes y citas del día
+            const today = new Date().toISOString().split('T')[0];
+            appointments = DEMO_APPOINTMENTS.filter(a => a.fecha === today);
+            const todayPatientIds = [...new Set(appointments.map(a => a.pacienteId))];
+            patients = DEMO_PATIENTS.filter(p => todayPatientIds.includes(p.id));
+            exams = DEMO_EXAMS.filter(e => e.fechaProgramada === today || e.fechaRealizada === today);
+            alerts = [];
+            stats = {
+                ...stats,
+                totalPacientes: patients.length,
+                citasHoy: appointments.length,
+            };
+            break;
+
+        case 'recepcion':
+            // Ve citas programadas, pacientes básico
+            patients = DEMO_PATIENTS.map(p => ({
+                ...p,
+                alergias: undefined,
+                tipoSangre: undefined,
+            }));
+            appointments = DEMO_APPOINTMENTS;
+            exams = [];
+            alerts = [];
+            stats = {
+                ...stats,
+                examenesCompletados: 0,
+                examenesPendientes: 0,
+            };
+            break;
+
+        case 'paciente':
+            // Solo su propio perfil
+            const myPatient = getDemoPatientForUser(userId);
+            patients = myPatient ? [myPatient] : [];
+            appointments = myPatient ? getDemoAppointmentsForPatient(myPatient.id) : [];
+            exams = myPatient ? getDemoExamsForPatient(myPatient.id) : [];
+            alerts = [];
+            stats = {
+                totalPacientes: 1,
+                pacientesActivos: 1,
+                pacientesIncapacitados: 0,
+                citasHoy: appointments.filter(a => a.fecha === new Date().toISOString().split('T')[0]).length,
+                citasProgramadas: appointments.filter(a => a.estado === 'programada').length,
+                citasConfirmadas: appointments.filter(a => a.estado === 'confirmada').length,
+                citasEnCurso: 0,
+                examenesCompletados: exams.filter(e => e.estado === 'completado').length,
+                examenesPendientes: exams.filter(e => e.estado === 'programado').length,
+                totalUsuarios: 1,
+                medicos: 0,
+            };
+            break;
+
+        default:
+            patients = [];
+            appointments = [];
+            exams = [];
+            alerts = [];
+    }
+
+    return { patients, appointments, exams, alerts, stats };
+}
+
+/**
+ * Convierte DemoPatient a formato Paciente del servicio
+ */
+export function convertToServicePaciente(patient: DemoPatient) {
+    return {
+        id: patient.id,
+        empresa_id: patient.empresaId,
+        numero_empleado: patient.numeroEmpleado,
+        nombre: patient.nombre,
+        apellido_paterno: patient.apellidoPaterno,
+        apellido_materno: patient.apellidoMaterno || '',
+        fecha_nacimiento: patient.fechaNacimiento,
+        genero: patient.genero === 'masculino' ? 'M' : patient.genero === 'femenino' ? 'F' : 'O',
+        email: patient.email || '',
+        telefono: patient.telefono || '',
+        puesto: DEMO_JOB_POSITIONS.find(j => j.id === patient.puestoTrabajoId)?.nombre || '',
+        foto_url: '',
+        estatus: patient.estatus === 'activo' ? 'apto' : patient.estatus === 'incapacitado' ? 'restriccion' : 'no_apto',
+        sede_id: DEMO_SEDE_ID,
+        created_at: new Date().toISOString(),
+        tipo_sangre: patient.tipoSangre,
+        alergias: patient.alergias,
+        curp: patient.curp,
+        nss: patient.nss,
+    };
+}
+
 export default {
     DEMO_EMPRESA_ID,
     DEMO_SEDE_ID,
@@ -675,4 +815,6 @@ export default {
     getDemoExamsForPatient,
     getPatientFullName,
     getUserFullName,
+    getDemoDataForRole,
+    convertToServicePaciente,
 };
