@@ -57,7 +57,19 @@ export function Pacientes() {
     const loadData = async () => {
       try {
         setLoading(true)
-        // Usar servicio real de Supabase
+
+        // Check if user is demo user - always use mock data for demo users
+        const storedUser = localStorage.getItem('mediflow_user')
+        const isDemoUser = storedUser && JSON.parse(storedUser).id?.startsWith('demo-')
+
+        if (isDemoUser) {
+          console.log('📦 Demo user detected - using mock data')
+          setPacientes(mockPacientes)
+          setIsOffline(true)
+          return
+        }
+
+        // Usar servicio real de Supabase for real users
         const data = await pacientesService.getAll()
         setPacientes(data)
         setIsOffline(false)

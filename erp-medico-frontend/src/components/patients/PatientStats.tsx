@@ -17,6 +17,18 @@ export function PatientStats() {
     useEffect(() => {
         const loadStats = async () => {
             try {
+                // Check if user is demo user - always use mock data for demo users
+                const storedUser = localStorage.getItem('mediflow_user')
+                const isDemoUser = storedUser && JSON.parse(storedUser).id?.startsWith('demo-')
+
+                if (isDemoUser) {
+                    console.log('📦 Demo user detected - using mock stats')
+                    setStats({ total: 247, aptos: 189, restricciones: 41, noAptos: 17 })
+                    setIsOffline(true)
+                    setLoading(false)
+                    return
+                }
+
                 const pacientes = await pacientesService.getAll()
                 // Calcular estadísticas por estatus
                 const total = pacientes.length
