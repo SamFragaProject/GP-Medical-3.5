@@ -22,7 +22,7 @@ import { UserRole, ROLE_LABELS, ROLE_COLORS } from '@/types/auth'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 
-// Usuarios demo para cada rol (Deben crearse en Supabase Auth)
+// Usuarios demo para cada rol - DEBEN COINCIDIR con AuthContext.tsx
 const DEMO_USERS = [
   {
     rol: 'super_admin' as UserRole,
@@ -36,28 +36,28 @@ const DEMO_USERS = [
   },
   {
     rol: 'admin_empresa' as UserRole,
-    email: 'admin@empresa.com',
-    password: 'admin123',
+    email: 'ana@mediflow.com',
+    password: 'ana123',
     nombre: 'Ana',
-    apellido_paterno: 'Gerente',
+    apellido_paterno: 'García',
     icon: Building2,
     gradient: 'from-blue-500 to-cyan-500',
     description: 'Gestión empresarial completa'
   },
   {
     rol: 'medico' as UserRole,
-    email: 'medico@mediflow.com',
-    password: 'medico123',
+    email: 'dr.roberto@mediflow.com',
+    password: 'roberto123',
     nombre: 'Dr. Roberto',
-    apellido_paterno: 'Pérez',
+    apellido_paterno: 'Méndez',
     icon: Stethoscope,
     gradient: 'from-green-500 to-emerald-500',
     description: 'Atención médica y pacientes'
   },
   {
     rol: 'paciente' as UserRole,
-    email: 'paciente@mediflow.com',
-    password: 'paciente123',
+    email: 'maria@mediflow.com',
+    password: 'maria123',
     nombre: 'María',
     apellido_paterno: 'López',
     icon: UserIcon,
