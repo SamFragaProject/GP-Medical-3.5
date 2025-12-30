@@ -1,0 +1,73 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - img [ref=e10]
+        - heading "MediFlow" [level=1] [ref=e12]
+        - paragraph [ref=e13]: Sistema de Gestión Médica Inteligente
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - generic [ref=e16]: Correo Electrónico
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - textbox "tu@email.com" [ref=e21]
+        - generic [ref=e22]:
+          - generic [ref=e23]: Contraseña
+          - generic [ref=e24]:
+            - img [ref=e25]
+            - textbox "••••••••" [ref=e28]
+            - button [ref=e29] [cursor=pointer]:
+              - img [ref=e30]
+        - button "Iniciar Sesión" [ref=e33] [cursor=pointer]:
+          - generic [ref=e34]: Iniciar Sesión
+          - img [ref=e35]
+      - generic [ref=e37]:
+        - link "¿Olvidaste tu contraseña?" [ref=e38] [cursor=pointer]:
+          - /url: "#"
+        - button "🛠️ Crear usuarios Demo en Supabase (Click aquí si no existen)" [ref=e40] [cursor=pointer]
+    - generic [ref=e41]:
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - img [ref=e44]
+          - heading "Acceso Rápido Demo" [level=2] [ref=e46]
+        - paragraph [ref=e47]: Prueba el sistema con diferentes roles de usuario
+      - generic [ref=e48]:
+        - button "Sam Super Administrador Acceso total (Super Admin)" [ref=e49] [cursor=pointer]:
+          - img [ref=e52]
+          - generic [ref=e54]:
+            - paragraph [ref=e55]: Sam
+            - paragraph [ref=e56]: Super Administrador
+            - paragraph [ref=e57]: Acceso total (Super Admin)
+          - img [ref=e58]
+        - button "Ana Administrador de Empresa Gestión empresarial completa" [ref=e60] [cursor=pointer]:
+          - img [ref=e63]
+          - generic [ref=e67]:
+            - paragraph [ref=e68]: Ana
+            - paragraph [ref=e69]: Administrador de Empresa
+            - paragraph [ref=e70]: Gestión empresarial completa
+          - img [ref=e71]
+        - button "Dr. Roberto Médico del Trabajo Atención médica y pacientes" [ref=e73] [cursor=pointer]:
+          - img [ref=e76]
+          - generic [ref=e80]:
+            - paragraph [ref=e81]: Dr. Roberto
+            - paragraph [ref=e82]: Médico del Trabajo
+            - paragraph [ref=e83]: Atención médica y pacientes
+          - img [ref=e84]
+        - button "María Paciente Portal del paciente" [ref=e86] [cursor=pointer]:
+          - img [ref=e89]
+          - generic [ref=e92]:
+            - paragraph [ref=e93]: María
+            - paragraph [ref=e94]: Paciente
+            - paragraph [ref=e95]: Portal del paciente
+          - img [ref=e96]
+      - paragraph [ref=e99]:
+        - text: 💡
+        - strong [ref=e100]: "Tip:"
+        - text: Usa el acceso rápido para probar diferentes roles sin necesidad de credenciales
+  - paragraph [ref=e102]:
+    - text: © 2025 MediFlow - Sistema de Gestión Médica
+    - text: Todos los derechos reservados
+```
