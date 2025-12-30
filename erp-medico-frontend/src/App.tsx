@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { CarritoProvider } from '@/contexts/CarritoContext'
 import { SystemProvider } from '@/contexts/SystemIntegrationContext'
+import { DemoDataProvider } from '@/contexts/DemoDataContext'
 import { Layout } from '@/components/Layout'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { PanelMenuConfig } from '@/components/admin/PanelMenuConfig'
@@ -46,294 +47,296 @@ function App() {
           path="/*"
           element={
             <AuthProvider>
-              <SystemProvider>
-                <CarritoProvider>
-                  <div className="App">
-                    <Routes>
-                      {/* Rutas Protegidas */}
-                      {/* Rutas Protegidas */}
-                      <Route
-                        path="/"
-                        element={<Home />}
-                      />
+              <DemoDataProvider>
+                <SystemProvider>
+                  <CarritoProvider>
+                    <div className="App">
+                      <Routes>
+                        {/* Rutas Protegidas */}
+                        {/* Rutas Protegidas */}
+                        <Route
+                          path="/"
+                          element={<Home />}
+                        />
 
-                      <Route
-                        path="/dashboard"
-                        element={
-                          <ProtectedRoute resource="dashboard">
-                            <Layout>
-                              <Dashboard />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/dashboard"
+                          element={
+                            <ProtectedRoute resource="dashboard">
+                              <Layout>
+                                <Dashboard />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/pacientes"
-                        element={
-                          <ProtectedRoute resource="pacientes">
-                            <Layout>
-                              <Pacientes />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/pacientes"
+                          element={
+                            <ProtectedRoute resource="pacientes">
+                              <Layout>
+                                <Pacientes />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/agenda"
-                        element={
-                          <ProtectedRoute resource="agenda">
-                            <Layout>
-                              <Agenda />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/agenda"
+                          element={
+                            <ProtectedRoute resource="agenda">
+                              <Layout>
+                                <Agenda />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/agenda/nueva"
-                        element={
-                          <ProtectedRoute resource="agenda">
-                            <Layout>
-                              <NuevaCita />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/agenda/nueva"
+                          element={
+                            <ProtectedRoute resource="agenda">
+                              <Layout>
+                                <NuevaCita />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/alertas"
-                        element={
-                          <ProtectedRoute resource="alertas">
-                            <Layout>
-                              <AlertasMedicas />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/alertas"
+                          element={
+                            <ProtectedRoute resource="alertas">
+                              <Layout>
+                                <AlertasMedicas />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      {/* Medicina del trabajo */}
-                      <Route
-                        path="/examenes"
-                        element={
-                          <ProtectedRoute resource="examenes">
-                            <Layout>
-                              <ExamenesOcupacionales />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        {/* Medicina del trabajo */}
+                        <Route
+                          path="/examenes"
+                          element={
+                            <ProtectedRoute resource="examenes">
+                              <Layout>
+                                <ExamenesOcupacionales />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/rayos-x"
-                        element={
-                          <ProtectedRoute resource="rayos_x">
-                            <Layout>
-                              <RayosX />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/rayos-x"
+                          element={
+                            <ProtectedRoute resource="rayos_x">
+                              <Layout>
+                                <RayosX />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/empresas"
-                        element={
-                          <ProtectedRoute resource="empresas">
-                            <Layout>
-                              <Empresas />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/empresas"
+                          element={
+                            <ProtectedRoute resource="empresas">
+                              <Layout>
+                                <Empresas />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/evaluaciones"
-                        element={
-                          <ProtectedRoute resource="evaluaciones">
-                            <Layout>
-                              <EvaluacionesRiesgo />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/evaluaciones"
+                          element={
+                            <ProtectedRoute resource="evaluaciones">
+                              <Layout>
+                                <EvaluacionesRiesgo />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
 
-                      <Route
-                        path="/ia"
-                        element={
-                          <ProtectedRoute resource="ia">
-                            <Layout>
-                              <IA />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/ia"
+                          element={
+                            <ProtectedRoute resource="ia">
+                              <Layout>
+                                <IA />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      {/* Apps Integradas */}
-                      <Route
-                        path="/apps/extractor"
-                        element={
-                          <ProtectedRoute resource="ia">
-                            <Layout>
-                              <ExtractorMedico />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        {/* Apps Integradas */}
+                        <Route
+                          path="/apps/extractor"
+                          element={
+                            <ProtectedRoute resource="ia">
+                              <Layout>
+                                <ExtractorMedico />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/apps/reportes"
-                        element={
-                          <ProtectedRoute resource="ia">
-                            <Layout>
-                              <GeneradorReportes />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/apps/reportes"
+                          element={
+                            <ProtectedRoute resource="ia">
+                              <Layout>
+                                <GeneradorReportes />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/certificaciones"
-                        element={
-                          <ProtectedRoute resource="certificaciones">
-                            <Layout>
-                              <Certificaciones />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/certificaciones"
+                          element={
+                            <ProtectedRoute resource="certificaciones">
+                              <Layout>
+                                <Certificaciones />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      {/* Gestión */}
-                      <Route
-                        path="/tienda"
-                        element={
-                          <ProtectedRoute resource="tienda">
-                            <Layout>
-                              <Tienda />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        {/* Gestión */}
+                        <Route
+                          path="/tienda"
+                          element={
+                            <ProtectedRoute resource="tienda">
+                              <Layout>
+                                <Tienda />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/facturacion"
-                        element={
-                          <ProtectedRoute resource="facturacion">
-                            <Layout>
-                              <Facturacion />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/facturacion"
+                          element={
+                            <ProtectedRoute resource="facturacion">
+                              <Layout>
+                                <Facturacion />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/reportes"
-                        element={
-                          <ProtectedRoute resource="reportes">
-                            <Layout>
-                              <Reportes />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/reportes"
+                          element={
+                            <ProtectedRoute resource="reportes">
+                              <Layout>
+                                <Reportes />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      {/* Sistema */}
-                      <Route
-                        path="/configuracion"
-                        element={
-                          <ProtectedRoute resource="configuracion">
-                            <Layout>
-                              <Configuracion />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        {/* Sistema */}
+                        <Route
+                          path="/configuracion"
+                          element={
+                            <ProtectedRoute resource="configuracion">
+                              <Layout>
+                                <Configuracion />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/perfil"
-                        element={
-                          <ProtectedRoute>
-                            <Layout>
-                              <PerfilUsuario />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/perfil"
+                          element={
+                            <ProtectedRoute>
+                              <Layout>
+                                <PerfilUsuario />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      {/* Rutas administrativas */}
-                      <Route
-                        path="/rrhh"
-                        element={
-                          <ProtectedRoute resource="rrhh">
-                            <Layout>
-                              <RRHH />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        {/* Rutas administrativas */}
+                        <Route
+                          path="/rrhh"
+                          element={
+                            <ProtectedRoute resource="rrhh">
+                              <Layout>
+                                <RRHH />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/admin/menu-config"
-                        element={
-                          <ProtectedRoute resource="sistema">
-                            <Layout>
-                              <PanelMenuConfig />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/admin/menu-config"
+                          element={
+                            <ProtectedRoute resource="sistema">
+                              <Layout>
+                                <PanelMenuConfig />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      <Route
-                        path="/admin/dashboard"
-                        element={
-                          <ProtectedRoute resource="sistema">
-                            <Layout>
-                              <AdminDashboardWrapper />
-                            </Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                        <Route
+                          path="/admin/dashboard"
+                          element={
+                            <ProtectedRoute resource="sistema">
+                              <Layout>
+                                <AdminDashboardWrapper />
+                              </Layout>
+                            </ProtectedRoute>
+                          }
+                        />
 
-                      {/* Fallback */}
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
+                        {/* Fallback */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
 
-                    {/* Toast notifications */}
-                    <Toaster
-                      position="top-right"
-                      toastOptions={{
-                        duration: 4000,
-                        style: {
-                          background: '#fff',
-                          color: '#333',
-                          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '0.5rem',
-                          fontSize: '14px',
-                        },
-                        success: {
+                      {/* Toast notifications */}
+                      <Toaster
+                        position="top-right"
+                        toastOptions={{
+                          duration: 4000,
                           style: {
-                            borderLeft: '4px solid #00BFA6',
+                            background: '#fff',
+                            color: '#333',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '0.5rem',
+                            fontSize: '14px',
                           },
-                          iconTheme: {
-                            primary: '#00BFA6',
-                            secondary: '#fff',
+                          success: {
+                            style: {
+                              borderLeft: '4px solid #00BFA6',
+                            },
+                            iconTheme: {
+                              primary: '#00BFA6',
+                              secondary: '#fff',
+                            },
                           },
-                        },
-                        error: {
-                          style: {
-                            borderLeft: '4px solid #EF4444',
+                          error: {
+                            style: {
+                              borderLeft: '4px solid #EF4444',
+                            },
+                            iconTheme: {
+                              primary: '#EF4444',
+                              secondary: '#fff',
+                            },
                           },
-                          iconTheme: {
-                            primary: '#EF4444',
-                            secondary: '#fff',
-                          },
-                        },
-                      }}
-                    />
-                  </div>
-                </CarritoProvider>
-              </SystemProvider>
+                        }}
+                      />
+                    </div>
+                  </CarritoProvider>
+                </SystemProvider>
+              </DemoDataProvider>
             </AuthProvider>
           }
         />

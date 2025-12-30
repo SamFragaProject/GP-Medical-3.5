@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Users,
@@ -23,8 +23,12 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuth } from '@/contexts/AuthContext'
+import { useDemoData } from '@/contexts/DemoDataContext'
+import { UserFormModal } from '@/components/users/UserFormModal'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { ROLE_LABELS, ROLE_COLORS } from '@/types/auth'
 import type { UserRole } from '@/types/auth'
+import type { DemoUser } from '@/data/mockDemoData'
 
 interface Usuario {
   id: string
@@ -41,75 +45,6 @@ interface Usuario {
   created_at: string
 }
 
-// Mock data
-const USUARIOS_DEMO: Usuario[] = [
-  {
-    id: '1',
-    nombre: 'Roberto',
-    apellido_paterno: 'Pérez',
-    apellido_materno: 'Sánchez',
-    email: 'roberto.perez@mediflow.mx',
-    rol: 'medico',
-    empresa: 'TechCorp México',
-    estado: 'activo',
-    telefono: '55-1234-5678',
-    last_login: '2024-11-25 10:30',
-    created_at: '2024-01-15'
-  },
-  {
-    id: '2',
-    nombre: 'Ana',
-    apellido_paterno: 'Martínez',
-    apellido_materno: 'López',
-    email: 'ana.martinez@techcorp.mx',
-    rol: 'admin_empresa',
-    empresa: 'TechCorp México',
-    estado: 'activo',
-    telefono: '55-9876-5432',
-    last_login: '2024-11-25 09:15',
-    created_at: '2024-02-20'
-  },
-  {
-    id: '3',
-    nombre: 'Pedro',
-    apellido_paterno: 'González',
-    apellido_materno: 'Ramírez',
-    email: 'pedro.gonzalez@delta.mx',
-    rol: 'medico',
-    empresa: 'Constructora Delta',
-    estado: 'inactivo',
-    telefono: '81-5555-1234',
-    last_login: '2024-11-20 14:45',
-    created_at: '2023-11-10'
-  },
-  {
-    id: '4',
-    nombre: 'María',
-    apellido_paterno: 'Rodríguez',
-    apellido_materno: 'Fernández',
-    email: 'maria.rodriguez@mediflow.mx',
-    rol: 'super_admin',
-    empresa: 'MediFlow',
-    estado: 'activo',
-    telefono: '55-7777-8888',
-    last_login: '2024-11-25 11:00',
-    created_at: '2023-01-01'
-  },
-  {
-    id: '5',
-    nombre: 'Carlos',
-    apellido_paterno: 'Hernández',
-    apellido_materno: 'García',
-    email: 'carlos.hernandez@paciente.mx',
-    rol: 'paciente',
-    empresa: 'TechCorp México',
-    estado: 'activo',
-    telefono: '55-3333-4444',
-    last_login: '2024-11-24 16:20',
-    created_at: '2024-03-15'
-  }
-]
-
 const ESTADO_COLORS = {
   activo: { bg: 'bg-emerald-100', text: 'text-emerald-700', icon: CheckCircle },
   inactivo: { bg: 'bg-gray-100', text: 'text-gray-700', icon: XCircle },
@@ -118,14 +53,35 @@ const ESTADO_COLORS = {
 
 export function UsuariosEmpresa() {
   const { user, hasPermission } = useAuth()
-  const [usuarios] = useState<Usuario[]>(USUARIOS_DEMO)
+  const demoData = useDemoData()
   const [searchQuery, setSearchQuery] = useState('')
   const [filterRol, setFilterRol] = useState<'all' | UserRole>('all')
   const [filterEstado, setFilterEstado] = useState<'all' | 'activo' | 'inactivo' | 'suspendido'>('all')
 
+  // Modal states
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false)
+  const [editingUser, setEditingUser] = useState<DemoUser | null>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<Usuario | null>(null)
+
   if (!user) return null
 
   const canManage = hasPermission('usuarios', 'update')
+
+  // Convert DemoUser to Usuario format
+  const usuarios: Usuario[] = demoData.users.map(u => ({
+    id: u.id,
+    nombre: u.nombre,
+    apellido_paterno: u.apellidoPaterno,
+    apellido_materno: u.apellidoMaterno || '',
+    email: u.email,
+    rol: (u.hierarchy === 'medico_trabajo' || u.hierarchy === 'medico_especialista' ? 'medico' : u.hierarchy) as UserRole,
+    empresa: 'MediFlow Demo',
+    estado: 'activo' as const,
+    telefono: u.telefono,
+    last_login: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    created_at: '2024-01-01'
+  }))
 
   const filteredUsuarios = usuarios.filter(u => {
     const matchesSearch =
@@ -144,16 +100,91 @@ export function UsuariosEmpresa() {
     suspendidos: usuarios.filter(u => u.estado === 'suspendido').length
   }
 
+  // CRUD Handlers
+  const handleNewUser = () => {
+    setEditingUser(null)
+    setIsFormModalOpen(true)
+  }
+
+  const handleEditUser = (usuario: Usuario) => {
+    const demoUser = demoData.users.find(u => u.id === usuario.id)
+    if (demoUser) {
+      setEditingUser(demoUser)
+    } else {
+      // Create a DemoUser from Usuario
+      setEditingUser({
+        id: usuario.id,
+        email: usuario.email,
+        nombre: usuario.nombre,
+        apellidoPaterno: usuario.apellido_paterno,
+        apellidoMaterno: usuario.apellido_materno,
+        hierarchy: usuario.rol,
+        empresaId: '',
+        sedeId: '',
+        telefono: usuario.telefono
+      })
+    }
+    setIsFormModalOpen(true)
+  }
+
+  const handleSaveUser = (userData: any) => {
+    if (editingUser) {
+      demoData.updateUser(editingUser.id, {
+        nombre: userData.nombre,
+        apellidoPaterno: userData.apellidoPaterno,
+        apellidoMaterno: userData.apellidoMaterno,
+        email: userData.email,
+        telefono: userData.telefono,
+        hierarchy: userData.hierarchy,
+        cedulaProfesional: userData.cedulaProfesional,
+        especialidad: userData.especialidad
+      })
+    } else {
+      demoData.addUser({
+        email: userData.email,
+        nombre: userData.nombre,
+        apellidoPaterno: userData.apellidoPaterno,
+        apellidoMaterno: userData.apellidoMaterno,
+        hierarchy: userData.hierarchy,
+        empresaId: '',
+        sedeId: '',
+        telefono: userData.telefono,
+        cedulaProfesional: userData.cedulaProfesional,
+        especialidad: userData.especialidad
+      })
+    }
+    setIsFormModalOpen(false)
+    setEditingUser(null)
+  }
+
+  const handleDeleteClick = (usuario: Usuario) => {
+    setUserToDelete(usuario)
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = () => {
+    if (userToDelete) {
+      demoData.deleteUser(userToDelete.id)
+      setUserToDelete(null)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Usuarios</h1>
-          <p className="text-gray-600 mt-1">Gestión de usuarios del sistema - {usuarios.length} total</p>
+          <p className="text-gray-600 mt-1">
+            Gestión de usuarios del sistema - {usuarios.length} total
+            <Badge className="ml-2 bg-amber-100 text-amber-700">Demo</Badge>
+          </p>
         </div>
         {canManage && (
-          <Button className="bg-primary hover:bg-primary/90 text-gray-900 shadow-lg shadow-primary/25 rounded-xl px-6 transition-all hover:scale-105">
+          <Button
+            onClick={handleNewUser}
+            className="bg-primary hover:bg-primary/90 text-gray-900 shadow-lg shadow-primary/25 rounded-xl px-6 transition-all hover:scale-105"
+          >
             <Plus className="w-5 h-5 mr-2" />
             Nuevo Usuario
           </Button>
@@ -341,11 +372,21 @@ export function UsuariosEmpresa() {
 
                     {canManage && (
                       <div className="pt-3 border-t border-gray-100 flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1 h-8 text-xs hover:text-blue-600 hover:border-blue-300">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 h-8 text-xs hover:text-blue-600 hover:border-blue-300"
+                          onClick={() => handleEditUser(usuario)}
+                        >
                           <Edit className="w-3 h-3 mr-1" />
                           Editar
                         </Button>
-                        <Button variant="outline" size="sm" className="h-8 px-3 text-xs text-red-600 hover:bg-red-50 hover:border-red-300">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-3 text-xs text-red-600 hover:bg-red-50 hover:border-red-300"
+                          onClick={() => handleDeleteClick(usuario)}
+                        >
                           <Trash2 className="w-3 h-3" />
                         </Button>
                       </div>
@@ -361,10 +402,38 @@ export function UsuariosEmpresa() {
       {filteredUsuarios.length === 0 && (
         <div className="text-center py-12">
           <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No se encontraron usuarios</h3>
-          <p className="text-gray-600">Intenta ajustar los filtros de búsqueda</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            {usuarios.length === 0 ? 'No hay usuarios' : 'No se encontraron usuarios'}
+          </h3>
+          <p className="text-gray-600 mb-4">
+            {usuarios.length === 0 ? 'Comienza agregando un nuevo usuario' : 'Intenta ajustar los filtros de búsqueda'}
+          </p>
+          {usuarios.length === 0 && canManage && (
+            <Button onClick={handleNewUser} className="bg-primary text-gray-900">
+              <Plus className="w-4 h-4 mr-2" /> Agregar Usuario
+            </Button>
+          )}
         </div>
       )}
+
+      {/* User Form Modal */}
+      <UserFormModal
+        open={isFormModalOpen}
+        onClose={() => { setIsFormModalOpen(false); setEditingUser(null); }}
+        onSave={handleSaveUser}
+        user={editingUser}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onClose={() => { setDeleteConfirmOpen(false); setUserToDelete(null); }}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Usuario"
+        message={`¿Estás seguro de que deseas eliminar a ${userToDelete?.nombre} ${userToDelete?.apellido_paterno}? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        variant="danger"
+      />
     </div>
   )
 }

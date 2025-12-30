@@ -17,7 +17,9 @@ import {
   FlaskConical,
   FileSearch,
   Filter,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Edit,
+  Trash2
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -30,10 +32,16 @@ import { PrescriptionEditor } from '@/components/medicina/PrescriptionEditor'
 import { ClinicalRecordView } from '@/components/medicina/ClinicalRecordView'
 import { WorkHistoryTimeline } from '@/components/dashboard/WorkHistoryTimeline'
 import { PatientStats } from '@/components/patients/PatientStats'
-import { getDemoDataForRole, convertToServicePaciente } from '@/data/mockDemoData'
+import { PatientFormModal } from '@/components/patients/PatientFormModal'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { useDemoData } from '@/contexts/DemoDataContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { getDemoDataForRole, convertToServicePaciente, DemoPatient, DEMO_EMPRESA_ID } from '@/data/mockDemoData'
 import toast from 'react-hot-toast'
 
 export function Pacientes() {
+  const { user } = useAuth()
+  const demoData = useDemoData()
   const [pacientes, setPacientes] = useState<Paciente[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedPatient, setSelectedPatient] = useState<Paciente | null>(null)
@@ -42,25 +50,27 @@ export function Pacientes() {
   const [activeFilter, setActiveFilter] = useState('all')
   const [isOffline, setIsOffline] = useState(false)
 
+  // Modal states
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false)
+  const [editingPatient, setEditingPatient] = useState<DemoPatient | null>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [patientToDelete, setPatientToDelete] = useState<Paciente | null>(null)
+
+  // Check if user is demo user
+  const isDemoUser = user?.id?.startsWith('demo-')
+
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true)
 
-        // Check if user is demo user - use role-based demo data
-        const storedUser = localStorage.getItem('mediflow_user')
-        if (storedUser) {
-          const user = JSON.parse(storedUser)
-          const isDemoUser = user.id?.startsWith('demo-')
-
-          if (isDemoUser) {
-            console.log('📦 Demo user detected - using role-based data for:', user.rol)
-            const { patients } = getDemoDataForRole(user.id, user.rol)
-            const convertedPatients = patients.map(p => convertToServicePaciente(p))
-            setPacientes(convertedPatients)
-            setIsOffline(true)
-            return
-          }
+        if (isDemoUser && user) {
+          console.log('📦 Demo user detected - using DemoDataContext for:', user.rol)
+          // Use data from DemoDataContext
+          const convertedPatients = demoData.patients.map(p => convertToServicePaciente(p))
+          setPacientes(convertedPatients)
+          setIsOffline(true)
+          return
         }
 
         // Usar servicio real de Supabase for real users
@@ -70,14 +80,9 @@ export function Pacientes() {
         console.log('✅ Pacientes cargados desde Supabase:', data.length)
       } catch (error) {
         console.error('Error al cargar pacientes:', error)
-        // Fallback to role-based demo data
-        const storedUser = localStorage.getItem('mediflow_user')
-        if (storedUser) {
-          const user = JSON.parse(storedUser)
-          const { patients } = getDemoDataForRole(user.id || '', user.rol || 'paciente')
-          const convertedPatients = patients.map(p => convertToServicePaciente(p))
-          setPacientes(convertedPatients)
-        }
+        // Fallback to demo data context
+        const convertedPatients = demoData.patients.map(p => convertToServicePaciente(p))
+        setPacientes(convertedPatients)
         setIsOffline(true)
         toast.success('Modo demo activado', { icon: '📦' })
         console.log('📦 Pacientes usando datos demo (modo offline)')
@@ -86,12 +91,12 @@ export function Pacientes() {
       }
     }
     loadData()
-  }, [])
+  }, [isDemoUser, user, demoData.patients])
 
   const filteredPatients = pacientes.filter(p =>
     (p.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.apellido_paterno.toLowerCase().includes(searchQuery.toLowerCase())) &&
-    (activeFilter === 'all' || p.estatus === activeFilter) // Note: Mock data doesn't have estatus, so this is placeholder logic
+    (activeFilter === 'all' || p.estatus === activeFilter)
   )
 
   // Reset view mode when selecting a new patient
@@ -103,6 +108,71 @@ export function Pacientes() {
   const handleBackToList = () => {
     setSelectedPatient(null)
     setViewMode('details')
+  }
+
+  // CRUD Handlers
+  const handleNewPatient = () => {
+    setEditingPatient(null)
+    setIsFormModalOpen(true)
+  }
+
+  const handleEditPatient = (patient: Paciente) => {
+    // Find the DemoPatient in context
+    const demoPatient = demoData.patients.find(p => p.id === patient.id)
+    if (demoPatient) {
+      setEditingPatient(demoPatient)
+      setIsFormModalOpen(true)
+    } else {
+      // Create a DemoPatient from Paciente for editing
+      setEditingPatient({
+        id: patient.id,
+        empresaId: patient.empresa_id || DEMO_EMPRESA_ID,
+        numeroEmpleado: patient.numero_empleado || '',
+        nombre: patient.nombre,
+        apellidoPaterno: patient.apellido_paterno,
+        apellidoMaterno: patient.apellido_materno,
+        fechaNacimiento: patient.fecha_nacimiento || '',
+        genero: patient.genero === 'M' ? 'masculino' : patient.genero === 'F' ? 'femenino' : 'otro',
+        email: patient.email,
+        telefono: patient.telefono,
+        estatus: 'activo',
+        tipoSangre: patient.tipo_sangre,
+        alergias: patient.alergias,
+        curp: patient.curp,
+        nss: patient.nss,
+      })
+      setIsFormModalOpen(true)
+    }
+  }
+
+  const handleSavePatient = (patientData: Omit<DemoPatient, 'id' | 'empresaId'>) => {
+    if (editingPatient) {
+      // Update existing patient
+      demoData.updatePatient(editingPatient.id, patientData)
+    } else {
+      // Add new patient
+      demoData.addPatient({
+        ...patientData,
+        empresaId: DEMO_EMPRESA_ID,
+      })
+    }
+    setIsFormModalOpen(false)
+    setEditingPatient(null)
+  }
+
+  const handleDeleteClick = (patient: Paciente) => {
+    setPatientToDelete(patient)
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = () => {
+    if (patientToDelete) {
+      demoData.deletePatient(patientToDelete.id)
+      setPatientToDelete(null)
+      if (selectedPatient?.id === patientToDelete.id) {
+        setSelectedPatient(null)
+      }
+    }
   }
 
   return (
@@ -120,9 +190,15 @@ export function Pacientes() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Pacientes</h1>
-              <p className="text-gray-600 mt-1">Gestión clínica y seguimiento integral</p>
+              <p className="text-gray-600 mt-1">
+                Gestión clínica y seguimiento integral
+                {isOffline && <Badge className="ml-2 bg-amber-100 text-amber-700">Demo</Badge>}
+              </p>
             </div>
-            <Button className="bg-primary hover:bg-primary/90 text-gray-900 shadow-lg shadow-primary/25 rounded-xl px-6 transition-all hover:scale-105">
+            <Button
+              onClick={handleNewPatient}
+              className="bg-primary hover:bg-primary/90 text-gray-900 shadow-lg shadow-primary/25 rounded-xl px-6 transition-all hover:scale-105"
+            >
               <Plus className="w-5 h-5 mr-2" />
               Nuevo Paciente
             </Button>
@@ -163,7 +239,7 @@ export function Pacientes() {
                     onClick={() => setActiveFilter('all')}
                     className="rounded-lg text-xs"
                   >
-                    Todos
+                    Todos ({pacientes.length})
                   </Button>
                   <Button
                     variant={activeFilter === 'apto' ? 'default' : 'outline'}
@@ -195,6 +271,15 @@ export function Pacientes() {
               <div className="flex-1 overflow-y-auto p-2 space-y-2">
                 {loading ? (
                   <div className="flex justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
+                ) : filteredPatients.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay pacientes</h3>
+                    <p className="text-gray-600 mb-4">Comienza agregando un nuevo paciente</p>
+                    <Button onClick={handleNewPatient} className="bg-primary text-gray-900">
+                      <Plus className="w-4 h-4 mr-2" /> Agregar Paciente
+                    </Button>
+                  </div>
                 ) : (
                   filteredPatients.map((patient, index) => {
                     // Mock data for status - in real app, this would come from patient data
@@ -210,11 +295,13 @@ export function Pacientes() {
                       <motion.div
                         key={patient.id}
                         layoutId={`patient-${patient.id}`}
-                        onClick={() => handleSelectPatient(patient)}
                         className="p-4 rounded-2xl cursor-pointer transition-all hover:bg-gray-50 border border-transparent hover:border-primary/20 group"
                       >
                         <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-3 flex-1">
+                          <div
+                            className="flex items-start space-x-3 flex-1"
+                            onClick={() => handleSelectPatient(patient)}
+                          >
                             <Avatar className="h-12 w-12 border-2 border-white shadow-sm ring-2 ring-primary/10">
                               <AvatarImage src={patient.foto_url} />
                               <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
@@ -267,7 +354,30 @@ export function Pacientes() {
                               </div>
                             </div>
                           </div>
-                          <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0 mt-2" />
+
+                          {/* Action buttons */}
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+                              onClick={(e) => { e.stopPropagation(); handleEditPatient(patient); }}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-gray-500 hover:text-red-600"
+                              onClick={(e) => { e.stopPropagation(); handleDeleteClick(patient); }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                            <ChevronRight
+                              className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0"
+                              onClick={() => handleSelectPatient(patient)}
+                            />
+                          </div>
                         </div>
                       </motion.div>
                     );
@@ -331,6 +441,15 @@ export function Pacientes() {
                     className="text-sm"
                   >
                     Receta
+                  </Button>
+                  <div className="w-px h-8 bg-gray-200 mx-2" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditPatient(selectedPatient)}
+                    className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  >
+                    <Edit className="w-4 h-4 mr-1" /> Editar
                   </Button>
                 </div>
               </div>
@@ -442,9 +561,9 @@ export function Pacientes() {
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                             {[
                               { label: 'Nueva Receta', icon: Pill, color: 'from-emerald-500 to-teal-600', shadow: 'shadow-emerald-500/20', onClick: () => setViewMode('prescription') },
-                              { label: 'Certificado Aptitud', icon: FileText, color: 'from-blue-500 to-indigo-600', shadow: 'shadow-blue-500/20', onClick: () => { } },
-                              { label: 'Eval. Ergonómica', icon: Activity, color: 'from-purple-500 to-pink-600', shadow: 'shadow-purple-500/20', onClick: () => { } },
-                              { label: 'Reporte Incidente', icon: AlertTriangle, color: 'from-amber-500 to-orange-600', shadow: 'shadow-amber-500/20', onClick: () => { } }
+                              { label: 'Certificado Aptitud', icon: FileText, color: 'from-blue-500 to-indigo-600', shadow: 'shadow-blue-500/20', onClick: () => toast.success('Generando certificado...', { icon: '📄' }) },
+                              { label: 'Eval. Ergonómica', icon: Activity, color: 'from-purple-500 to-pink-600', shadow: 'shadow-purple-500/20', onClick: () => toast.success('Abriendo evaluación...', { icon: '📋' }) },
+                              { label: 'Reporte Incidente', icon: AlertTriangle, color: 'from-amber-500 to-orange-600', shadow: 'shadow-amber-500/20', onClick: () => toast.success('Creando reporte...', { icon: '⚠️' }) }
                             ].map((action, idx) => (
                               <motion.button
                                 key={idx}
@@ -539,9 +658,25 @@ export function Pacientes() {
           )}
         </AnimatePresence >
       </div >
+
+      {/* Patient Form Modal */}
+      <PatientFormModal
+        open={isFormModalOpen}
+        onClose={() => { setIsFormModalOpen(false); setEditingPatient(null); }}
+        onSave={handleSavePatient}
+        patient={editingPatient}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onClose={() => { setDeleteConfirmOpen(false); setPatientToDelete(null); }}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Paciente"
+        message={`¿Estás seguro de que deseas eliminar a ${patientToDelete?.nombre} ${patientToDelete?.apellido_paterno}? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        variant="danger"
+      />
     </div >
   )
 }
-
-
-
