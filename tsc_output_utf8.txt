@@ -1,0 +1,5 @@
+﻿src/components/certificaciones/PlantillasCertificado.tsx(340,73): error TS2322: Type '{ className: string; title: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'title' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/configuracion/PanelAdministracion.tsx(41,28): error TS2353: Object literal may only specify known properties, and 'shadow' does not exist in type 'string[] | TargetAndTransition'.
+src/components/tienda/BotonCarritoFlotante.tsx(58,17): error TS2322: Type '{ children: string | number; variant: string; className: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'variant' does not exist on type 'IntrinsicAttributes & LucideProps'.

@@ -1,0 +1,24 @@
+import { StrictMode } from 'react'
+console.log('Main.tsx executing')
+const debugDiv = document.createElement('div');
+debugDiv.innerHTML = '<h1>DEBUG: Main.tsx is running</h1>';
+debugDiv.style.position = 'fixed';
+debugDiv.style.top = '0';
+debugDiv.style.left = '0';
+debugDiv.style.zIndex = '99999';
+debugDiv.style.background = 'red';
+debugDiv.style.color = 'white';
+document.body.appendChild(debugDiv);
+
+import { createRoot } from 'react-dom/client'
+import { ErrorBoundary } from './components/ErrorBoundary.tsx'
+import './index.css'
+import AppNew from './AppNew.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <ErrorBoundary>
+      <AppNew />
+    </ErrorBoundary>
+  </StrictMode>,
+)

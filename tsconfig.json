@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/src-v2/*": ["./src-v2/*"]
+    },
+    "types": ["node"]
+  },
+  "include": ["src/**/*", "src-v2/modules/chatbot-v2/**/*"],
+  "exclude": [
+    "src-v2/modules/auth-v2/**/*",
+    "src-v2/modules/pacientes-v2/**/*",
+    "src-v2/modules/agenda-v2/**/*",
+    "src-v2/modules/inventario-v2/**/*",
+    "src-v2/modules/facturacion-v2/**/*",
+    "src-v2/modules/reportes-v2/**/*",
+    "src-v2/shared/**/*",
+    "src-v2/version-router.tsx",
+    "node_modules",
+    "dist"
+  ],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

@@ -1,0 +1,64 @@
+/* =====================================================
+   GPMedical V2 - Estilos Globales
+   ===================================================== */
+
+:root {
+  --v2-primary: #3b82f6;
+  --v2-primary-dark: #2563eb;
+  --v2-success: #10b981;
+  --v2-warning: #f59e0b;
+  --v2-error: #ef4444;
+  --v2-gray-100: #f3f4f6;
+  --v2-gray-200: #e5e7eb;
+  --v2-gray-700: #374151;
+  --v2-gray-900: #111827;
+  --v2-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --v2-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --v2-radius: 0.5rem;
+  --v2-radius-lg: 1rem;
+}
+
+/* Botones V2 */
+.v2-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--v2-radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.v2-btn--primary {
+  background: var(--v2-primary);
+  color: white;
+}
+
+.v2-btn--primary:hover {
+  background: var(--v2-primary-dark);
+}
+
+/* Cards V2 */
+.v2-card {
+  background: white;
+  border: 1px solid var(--v2-gray-200);
+  border-radius: var(--v2-radius-lg);
+  box-shadow: var(--v2-shadow);
+}
+
+/* Badges V2 */
+.v2-badge {
+  display: inline-flex;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+}
+
+.v2-badge--success { background: #d1fae5; color: #065f46; }
+.v2-badge--warning { background: #fef3c7; color: #92400e; }
+.v2-badge--error { background: #fee2e2; color: #991b1b; }
