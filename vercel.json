@@ -1,10 +1,9 @@
 {
   "version": 2,
-  "name": "gpmedical",
   "framework": "vite",
-  "buildCommand": "pnpm install --prefer-offline && pnpm run build",
+  "buildCommand": "vite build",
   "outputDirectory": "dist",
-  "installCommand": "pnpm install --prefer-offline",
+  "installCommand": "npm install",
   "rewrites": [
     {
       "source": "/((?!api/).*)",
@@ -22,19 +21,6 @@
         {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        }
-      ]
-    },
-    {
-      "source": "/assets/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
         }
       ]
     }
