@@ -1,70 +1,95 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles, CheckCircle, Zap, ShieldCheck, Activity } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Phone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+const FEATURES = [
+  '30 días de prueba gratis',
+  'Sin tarjeta de crédito',
+  'Implementación incluida',
+  'Soporte 24/7',
+];
+
 export function CTASection() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    return (
-        <section className="py-40 bg-transparent relative overflow-hidden">
-            {/* Soft Ambient Energy */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-emerald-500/5 rounded-full blur-[120px]" />
-            </div>
+  return (
+    <section className="py-24 bg-emerald-600 relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+          backgroundSize: '32px 32px'
+        }} />
+      </div>
 
-            <div className="max-w-5xl mx-auto px-6 relative z-10 text-center">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                >
-                    {/* Medical Badge */}
-                    <div className="inline-flex items-center gap-2.5 px-5 py-2 bg-emerald-50 border border-emerald-100 rounded-full mb-10 shadow-sm">
-                        <Activity className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="text-emerald-700 font-extrabold text-[10px] uppercase tracking-widest">Protocol Activation Ready</span>
-                    </div>
+      {/* Gradient Orbs */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-400/30 rounded-full blur-[100px]" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-400/20 rounded-full blur-[80px]" />
 
-                    {/* Headline */}
-                    <h2 className="text-6xl md:text-8xl font-extrabold text-slate-900 mb-8 tracking-tighter leading-none">
-                        El Futuro de la <br />
-                        <span className="text-emerald-500">Salud Laboral</span>
-                    </h2>
+      <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-white/90 text-sm font-medium mb-8">
+            <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+            Oferta de lanzamiento disponible
+          </div>
 
-                    <p className="text-xl md:text-2xl text-slate-500 mb-16 max-w-3xl mx-auto font-normal leading-relaxed">
-                        Despliega la infraestructura más avanzada y eleva el estándar operativo de tu organización médica hoy mismo.
-                    </p>
+          {/* Headline */}
+          <h2 className="text-4xl md:text-6xl font-bold text-white mb-6">
+            Comienza a transformar la salud
+            <br />
+            de tu empresa hoy
+          </h2>
 
-                    {/* High Impact Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => navigate('/register')}
-                            className="px-14 py-5 bg-emerald-500 text-white rounded-[2rem] font-extrabold text-lg uppercase tracking-wider shadow-2xl shadow-emerald-200 hover:bg-emerald-600 transition-all flex items-center gap-4"
-                        >
-                            Comenzar Ahora
-                            <ArrowRight className="w-6 h-6" />
-                        </motion.button>
+          {/* Subheadline */}
+          <p className="text-xl text-emerald-100 max-w-3xl mx-auto mb-10">
+            Únete a más de 500 empresas que ya redujeron sus costos de ausentismo 
+            y cumplen con todas las normativas de salud ocupacional.
+          </p>
 
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => navigate('/pricing')}
-                            className="px-14 py-5 bg-white border border-slate-200 text-slate-900 rounded-[2rem] font-extrabold text-lg uppercase tracking-wider hover:bg-slate-50 transition-all shadow-xl shadow-slate-100"
-                        >
-                            Ver Specs
-                        </motion.button>
-                    </div>
+          {/* Features */}
+          <div className="flex flex-wrap justify-center gap-6 mb-12">
+            {FEATURES.map((feature, i) => (
+              <div key={i} className="flex items-center gap-2 text-emerald-100">
+                <CheckCircle2 className="w-5 h-5" />
+                <span>{feature}</span>
+              </div>
+            ))}
+          </div>
 
-                    {/* Trust indicator */}
-                    <div className="mt-24 flex items-center justify-center gap-4">
-                        <div className="h-px w-12 bg-slate-200" />
-                        <span className="text-slate-400 text-[9px] font-bold uppercase tracking-[0.4em]">Confianza en +150 Centros Médicos</span>
-                        <div className="h-px w-12 bg-slate-200" />
-                    </div>
-                </motion.div>
-            </div>
-        </section>
-    );
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate('/register')}
+              className="px-10 py-5 bg-white text-emerald-600 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transition-all flex items-center gap-3"
+            >
+              Crear cuenta gratis
+              <ArrowRight className="w-5 h-5" />
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="px-10 py-5 bg-emerald-700 text-white rounded-xl font-semibold text-lg hover:bg-emerald-800 transition-all flex items-center gap-3 border border-emerald-500"
+            >
+              <Phone className="w-5 h-5" />
+              Hablar con ventas
+            </motion.button>
+          </div>
+
+          {/* Trust Note */}
+          <p className="mt-8 text-emerald-200 text-sm">
+            Cancela cuando quieras. Sin compromisos ni cargos ocultos.
+          </p>
+        </motion.div>
+      </div>
+    </section>
+  );
 }

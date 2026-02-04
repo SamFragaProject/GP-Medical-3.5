@@ -1,70 +1,64 @@
 import React, { useEffect } from 'react';
-import { motion, useScroll, AnimatePresence } from 'framer-motion';
-import { Heart, Menu, X, ArrowRight, ShieldCheck } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { motion, useScroll } from 'framer-motion';
 import { HomeNavbar } from '../components/home/HomeNavbar';
 import { HeroSection } from '../components/home/HeroSection';
-import { InteractiveShowcase } from '../components/home/InteractiveShowcase';
-import { DashboardPreview } from '../components/home/DashboardPreview';
-import { FeaturesGrid } from '../components/home/FeaturesGrid';
-import { AIShowcase } from '../components/home/AIShowcase';
-import { PricingSection } from '../components/home/PricingSection';
-import { StatsSection } from '../components/home/StatsSection';
+import { BenefitsSection } from '../components/home/BenefitsSection';
+import { ShowcaseGallery } from '../components/home/ShowcaseGallery';
+import { HowItWorks } from '../components/home/HowItWorks';
+import { Testimonials } from '../components/home/Testimonials';
 import { CTASection } from '../components/home/CTASection';
 import { HomeFooter } from '../components/home/HomeFooter';
 import { useMeta } from '@/hooks/useMeta';
 
 export default function Home() {
-    useMeta({
-        title: 'Software ERP Médico y Medicina del Trabajo',
-        description: 'La plataforma más avanzada para gestión clínica, salud ocupacional y análisis predictivo con IA. GPMedical MediFlow v3.5.'
-    });
-    const { scrollYProgress } = useScroll();
+  useMeta({
+    title: 'GPMedical - Software de Medicina del Trabajo #1 en México',
+    description: 'Reduce el ausentismo hasta 40%. Expedientes digitales, exámenes médicos ocupacionales, cumplimiento NOM y análisis predictivo con IA.'
+  });
 
-    // Smooth scroll behavior
-    useEffect(() => {
-        document.documentElement.style.scrollBehavior = 'smooth';
-        return () => {
-            document.documentElement.style.scrollBehavior = 'auto';
-        };
-    }, []);
+  const { scrollYProgress } = useScroll();
 
-    return (
-        <div className="min-h-screen bg-transparent relative">
-            {/* Clinical Scroll Progress Bar */}
-            <motion.div
-                className="fixed top-0 left-0 right-0 h-1 bg-emerald-500 origin-[0%] z-[100] shadow-[0_0_10px_rgba(16,185,129,0.3)]"
-                style={{ scaleX: scrollYProgress }}
-            />
+  useEffect(() => {
+    document.documentElement.style.scrollBehavior = 'smooth';
+    return () => {
+      document.documentElement.style.scrollBehavior = 'auto';
+    };
+  }, []);
 
-            <div className="relative z-10 font-sans">
-                {/* Navbar */}
-                <HomeNavbar />
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Progress Bar */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-1 bg-emerald-500 origin-[0%] z-[100]"
+        style={{ scaleX: scrollYProgress }}
+      />
 
-                {/* Hero Section */}
-                <HeroSection />
+      {/* Navigation */}
+      <HomeNavbar />
 
-                {/* Interactive Feature Showcase - NEW */}
-                <InteractiveShowcase />
+      {/* Main Content - Funnel de Convicción */}
+      <main>
+        {/* 1. HERO - Propuesta de valor clara */}
+        <HeroSection />
 
-                {/* Dashboard Preview */}
-                <DashboardPreview />
+        {/* 2. BENEFICIOS - Resultados tangibles antes que features */}
+        <BenefitsSection />
 
-                {/* AI Showcase */}
-                <AIShowcase />
+        {/* 3. SHOWCASE - Galería visual de espacios */}
+        <ShowcaseGallery />
 
-                {/* Stats Section */}
-                <StatsSection />
+        {/* 4. CÓMO FUNCIONA - Proceso simple */}
+        <HowItWorks />
 
-                {/* Pricing Section */}
-                <PricingSection />
+        {/* 5. TESTIMONIALS - Prueba social */}
+        <Testimonials />
 
-                {/* CTA Section */}
-                <CTASection />
+        {/* 6. CTA FINAL - Conversión */}
+        <CTASection />
+      </main>
 
-                {/* Footer */}
-                <HomeFooter />
-            </div>
-        </div>
-    );
+      {/* Footer */}
+      <HomeFooter />
+    </div>
+  );
 }

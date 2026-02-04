@@ -1,151 +1,226 @@
 import React from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, Activity, Shield, Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowRight, Play, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const MEDICAL_AI_IMAGE = '/assets/medical_ai.png';
+const CHECKS = [
+  'Sin costos de implementación ocultos',
+  'Migración de datos incluida',
+  'Capacitación personalizada',
+];
 
 export function HeroSection() {
-    const navigate = useNavigate();
-    const { scrollY } = useScroll();
-    const opacity = useTransform(scrollY, [0, 400], [1, 0]);
-    const scale = useTransform(scrollY, [0, 400], [1, 0.97]);
+  const navigate = useNavigate();
 
-    return (
-        <section className="relative min-h-[100vh] flex items-center justify-center overflow-hidden pt-24 pb-16">
-            {/* Ambient Glow */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[20%] left-[5%] w-[50%] h-[50%] bg-emerald-400/[0.07] blur-[150px] rounded-full" />
-                <div className="absolute bottom-[10%] right-[10%] w-[40%] h-[40%] bg-sky-400/[0.05] blur-[120px] rounded-full" />
+  return (
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-slate-50">
+      {/* Background Pattern - Subtle */}
+      <div className="absolute inset-0 opacity-[0.02]">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, #0f172a 1px, transparent 0)`,
+          backgroundSize: '40px 40px'
+        }} />
+      </div>
+
+      {/* Soft Gradient Orbs */}
+      <div className="absolute top-1/4 right-0 w-[600px] h-[600px] bg-emerald-200/30 rounded-full blur-[120px] -translate-y-1/2" />
+      <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] bg-blue-200/20 rounded-full blur-[100px]" />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-32 w-full">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          {/* LEFT: Value Proposition */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-8"
+          >
+            {/* Eyebrow */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full shadow-sm"
+            >
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+              <span className="text-slate-600 font-medium text-sm">Software de Medicina del Trabajo #1 en México</span>
+            </motion.div>
+
+            {/* Headline - Clear Benefit */}
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900 leading-[1.05] tracking-tight">
+              Reduce tus
+              <span className="text-emerald-600"> costos de ausentismo</span>
+              <br />
+              hasta un 40%
+            </h1>
+
+            {/* Subheadline - Specific Value */}
+            <p className="text-xl text-slate-600 max-w-xl leading-relaxed">
+              GPMedical es el sistema integral que conecta la salud de tus colaboradores 
+              con la productividad de tu empresa. Cumplimiento NOM, expedientes digitales 
+              y análisis predictivo en una sola plataforma.
+            </p>
+
+            {/* Trust Checks */}
+            <div className="flex flex-wrap gap-4">
+              {CHECKS.map((check, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 + i * 0.1 }}
+                  className="flex items-center gap-2 text-slate-600"
+                >
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <span className="text-sm font-medium">{check}</span>
+                </motion.div>
+              ))}
             </div>
 
-            <motion.div
-                style={{ opacity, scale }}
-                className="relative z-10 max-w-7xl mx-auto px-6 w-full"
-            >
-                <div className="grid lg:grid-cols-2 gap-16 items-center">
-                    {/* LEFT: The Message */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -40 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                        className="space-y-10"
-                    >
-                        {/* Tagline */}
-                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                            <Activity className="w-4 h-4 text-emerald-500" />
-                            <span className="text-emerald-600 font-semibold text-xs tracking-wide">ERP de Salud Ocupacional</span>
-                        </div>
+            {/* CTAs */}
+            <div className="flex flex-wrap gap-4 pt-4">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate('/register')}
+                className="px-8 py-4 bg-emerald-600 text-white rounded-xl font-semibold text-lg shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center gap-3"
+              >
+                Prueba gratis 30 días
+                <ArrowRight className="w-5 h-5" />
+              </motion.button>
+              
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate('/login')}
+                className="px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold text-lg hover:bg-slate-50 transition-all flex items-center gap-3"
+              >
+                <Play className="w-5 h-5" />
+                Ver demo
+              </motion.button>
+            </div>
 
-                        {/* Headline - CLEAR & BOLD */}
-                        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900 leading-[1.05] tracking-tight">
-                            El sistema operativo<br />
-                            <span className="text-emerald-500">para clínicas</span><br />
-                            de medicina laboral
-                        </h1>
+            {/* Social Proof - Minimal */}
+            <div className="flex items-center gap-4 pt-6 border-t border-slate-200">
+              <div className="flex -space-x-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="w-10 h-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden"
+                  >
+                    <img
+                      src={`https://i.pravatar.cc/100?img=${i + 10}`}
+                      alt="Cliente"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div className="text-slate-900 font-semibold">+500 empresas</div>
+                <div className="text-slate-500 text-sm">confían en GPMedical</div>
+              </div>
+            </div>
+          </motion.div>
 
-                        {/* Sub-headline - SHORT */}
-                        <p className="text-xl text-slate-500 max-w-lg leading-relaxed">
-                            Expedientes, exámenes, reportes STPS y cumplimiento NOM. Todo en una sola plataforma impulsada por IA.
-                        </p>
-
-                        {/* CTA Buttons */}
-                        <div className="flex flex-wrap gap-4 pt-2">
-                            <motion.button
-                                whileHover={{ scale: 1.03 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => navigate('/register')}
-                                className="px-8 py-4 bg-emerald-500 text-white rounded-2xl font-semibold text-base shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-colors flex items-center gap-3"
-                            >
-                                Comenzar Gratis
-                                <ArrowRight className="w-5 h-5" />
-                            </motion.button>
-                            <motion.button
-                                whileHover={{ scale: 1.03 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => navigate('/login')}
-                                className="px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-2xl font-semibold text-base hover:bg-slate-50 transition-colors shadow-lg shadow-slate-100"
-                            >
-                                Iniciar Sesión
-                            </motion.button>
-                        </div>
-
-                        {/* Trust Indicators - MINIMAL */}
-                        <div className="flex items-center gap-8 pt-4">
-                            <div className="flex items-center gap-2 text-slate-400">
-                                <Shield className="w-4 h-4 text-emerald-500" />
-                                <span className="text-xs font-medium">NOM-004 Certificado</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-slate-400">
-                                <Zap className="w-4 h-4 text-emerald-500" />
-                                <span className="text-xs font-medium">HIPAA Compliant</span>
-                            </div>
-                        </div>
-                    </motion.div>
-
-                    {/* RIGHT: The Visual */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 40, scale: 0.95 }}
-                        animate={{ opacity: 1, x: 0, scale: 1 }}
-                        transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                        className="relative hidden lg:block"
-                    >
-                        {/* Main Image Card */}
-                        <div className="relative bg-slate-900 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-900/30 aspect-[4/3]">
-                            <img
-                                src={MEDICAL_AI_IMAGE}
-                                alt="GPMedical Dashboard"
-                                className="w-full h-full object-cover"
-                            />
-                            {/* Overlay gradient */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent" />
-
-                            {/* Live Indicator */}
-                            <div className="absolute top-6 left-6 flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur-md rounded-full border border-white/10">
-                                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                                <span className="text-white/80 text-xs font-medium">IA Activa</span>
-                            </div>
-
-                            {/* Bottom Caption */}
-                            <div className="absolute bottom-6 left-6 right-6">
-                                <div className="text-white/60 text-[10px] uppercase tracking-widest mb-1">Motor de Análisis</div>
-                                <div className="text-white text-lg font-semibold">Diagnóstico Predictivo en Tiempo Real</div>
-                            </div>
-                        </div>
-
-                        {/* Floating Stats Card */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.6, duration: 0.6 }}
-                            className="absolute -bottom-8 -left-8 bg-white rounded-2xl p-5 shadow-xl shadow-slate-200/50 border border-slate-100"
-                        >
-                            <div className="text-3xl font-bold text-slate-900">+12,400</div>
-                            <div className="text-sm text-slate-500">Pacientes gestionados</div>
-                        </motion.div>
-
-                        {/* Floating Compliance Badge */}
-                        <motion.div
-                            initial={{ opacity: 0, y: -20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.8, duration: 0.6 }}
-                            className="absolute -top-4 -right-4 bg-emerald-500 text-white rounded-2xl px-4 py-3 shadow-lg shadow-emerald-500/30"
-                        >
-                            <div className="text-xs font-bold uppercase tracking-wide">NOM-030 Ready</div>
-                        </motion.div>
-                    </motion.div>
+          {/* RIGHT: Visual - Clean Dashboard Preview */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="relative hidden lg:block"
+          >
+            {/* Main Dashboard Card */}
+            <div className="relative bg-white rounded-3xl shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+              {/* Header */}
+              <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-red-400" />
+                  <div className="w-3 h-3 rounded-full bg-amber-400" />
+                  <div className="w-3 h-3 rounded-full bg-emerald-400" />
                 </div>
-            </motion.div>
+                <div className="text-xs text-slate-400 font-medium">dashboard.gpmedical.mx</div>
+              </div>
 
-            {/* Scroll Hint */}
+              {/* Content */}
+              <div className="p-6 space-y-6">
+                {/* Stats Row */}
+                <div className="grid grid-cols-3 gap-4">
+                  {[
+                    { label: 'Exámenes hoy', val: '24', trend: '+12%' },
+                    { label: 'Ausentismo', val: '3.2%', trend: '-8%' },
+                    { label: 'ROI Mensual', val: '$45K', trend: '+15%' },
+                  ].map((stat, i) => (
+                    <div key={i} className="bg-slate-50 rounded-2xl p-4">
+                      <div className="text-xs text-slate-500 mb-1">{stat.label}</div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-bold text-slate-900">{stat.val}</span>
+                        <span className={`text-xs ${stat.trend.startsWith('+') ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {stat.trend}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Chart Area */}
+                <div className="bg-slate-50 rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-medium text-slate-700">Tendencia de ausentismo</span>
+                    <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">Este mes</span>
+                  </div>
+                  <div className="flex items-end gap-2 h-24">
+                    {[40, 55, 45, 70, 50, 35, 30].map((h, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ height: 0 }}
+                        animate={{ height: `${h}%` }}
+                        transition={{ duration: 0.8, delay: 0.8 + i * 0.1 }}
+                        className="flex-1 bg-emerald-500 rounded-t-lg"
+                        style={{ opacity: 0.3 + (i * 0.1) }}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex justify-between mt-2 text-xs text-slate-400">
+                    <span>Lun</span>
+                    <span>Dom</span>
+                  </div>
+                </div>
+
+                {/* Alert Card */}
+                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-center gap-4">
+                  <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                    <span className="text-amber-600 text-lg">⚠️</span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-slate-900">Alerta predictiva</div>
+                    <div className="text-xs text-slate-500">3 empleados en riesgo ergonómico alto</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating Badge - Compliance */}
             <motion.div
-                animate={{ y: [0, 8, 0] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2 }}
+              className="absolute -bottom-6 -left-6 bg-white rounded-2xl p-4 shadow-xl border border-slate-100"
             >
-                <div className="w-px h-8 bg-gradient-to-b from-slate-400 to-transparent" />
-                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">Scroll</span>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">✓</span>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-500">Cumplimiento</div>
+                  <div className="text-lg font-bold text-slate-900">NOM-030</div>
+                  <div className="text-xs text-emerald-600">Certificado</div>
+                </div>
+              </div>
             </motion.div>
-        </section>
-    );
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
 }
