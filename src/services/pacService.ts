@@ -21,16 +21,16 @@ export const pacService = {
 <cfdi:Comprobante 
     Version="4.0" 
     Folio="${cfdi.folio || ''}" 
-    Fecha="${cfdi.fecha_emision}" 
+    Fecha="${cfdi.fechaEmision}" 
     Sello="SELLO_EMISOR_MOCK" 
     Total="${cfdi.total}" 
     SubTotal="${cfdi.subtotal}" 
     Moneda="${cfdi.moneda}" 
-    TipoDeComprobante="${cfdi.tipo_comprobante}" 
+    TipoDeComprobante="I" 
     LugarExpedicion="${'CP_EMISOR'}"
 >
   <cfdi:Emisor Rfc="XAXX010101000" Nombre="EMPRESA DEMO S.A. DE C.V." RegimenFiscal="601"/>
-  <cfdi:Receptor Rfc="${cfdi.cliente?.rfc}" Nombre="${cfdi.cliente?.razon_social}" UsoCFDI="${cfdi.cliente?.uso_cfdi}"/>
+  <cfdi:Receptor Rfc="${cfdi.cliente?.rfc}" Nombre="${cfdi.cliente?.razonSocial}" UsoCFDI="${cfdi.cliente?.usoCFDI}"/>
   <cfdi:Conceptos>
     <cfdi:Concepto Importe="${cfdi.total}" ValorUnitario="${cfdi.total}" Descripcion="Servicios Médicos"/>
   </cfdi:Conceptos>

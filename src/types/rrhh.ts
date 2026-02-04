@@ -6,48 +6,142 @@ export interface Employee {
     empresa_id: string;
     usuario_id?: string;
     nombre: string;
-    apellido: string;
-    email_personal?: string;
+    apellido_paterno: string;
+    apellido_materno?: string;
+    email: string;
     telefono?: string;
     direccion?: string;
     numero_empleado?: string;
     fecha_ingreso: string; // ISO Date
-    puesto: string;
-    departamento?: string;
-    tipo_contrato?: ContractType;
-    rfc?: string;
-    curp?: string;
-    nss?: string;
-    salario_diario?: number;
-    cuenta_bancaria?: string;
-    banco?: string;
-    estado: EmployeeStatus;
+    fecha_nacimiento?: string;
+    puesto_id?: string;
+    departamento_id?: string;
+    salario_mensual?: number;
+    tipo_contrato?: string;
+    dias_vacaciones_disponibles?: number;
+    dias_vacaciones_usados?: number;
+    estado: string;
     foto_url?: string;
-    fecha_baja?: string;
-    motivo_baja?: string;
     created_at?: string;
+    departamento?: Departamento;
+    puesto?: Puesto;
 }
 
-export type VacationStatus = 'pendiente' | 'aprobado' | 'rechazado';
-export type VacationType = 'vacaciones' | 'incapacidad' | 'permiso_sin_goce' | 'permiso_con_goce';
+// Alias for legacy support
+export type Empleado = Employee;
 
-export interface VacationRequest {
+export interface Departamento {
     id: string;
     empresa_id: string;
+    nombre: string;
+    codigo?: string;
+    descripcion?: string;
+}
+
+export interface Puesto {
+    id: string;
+    departamento_id: string;
+    nombre: string;
+    descripcion?: string;
+    requisitos?: string[];
+}
+
+export interface RegistroAsistencia {
+    id: string;
     empleado_id: string;
-    empleado?: Partial<Employee>; // Joined
-    tipo: VacationType;
+    empleado?: Partial<Employee>;
+    fecha: string;
+    hora_entrada: string;
+    hora_salida?: string;
+    tipo: 'presencial' | 'remoto';
+}
+
+export interface SolicitudVacaciones {
+    id: string;
+    empleado_id: string;
+    empleado?: Partial<Employee>;
     fecha_inicio: string;
     fecha_fin: string;
-    dias_tomados: number;
-    estado: VacationStatus;
+    dias_solicitados: number;
+    estado: 'pendiente' | 'aprobada' | 'rechazada';
     observaciones?: string;
-    aprobado_por?: string;
+    aprobado_por_id?: string;
+    fecha_aprobacion?: string;
     created_at?: string;
 }
 
-export type PayrollStatus = 'borrador' | 'timbrada' | 'pagada' | 'cancelada';
+export interface Incidencia {
+    id: string;
+    empleado_id: string;
+    tipo: 'falta' | 'retardo' | 'permiso' | 'incapacidad';
+    fecha: string;
+    descripcion: string;
+    created_at?: string;
+}
 
+export interface TurnoHorario {
+    id: string;
+    nombre: string;
+    hora_entrada: string;
+    hora_salida: string;
+}
+
+export interface RRHHStats {
+    total_empleados: number;
+    empleados_activos: number;
+    empleados_vacaciones: number;
+    empleados_incapacidad: number;
+    asistencia_hoy: number;
+    ausencias_hoy: number;
+    solicitudes_pendientes: number;
+    cumpleanos_mes: number;
+    aniversarios_mes: number;
+}
+
+export interface AlertaRRHH {
+    id: string;
+    tipo: 'vencimiento_contrato' | 'cumpleanos' | 'ausencia';
+    mensaje: string;
+    prioridad: 'baja' | 'media' | 'alta';
+}
+
+export interface NodoOrganigrama {
+    id: string;
+    nombre: string;
+    puesto: string;
+    departamento: string;
+    foto_url?: string;
+    hijos?: NodoOrganigrama[];
+}
+
+export interface FiltrosEmpleado {
+    busqueda?: string;
+    departamento_id?: string;
+    puesto_id?: string;
+    estado?: string;
+}
+
+export interface FiltrosAsistencia {
+    empleado_id?: string;
+    fecha_inicio?: string;
+    fecha_fin?: string;
+}
+
+export interface FiltrosVacaciones {
+    empleado_id?: string;
+    estado?: string;
+}
+
+export interface FiltrosIncidencias {
+    empleado_id?: string;
+    tipo?: string;
+}
+
+// Keep existing types for compatibility
+export type VacationStatus = 'pendiente' | 'aprobado' | 'rechazado';
+export type VacationType = 'vacaciones' | 'incapacidad' | 'permiso_sin_goce' | 'permiso_con_goce';
+export interface VacationRequest extends SolicitudVacaciones { }
+export type PayrollStatus = 'borrador' | 'timbrada' | 'pagada' | 'cancelada';
 export interface Payroll {
     id: string;
     empresa_id: string;
@@ -61,7 +155,6 @@ export interface Payroll {
     total_pagado: number;
     created_at?: string;
 }
-
 export interface PayrollDetail {
     id: string;
     nomina_id: string;

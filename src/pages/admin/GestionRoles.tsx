@@ -226,6 +226,9 @@ function RolCard({ rol, onEditar, onEliminar }: RolCardProps) {
 // PÁGINA PRINCIPAL
 // =============================================
 
+import { AdminLayout, AdminSearchBar, AdminLoadingState } from '@/components/admin/AdminLayout'
+import { Button } from '@/components/ui/button'
+
 export default function GestionRoles() {
     const { user } = useAuth()
     const { isSuperAdmin, puede } = usePermisosDinamicos()
@@ -297,175 +300,149 @@ export default function GestionRoles() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50/50 font-sans">
-            <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 py-12">
-                {/* Master Header */}
-                <div className="mb-12">
-                    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
-                        <div>
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="p-2.5 bg-blue-600 rounded-2xl shadow-lg shadow-blue-500/20">
-                                    <Shield className="w-6 h-6 text-white" />
-                                </div>
-                                <Badge className="bg-blue-100 text-blue-700 border-none text-[10px] font-black uppercase tracking-widest px-3 py-1">
-                                    Administración Core
-                                </Badge>
-                            </div>
-                            <h1 className="text-4xl font-black text-slate-900 tracking-tight">
-                                Gestión de Perfiles Operativos
-                            </h1>
-                            <p className="text-slate-500 font-medium mt-2 max-w-2xl">
-                                Configura la arquitectura de accesos y responsabilidades jerárquicas para cada rol dentro del ecosistema GPMedical.
-                            </p>
-                        </div>
+        <AdminLayout
+            title="Gestión de Perfiles Operativos"
+            subtitle="Configura la arquitectura de accesos y responsabilidades jerárquicas para cada rol."
+            icon={Shield}
+            badges={[{ text: 'Administración Core', variant: 'info', icon: <Lock size={12} /> }]}
+            actions={
+                (isSuperAdmin || puede('roles_permisos', 'crear')) && (
+                    <Button
+                        onClick={() => setMostrarWizard(true)}
+                        className="bg-slate-900 text-white hover:bg-slate-800"
+                    >
+                        <Plus className="w-5 h-5 mr-2" />
+                        Crear Nuevo Perfil
+                    </Button>
+                )
+            }
+        >
+            <div className="space-y-6">
+                <div className="flex flex-col lg:flex-row gap-4 items-center">
+                    <AdminSearchBar
+                        placeholder="Filtrar por nombre de rol o capacidad..."
+                        value={busqueda}
+                        onChange={setBusqueda}
+                        className="flex-1"
+                    />
 
-                        {/* Botón Maestro */}
-                        {(isSuperAdmin || puede('roles_permisos', 'crear')) && (
+                    {/* Selector de Segmento */}
+                    <div className="flex p-1.5 bg-slate-200/50 rounded-2xl w-full lg:w-fit border border-slate-100">
+                        {[
+                            { valor: 'todos', label: 'Todos', icon: Shield },
+                            { valor: 'sistema', label: 'Core', icon: Lock },
+                            { valor: 'personalizados', label: 'Custom', icon: Users }
+                        ].map(filtro => (
                             <button
-                                onClick={() => setMostrarWizard(true)}
-                                className="group relative px-8 py-4 bg-slate-900 text-white font-black text-[11px] uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-slate-900/10 hover:shadow-blue-900/20 transition-all hover:-translate-y-1 active:scale-95 overflow-hidden"
+                                key={filtro.valor}
+                                onClick={() => setFiltroTipo(filtro.valor as any)}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+                                    ${filtroTipo === filtro.valor
+                                        ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-100'
+                                        : 'text-slate-500 hover:text-slate-900'
+                                    }`}
                             >
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                <span className="relative flex items-center gap-3">
-                                    <Plus className="w-5 h-5 stroke-[3]" />
-                                    Crear Nuevo Perfil
-                                </span>
+                                <filtro.icon className="w-3.5 h-3.5" />
+                                {filtro.label}
                             </button>
-                        )}
-                    </div>
-
-                    {/* Barra de Herramientas de Control */}
-                    <div className="mt-10 flex flex-col lg:flex-row gap-4 items-center">
-                        {/* Búsqueda de alta fidelidad */}
-                        <div className="relative flex-1 w-full">
-                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-                            <input
-                                type="text"
-                                value={busqueda}
-                                onChange={(e) => setBusqueda(e.target.value)}
-                                placeholder="Filtrar por nombre de rol o capacidad..."
-                                className="w-full pl-14 pr-6 py-4 rounded-[1.25rem] border border-slate-200 bg-white text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm"
-                            />
-                        </div>
-
-                        {/* Selector de Segmento */}
-                        <div className="flex p-1.5 bg-slate-200/50 rounded-2xl w-full lg:w-fit border border-slate-100">
-                            {[
-                                { valor: 'todos', label: 'Todos', icon: Shield },
-                                { valor: 'sistema', label: 'Core', icon: Lock },
-                                { valor: 'personalizados', label: 'Custom', icon: Users }
-                            ].map(filtro => (
-                                <button
-                                    key={filtro.valor}
-                                    onClick={() => setFiltroTipo(filtro.valor as any)}
-                                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
-                                        ${filtroTipo === filtro.valor
-                                            ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-100'
-                                            : 'text-slate-500 hover:text-slate-900'
-                                        }`}
-                                >
-                                    <filtro.icon className="w-3.5 h-3.5" />
-                                    {filtro.label}
-                                </button>
-                            ))}
-                        </div>
+                        ))}
                     </div>
                 </div>
+            </div>
 
-                {/* Feedback de Estado */}
-                <AnimatePresence>
-                    {error && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="mb-8"
-                        >
-                            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100 flex items-center gap-4 text-rose-700">
-                                <div className="p-2 bg-rose-100 rounded-xl">
-                                    <AlertCircle className="w-5 h-5" />
-                                </div>
-                                <p className="text-xs font-bold uppercase tracking-widest flex-1">{error}</p>
-                                <button
-                                    onClick={() => setError(null)}
-                                    className="p-2 hover:bg-rose-100 rounded-xl transition-colors"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
+            {/* Feedback de Estado */}
+            <AnimatePresence>
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mb-8"
+                    >
+                        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100 flex items-center gap-4 text-rose-700">
+                            <div className="p-2 bg-rose-100 rounded-xl">
+                                <AlertCircle className="w-5 h-5" />
                             </div>
+                            <p className="text-xs font-bold uppercase tracking-widest flex-1">{error}</p>
+                            <button
+                                onClick={() => setError(null)}
+                                className="p-2 hover:bg-rose-100 rounded-xl transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Dashboard de Roles */}
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-32 text-slate-400 gap-4">
+                    <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Sincronizando Base de Roles...</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {rolesFiltrados.map(rol => (
+                        <RolCard
+                            key={rol.id}
+                            rol={rol}
+                            onEditar={() => {
+                                setRolAEditar(rol)
+                                setMostrarWizard(true)
+                            }}
+                            onEliminar={() => handleEliminarRol(rol.id)}
+                        />
+                    ))}
+
+                    {/* Empty States Premium */}
+                    {rolesFiltrados.length === 0 && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="col-span-full py-32 flex flex-col items-center text-center px-6"
+                        >
+                            <div className="w-24 h-24 rounded-[2.5rem] bg-slate-50 flex items-center justify-center mb-8 border border-slate-100">
+                                <Users className="w-12 h-12 text-slate-200" />
+                            </div>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2">
+                                No se detectaron perfiles activos
+                            </h3>
+                            <p className="text-slate-400 font-medium max-w-sm mb-10">
+                                {busqueda
+                                    ? `No hay coincidencias para "${busqueda}" en la base de datos de seguridad.`
+                                    : 'Inicie el protocolo de creación para desplegar nuevos perfiles operativos.'
+                                }
+                            </p>
+                            {!busqueda && (
+                                <button
+                                    onClick={() => setMostrarWizard(true)}
+                                    className="px-8 py-4 bg-blue-600 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-3"
+                                >
+                                    <Plus className="w-5 h-5 stroke-[3]" />
+                                    Desplegar Primer Perfil
+                                </button>
+                            )}
                         </motion.div>
                     )}
-                </AnimatePresence>
+                </div>
+            )}
 
-                {/* Dashboard de Roles */}
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-32 text-slate-400 gap-4">
-                        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em]">Sincronizando Base de Roles...</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        {rolesFiltrados.map(rol => (
-                            <RolCard
-                                key={rol.id}
-                                rol={rol}
-                                onEditar={() => {
-                                    setRolAEditar(rol)
-                                    setMostrarWizard(true)
-                                }}
-                                onEliminar={() => handleEliminarRol(rol.id)}
-                            />
-                        ))}
-
-                        {/* Empty States Premium */}
-                        {rolesFiltrados.length === 0 && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="col-span-full py-32 flex flex-col items-center text-center px-6"
-                            >
-                                <div className="w-24 h-24 rounded-[2.5rem] bg-slate-50 flex items-center justify-center mb-8 border border-slate-100">
-                                    <Users className="w-12 h-12 text-slate-200" />
-                                </div>
-                                <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2">
-                                    No se detectaron perfiles activos
-                                </h3>
-                                <p className="text-slate-400 font-medium max-w-sm mb-10">
-                                    {busqueda
-                                        ? `No hay coincidencias para "${busqueda}" en la base de datos de seguridad.`
-                                        : 'Inicie el protocolo de creación para desplegar nuevos perfiles operativos.'
-                                    }
-                                </p>
-                                {!busqueda && (
-                                    <button
-                                        onClick={() => setMostrarWizard(true)}
-                                        className="px-8 py-4 bg-blue-600 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-3"
-                                    >
-                                        <Plus className="w-5 h-5 stroke-[3]" />
-                                        Desplegar Primer Perfil
-                                    </button>
-                                )}
-                            </motion.div>
-                        )}
-                    </div>
+            {/* Wizard Overlay */}
+            <AnimatePresence>
+                {mostrarWizard && (
+                    <WizardCrearRol
+                        onClose={() => {
+                            setMostrarWizard(false)
+                            setRolAEditar(null)
+                        }}
+                        onCreado={() => {
+                            cargarRoles()
+                        }}
+                        rolInitial={rolAEditar || undefined}
+                    />
                 )}
-
-                {/* Wizard Overlay */}
-                <AnimatePresence>
-                    {mostrarWizard && (
-                        <WizardCrearRol
-                            onClose={() => {
-                                setMostrarWizard(false)
-                                setRolAEditar(null)
-                            }}
-                            onCreado={() => {
-                                cargarRoles()
-                            }}
-                            rolInitial={rolAEditar || undefined}
-                        />
-                    )}
-                </AnimatePresence>
-            </div>
-        </div>
+            </AnimatePresence>
+        </AdminLayout>
     )
 }

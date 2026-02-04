@@ -1,6 +1,7 @@
 // Servicio de datos reales para RRHH usando Supabase
 import { supabase } from '@/lib/supabase'
 import type {
+    Employee,
     Empleado,
     Departamento,
     Puesto,

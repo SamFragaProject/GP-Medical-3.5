@@ -17,8 +17,8 @@ import {
     Edit,
     ExternalLink
 } from 'lucide-react'
-import { PremiumHeader } from '@/components/ui/PremiumHeader'
-import { PremiumButton } from '@/components/ui/PremiumButton'
+import { AdminLayout, AdminSearchBar, AdminLoadingState } from '@/components/admin/AdminLayout'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { dataService } from '@/services/dataService'
@@ -77,41 +77,33 @@ export default function GestionEmpresas() {
     )
 
     return (
-        <div className="min-h-screen bg-slate-50/50 p-6 space-y-8">
-            <PremiumHeader
-                title="Gestión de Empresas (Tenants)"
-                subtitle="Administra los socios corporativos y sus configuraciones SaaS."
-                badges={[{ text: 'Multi-Tenancy', variant: 'info', icon: <Shield size={12} /> }]}
-            >
-                <PremiumButton
-                    variant="primary"
-                    gradient
-                    icon={<Plus size={16} />}
+        <AdminLayout
+            title="Gestión de Empresas (Tenants)"
+            subtitle="Administra los socios corporativos y sus configuraciones SaaS."
+            icon={Building2}
+            badges={[{ text: 'Multi-Tenancy', variant: 'info', icon: <Shield size={12} /> }]}
+            actions={
+                <Button
                     onClick={() => {
                         setSelectedEmpresa(null)
                         setIsDialogOpen(true)
                     }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
+                    <Plus size={16} className="mr-2" />
                     Nueva Empresa
-                </PremiumButton>
-            </PremiumHeader>
-
-            <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-8">
-                <Search className="text-slate-400 w-5 h-5 ml-2" />
-                <input
-                    type="text"
-                    placeholder="Buscar empresa por nombre, RFC o código..."
-                    className="flex-1 bg-transparent border-none outline-none text-slate-700 font-medium placeholder:text-slate-400"
-                    value={busqueda}
-                    onChange={(e) => setBusqueda(e.target.value)}
-                />
-            </div>
+                </Button>
+            }
+        >
+            <AdminSearchBar
+                placeholder="Buscar empresa por nombre, RFC o código..."
+                value={busqueda}
+                onChange={setBusqueda}
+                className="mb-8"
+            />
 
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-4">
-                    <Loader2 className="animate-spin w-10 h-10 text-blue-600" />
-                    <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Cargando Universos de Datos...</p>
-                </div>
+                <AdminLoadingState message="Cargando Universos de Datos..." />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredEmpresas.map((emp) => (
@@ -208,6 +200,6 @@ export default function GestionEmpresas() {
                 onSuccess={cargarEmpresas}
                 initialData={selectedEmpresa}
             />
-        </div>
+        </AdminLayout>
     )
 }
