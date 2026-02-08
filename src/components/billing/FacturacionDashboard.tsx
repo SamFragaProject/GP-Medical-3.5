@@ -47,13 +47,13 @@ export function FacturacionDashboard() {
     const stats = [
         { label: 'Facturado Mes', value: '$45,200', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
         { label: 'Timbradas', value: facturas.filter(f => f.estado === 'timbrada').length, icon: FileCheck, color: 'text-blue-500', bg: 'bg-blue-50' },
-        { label: 'Pendientes', value: facturas.filter(f => f.estado === 'borrador').length, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-50' },
+        { label: 'Pendientes', value: facturas.filter(f => f.estado === 'pendiente').length, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-50' },
         { label: 'Canceladas', value: facturas.filter(f => f.estado === 'cancelada').length, icon: FileWarning, color: 'text-rose-500', bg: 'bg-rose-50' },
     ]
 
     const statusColors: Record<string, string> = {
         timbrada: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-        borrador: 'bg-amber-100 text-amber-700 border-amber-200',
+        pendiente: 'bg-amber-100 text-amber-700 border-amber-200',
         cancelada: 'bg-rose-100 text-rose-700 border-rose-200',
     }
 
@@ -112,15 +112,15 @@ export function FacturacionDashboard() {
                                                     {f.serie}{f.folio || 'S/N'}
                                                 </div>
                                                 <div className="text-[10px] text-slate-400 font-mono truncate max-w-[120px]">
-                                                    {f.uuid_sat || 'No timbrada'}
+                                                    {f.cfdiUUID || 'No timbrada'}
                                                 </div>
                                             </td>
                                             <td className="p-3">
-                                                <div className="font-medium text-slate-700">{f.cliente?.razon_social}</div>
+                                                <div className="font-medium text-slate-700">{f.cliente?.razonSocial}</div>
                                                 <div className="text-xs text-slate-500">{f.cliente?.rfc}</div>
                                             </td>
                                             <td className="p-3 text-slate-500">
-                                                {new Date(f.fecha_emision).toLocaleDateString()}
+                                                {new Date(f.fechaEmision).toLocaleDateString()}
                                             </td>
                                             <td className="p-3 text-right font-semibold text-slate-800">
                                                 ${f.total.toLocaleString()}

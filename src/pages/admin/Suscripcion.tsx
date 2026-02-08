@@ -12,7 +12,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { PremiumHeader } from '@/components/ui/PremiumHeader'
-import { billingService, PlanSaaS, SuscripcionSaaS } from '@/services/billingService'
+import { billingService } from '@/services/billingService'
+import { PlanSaaS, SuscripcionSaaS } from '@/types/facturacion'
 import { useAuth } from '@/contexts/AuthContext'
 import toast from 'react-hot-toast'
 
@@ -26,24 +27,36 @@ export default function PlanesSuscripcion() {
     const demoPlanes: PlanSaaS[] = [
         {
             id: 'basic',
-            codigo: 'basic',
             nombre: 'Plan Básico',
-            precio_mensual: 1499,
-            features: { modulos: ['Expediente Clínico', 'Citas Médicas', 'Recetas en PDF'], soporte: 'Email 24/7' }
+            descripcion: 'Sistema médico esencial',
+            precioMensual: 1499,
+            precioAnual: 14990,
+            maxUsuarios: 3,
+            maxPacientes: 500,
+            caracteristicas: ['Expediente Clínico', 'Citas Médicas', 'Recetas en PDF'],
+            nivel: 'basic'
         },
         {
             id: 'pro',
-            codigo: 'pro',
             nombre: 'Plan Profesional',
-            precio_mensual: 3999,
-            features: { modulos: ['Todo del Básico', 'NOM-035 (Psicosocial)', 'NOM-036 (Ergonomía)', 'Dashboard Avanzado'], soporte: 'Prioritario' }
+            descripcion: 'Para empresas en crecimiento',
+            precioMensual: 3999,
+            precioAnual: 39990,
+            maxUsuarios: 10,
+            maxPacientes: 2000,
+            caracteristicas: ['Todo del Básico', 'NOM-035 (Psicosocial)', 'NOM-036 (Ergonomía)', 'Dashboard Avanzado'],
+            nivel: 'pro'
         },
         {
             id: 'enterprise',
-            codigo: 'enterprise',
             nombre: 'Enterprise',
-            precio_mensual: 9999,
-            features: { modulos: ['Suite Completa', 'Ley Silla', 'Identidad Corporativa', 'API Access', 'Auditoría STPS'], soporte: 'Gerente Dedicado' }
+            descripcion: 'Para grandes corporativos',
+            precioMensual: 9999,
+            precioAnual: 99990,
+            maxUsuarios: 100,
+            maxPacientes: 10000,
+            caracteristicas: ['Suite Completa', 'Ley Silla', 'Identidad Corporativa', 'API Access', 'Auditoría STPS'],
+            nivel: 'enterprise'
         }
     ]
 
@@ -119,9 +132,9 @@ export default function PlanesSuscripcion() {
             {/* Grid de Planes */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {planes.map((plan) => {
-                    const isCurrent = suscripcion?.plan_id === plan.id
-                    const isPro = plan.codigo === 'pro'
-                    const isEnt = plan.codigo === 'enterprise'
+                    const isCurrent = suscripcion?.planId === plan.id
+                    const isPro = plan.nivel === 'pro'
+                    const isEnt = plan.nivel === 'enterprise'
 
                     return (
                         <Card
@@ -141,7 +154,7 @@ export default function PlanesSuscripcion() {
                                 </div>
                                 <CardTitle className="text-xl font-bold text-slate-900">{plan.nombre}</CardTitle>
                                 <div className="mt-4 flex items-baseline">
-                                    <span className="text-4xl font-black text-slate-900">${plan.precio_mensual}</span>
+                                    <span className="text-4xl font-black text-slate-900">${plan.precioMensual}</span>
                                     <span className="ml-1 text-slate-500 font-medium">/mes</span>
                                 </div>
                                 <CardDescription className="mt-2">
@@ -150,16 +163,12 @@ export default function PlanesSuscripcion() {
                             </CardHeader>
                             <CardContent className="p-6 flex-1">
                                 <ul className="space-y-4">
-                                    {plan.features.modulos.map((feature: string, idx: number) => (
+                                    {plan.caracteristicas.map((feature: string, idx: number) => (
                                         <li key={idx} className="flex items-start gap-3 text-sm text-slate-600">
                                             <Check className="w-5 h-5 text-emerald-500 shrink-0" />
                                             {feature}
                                         </li>
                                     ))}
-                                    <li className="flex items-start gap-3 text-sm text-slate-600 font-semibold pt-2 border-t border-dashed">
-                                        <Shield className="w-5 h-5 text-indigo-500 shrink-0" />
-                                        Soporte {plan.features.soporte}
-                                    </li>
                                 </ul>
                             </CardContent>
                             <CardFooter className="p-6 pt-0">

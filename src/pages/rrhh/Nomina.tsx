@@ -168,7 +168,11 @@ export function NominaPanel() {
                                                         <div className="font-medium text-slate-700">
                                                             {d.empleado?.nombre} {d.empleado?.apellido}
                                                         </div>
-                                                        <div className="text-xs text-slate-400">{d.empleado?.puesto}</div>
+                                                        <div className="text-xs text-slate-400">
+                                                            {typeof d.empleado?.puesto === 'string'
+                                                                ? d.empleado.puesto
+                                                                : (d.empleado?.puesto as any)?.nombre || ''}
+                                                        </div>
                                                     </td>
                                                     <td className="p-2 text-right">${d.salario_base.toLocaleString()}</td>
                                                     <td className="p-2 text-right text-emerald-600">+${d.total_percepciones.toLocaleString()}</td>

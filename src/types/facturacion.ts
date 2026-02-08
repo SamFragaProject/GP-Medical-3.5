@@ -62,6 +62,7 @@ export interface Cliente {
   tipo: 'fisica' | 'moral';
   regimenFiscal: RegimenFiscal;
   usoCFDI: UsoCFDI;
+  limiteCredito?: number;
 }
 
 export interface ServicioMedico {
@@ -95,7 +96,7 @@ export interface Factura {
   impuestos: number;
   total: number;
   moneda: string;
-  estado: 'pendiente' | 'pagada' | 'vencida' | 'cancelada';
+  estado: 'pendiente' | 'pagada' | 'vencida' | 'cancelada' | 'timbrada' | 'borrador';
   metodoPago: MetodoPago;
   lugarExpedicion: string;
   regimeFiscal: RegimenFiscal;
@@ -103,6 +104,7 @@ export interface Factura {
   serie: string;
   numero: number;
   cfdiUUID?: string;
+  observaciones?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -114,6 +116,7 @@ export interface Pago {
   fechaPago: Date;
   metodoPago: string;
   estado: 'pendiente' | 'completado' | 'fallido';
+  referencia?: string;
 }
 
 export interface NotaCredito {
@@ -123,6 +126,7 @@ export interface NotaCredito {
   fecha: Date;
   monto: number;
   motivo: string;
+  cliente: Cliente;
 }
 
 export interface Seguro {
@@ -177,17 +181,74 @@ export interface PlanPrecios {
   frecuencia: 'mensual' | 'anual';
 }
 
+export interface MovimientoEstadoCuenta {
+  fecha: Date;
+  concepto: string;
+  cargo: number;
+  abono: number;
+  saldo: number;
+}
+
 export interface EstadoCuenta {
-  id: string;
+  id?: string;
   clienteId: string;
+  cliente: Cliente;
+  saldoActual: number;
+  limiteCredito: number;
+  facturas: Factura[];
+  notasCredito: NotaCredito[];
+  pagos: Pago[];
+  movimientos: MovimientoEstadoCuenta[];
 }
 
 export interface FacturacionRecurrente {
   id: string;
 }
 
+export interface MovimientoConciliacion {
+  fecha: Date;
+  concepto: string;
+  monto: number;
+  tipo: 'ingreso' | 'egreso';
+  estado: 'conciliado' | 'pendiente' | 'diferencia';
+  referencia?: string;
+}
+
 export interface ConciliacionPagos {
   id: string;
+  fechaConciliacion: Date;
+  periodo: {
+    fechaInicio: Date;
+    fechaFin: Date;
+  };
+  movimientos: MovimientoConciliacion[];
+  diferencias: number;
+  estado: 'pendiente' | 'conciliada' | 'diferencia';
+}
+
+export interface PlanSaaS {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  precioMensual: number;
+  precioAnual: number;
+  maxUsuarios: number;
+  maxPacientes: number;
+  caracteristicas: string[];
+  nivel: 'basic' | 'pro' | 'enterprise';
+}
+
+export interface SuscripcionSaaS {
+  id: string;
+  empresaId: string;
+  planId: string;
+  plan?: PlanSaaS;
+  estado: 'activa' | 'vencida' | 'cancelada' | 'prueba';
+  fechaInicio: Date;
+  fechaFin: Date;
+  proximoPago: Date;
+  metodoPago?: string;
+  autoRenovacion: boolean;
 }
 
 export interface ConfiguracionSeguro {

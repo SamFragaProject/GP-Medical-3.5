@@ -32,7 +32,7 @@ export function ClientesFiscales() {
     }
 
     const filtered = clientes.filter(c =>
-        c.razon_social.toLowerCase().includes(busqueda.toLowerCase()) ||
+        c.razonSocial.toLowerCase().includes(busqueda.toLowerCase()) ||
         c.rfc.toLowerCase().includes(busqueda.toLowerCase())
     )
 
@@ -65,10 +65,10 @@ export function ClientesFiscales() {
                             <CardContent className="p-4 space-y-3">
                                 <div className="flex justify-between items-start">
                                     <h3 className="font-semibold text-slate-800 line-clamp-1">
-                                        {cliente.razon_social}
+                                        {cliente.razonSocial}
                                     </h3>
                                     <Badge variant="outline" className="text-[10px] bg-slate-50">
-                                        {cliente.regimen_fiscal}
+                                        {cliente.regimenFiscal}
                                     </Badge>
                                 </div>
 
@@ -79,11 +79,11 @@ export function ClientesFiscales() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Mail className="h-3.5 w-3.5 text-emerald-500" />
-                                        <span>{cliente.email_envio}</span>
+                                        <span>{cliente.email}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <MapPin className="h-3.5 w-3.5 text-emerald-500" />
-                                        <span>CP: {cliente.codigo_postal}</span>
+                                        <span>CP: {cliente.direccion.cp}</span>
                                     </div>
                                 </div>
 

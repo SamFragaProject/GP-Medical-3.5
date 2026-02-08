@@ -41,8 +41,8 @@ export function NuevaFactura({ open, onClose }: NuevaFacturaProps) {
     const [busquedaCliente, setBusquedaCliente] = React.useState('')
     const [clientes, setClientes] = React.useState<ClienteFiscal[]>([])
 
-    const [conceptos, setConceptos] = React.useState<ConceptoFactura[]>([
-        { clave_prod_serv: '85121500', cantidad: 1, clave_unidad: 'E48', descripcion: 'Consulta Médica General', valor_unitario: 0, importe: 0 }
+    const [conceptos, setConceptos] = React.useState<any[]>([
+        { servicioId: '85121500', cantidad: 1, servicioNombre: 'Consulta Médica General', precioUnitario: 0, total: 0, descuento: 0, impuesto: 0 }
     ])
 
     const [metodoPago, setMetodoPago] = React.useState<MetodoPago>('PUE')
@@ -54,23 +54,23 @@ export function NuevaFactura({ open, onClose }: NuevaFacturaProps) {
         }
     }, [open, user?.empresa_id])
 
-    const subtotal = conceptos.reduce((acc, c) => acc + (c.cantidad * c.valor_unitario), 0)
+    const subtotal = conceptos.reduce((acc, c) => acc + (c.cantidad * c.precioUnitario), 0)
     const iva = subtotal * 0.16 // Simplificado
     const total = subtotal + iva
 
     const handleAddConcepto = () => {
-        setConceptos([...conceptos, { clave_prod_serv: '85121500', cantidad: 1, clave_unidad: 'E48', descripcion: '', valor_unitario: 0, importe: 0 }])
+        setConceptos([...conceptos, { servicioId: '85121500', cantidad: 1, servicioNombre: '', precioUnitario: 0, total: 0, descuento: 0, impuesto: 0 }])
     }
 
     const handleRemoveConcepto = (index: number) => {
         setConceptos(conceptos.filter((_, i) => i !== index))
     }
 
-    const handleConceptoChange = (index: number, field: keyof ConceptoFactura, value: any) => {
+    const handleConceptoChange = (index: number, field: string, value: any) => {
         const newConceptos = [...conceptos]
         newConceptos[index] = { ...newConceptos[index], [field]: value }
-        if (field === 'cantidad' || field === 'valor_unitario') {
-            newConceptos[index].importe = newConceptos[index].cantidad * newConceptos[index].valor_unitario
+        if (field === 'cantidad' || field === 'precioUnitario') {
+            newConceptos[index].total = newConceptos[index].cantidad * newConceptos[index].precioUnitario
         }
         setConceptos(newConceptos)
     }
@@ -101,7 +101,7 @@ export function NuevaFactura({ open, onClose }: NuevaFacturaProps) {
             const result = await pacService.timbrarFactura({ ...borrador, cliente: selectedCliente })
 
             // 3. Actualizar Estado
-            await billingService.updateEstadoFactura(borrador.id, {
+            await (billingService as any).updateEstadoFactura(borrador.id, {
                 estado: 'timbrada',
                 uuid_sat: result.uuid,
                 fecha_timbrado: result.fecha_timbrado,
@@ -122,7 +122,7 @@ export function NuevaFactura({ open, onClose }: NuevaFacturaProps) {
     const reset = () => {
         setStep(1)
         setSelectedCliente(null)
-        setConceptos([{ clave_prod_serv: '85121500', cantidad: 1, clave_unidad: 'E48', descripcion: 'Consulta Médica General', valor_unitario: 0, importe: 0 }])
+        setConceptos([{ servicioId: '85121500', cantidad: 1, servicioNombre: 'Consulta Médica General', precioUnitario: 0, total: 0, descuento: 0, impuesto: 0 }])
         onClose()
     }
 
@@ -170,7 +170,7 @@ export function NuevaFactura({ open, onClose }: NuevaFacturaProps) {
 
                         <div className="grid gap-2">
                             {clientes
-                                .filter(c => c.razon_social.toLowerCase().includes(busquedaCliente.toLowerCase()) || c.rfc.toLowerCase().includes(busquedaCliente.toLowerCase()))
+                                .filter(c => c.razonSocial.toLowerCase().includes(busquedaCliente.toLowerCase()) || c.rfc.toLowerCase().includes(busquedaCliente.toLowerCase()))
                                 .slice(0, 4)
                                 .map(cliente => (
                                     <div
@@ -180,8 +180,8 @@ export function NuevaFactura({ open, onClose }: NuevaFacturaProps) {
                                             }`}
                                     >
                                         <div>
-                                            <p className="font-semibold text-slate-700 text-sm">{cliente.razon_social}</p>
-                                            <p className="text-xs text-slate-500">{cliente.rfc} | CP: {cliente.codigo_postal}</p>
+                                            <p className="font-semibold text-slate-700 text-sm">{cliente.razonSocial}</p>
+                                            <p className="text-xs text-slate-500">{cliente.rfc} | CP: {cliente.direccion.cp}</p>
                                         </div>
                                         {selectedCliente?.id === cliente.id && <CheckCircle2 className="h-5 w-5 text-emerald-600" />}
                                     </div>
@@ -194,11 +194,11 @@ export function NuevaFactura({ open, onClose }: NuevaFacturaProps) {
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <Label className="text-[10px] text-slate-400">Uso CFDI</Label>
-                                        <p className="font-medium">{CATALOGO_USO_CFDI[selectedCliente.uso_cfdi] || selectedCliente.uso_cfdi}</p>
+                                        <p className="font-medium">{CATALOGO_USO_CFDI[selectedCliente.usoCFDI] || selectedCliente.usoCFDI}</p>
                                     </div>
                                     <div>
                                         <Label className="text-[10px] text-slate-400">Régimen</Label>
-                                        <p className="font-medium">{selectedCliente.regimen_fiscal}</p>
+                                        <p className="font-medium">{selectedCliente.regimenFiscal}</p>
                                     </div>
                                 </div>
                             </div>
@@ -223,8 +223,8 @@ export function NuevaFactura({ open, onClose }: NuevaFacturaProps) {
                                             <div className="col-span-8 space-y-1">
                                                 <Label className="text-[10px]">Descripción</Label>
                                                 <Input
-                                                    value={concepto.descripcion}
-                                                    onChange={e => handleConceptoChange(idx, 'descripcion', e.target.value)}
+                                                    value={concepto.servicioNombre}
+                                                    onChange={e => handleConceptoChange(idx, 'servicioNombre', e.target.value)}
                                                     className="h-8 text-sm"
                                                 />
                                             </div>
@@ -241,8 +241,8 @@ export function NuevaFactura({ open, onClose }: NuevaFacturaProps) {
                                                 <Label className="text-[10px]">Precio</Label>
                                                 <Input
                                                     type="number"
-                                                    value={concepto.valor_unitario}
-                                                    onChange={e => handleConceptoChange(idx, 'valor_unitario', parseFloat(e.target.value))}
+                                                    value={concepto.precioUnitario}
+                                                    onChange={e => handleConceptoChange(idx, 'precioUnitario', parseFloat(e.target.value))}
                                                     className="h-8 text-sm px-1"
                                                 />
                                             </div>

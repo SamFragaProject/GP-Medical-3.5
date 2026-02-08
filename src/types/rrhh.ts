@@ -8,23 +8,26 @@ export interface Employee {
     nombre: string;
     apellido_paterno: string;
     apellido_materno?: string;
+    apellido?: string;
     email: string;
+    email_personal?: string;
     telefono?: string;
     direccion?: string;
     numero_empleado?: string;
-    fecha_ingreso: string; // ISO Date
+    fecha_ingreso: string;
     fecha_nacimiento?: string;
     puesto_id?: string;
     departamento_id?: string;
     salario_mensual?: number;
+    salario_diario?: number;
     tipo_contrato?: string;
     dias_vacaciones_disponibles?: number;
     dias_vacaciones_usados?: number;
     estado: string;
     foto_url?: string;
     created_at?: string;
-    departamento?: Departamento;
-    puesto?: Puesto;
+    departamento?: Departamento | string;
+    puesto?: Puesto | string;
 }
 
 // Alias for legacy support
@@ -53,7 +56,9 @@ export interface RegistroAsistencia {
     fecha: string;
     hora_entrada: string;
     hora_salida?: string;
-    tipo: 'presencial' | 'remoto';
+    retardo_minutos?: number;
+    horas_trabajadas?: number;
+    tipo: 'presencial' | 'remoto' | 'home_office' | 'campo' | any;
 }
 
 export interface SolicitudVacaciones {
@@ -63,6 +68,7 @@ export interface SolicitudVacaciones {
     fecha_inicio: string;
     fecha_fin: string;
     dias_solicitados: number;
+    dias_tomados?: number;
     estado: 'pendiente' | 'aprobada' | 'rechazada';
     observaciones?: string;
     aprobado_por_id?: string;
@@ -73,9 +79,15 @@ export interface SolicitudVacaciones {
 export interface Incidencia {
     id: string;
     empleado_id: string;
-    tipo: 'falta' | 'retardo' | 'permiso' | 'incapacidad';
+    empleado?: Partial<Employee>;
+    tipo: 'falta' | 'retardo' | 'permiso' | 'incapacidad' | string;
     fecha: string;
+    fecha_inicio?: string;
+    fecha_fin?: string;
+    estado?: string;
     descripcion: string;
+    dias_afectados?: number;
+    motivo?: string;
     created_at?: string;
 }
 

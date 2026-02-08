@@ -65,7 +65,9 @@ export function EmpleadoCard({ empleado, onView, onEdit }: EmpleadoCardProps) {
                                     {empleado.nombre} {empleado.apellido}
                                 </h3>
                                 <p className="text-sm text-slate-500 truncate">
-                                    {empleado.puesto || 'Sin puesto'}
+                                    {typeof empleado.puesto === 'string'
+                                        ? empleado.puesto
+                                        : empleado.puesto?.nombre || 'Sin puesto'}
                                 </p>
                             </div>
 
@@ -101,11 +103,15 @@ export function EmpleadoCard({ empleado, onView, onEdit }: EmpleadoCardProps) {
                 <div className="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs text-slate-500">
                     <div className="flex items-center gap-1.5">
                         <Building2 className="h-3.5 w-3.5 text-primary/60" />
-                        <span className="truncate">{empleado.departamento || 'Sin departamento'}</span>
+                        <span className="truncate">
+                            {typeof empleado.departamento === 'string'
+                                ? empleado.departamento
+                                : empleado.departamento?.nombre || 'Sin departamento'}
+                        </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <Calendar className="h-3.5 w-3.5 text-primary/60" />
-                        <span>{new Date(empleado.fecha_ingreso).toLocaleDateString('es-MX', { year: 'numeric', month: 'short' })}</span>
+                        <span>{empleado.fecha_ingreso ? new Date(empleado.fecha_ingreso).toLocaleDateString('es-MX', { year: 'numeric', month: 'short' }) : 'Sin fecha'}</span>
                     </div>
                     {empleado.email_personal && (
                         <div className="flex items-center gap-1.5 col-span-2">

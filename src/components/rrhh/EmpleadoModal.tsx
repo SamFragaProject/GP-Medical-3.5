@@ -170,7 +170,7 @@ export function EmpleadoModal({
                         <div className="space-y-2">
                             <Label>Departamento</Label>
                             <Input
-                                value={formData.departamento}
+                                value={formData.departamento as any}
                                 onChange={(e) => handleChange('departamento', e.target.value)}
                                 placeholder="Ej. Ventas"
                             />
@@ -179,7 +179,7 @@ export function EmpleadoModal({
                         <div className="space-y-2">
                             <Label>Puesto</Label>
                             <Input
-                                value={formData.puesto}
+                                value={formData.puesto as any}
                                 onChange={(e) => handleChange('puesto', e.target.value)}
                                 placeholder="Ej. Gerente"
                             />
@@ -189,7 +189,7 @@ export function EmpleadoModal({
                             <Label>Salario Diario</Label>
                             <Input
                                 type="number"
-                                value={formData.salario_diario}
+                                value={formData.salario_diario as any}
                                 onChange={(e) => handleChange('salario_diario', parseFloat(e.target.value))}
                             />
                         </div>

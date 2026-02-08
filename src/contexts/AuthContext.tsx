@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null
   originalUser: User | null
   loading: boolean
+  error: string | null
   isAuthenticated: boolean
   isImpersonating: boolean
   login: (email: string, password: string) => Promise<void>
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [originalUser, setOriginalUser] = useState<User | null>(null) // Para impersonación
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Cargar usuario desde localStorage o sesión de Supabase
   useEffect(() => {
@@ -335,6 +337,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     originalUser,
     loading,
+    error,
     isAuthenticated: !!user,
     isImpersonating: !!originalUser,
     login,

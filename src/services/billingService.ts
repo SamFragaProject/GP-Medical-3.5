@@ -1,9 +1,11 @@
 import { supabase } from '@/lib/supabase'
 import type {
+    ConceptoFactura,
     CFDI,
     ClienteFiscal,
     EmisorConfig,
-    ConceptoFactura
+    PlanSaaS,
+    SuscripcionSaaS
 } from '@/types/facturacion'
 
 export const billingService = {
@@ -229,6 +231,35 @@ export const billingService = {
             usoCFDI: f.cliente?.uso_cfdi || 'G03',
             created_at: new Date(f.created_at),
             updated_at: new Date(f.created_at)
-        } as CFDI
+        } as any
+    },
+
+    // --- SAAS SUBSCRIPTIONS ---
+    async getPlanes(): Promise<PlanSaaS[]> {
+        // Mocking planes for now
+        return [
+            { id: '1', nombre: 'Plan Básico', descripcion: 'Sistema médico esencial', precioMensual: 999, precioAnual: 9990, maxUsuarios: 3, maxPacientes: 500, caracteristicas: ['Agenda', 'Pacientes', 'Ventas'], nivel: 'basic' },
+            { id: '2', nombre: 'Plan Pro', descripcion: 'Para consultorios en crecimiento', precioMensual: 1999, precioAnual: 19990, maxUsuarios: 10, maxPacientes: 2000, caracteristicas: ['Todo lo básico', 'Facturación ilimitada', 'Reportes avanzados'], nivel: 'pro' },
+            { id: '3', nombre: 'Plan Enterprise', descripcion: 'Control total para clínicas', precioMensual: 4999, precioAnual: 49990, maxUsuarios: 100, maxPacientes: 10000, caracteristicas: ['Todo lo Pro', 'API access', 'Soporte 24/7'], nivel: 'enterprise' }
+        ]
+    },
+
+    async getSuscripcionActual(empresaId: string): Promise<SuscripcionSaaS | null> {
+        // Mocking subscription
+        return {
+            id: 'sub123',
+            empresaId,
+            planId: '2',
+            estado: 'activa',
+            fechaInicio: new Date(),
+            fechaFin: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+            proximoPago: new Date(new Date().setMonth(new Date().getMonth() + 1)),
+            autoRenovacion: true
+        }
+    },
+
+    async simularActivacionPlan(empresaId: string, planId: string): Promise<void> {
+        console.log(`Activando plan ${planId} para empresa ${empresaId}`)
+        return Promise.resolve()
     }
 }

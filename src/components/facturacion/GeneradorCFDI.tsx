@@ -1,11 +1,11 @@
 // Generador de CFDI 4.0 con integración completa
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  FileText, 
-  Download, 
-  Send, 
-  Calculator, 
+import {
+  FileText,
+  Download,
+  Send,
+  Calculator,
   Calendar,
   Building2,
   User,
@@ -34,7 +34,7 @@ interface GeneradorCFDIProps {
 
 export function GeneradorCFDI({ cliente, servicios, onFacturaCreada }: GeneradorCFDIProps) {
   const { crearFactura, generarCFDI, loading } = useFacturacion()
-  
+
   const [facturaData, setFacturaData] = useState({
     serviciosSeleccionados: [] as Array<{ servicio: ServicioMedico; cantidad: number; descuento: number }>,
     metodoPago: 'PUE',
@@ -131,10 +131,10 @@ export function GeneradorCFDI({ cliente, servicios, onFacturaCreada }: Generador
         total,
         moneda: 'MXN',
         estado: 'borrador',
-        metodoPago: facturaData.metodoPago,
+        metodoPago: facturaData.metodoPago as any,
         lugarExpedicion: facturaData.lugarExpedicion,
         regimeFiscal: cliente.regimenFiscal,
-        usoCFDI: facturaData.usoCFDI,
+        usoCFDI: facturaData.usoCFDI as any,
         serie: 'F',
         numero: Date.now(),
         observaciones: facturaData.observaciones
@@ -142,12 +142,12 @@ export function GeneradorCFDI({ cliente, servicios, onFacturaCreada }: Generador
 
       onFacturaCreada(nuevaFactura)
       setMostrarPreview(false)
-      
+
       // Auto-generar CFDI
       const uuid = await generarCFDI(nuevaFactura.id)
       setCfdiGenerado(uuid)
       setMostrarCFDI(true)
-      
+
       // Reset form
       setFacturaData({
         serviciosSeleccionados: [],
@@ -156,7 +156,7 @@ export function GeneradorCFDI({ cliente, servicios, onFacturaCreada }: Generador
         observaciones: '',
         lugarExpedicion: 'CDMX'
       })
-      
+
     } catch (error) {
       console.error('Error creando factura:', error)
     }
@@ -248,7 +248,7 @@ export function GeneradorCFDI({ cliente, servicios, onFacturaCreada }: Generador
         {/* Configuración y Totales */}
         <Card className="p-6">
           <h3 className="font-semibold text-gray-900 mb-4">Configuración de Factura</h3>
-          
+
           {/* Servicios Seleccionados */}
           <div className="space-y-3 mb-6">
             {facturaData.serviciosSeleccionados.map((item) => (
@@ -300,7 +300,7 @@ export function GeneradorCFDI({ cliente, servicios, onFacturaCreada }: Generador
                 <option value="PPD">Pago en parcialidades o diferido</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Uso del CFDI</label>
               <select
@@ -313,7 +313,7 @@ export function GeneradorCFDI({ cliente, servicios, onFacturaCreada }: Generador
                 <option value="G04">Gastos médicos</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
               <textarea
@@ -356,7 +356,7 @@ export function GeneradorCFDI({ cliente, servicios, onFacturaCreada }: Generador
           <DialogHeader>
             <DialogTitle>Vista Previa de Factura CFDI 4.0</DialogTitle>
           </DialogHeader>
-          
+
           <div className="bg-white p-8 rounded-lg border">
             {/* Header de la Factura */}
             <div className="flex justify-between items-start mb-8">
@@ -471,7 +471,7 @@ export function GeneradorCFDI({ cliente, servicios, onFacturaCreada }: Generador
               <span>CFDI 4.0 Generado Exitosamente</span>
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <div className="flex items-center space-x-2 mb-2">

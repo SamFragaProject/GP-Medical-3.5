@@ -107,6 +107,7 @@ export const comprasService = {
                 cantidad: item.cantidad,
                 referencia_id: ordenId,
                 origen_ref: 'ordenes_compra',
+                usuario_id: null,
                 observaciones: 'Recepción de Mercancía'
             })
 
