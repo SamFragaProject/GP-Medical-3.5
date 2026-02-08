@@ -3,7 +3,7 @@ import { Search, AlertCircle, Info, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import type { RestriccionCatalogo } from '@/types/dictamen';
+import type { RestriccionMedicaCatalogo } from '@/types/dictamen';
 
 interface SelectorRestriccionesProps {
   selected: string[];
@@ -11,29 +11,45 @@ interface SelectorRestriccionesProps {
   puestoId?: string;
 }
 
-// Catálogo de restricciones de ejemplo
-const restriccionesEjemplo: RestriccionCatalogo[] = [
-  { id: '1', codigo: 'R001', nombre: 'No manipular sustancias tóxicas', descripcion: 'Restricción para manipulación de químicos, solventes y sustancias peligrosas', categoria: 'Químicos', activo: true },
-  { id: '2', codigo: 'R002', nombre: 'No trabajar en alturas', descripcion: 'Restricción para trabajo en alturas mayores a 1.8 metros', categoria: 'Físicos', activo: true },
-  { id: '3', codigo: 'R003', nombre: 'No exponerse a ruido >85dB', descripcion: 'Restricción para zonas con nivel de ruido superior a 85 decibeles', categoria: 'Físicos', activo: true },
-  { id: '4', codigo: 'R004', nombre: 'No realizar esfuerzos físicos mayores', descripcion: 'Restricción para carga manual >25kg (hombres) o >15kg (mujeres)', categoria: 'Ergonomía', activo: true },
-  { id: '5', codigo: 'R005', nombre: 'No manipular vibraciones segmentarias', descripcion: 'Restricción para uso de herramientas vibratorias', categoria: 'Físicos', activo: true },
-  { id: '6', codigo: 'R006', nombre: 'No exposición a temperaturas extremas', descripcion: 'Restricción para trabajo en cámaras frigoríficas o ambientes calurosos', categoria: 'Físicos', activo: true },
-  { id: '7', codigo: 'R007', nombre: 'No conducir vehículos de empresa', descripcion: 'Restricción para operación de vehículos automotores', categoria: 'Seguridad', activo: true },
-  { id: '8', codigo: 'R008', nombre: 'No manipular alimentos', descripcion: 'Restricción para trabajo en áreas de manipulación de alimentos', categoria: 'Higiene', activo: true },
-  { id: '9', codigo: 'R009', nombre: 'No trabajar turno nocturno', descripcion: 'Restricción para trabajo nocturno por condiciones de salud', categoria: 'Horario', activo: true },
-  { id: '10', codigo: 'R010', nombre: 'No manipular metales pesados', descripcion: 'Restricción para trabajo con plomo, mercurio, cadmio, etc.', categoria: 'Químicos', activo: true },
-  { id: '11', codigo: 'R011', nombre: 'No exposición a polvos orgánicos', descripcion: 'Restricción para trabajo con granos, harinas, fibras textiles', categoria: 'Químicos', activo: true },
-  { id: '12', codigo: 'R012', nombre: 'No usar EPP respiratorio', descripcion: 'Contraindicación para uso de respiradores por condiciones respiratorias', categoria: 'EPP', activo: true },
+// Catálogo de restricciones de ejemplo adaptado a la interfaz real
+const restriccionesEjemplo: RestriccionMedicaCatalogo[] = [
+  {
+    id: '1',
+    codigo: 'R001',
+    descripcion: 'Restricción para manipulación de químicos, solventes y sustancias peligrosas',
+    descripcion_corta: 'No manipular sustancias tóxicas',
+    tipo_restriccion: 'quimica',
+    puestos_aplicables: [],
+    riesgos_relacionados: [],
+    requiere_revision: false,
+    prioridad: 1,
+    activo: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: '2',
+    codigo: 'R002',
+    descripcion: 'Restricción para trabajo en alturas mayores a 1.8 metros',
+    descripcion_corta: 'No trabajar en alturas',
+    tipo_restriccion: 'fisica',
+    puestos_aplicables: [],
+    riesgos_relacionados: [],
+    requiere_revision: true,
+    prioridad: 2,
+    activo: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
 ];
 
-const categorias = Array.from(new Set(restriccionesEjemplo.map(r => r.categoria)));
+const categorias = Array.from(new Set(restriccionesEjemplo.map(r => r.tipo_restriccion)));
 
 export function SelectorRestricciones({ selected, onChange, puestoId }: SelectorRestriccionesProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>('todas');
   const [hoveredRestriccion, setHoveredRestriccion] = useState<string | null>(null);
-  const [restricciones, setRestricciones] = useState<RestriccionCatalogo[]>(restriccionesEjemplo);
+  const [restricciones, setRestricciones] = useState<RestriccionMedicaCatalogo[]>(restriccionesEjemplo);
 
   // Cargar restricciones desde API (simulado)
   useEffect(() => {
@@ -44,10 +60,10 @@ export function SelectorRestricciones({ selected, onChange, puestoId }: Selector
   }, [puestoId]);
 
   const restriccionesFiltradas = restricciones.filter(r => {
-    const matchesSearch = r.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         r.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         r.codigo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategoria = categoriaSeleccionada === 'todas' || r.categoria === categoriaSeleccionada;
+    const matchesSearch = r.descripcion_corta.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.codigo.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategoria = categoriaSeleccionada === 'todas' || r.tipo_restriccion === categoriaSeleccionada;
     return matchesSearch && matchesCategoria && !selected.includes(r.id);
   });
 
@@ -80,7 +96,7 @@ export function SelectorRestricciones({ selected, onChange, puestoId }: Selector
                 variant="secondary"
                 className="bg-white border border-emerald-200 text-emerald-800 pl-2 pr-1 py-1"
               >
-                <span className="mr-1">{r.nombre}</span>
+                <span className="mr-1">{r.descripcion_corta}</span>
                 <button
                   type="button"
                   onClick={() => removeRestriccion(r.id)}
@@ -111,11 +127,10 @@ export function SelectorRestricciones({ selected, onChange, puestoId }: Selector
           <button
             type="button"
             onClick={() => setCategoriaSeleccionada('todas')}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              categoriaSeleccionada === 'todas'
-                ? 'bg-emerald-500 text-white'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${categoriaSeleccionada === 'todas'
+              ? 'bg-emerald-500 text-white'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
           >
             Todas
           </button>
@@ -124,11 +139,10 @@ export function SelectorRestricciones({ selected, onChange, puestoId }: Selector
               key={cat}
               type="button"
               onClick={() => setCategoriaSeleccionada(cat)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                categoriaSeleccionada === cat
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${categoriaSeleccionada === cat
+                ? 'bg-emerald-500 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
             >
               {cat}
             </button>
@@ -161,9 +175,9 @@ export function SelectorRestricciones({ selected, onChange, puestoId }: Selector
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-mono text-slate-500">{restriccion.codigo}</span>
-                        <Badge variant="outline" className="text-xs">{restriccion.categoria}</Badge>
+                        <Badge variant="outline" className="text-xs">{restriccion.tipo_restriccion}</Badge>
                       </div>
-                      <p className="font-medium text-sm text-slate-900 mt-1">{restriccion.nombre}</p>
+                      <p className="font-medium text-sm text-slate-900 mt-1">{restriccion.descripcion_corta}</p>
                     </div>
                     <Info className="w-4 h-4 text-slate-400 flex-shrink-0" />
                   </div>
@@ -172,7 +186,7 @@ export function SelectorRestricciones({ selected, onChange, puestoId }: Selector
                 {/* Tooltip con descripción */}
                 {hoveredRestriccion === restriccion.id && (
                   <div className="absolute z-50 left-0 right-0 top-full mt-1 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-lg">
-                    <p className="font-medium mb-1">{restriccion.nombre}</p>
+                    <p className="font-medium mb-1">{restriccion.descripcion_corta}</p>
                     <p className="opacity-90">{restriccion.descripcion}</p>
                     <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-800 rotate-45"></div>
                   </div>

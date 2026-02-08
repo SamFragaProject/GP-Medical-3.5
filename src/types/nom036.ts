@@ -8,11 +8,17 @@
 
 export type MetodoEvaluacionErgonomica = 'REBA' | 'RUEDA' | 'OWAS' | 'NIOSH' | 'OSHA' | 'MANUAL';
 export type NivelRiesgoErgonomico = 'aceptable' | 'medio' | 'alto' | 'muy_alto';
+export type NivelRiesgoREBA = 'negligible' | 'bajo' | 'medio' | 'alto' | 'muy_alto';
 export type EstadoProgramaErgonomia = 'planificado' | 'activo' | 'en_proceso' | 'completado' | 'cerrado';
 export type EstadoEvaluacionErgonomica = 'pendiente' | 'en_proceso' | 'completado' | 'con_seguimiento' | 'cerrado';
 export type EstadoCapacitacionErgonomia = 'programada' | 'completada' | 'cancelada' | 'reprogramada';
 export type PrioridadIntervencion = 'baja' | 'media' | 'alta' | 'urgente';
 export type CategoriaFactorRiesgo = 'fisico' | 'cognitivo' | 'organizacional' | 'psicosocial';
+export type EstadoMatrizRiesgo = 'identificado' | 'en_control' | 'controlado' | 'seguimiento';
+
+// Tipos específicos NIOSH
+export type NivelRiesgoNIOSH = 'aceptable' | 'mejora' | 'pronto' | 'ahora';
+export type InterpretacionNIOSH = 'sin_riesgo' | 'con_riesgo' | 'excesivo';
 
 // =====================================================
 // INTERFAZ: Programa de Ergonomía
@@ -22,41 +28,41 @@ export interface ProgramaErgonomia {
   id: string;
   empresa_id: string;
   sede_id?: string;
-  
+
   // Identificación
   anio: number;
   nombre_programa?: string;
   descripcion?: string;
-  
+
   // Fechas
   fecha_inicio: string;
   fecha_fin?: string;
   fecha_cierre?: string;
-  
+
   // Cobertura
   total_puestos_evaluados: number;
   total_trabajadores_capacitados: number;
   total_riesgos_identificados: number;
   total_medidas_implementadas: number;
-  
+
   // Estado
   estado: EstadoProgramaErgonomia;
-  
+
   // Responsables
   responsable_medico_id?: string;
   responsable_medico_nombre?: string;
   responsable_empresa_id?: string;
   responsable_empresa_nombre?: string;
-  
+
   // Documentos
   diagnostico_ergonomico_url?: string;
   programa_trabajo_url?: string;
   informe_anual_url?: string;
-  
+
   // Relaciones
   evaluaciones?: EvaluacionErgonomica[];
   capacitaciones?: CapacitacionErgonomia[];
-  
+
   // Auditoría
   created_by?: string;
   updated_by?: string;
@@ -73,7 +79,7 @@ export interface EvaluacionErgonomica {
   empresa_id: string;
   sede_id?: string;
   programa_id?: string;
-  
+
   // Paciente/Trabajador
   paciente_id?: string;
   paciente?: {
@@ -84,51 +90,51 @@ export interface EvaluacionErgonomica {
     puesto_trabajo?: string;
     area_trabajo?: string;
   };
-  
+
   // Puesto
   puesto_trabajo: string;
   area_trabajo?: string;
   descripcion_tarea?: string;
-  
+
   // Evaluación
   metodo_evaluacion: MetodoEvaluacionErgonomica;
   fecha_evaluacion: string;
   duracion_evaluacion_minutos?: number;
-  
+
   // Resultado
   puntuacion_total?: number;
   nivel_riesgo?: NivelRiesgoErgonomico;
   color_riesgo?: string;
-  
+
   // Factores
   factores_riesgo: string[];
   recomendaciones: string[];
   medidas_control: string[];
-  
+
   // Datos específicos del método
   datos_raw: DatosEvaluacionErgonomica;
-  
+
   // Interpretación
   interpretacion_resultado?: string;
   requiere_intervencion: boolean;
   prioridad_intervencion?: PrioridadIntervencion;
-  
+
   // Seguimiento
   fecha_seguimiento?: string;
   resultado_seguimiento?: string;
-  
+
   // Multimedia
   fotos_antes: FotoEvaluacion[];
   fotos_despues: FotoEvaluacion[];
   video_evaluacion_url?: string;
-  
+
   // Evaluador
   evaluador_id?: string;
   evaluador_nombre?: string;
-  
+
   // Estado
   estado: EstadoEvaluacionErgonomica;
-  
+
   // Auditoría
   created_by?: string;
   updated_by?: string;
@@ -146,10 +152,10 @@ export interface FotoEvaluacion {
 // TIPOS DE DATOS ESPECÍFICOS POR MÉTODO
 // =====================================================
 
-export type DatosEvaluacionErgonomica = 
-  | DatosREBA 
-  | DatosNIOSH 
-  | DatosOWAS 
+export type DatosEvaluacionErgonomica =
+  | DatosREBA
+  | DatosNIOSH
+  | DatosOWAS
   | DatosGenericos;
 
 export interface DatosREBA {
@@ -161,7 +167,7 @@ export interface DatosREBA {
   tronco_lateral?: boolean;
   piernas: number; // 1-4
   piernas_alternas?: boolean;
-  
+
   // Grupo B: Brazos, Antebrazos, Muñecas
   brazo: number; // 1-6
   brazo_hombro_elevado?: boolean;
@@ -170,7 +176,7 @@ export interface DatosREBA {
   antebrazo: number; // 1-2
   muneca: number; // 1-3
   muneca_desviacion?: boolean;
-  
+
   // Factores de corrección
   carga: number; // 0-3
   agarre: number; // 0-3
@@ -207,47 +213,47 @@ export interface CapacitacionErgonomia {
   id: string;
   empresa_id: string;
   programa_id?: string;
-  
+
   // Información
   tema: string;
   descripcion?: string;
   tipo_capacitacion?: 'induccion' | 'reentrenamiento' | 'especifica' | 'charla';
-  
+
   // Fecha
   fecha: string;
   hora_inicio?: string;
   hora_fin?: string;
   duracion_horas?: number;
-  
+
   // Lugar
   sede_id?: string;
   sede_nombre?: string;
   lugar?: string;
-  
+
   // Instructor
   instructor_id?: string;
   instructor_nombre?: string;
   instructor_externo?: string;
-  
+
   // Participantes
   numero_participantes: number;
   participantes_ids: string[];
   areas_participantes: string[];
-  
+
   // Evaluación
   material_entregado: boolean;
   evaluacion_efectividad: boolean;
   calificacion_promedio?: number;
-  
+
   // Documentos
   lista_asistencia_url?: string;
   material_capacitacion_url?: string;
   evidencia_fotografica: FotoEvaluacion[];
-  
+
   // Estado
   estado: EstadoCapacitacionErgonomia;
   observaciones?: string;
-  
+
   // Auditoría
   created_by?: string;
   updated_by?: string;
@@ -266,22 +272,22 @@ export interface FactorRiesgoErgonomico {
   descripcion?: string;
   categoria: CategoriaFactorRiesgo;
   subcategoria?: string;
-  
+
   // Características
   sintomas_asociados: string[];
   enfermedades_asociadas: string[];
   medidas_preventivas: string[];
-  
+
   // Evaluación
   metodo_evaluacion_recomendado?: MetodoEvaluacionErgonomica;
   umbral_riesgo_bajo?: number;
   umbral_riesgo_medio?: number;
   umbral_riesgo_alto?: number;
-  
+
   // NOM-036
   requiere_atencion_nom036: boolean;
   prioridad_nom036: number;
-  
+
   activo: boolean;
   created_at: string;
 }
@@ -342,20 +348,40 @@ export interface MatrizRiesgoArea {
   area: string;
   puesto: string;
   numero_trabajadores: number;
-  
+
   // Evaluaciones
   evaluaciones_reba?: ResultadoREBA[];
   evaluaciones_niosh?: ResultadoNIOSH[];
   evaluaciones_owas?: ResultadoOWAS[];
-  
+
   // Agregado
   riesgo_promedio: NivelRiesgoErgonomico;
   riesgo_maximo: NivelRiesgoErgonomico;
   factores_identificados: string[];
-  
+
   // Medidas
   medidas_implementadas: number;
   medidas_pendientes: number;
+}
+
+export interface MatrizRiesgoErgonomico {
+  id: string;
+  empresa_id: string;
+  area: string;
+  puesto: string;
+  numero_trabajadores: number;
+  riesgos: { tipo: string; descripcion: string; severidad: string }[];
+  evaluacion_reba?: number;
+  evaluacion_niosh?: number;
+  nivel_riesgo: NivelRiesgoREBA;
+  medidas_preventivas: string[];
+  medidas_correctivas?: string[];
+  estado: EstadoMatrizRiesgo;
+  trabajadores?: { id: string; nombre: string; puesto: string }[];
+  fecha_evaluacion: string;
+  fecha_proxima_evaluacion?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // =====================================================
@@ -365,15 +391,15 @@ export interface MatrizRiesgoArea {
 export interface ReporteNOM036 {
   anio: number;
   empresa_id: string;
-  
+
   // Resumen programa
   programa_activo: boolean;
   fecha_inicio_programa?: string;
-  
+
   // Evaluaciones
   total_evaluaciones: number;
   por_metodo: Record<MetodoEvaluacionErgonomica, number>;
-  
+
   // Por nivel de riesgo
   por_nivel_riesgo: {
     aceptable: number;
@@ -381,19 +407,19 @@ export interface ReporteNOM036 {
     alto: number;
     muy_alto: number;
   };
-  
+
   // Factores más frecuentes
   factores_frecuentes: { factor: string; frecuencia: number }[];
-  
+
   // Capacitaciones
   total_capacitaciones: number;
   trabajadores_capacitados: number;
   horas_capacitacion: number;
-  
+
   // Intervenciones
   intervenciones_pendientes: number;
   intervenciones_completadas: number;
-  
+
   // Indicadores
   porcentaje_avance: number;
   tendencia_vs_anio_anterior?: 'mejora' | 'estable' | 'deterioro';
@@ -559,4 +585,49 @@ export const FACTORES_RIESGO_LABELS: Record<string, string> = {
   posicion_prolongada: 'Posición prolongada',
   contacto_presion: 'Contacto por presión',
   espacio_insuficiente: 'Espacio de trabajo insuficiente'
+};
+
+// =====================================================
+// REBA TABLES & TEXTS
+// =====================================================
+
+export const NivelRiesgoREBATexto: Record<NivelRiesgoREBA, { texto: string; accion: string; color: string }> = {
+  negligible: { texto: 'Insignificante', accion: 'No es necesaria acción', color: '#22c55e' },
+  bajo: { texto: 'Bajo', accion: 'Puede ser necesaria acción', color: '#84cc16' },
+  medio: { texto: 'Medio', accion: 'Es necesaria la acción', color: '#eab308' },
+  alto: { texto: 'Alto', accion: 'Es necesaria la acción pronto', color: '#f97316' },
+  muy_alto: { texto: 'Muy Alto', accion: 'Es necesaria la acción de inmediato', color: '#ef4444' }
+};
+
+export const TablaA_REBA: number[][] = [
+  [1, 2, 3, 4], [2, 3, 4, 5], [2, 4, 5, 6], [3, 5, 6, 7], [4, 6, 7, 8],
+  [1, 2, 3, 4], [3, 4, 5, 6], [4, 5, 6, 7], [5, 7, 8, 9], [6, 8, 9, 9],
+  [3, 3, 4, 5], [4, 5, 6, 7], [5, 6, 7, 8], [6, 7, 8, 9], [7, 9, 9, 9]
+];
+
+export const TablaB_REBA: number[][] = [
+  [1, 2, 3], [2, 3, 4], [3, 4, 5], [4, 5, 6], [5, 6, 7], [7, 8, 9],
+  [2, 2, 3], [3, 3, 4], [4, 4, 5], [5, 5, 6], [6, 6, 7], [7, 7, 8],
+];
+
+export const TablaC_REBA: number[][] = [
+  [1, 1, 1, 2, 3, 3, 4, 5, 6, 7, 7, 7],
+  [1, 2, 2, 3, 4, 4, 5, 6, 6, 7, 7, 8],
+  [2, 3, 3, 3, 4, 5, 6, 7, 7, 8, 8, 8],
+  [3, 4, 4, 4, 5, 6, 7, 8, 8, 9, 9, 9],
+  [4, 4, 4, 5, 6, 7, 8, 8, 9, 9, 9, 9],
+  [6, 6, 6, 7, 8, 8, 9, 9, 10, 10, 10, 10],
+  [7, 7, 7, 8, 9, 9, 9, 10, 10, 11, 11, 11],
+  [8, 8, 8, 9, 10, 10, 10, 10, 11, 11, 11, 12],
+  [9, 9, 9, 10, 10, 10, 11, 11, 11, 12, 12, 12],
+  [10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 12],
+  [11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12],
+  [12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12]
+];
+
+export const NivelRiesgoNIOSHTexto: Record<NivelRiesgoNIOSH, { texto: string; descripcion: string; color: string }> = {
+  aceptable: { texto: 'Aceptable', descripcion: 'El riesgo se considera mínimo o inexistente.', color: '#22c55e' },
+  mejora: { texto: 'Requiere Mejora', descripcion: 'Algunas tareas pueden requerir rediseño.', color: '#84cc16' },
+  pronto: { texto: 'Mejora Pronto', descripcion: 'Es necesario aplicar cambios estructurales en el corto plazo.', color: '#f97316' },
+  ahora: { texto: 'Mejora Inmediata', descripcion: 'Riesgo excesivo. Implementar cambios de inmediato.', color: '#ef4444' }
 };

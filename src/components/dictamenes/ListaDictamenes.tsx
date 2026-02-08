@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FileText, 
-  Plus, 
-  Search, 
-  Filter, 
-  Download, 
-  Eye, 
-  Edit2, 
+import {
+  FileText,
+  Plus,
+  Search,
+  Filter,
+  Download,
+  Eye,
+  Edit2,
   FileSignature,
   Calendar,
   CheckCircle2,
@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermisosDinamicos } from '@/hooks/usePermisosDinamicos';
 import { toast } from 'react-hot-toast';
-import type { DictamenMedico, TipoEvaluacion, ResultadoDictamen, EstadoDictamen } from '@/types/dictamen';
+import type { DictamenMedico, TipoEvaluacionDictamen as TipoEvaluacion, ResultadoDictamen, EstadoDictamen } from '@/types/dictamen';
 
 interface ListaDictamenesProps {
   onNuevoDictamen: () => void;
@@ -30,37 +30,41 @@ interface ListaDictamenesProps {
 }
 
 const resultadosColors: Record<ResultadoDictamen, { badge: string; icon: React.ReactNode }> = {
-  apto: { 
-    badge: 'bg-emerald-100 text-emerald-800 border-emerald-200', 
+  apto: {
+    badge: 'bg-emerald-100 text-emerald-800 border-emerald-200',
     icon: <CheckCircle2 className="w-4 h-4 text-emerald-600" />
   },
-  apto_restricciones: { 
-    badge: 'bg-amber-100 text-amber-800 border-amber-200', 
+  apto_restricciones: {
+    badge: 'bg-amber-100 text-amber-800 border-amber-200',
     icon: <AlertCircle className="w-4 h-4 text-amber-600" />
   },
-  no_apto_temporal: { 
-    badge: 'bg-orange-100 text-orange-800 border-orange-200', 
+  no_apto_temporal: {
+    badge: 'bg-orange-100 text-orange-800 border-orange-200',
     icon: <Clock className="w-4 h-4 text-orange-600" />
   },
-  no_apto: { 
-    badge: 'bg-rose-100 text-rose-800 border-rose-200', 
+  no_apto: {
+    badge: 'bg-rose-100 text-rose-800 border-rose-200',
     icon: <XCircle className="w-4 h-4 text-rose-600" />
   },
-  evaluacion_complementaria: { 
-    badge: 'bg-blue-100 text-blue-800 border-blue-200', 
+  evaluacion_complementaria: {
+    badge: 'bg-blue-100 text-blue-800 border-blue-200',
     icon: <AlertCircle className="w-4 h-4 text-blue-600" />
   },
 };
 
 const estadoColors: Record<EstadoDictamen, string> = {
   borrador: 'bg-slate-100 text-slate-800',
+  pendiente: 'bg-amber-100 text-amber-800',
   completado: 'bg-emerald-100 text-emerald-800',
+  anulado: 'bg-rose-100 text-rose-800',
+  vencido: 'bg-gray-100 text-gray-800',
   firmado: 'bg-blue-100 text-blue-800',
   cancelado: 'bg-rose-100 text-rose-800',
 };
 
 const tipoEvaluacionLabels: Record<TipoEvaluacion, string> = {
-  preempleo: 'Preempleo',
+  preempleo: 'Pre-empleo',
+  ingreso: 'Ingreso',
   periodico: 'Periódico',
   retorno: 'Retorno',
   egreso: 'Egreso',
@@ -75,15 +79,16 @@ const dictamenesEjemplo: DictamenMedico[] = [
     paciente_id: 'p1',
     expediente_id: 'e1',
     empresa_id: 'emp1',
-    tipo_evaluacion: 'preempleo',
+    tipo_evaluacion: 'ingreso',
     resultado: 'apto',
     restricciones: [],
     restricciones_detalle: '',
-    recomendaciones_medicas: 'Mantener hábitos saludables',
+    recomendaciones_medicas: ['Mantener hábitos saludables'],
     recomendaciones_epp: ['lentes_seguridad'],
     fecha_emision: '2026-02-08',
     fecha_vigencia_inicio: '2026-02-08',
     fecha_vigencia_fin: '2027-02-08',
+    vigencia_inicio: '2026-02-08',
     estado: 'firmado',
     paciente: {
       id: 'p1',
@@ -98,6 +103,12 @@ const dictamenesEjemplo: DictamenMedico[] = [
     },
     created_at: '2026-02-08T10:00:00Z',
     updated_at: '2026-02-08T10:00:00Z',
+    folio: 'DICT-001',
+    estudios_requeridos_completos: true,
+    estudios_faltantes: [],
+    bloqueos_pendientes: [],
+    version: 1,
+    es_version_final: true,
   },
   {
     id: '2',
@@ -106,13 +117,18 @@ const dictamenesEjemplo: DictamenMedico[] = [
     empresa_id: 'emp1',
     tipo_evaluacion: 'periodico',
     resultado: 'apto_restricciones',
-    restricciones: ['R003'],
+    restricciones: [{
+      codigo: 'R003',
+      descripcion: 'No exponerse a ruido superior a 80dB',
+      tipo: 'fisica'
+    }],
     restricciones_detalle: 'No exponerse a ruido superior a 80dB',
-    recomendaciones_medicas: 'Usar protección auditiva permanente',
+    recomendaciones_medicas: ['Usar protección auditiva permanente'],
     recomendaciones_epp: ['tapones_auditivos', 'protector_auditivo'],
     fecha_emision: '2026-02-07',
     fecha_vigencia_inicio: '2026-02-07',
     fecha_vigencia_fin: '2027-02-07',
+    vigencia_inicio: '2026-02-07',
     estado: 'completado',
     paciente: {
       id: 'p2',
@@ -127,6 +143,12 @@ const dictamenesEjemplo: DictamenMedico[] = [
     },
     created_at: '2026-02-07T14:30:00Z',
     updated_at: '2026-02-07T14:30:00Z',
+    folio: 'DICT-002',
+    estudios_requeridos_completos: true,
+    estudios_faltantes: [],
+    bloqueos_pendientes: [],
+    version: 1,
+    es_version_final: true,
   },
   {
     id: '3',
@@ -137,10 +159,11 @@ const dictamenesEjemplo: DictamenMedico[] = [
     resultado: 'apto',
     restricciones: [],
     restricciones_detalle: '',
-    recomendaciones_medicas: 'Retorno gradual a actividades',
+    recomendaciones_medicas: ['Retorno gradual a actividades'],
     recomendaciones_epp: [],
     fecha_emision: '2026-02-06',
     fecha_vigencia_inicio: '2026-02-06',
+    vigencia_inicio: '2026-02-06',
     estado: 'firmado',
     paciente: {
       id: 'p3',
@@ -155,6 +178,12 @@ const dictamenesEjemplo: DictamenMedico[] = [
     },
     created_at: '2026-02-06T09:00:00Z',
     updated_at: '2026-02-06T09:00:00Z',
+    folio: 'DICT-003',
+    estudios_requeridos_completos: true,
+    estudios_faltantes: [],
+    bloqueos_pendientes: [],
+    version: 1,
+    es_version_final: true,
   },
 ];
 
@@ -167,7 +196,7 @@ export function ListaDictamenes({ onNuevoDictamen, onVerDictamen, onEditarDictam
   const [filtroResultado, setFiltroResultado] = useState<ResultadoDictamen | 'todos'>('todos');
 
   const dictamenesFiltrados = dictamenes.filter(d => {
-    const matchesSearch = 
+    const matchesSearch =
       d.paciente?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       d.paciente?.apellido_paterno.toLowerCase().includes(searchTerm.toLowerCase()) ||
       d.empresa?.nombre.toLowerCase().includes(searchTerm.toLowerCase());
@@ -314,9 +343,10 @@ export function ListaDictamenes({ onNuevoDictamen, onVerDictamen, onEditarDictam
                     <TableCell>
                       <Badge className={`text-xs ${estadoColors[dictamen.estado]}`}>
                         {dictamen.estado === 'borrador' && 'Borrador'}
+                        {dictamen.estado === 'pendiente' && 'Pendiente'}
                         {dictamen.estado === 'completado' && 'Completado'}
-                        {dictamen.estado === 'firmado' && 'Firmado'}
-                        {dictamen.estado === 'cancelado' && 'Cancelado'}
+                        {dictamen.estado === 'anulado' && 'Anulado'}
+                        {dictamen.estado === 'vencido' && 'Vencido'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -329,7 +359,7 @@ export function ListaDictamenes({ onNuevoDictamen, onVerDictamen, onEditarDictam
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        {puede('dictamenes', 'editar') && dictamen.estado !== 'firmado' && (
+                        {puede('dictamenes', 'editar') && dictamen.estado !== 'completado' && (
                           <Button
                             variant="ghost"
                             size="sm"

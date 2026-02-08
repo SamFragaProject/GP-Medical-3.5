@@ -16,10 +16,15 @@ import type {
   Checkpoint,
   Bloqueo,
   AlertaSLA,
+  NextBestAction,
+  EstadoEnCola,
+  PacienteEnCola,
+  TipoEvaluacion,
+} from '@/types/episodio';
+import {
   TRANSICIONES_PERMITIDAS,
   ROLES_POR_TRANSICION,
   SLA_POR_TIPO,
-  NextBestAction,
 } from '@/types/episodio';
 
 // =====================================================
@@ -75,7 +80,7 @@ function tienePermisoTransicion(estadoActual: EstadoEpisodio, nuevoEstado: Estad
  * Obtiene el SLA según el tipo de evaluación
  */
 function obtenerSLA(tipo: string): number {
-  return SLA_POR_TIPO[tipo as keyof typeof SLA_POR_TIPO] || 60;
+  return SLA_POR_TIPO[tipo as TipoEvaluacion] || 60;
 }
 
 /**
@@ -202,8 +207,6 @@ export const episodioService = {
       bloqueos: [] as Bloqueo[],
       siguiente_accion: calcularNextAction('registro', dto.tipo),
       creado_por: dto.creado_por,
-      created_at: now,
-      updated_at: now,
     };
 
     const { data, error } = await supabase
@@ -222,7 +225,7 @@ export const episodioService = {
       throw new Error(`Error al crear episodio: ${error.message}`);
     }
 
-    return data as EpisodioAtencion;
+    return data as unknown as EpisodioAtencion;
   },
 
   /**
@@ -493,11 +496,11 @@ export const episodioService = {
     const bloqueosActualizados = (episodio.bloqueos || []).map(b =>
       b.id === bloqueoId
         ? {
-            ...b,
-            resuelto: true,
-            resuelto_por: usuarioId,
-            resuelto_en: new Date().toISOString(),
-          }
+          ...b,
+          resuelto: true,
+          resuelto_por: usuarioId,
+          resuelto_en: new Date().toISOString(),
+        }
         : b
     );
 
@@ -674,7 +677,7 @@ export const episodioService = {
         },
         prioridad: 3, // TODO: Implementar cálculo de prioridad
         tiempo_espera_minutos: tiempoEspera,
-        estado: ep.asignado_a ? 'en_atencion' : 'esperando',
+        estado: (ep.asignado_a ? 'en_atencion' : 'esperando') as EstadoEnCola,
         asignado_a: ep.asignado_a,
         tipo_evaluacion: ep.tipo,
         empresa_nombre: ep.empresa?.nombre || '',
@@ -815,9 +818,10 @@ export const episodioService = {
       const tiempoTranscurrido = Math.round((ahora - inicio) / (1000 * 60));
 
       if (tiempoTranscurrido > ep.sla_minutos) {
+        const paciente = Array.isArray(ep.paciente) ? ep.paciente[0] : ep.paciente;
         alertas.push({
           episodio_id: ep.id,
-          paciente_nombre: `${ep.paciente?.nombre || ''} ${ep.paciente?.apellido_paterno || ''}`.trim(),
+          paciente_nombre: `${paciente?.nombre || ''} ${paciente?.apellido_paterno || ''}`.trim(),
           estado_actual: ep.estado_actual,
           tiempo_transcurrido: tiempoTranscurrido,
           sla_minutos: ep.sla_minutos,

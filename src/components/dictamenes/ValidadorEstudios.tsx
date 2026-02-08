@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  CheckCircle2, 
-  XCircle, 
-  AlertCircle, 
+import {
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
   FileCheck,
   Microscope,
   Activity,
@@ -13,7 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import type { EstudioRequerido, TipoEvaluacion } from '@/types/dictamen';
+import type { EstudioRequerido, TipoEvaluacionDictamen as TipoEvaluacion } from '@/types/dictamen';
 
 interface ValidadorEstudiosProps {
   pacienteId: string;
@@ -24,6 +24,14 @@ interface ValidadorEstudiosProps {
 // Definición de estudios requeridos por tipo de evaluación
 const estudiosPorTipo: Record<TipoEvaluacion, EstudioRequerido[]> = {
   preempleo: [
+    { tipo: 'exploracion_fisica', nombre: 'Exploración Física', obligatorio: true, completado: false },
+    { tipo: 'audiometria', nombre: 'Audiometría', obligatorio: false, completado: false },
+    { tipo: 'espirometria', nombre: 'Espirometría', obligatorio: false, completado: false },
+    { tipo: 'rx_torax', nombre: 'Rayos X de Tórax', obligatorio: true, completado: false },
+    { tipo: 'examenes_laboratorio', nombre: 'Exámenes de Laboratorio', obligatorio: true, completado: false },
+    { tipo: 'vision', nombre: 'Agudeza Visual', obligatorio: true, completado: false },
+  ],
+  ingreso: [
     { tipo: 'exploracion_fisica', nombre: 'Exploración Física', obligatorio: true, completado: false },
     { tipo: 'audiometria', nombre: 'Audiometría', obligatorio: false, completado: false },
     { tipo: 'espirometria', nombre: 'Espirometría', obligatorio: false, completado: false },
@@ -81,7 +89,7 @@ export function ValidadorEstudios({ pacienteId, tipoEvaluacion, onValidacionChan
       try {
         // Aquí iría la llamada a la API
         // const estudiosCompletados = await estudiosService.getByPaciente(pacienteId);
-        
+
         // Simulación de datos
         const estudiosBase = estudiosPorTipo[tipoEvaluacion];
         const estudiosSimulados = estudiosBase.map((est, index) => ({
@@ -90,7 +98,7 @@ export function ValidadorEstudios({ pacienteId, tipoEvaluacion, onValidacionChan
           fecha_completado: index < 3 ? new Date().toISOString() : undefined,
           resultado: index < 3 ? 'Normal' : undefined,
         }));
-        
+
         setEstudios(estudiosSimulados);
       } catch (error) {
         console.error('Error cargando estudios:', error);
@@ -108,7 +116,7 @@ export function ValidadorEstudios({ pacienteId, tipoEvaluacion, onValidacionChan
     const faltantesObligatorios = estudios
       .filter(e => e.obligatorio && !e.completado)
       .map(e => e.nombre);
-    
+
     const valido = faltantesObligatorios.length === 0;
     onValidacionChange(valido, faltantesObligatorios);
   }, [estudios, onValidacionChange]);

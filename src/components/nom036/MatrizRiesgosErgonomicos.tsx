@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  Grid3X3, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Users, 
+import {
+  Grid3X3,
+  AlertTriangle,
+  CheckCircle2,
+  Users,
   MapPin,
   TrendingUp,
   Filter,
@@ -13,17 +13,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   Cell
 } from 'recharts';
-import { 
+import {
   NivelRiesgoREBATexto,
   type NivelRiesgoREBA,
   type MatrizRiesgoErgonomico
@@ -133,7 +133,7 @@ export function MatrizRiesgosErgonomicos() {
 
   const areasFiltradas = matriz.filter(m => {
     const matchesSearch = m.area.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         m.puesto?.toLowerCase().includes(searchTerm.toLowerCase());
+      m.puesto?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesNivel = filtroNivel === 'todos' || m.nivel_riesgo === filtroNivel;
     return matchesSearch && matchesNivel;
   });
@@ -292,8 +292,8 @@ export function MatrizRiesgosErgonomicos() {
           {/* Grid de áreas */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {areasFiltradas.map((area) => (
-              <Card 
-                key={area.id} 
+              <Card
+                key={area.id}
                 className="border shadow-md hover:shadow-lg transition-shadow cursor-pointer"
                 onClick={() => setSelectedArea(selectedArea === area.id ? null : area.id)}
               >
@@ -303,7 +303,7 @@ export function MatrizRiesgosErgonomicos() {
                       <CardTitle className="text-base">{area.area}</CardTitle>
                       <CardDescription>{area.puesto}</CardDescription>
                     </div>
-                    <div 
+                    <div
                       className="w-4 h-4 rounded-full"
                       style={{ backgroundColor: getColorPorRiesgo(area.nivel_riesgo) }}
                     />
@@ -322,14 +322,14 @@ export function MatrizRiesgosErgonomicos() {
                       {area.estado === 'seguimiento' && 'Seguimiento'}
                     </Badge>
                   </div>
-                  
+
                   {area.evaluacion_reba && (
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-slate-500">REBA:</span>
                       <span className="font-mono font-bold">{area.evaluacion_reba}</span>
-                      <span 
+                      <span
                         className="text-xs px-2 py-0.5 rounded"
-                        style={{ 
+                        style={{
                           backgroundColor: `${getColorPorRiesgo(area.nivel_riesgo)}20`,
                           color: getColorPorRiesgo(area.nivel_riesgo)
                         }}
@@ -355,7 +355,7 @@ export function MatrizRiesgosErgonomicos() {
                           ))}
                         </div>
                       </div>
-                      
+
                       {area.medidas_correctivas.length > 0 && (
                         <div>
                           <p className="text-xs font-semibold text-slate-700 mb-2">Medidas Correctivas:</p>
@@ -404,7 +404,7 @@ export function MatrizRiesgosErgonomicos() {
                     <XAxis type="number" tick={{ fontSize: 12 }} />
                     <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={80} />
                     <Tooltip />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]} {...({} as any)}>
                       {chartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
@@ -422,9 +422,9 @@ export function MatrizRiesgosErgonomicos() {
             </CardHeader>
             <CardContent className="p-4">
               <div className="space-y-2">
-                {Object.entries(NivelRiesgoREBATexto).map(([key, value]) => (
+                {(Object.entries(NivelRiesgoREBATexto) as [string, any][]).map(([key, value]) => (
                   <div key={key} className="flex items-center gap-3">
-                    <div 
+                    <div
                       className="w-4 h-4 rounded"
                       style={{ backgroundColor: value.color }}
                     />

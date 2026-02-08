@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Target,
   Zap,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -99,7 +100,7 @@ export function NextBestActionWidget({
   const slaExcedido = (tiempo_total_minutos || 0) > sla_minutos;
 
   // Verificar si la acción es para el rol actual
-  const esMiAccion = !siguiente_accion || 
+  const esMiAccion = !siguiente_accion ||
     siguiente_accion.rol_responsable === user?.rol ||
     user?.rol === 'super_admin';
 

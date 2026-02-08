@@ -22,9 +22,25 @@ import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { PremiumMetricCard } from '@/components/ui/PremiumMetricCard'
 import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader'
-import { nom036Service, EvaluacionNom036 } from '@/services/nom036Service'
+import { nom036Service } from '@/services/nom036Service'
+import type { EvaluacionErgonomica, CreateEvaluacionErgonomicaDTO } from '@/types/nom036'
 import { useAuth } from '@/contexts/AuthContext'
 import toast from 'react-hot-toast'
+
+// Interfaz extendida para la UI local
+interface EvaluacionNom036 extends Omit<EvaluacionErgonomica, 'factores_riesgo'> {
+    puesto_trabajo: string;
+    peso_carga_kg?: number;
+    nivel_riesgo_calculado?: string;
+    medidas_preventivas_sugeridas?: string;
+    factores_riesgo?: {
+        genero_operador: 'masculino' | 'femenino';
+        postura_tronco: 'erguido' | 'flexionado' | 'torsion';
+        distancia_vertical: 'nudillos' | 'hombros' | 'suelo';
+        distancia_horizontal: 'cerca' | 'lejos';
+        tipo_agarre: 'bueno' | 'regular' | 'malo';
+    };
+}
 
 export default function Nom036() {
     const { user } = useAuth()
@@ -48,9 +64,43 @@ export default function Nom036() {
     // Riesgo en tiempo real
     const [riesgoPreview, setRiesgoPreview] = useState<any>(null)
 
+    const calculateLocalRisk = (data: Partial<EvaluacionNom036>) => {
+        const peso = data.peso_carga_kg || 0;
+        let score = 0;
+        if (peso > 25) score += 5;
+        else if (peso > 15) score += 3;
+        else if (peso > 5) score += 1;
+
+        const f = data.factores_riesgo as any;
+        if (f?.postura_tronco === 'torsion') score += 5;
+        if (f?.postura_tronco === 'flexionado') score += 2;
+        if (f?.distancia_horizontal === 'lejos') score += 3;
+        if (f?.tipo_agarre === 'malo') score += 3;
+
+        let nivel = 'bajo';
+        let color = 'bg-emerald-500';
+        let recomendacion = 'Continuar con las medidas actuales.';
+
+        if (score >= 10) {
+            nivel = 'muy_alto';
+            color = 'bg-red-500';
+            recomendacion = 'DETENER TAREA. Rediseño inmediato requerido.';
+        } else if (score >= 7) {
+            nivel = 'alto';
+            color = 'bg-orange-500';
+            recomendacion = 'Acción correctiva necesaria pronto.';
+        } else if (score >= 4) {
+            nivel = 'medio';
+            color = 'bg-yellow-500';
+            recomendacion = 'Investigación y cambios requeridos.';
+        }
+
+        return { score, nivel, color, recomendacion };
+    }
+
     useEffect(() => {
         // Calcular riesgo cada vez que cambia el form
-        const analisis = nom036Service.calculateRisk(formData)
+        const analisis = calculateLocalRisk(formData)
         setRiesgoPreview(analisis)
     }, [formData])
 
@@ -61,8 +111,8 @@ export default function Nom036() {
     const loadData = async () => {
         try {
             // Simulamos carga si no hay empresa real o backend listo
-            const data = await nom036Service.getByEmpresa('emp-1')
-            setEvaluaciones(data || [])
+            const { data } = await nom036Service.listarEvaluaciones({ empresa_id: 'emp-1' })
+            setEvaluaciones(data as any || [])
         } catch (error) {
             console.error(error)
             // Mock data si falla
@@ -73,12 +123,25 @@ export default function Nom036() {
     }
 
     const handleSave = async () => {
+        if (!user) return;
         try {
-            await nom036Service.create({
-                ...formData,
+            await nom036Service.crearEvaluacion({
+                ...formData as any,
                 empresa_id: 'emp-1', // Demo ID
-                estado: 'finalizado'
-            })
+                metodo_evaluacion: 'REBA', // Por defecto en esta vista simple
+                fecha_evaluacion: new Date().toISOString(),
+                datos_raw: {
+                    cuello: 1,
+                    tronco: 1,
+                    piernas: 1,
+                    brazo: 1,
+                    antebrazo: 1,
+                    muneca: 1,
+                    carga: 0,
+                    agarre: 0,
+                    actividad: 0
+                }
+            }, user)
             toast.success('Evaluación ergonómica guardada')
             setIsDialogOpen(false)
             loadData()

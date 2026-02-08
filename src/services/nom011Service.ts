@@ -100,7 +100,7 @@ export const nom011Service = {
       throw new Error(`Error al listar programas: ${error.message}`);
     }
 
-    return { data: data as ProgramaConservacionAuditiva[], total: count || 0 };
+    return { data: (data || []) as unknown as ProgramaConservacionAuditiva[], total: count || 0 };
   },
 
   /**
@@ -251,7 +251,7 @@ export const nom011Service = {
       throw new Error(`Error al listar audiometrías: ${error.message}`);
     }
 
-    return { data: data as EstudioAudiometria[], total: count || 0 };
+    return { data: (data || []) as unknown as EstudioAudiometria[], total: count || 0 };
   },
 
   /**
@@ -591,7 +591,7 @@ export const nom011Service = {
    */
   async generarPDFReporteAnual(empresaId: string, anio: number): Promise<Blob> {
     const reporte = await this.generarReporteAnual(empresaId, anio);
-    
+
     // Placeholder - el componente frontend debe usar una librería PDF
     return new Blob([JSON.stringify(reporte, null, 2)], { type: 'application/json' });
   },
@@ -603,7 +603,7 @@ export const nom011Service = {
   /**
    * Actualizar contadores del programa
    */
-  private async actualizarContadoresPrograma(programaId: string): Promise<void> {
+  async actualizarContadoresPrograma(programaId: string): Promise<void> {
     const { data: stats } = await supabase
       .from('estudios_audiometria')
       .select('semaforo')

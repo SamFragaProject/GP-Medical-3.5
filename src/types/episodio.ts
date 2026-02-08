@@ -184,8 +184,8 @@ export interface EpisodioAtencion {
   siguiente_accion?: NextBestAction;
 
   // Metadata
-  creado_en: string;
-  actualizado_en: string;
+  created_at: string;
+  updated_at: string;
   creado_por: string;
 
   // Relaciones
@@ -280,6 +280,8 @@ export interface CrearEpisodioDTO {
   creado_por: string;
   prioridad?: number;
   observaciones?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface TransicionEstadoDTO {

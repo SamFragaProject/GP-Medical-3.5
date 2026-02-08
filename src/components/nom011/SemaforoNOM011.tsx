@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle2, AlertCircle, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type { SemaforoNOM011 as SemaforoType } from '@/types/nom011';
+import type { SemaforoNom011 as SemaforoType } from '@/types/nom011';
 
 interface SemaforoNOM011Props {
   estado: SemaforoType;
@@ -53,9 +53,9 @@ export function SemaforoNOM011({ estado, mensaje, showDetails = true }: Semaforo
   return (
     <div className={`p-4 rounded-xl border-2 ${config.bgColor} ${config.borderColor} transition-all duration-300`}>
       <div className="flex items-center gap-4">
-        <div 
+        <div
           className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg"
-          style={{ 
+          style={{
             backgroundColor: config.color,
             boxShadow: `0 0 20px ${config.color}40`,
           }}
@@ -72,7 +72,7 @@ export function SemaforoNOM011({ estado, mensaje, showDetails = true }: Semaforo
             {mensaje || config.description}
           </p>
         </div>
-        <div 
+        <div
           className="w-4 h-4 rounded-full"
           style={{ backgroundColor: config.color }}
         />
@@ -103,12 +103,12 @@ export function SemaforoNOM011({ estado, mensaje, showDetails = true }: Semaforo
 // Versión compacta para tablas
 export function SemaforoNOM011Badge({ estado }: { estado: SemaforoType }) {
   const config = semaforoConfig[estado];
-  
+
   return (
-    <Badge 
+    <Badge
       className={`${config.bgColor} ${config.textColor} ${config.borderColor} border`}
     >
-      <span 
+      <span
         className="w-2 h-2 rounded-full mr-1.5"
         style={{ backgroundColor: config.color }}
       />
@@ -120,17 +120,17 @@ export function SemaforoNOM011Badge({ estado }: { estado: SemaforoType }) {
 // Indicador visual simple (solo el círculo)
 export function SemaforoNOM011Indicator({ estado, size = 'md' }: { estado: SemaforoType; size?: 'sm' | 'md' | 'lg' }) {
   const config = semaforoConfig[estado];
-  
+
   const sizeClasses = {
     sm: 'w-3 h-3',
     md: 'w-4 h-4',
     lg: 'w-6 h-6',
   };
-  
+
   return (
     <div
       className={`${sizeClasses[size]} rounded-full`}
-      style={{ 
+      style={{
         backgroundColor: config.color,
         boxShadow: `0 0 10px ${config.color}60`,
       }}

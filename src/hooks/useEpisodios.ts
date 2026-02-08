@@ -216,18 +216,18 @@ export function useEpisodios(options: UseEpisodiosOptions = {}) {
   // HELPERS
   // =====================================================
   const crearEpisodio = useCallback(
-    async (dto: Omit<CrearEpisodioDTO, 'creado_por' | 'empresa_id' | 'sede_id'>) => {
-      if (!user?.id || !empresaId) {
-        toast.error('Usuario no autenticado');
+    async (dto: Omit<CrearEpisodioDTO, 'creado_por'> & { empresa_id?: string; sede_id?: string }) => {
+      if (!user?.id || (!dto.empresa_id && !empresaId)) {
+        toast.error('Usuario no autenticado o empresa no definida');
         return null;
       }
 
       return crearMutation.mutateAsync({
         ...dto,
         creado_por: user.id,
-        empresa_id: empresaId,
-        sede_id: options.sedeId || user.sede_id || '',
-      });
+        empresa_id: dto.empresa_id || empresaId || '',
+        sede_id: dto.sede_id || options.sedeId || user.sede_id || '',
+      } as CrearEpisodioDTO);
     },
     [user, empresaId, options.sedeId, crearMutation]
   );

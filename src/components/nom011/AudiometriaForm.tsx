@@ -2,10 +2,10 @@ import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  Ear, 
-  Save, 
-  Upload, 
+import {
+  Ear,
+  Save,
+  Upload,
   Activity,
   ChevronRight,
   ChevronLeft,
@@ -20,11 +20,11 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'react-hot-toast';
 import { GraficaAudiograma } from './GraficaAudiograma';
 import { SemaforoNOM011 } from './SemaforoNOM011';
-import type { TipoAudiometria, SemaforoNOM011 as SemaforoType } from '@/types/nom011';
+import type { TipoEstudioAudiometria as TipoAudiometria, SemaforoNom011 as SemaforoType } from '@/types/nom011';
 
 const audiometriaSchema = z.object({
-  tipo: z.enum(['base', 'anual', 'reevaluacion', 'egreso', 'cambio_area']),
-  
+  tipo: z.enum(['ingreso', 'periodico', 'cambio_area', 'baja', 'especial', 'reevaluacion']),
+
   // Oído Derecho
   od_250hz: z.number().min(0).max(120).optional(),
   od_500hz: z.number().min(0).max(120).optional(),
@@ -34,7 +34,7 @@ const audiometriaSchema = z.object({
   od_4000hz: z.number().min(0).max(120).optional(),
   od_6000hz: z.number().min(0).max(120).optional(),
   od_8000hz: z.number().min(0).max(120).optional(),
-  
+
   // Oído Izquierdo
   oi_250hz: z.number().min(0).max(120).optional(),
   oi_500hz: z.number().min(0).max(120).optional(),
@@ -44,14 +44,14 @@ const audiometriaSchema = z.object({
   oi_4000hz: z.number().min(0).max(120).optional(),
   oi_6000hz: z.number().min(0).max(120).optional(),
   oi_8000hz: z.number().min(0).max(120).optional(),
-  
+
   // Interpretación
   interpretacion: z.string().optional(),
   retardo_auditivo_od: z.boolean().default(false),
   retardo_auditivo_oi: z.boolean().default(false),
   requiere_reevaluacion: z.boolean().default(false),
   tiempo_reevaluacion_meses: z.number().optional(),
-  
+
   // Archivo
   imagen_audiograma: z.instanceof(File).optional(),
 });
@@ -79,7 +79,7 @@ export function AudiometriaForm({ pacienteId, onSubmit, onCancel }: AudiometriaF
   const { register, handleSubmit, watch, setValue, control, formState: { errors, isSubmitting } } = useForm<AudiometriaFormValues>({
     resolver: zodResolver(audiometriaSchema),
     defaultValues: {
-      tipo: 'anual',
+      tipo: 'periodico',
       retardo_auditivo_od: false,
       retardo_auditivo_oi: false,
       requiere_reevaluacion: false,
@@ -93,10 +93,10 @@ export function AudiometriaForm({ pacienteId, onSubmit, onCancel }: AudiometriaF
   const calcularSemaforo = (): SemaforoType => {
     const odValues = frecuencias.map(f => watch(`od_${f.key}` as keyof AudiometriaFormValues) as number).filter(v => v !== undefined);
     const oiValues = frecuencias.map(f => watch(`oi_${f.key}` as keyof AudiometriaFormValues) as number).filter(v => v !== undefined);
-    
+
     const allValues = [...odValues, ...oiValues];
     if (allValues.length === 0) return 'verde';
-    
+
     const maxValue = Math.max(...allValues);
     if (maxValue >= 45) return 'rojo';
     if (maxValue >= 25) return 'amarillo';
@@ -126,11 +126,12 @@ export function AudiometriaForm({ pacienteId, onSubmit, onCancel }: AudiometriaF
   const renderFrecuenciaInput = (ear: 'od' | 'oi', freq: { key: string; label: string }) => {
     const fieldName = `${ear}_${freq.key}` as keyof AudiometriaFormValues;
     const value = watch(fieldName);
-    
+
     let borderColor = 'border-gray-200';
     if (value !== undefined) {
-      if (value >= 45) borderColor = 'border-rose-300 focus:border-rose-500 focus:ring-rose-500';
-      else if (value >= 25) borderColor = 'border-amber-300 focus:border-amber-500 focus:ring-amber-500';
+      const numValue = value as number;
+      if (numValue >= 45) borderColor = 'border-rose-300 focus:border-rose-500 focus:ring-rose-500';
+      else if (numValue >= 25) borderColor = 'border-amber-300 focus:border-amber-500 focus:ring-amber-500';
       else borderColor = 'border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500';
     }
 
@@ -167,11 +168,12 @@ export function AudiometriaForm({ pacienteId, onSubmit, onCancel }: AudiometriaF
             className="h-10 px-3 rounded-md border border-gray-200 bg-white text-sm"
             {...register('tipo')}
           >
-            <option value="base">Base</option>
-            <option value="anual">Anual</option>
+            <option value="ingreso">Ingreso</option>
+            <option value="periodico">Periódico</option>
             <option value="reevaluacion">Reevaluación</option>
-            <option value="egreso">Egreso</option>
+            <option value="baja">Egreso / Baja</option>
             <option value="cambio_area">Cambio de Área</option>
+            <option value="especial">Especial</option>
           </select>
           <Button
             type="button"
@@ -228,9 +230,9 @@ export function AudiometriaForm({ pacienteId, onSubmit, onCancel }: AudiometriaF
           </CardHeader>
           <CardContent className="p-6 space-y-4">
             <SemaforoNOM011 estado={semaforo} />
-            
+
             <Separator />
-            
+
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <input

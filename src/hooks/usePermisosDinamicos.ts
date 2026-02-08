@@ -137,7 +137,7 @@ const ALL_MODULES_CATALOG: PermisoModulo[] = [
 const DEMO_ROLE_PERMISSIONS: Record<string, string[]> = {
     'super_admin': ['*'],
     'admin_saas': ['*'],
-    'admin_empresa': ['dashboard', 'usuarios', 'configuracion', 'reportes', 'facturacion', 'rrhh', 'sedes', 'inventario', 'tienda', 'alertas', 'normatividad'],
+    'admin_empresa': ['dashboard', 'usuarios', 'configuracion', 'reportes', 'facturacion', 'rrhh', 'sedes', 'inventario', 'tienda', 'alertas', 'normatividad', 'dictamenes', 'nom011', 'nom036', 'episodios'],
     'medico': ['dashboard', 'pacientes', 'agenda', 'citas', 'estudios_medicos', 'historial', 'prescripcion', 'ia', 'rayos_x', 'matriz_riesgos', 'programa_anual', 'incapacidades', 'evaluaciones', 'resultados', 'certificaciones'],
     'enfermera': ['dashboard', 'pacientes', 'agenda', 'citas', 'historial', 'resultados', 'alertas'],
     'recepcion': ['dashboard', 'agenda', 'citas', 'pacientes', 'tienda', 'facturacion', 'resultados'],

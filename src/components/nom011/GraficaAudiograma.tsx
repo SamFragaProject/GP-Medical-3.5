@@ -1,15 +1,15 @@
 import React from 'react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  ReferenceLine,
-} from 'recharts';
+import * as Recharts from 'recharts';
+
+const LineChart = (Recharts as any).LineChart;
+const Line = (Recharts as any).Line;
+const XAxis = (Recharts as any).XAxis;
+const YAxis = (Recharts as any).YAxis;
+const CartesianGrid = (Recharts as any).CartesianGrid;
+const Tooltip = (Recharts as any).Tooltip;
+const Legend = (Recharts as any).Legend;
+const ResponsiveContainer = (Recharts as any).ResponsiveContainer;
+const ReferenceLine = (Recharts as any).ReferenceLine;
 
 interface GraficaAudiogramaProps {
   data: {
@@ -84,12 +84,12 @@ export function GraficaAudiograma({ data, height = 300 }: GraficaAudiogramaProps
           margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-          <XAxis 
-            dataKey="frecuencia" 
+          <XAxis
+            dataKey="frecuencia"
             label={{ value: 'Frecuencia (Hz)', position: 'insideBottom', offset: -10 }}
             tick={{ fontSize: 12 }}
           />
-          <YAxis 
+          <YAxis
             domain={[120, -10]}
             reversed
             label={{ value: 'dB HL', angle: -90, position: 'insideLeft' }}
@@ -98,11 +98,11 @@ export function GraficaAudiograma({ data, height = 300 }: GraficaAudiogramaProps
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend verticalAlign="top" height={36} />
-          
+
           {/* Líneas de referencia para semáforo NOM-011 */}
-          <ReferenceLine y={25} stroke="#fbbf24" strokeDasharray="5 5" strokeWidth={1.5} />
-          <ReferenceLine y={45} stroke="#f87171" strokeDasharray="5 5" strokeWidth={1.5} />
-          
+          <ReferenceLine y={25} stroke="#fbbf24" strokeDasharray="5 5" strokeWidth={1.5} {...({} as any)} />
+          <ReferenceLine y={45} stroke="#f87171" strokeDasharray="5 5" strokeWidth={1.5} {...({} as any)} />
+
           <Line
             type="monotone"
             dataKey="od"
@@ -112,6 +112,7 @@ export function GraficaAudiograma({ data, height = 300 }: GraficaAudiogramaProps
             dot={{ fill: '#3b82f6', strokeWidth: 2, r: 5 }}
             activeDot={{ r: 7 }}
             connectNulls={false}
+            {...({} as any)}
           />
           <Line
             type="monotone"
@@ -122,10 +123,11 @@ export function GraficaAudiograma({ data, height = 300 }: GraficaAudiogramaProps
             dot={{ fill: '#ef4444', strokeWidth: 2, r: 5 }}
             activeDot={{ r: 7 }}
             connectNulls={false}
+            {...({} as any)}
           />
         </LineChart>
       </ResponsiveContainer>
-      
+
       {/* Leyenda de referencias */}
       <div className="flex justify-center gap-6 mt-2 text-xs">
         <div className="flex items-center gap-1.5">

@@ -32,7 +32,8 @@ interface UseAgendaOptions {
 
 export function useAgenda(options: UseAgendaOptions = {}) {
   const { enableRealtime = true } = options;
-  const { user, empresaId } = useAuthContext();
+  const { user } = useAuthContext();
+  const empresaId = user?.empresaId || '';
   const queryClient = useQueryClient();
 
   const [filters, setFilters] = useState<AgendaFilters>({});
@@ -122,7 +123,7 @@ export function useAgenda(options: UseAgendaOptions = {}) {
     const fechaStr = fecha.toISOString().split('T')[0];
     const manana = new Date(fecha);
     manana.setDate(manana.getDate() + 1);
-    
+
     setFilters((prev) => ({
       ...prev,
       fechaDesde: fechaStr,
@@ -159,12 +160,12 @@ export function useAgenda(options: UseAgendaOptions = {}) {
     stats: statsQuery.data,
     fechaSeleccionada,
     filters,
-    
+
     // Loading
     isLoading: citasQuery.isLoading,
     isLoadingHoy: citasHoyQuery.isLoading,
     isLoadingStats: statsQuery.isLoading,
-    
+
     // Acciones
     setFecha,
     setMedicoFilter,
@@ -174,13 +175,13 @@ export function useAgenda(options: UseAgendaOptions = {}) {
     cancelar: cancelarMutation.mutate,
     completar: completarMutation.mutate,
     verificarDisponibilidad,
-    
+
     // Loading mutations
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isCancelando: cancelarMutation.isPending,
     isCompletando: completarMutation.isPending,
-    
+
     // Refetch
     refetch: citasQuery.refetch,
   };

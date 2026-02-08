@@ -85,7 +85,7 @@ export const nom036Service = {
       throw new Error(`Error al listar programas: ${error.message}`);
     }
 
-    return { data: data as ProgramaErgonomia[], total: count || 0 };
+    return { data: (data || []) as unknown as ProgramaErgonomia[], total: count || 0 };
   },
 
   /**
@@ -231,7 +231,7 @@ export const nom036Service = {
       throw new Error(`Error al listar evaluaciones: ${error.message}`);
     }
 
-    return { data: data as EvaluacionErgonomica[], total: count || 0 };
+    return { data: (data || []) as unknown as EvaluacionErgonomica[], total: count || 0 };
   },
 
   /**
@@ -590,7 +590,7 @@ export const nom036Service = {
 
     for (const ev of evaluaciones || []) {
       const key = `${ev.area_trabajo || 'Sin área'}-${ev.puesto_trabajo}`;
-      
+
       if (!areasMap.has(key)) {
         areasMap.set(key, {
           area: ev.area_trabajo || 'Sin área',
@@ -606,7 +606,7 @@ export const nom036Service = {
 
       const area = areasMap.get(key)!;
       area.numero_trabajadores++;
-      
+
       // Agregar factores
       for (const factor of ev.factores_riesgo || []) {
         if (!area.factores_identificados.includes(factor)) {
@@ -703,7 +703,7 @@ export const nom036Service = {
    */
   async generarPDFReporte(empresaId: string, anio: number): Promise<Blob> {
     const reporte = await this.generarReporteNOM036(empresaId, anio);
-    
+
     // Placeholder - el componente frontend debe usar una librería PDF
     return new Blob([JSON.stringify(reporte, null, 2)], { type: 'application/json' });
   },
@@ -712,7 +712,7 @@ export const nom036Service = {
   // FUNCIONES PRIVADAS
   // ==========================================
 
-  private async actualizarContadoresPrograma(programaId: string): Promise<void> {
+  async actualizarContadoresPrograma(programaId: string): Promise<void> {
     const { data: stats } = await supabase
       .from('evaluaciones_ergonomicas')
       .select('nivel_riesgo, requiere_intervencion')
@@ -730,7 +730,7 @@ export const nom036Service = {
       .eq('id', programaId);
   },
 
-  private async actualizarContadoresCapacitaciones(programaId: string): Promise<void> {
+  async actualizarContadoresCapacitaciones(programaId: string): Promise<void> {
     const { data: stats } = await supabase
       .from('capacitaciones_ergonomia')
       .select('numero_participantes')
@@ -747,54 +747,54 @@ export const nom036Service = {
       .eq('id', programaId);
   },
 
-  private identificarFactoresDesdeREBA(resultado: ResultadoREBA): string[] {
+  identificarFactoresDesdeREBA(resultado: ResultadoREBA): string[] {
     const factores: string[] = [];
-    
+
     if (resultado.cuello >= 2) factores.push('postura_forzada');
     if (resultado.tronco >= 3) factores.push('postura_forzada');
     if (resultado.brazo >= 4) factores.push('posicion_prolongada');
     if (resultado.carga >= 2) factores.push('manejo_cargas');
     if (resultado.actividad >= 1) factores.push('movimientos_repetitivos');
-    
+
     return factores;
   },
 
-  private identificarFactoresDesdeNIOSH(resultado: ResultadoNIOSH): string[] {
+  identificarFactoresDesdeNIOSH(resultado: ResultadoNIOSH): string[] {
     const factores: string[] = ['manejo_cargas'];
-    
+
     if (resultado.altura_origen < 75) factores.push('postura_forzada');
     if (resultado.distancia_horizontal > 50) factores.push('sobreesfuerzo');
     if (resultado.angulo_asimetria > 30) factores.push('postura_forzada');
-    
+
     return factores;
   },
 
-  private identificarFactoresDesdeOWAS(resultado: ResultadoOWAS): string[] {
+  identificarFactoresDesdeOWAS(resultado: ResultadoOWAS): string[] {
     const factores: string[] = [];
-    
+
     if (resultado.espalda >= 2) factores.push('postura_forzada');
     if (resultado.carga >= 2) factores.push('manejo_cargas');
-    
+
     return factores;
   },
 
-  private calcularPorcentajeAvance(programa: any, evaluaciones: any[]): number {
+  calcularPorcentajeAvance(programa: any, evaluaciones: any[]): number {
     // Cálculo simplificado del porcentaje de avance
     if (!programa.fecha_inicio || !programa.fecha_fin) return 0;
-    
+
     const inicio = new Date(programa.fecha_inicio);
     const fin = new Date(programa.fecha_fin);
     const hoy = new Date();
-    
+
     const totalDias = (fin.getTime() - inicio.getTime()) / (1000 * 3600 * 24);
     const diasTranscurridos = (hoy.getTime() - inicio.getTime()) / (1000 * 3600 * 24);
-    
+
     const avanceTiempo = Math.min(100, Math.max(0, (diasTranscurridos / totalDias) * 100));
-    
+
     // Ajustar por metas cumplidas
     const metaEvaluaciones = programa.total_puestos_evaluados || 1;
     const avanceEvaluaciones = Math.min(100, (evaluaciones.length / metaEvaluaciones) * 100);
-    
+
     return Math.round((avanceTiempo * 0.4 + avanceEvaluaciones * 0.6));
   }
 };

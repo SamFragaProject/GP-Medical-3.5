@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  User, 
-  FileCheck, 
-  AlertTriangle, 
-  FileSignature, 
-  ChevronRight, 
-  ChevronLeft, 
+import {
+  User,
+  FileCheck,
+  AlertTriangle,
+  FileSignature,
+  ChevronRight,
+  ChevronLeft,
   Save,
   X,
   CheckCircle2,
@@ -22,11 +22,11 @@ import { usePermisosDinamicos } from '@/hooks/usePermisosDinamicos';
 import { DictamenForm } from './DictamenForm';
 import { ValidadorEstudios } from './ValidadorEstudios';
 import { toast } from 'react-hot-toast';
-import type { TipoEvaluacion, ResultadoDictamen } from '@/types/dictamen';
+import type { TipoEvaluacionDictamen as TipoEvaluacion, ResultadoDictamen } from '@/types/dictamen';
 
 const dictamenWizardSchema = z.object({
   paciente_id: z.string().min(1, 'Seleccione un paciente'),
-  tipo_evaluacion: z.enum(['preempleo', 'periodico', 'retorno', 'egreso', 'reubicacion', 'reincorporacion']),
+  tipo_evaluacion: z.enum(['preempleo', 'ingreso', 'periodico', 'retorno', 'egreso', 'reubicacion', 'reincorporacion']),
   resultado: z.enum(['apto', 'apto_restricciones', 'no_apto_temporal', 'no_apto', 'evaluacion_complementaria']),
   restricciones: z.array(z.string()),
   restricciones_detalle: z.string().optional(),
@@ -238,7 +238,7 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-slate-500">Resultado:</span>
-                      <Badge 
+                      <Badge
                         variant={resultado === 'apto' ? 'success' : resultado.includes('no_apto') ? 'destructive' : 'warning'}
                         className="ml-2"
                       >
@@ -291,13 +291,12 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
             <React.Fragment key={step.number}>
               <div className="flex flex-col items-center">
                 <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
-                    isActive
+                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${isActive
                       ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30'
                       : isCompleted
-                      ? 'bg-emerald-100 text-emerald-600'
-                      : 'bg-slate-100 text-slate-400'
-                  }`}
+                        ? 'bg-emerald-100 text-emerald-600'
+                        : 'bg-slate-100 text-slate-400'
+                    }`}
                 >
                   {isCompleted ? (
                     <CheckCircle2 className="w-6 h-6" />
@@ -306,18 +305,16 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
                   )}
                 </div>
                 <span
-                  className={`mt-2 text-sm font-medium ${
-                    isActive ? 'text-emerald-600' : isCompleted ? 'text-emerald-600' : 'text-slate-400'
-                  }`}
+                  className={`mt-2 text-sm font-medium ${isActive ? 'text-emerald-600' : isCompleted ? 'text-emerald-600' : 'text-slate-400'
+                    }`}
                 >
                   {step.title}
                 </span>
               </div>
               {index < steps.length - 1 && (
                 <div
-                  className={`flex-1 h-0.5 mx-4 transition-all duration-300 ${
-                    isCompleted ? 'bg-emerald-500' : 'bg-slate-200'
-                  }`}
+                  className={`flex-1 h-0.5 mx-4 transition-all duration-300 ${isCompleted ? 'bg-emerald-500' : 'bg-slate-200'
+                    }`}
                 />
               )}
             </React.Fragment>

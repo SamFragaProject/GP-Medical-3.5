@@ -3,9 +3,9 @@
 // =====================================================
 
 // Tipos enumerados
-export type TipoEvaluacionDictamen = 'ingreso' | 'periodico' | 'retorno' | 'egreso' | 'reubicacion';
-export type ResultadoDictamen = 'apto' | 'apto_restricciones' | 'no_apto_temporal' | 'no_apto';
-export type EstadoDictamen = 'borrador' | 'pendiente' | 'completado' | 'anulado' | 'vencido';
+export type TipoEvaluacionDictamen = 'preempleo' | 'ingreso' | 'periodico' | 'retorno' | 'egreso' | 'reubicacion' | 'reincorporacion';
+export type ResultadoDictamen = 'apto' | 'apto_restricciones' | 'no_apto_temporal' | 'no_apto' | 'evaluacion_complementaria';
+export type EstadoDictamen = 'borrador' | 'pendiente' | 'completado' | 'anulado' | 'vencido' | 'firmado' | 'cancelado';
 export type TipoCambioVersion = 'correccion' | 'actualizacion' | 'revision' | 'anulacion';
 export type TipoRestriccion = 'fisica' | 'quimica' | 'biologica' | 'psicosocial' | 'ambiental';
 export type SeveridadBloqueo = 'baja' | 'media' | 'alta' | 'critica';
@@ -37,13 +37,13 @@ export interface RestriccionMedicaCatalogo {
 export interface DictamenMedico {
   id: string;
   folio: string;
-  
+
   // Relaciones
   empresa_id: string;
   sede_id?: string;
   paciente_id: string;
   expediente_id?: string;
-  
+
   // Información del paciente (denormalizado para el dictamen)
   paciente?: {
     id: string;
@@ -54,51 +54,64 @@ export interface DictamenMedico {
     sexo?: string;
     puesto_trabajo?: string;
     area_trabajo?: string;
+    puesto?: string; // Compatibilidad con Swarm
   };
-  
+
+  // Empresa relación
+  empresa?: {
+    id: string;
+    nombre: string;
+  };
+
   // Tipo y contexto
   tipo_evaluacion: TipoEvaluacionDictamen;
   motivo_evaluacion?: string;
-  
+
   // Resultado
   resultado: ResultadoDictamen;
   resultado_detalle?: string;
-  
+
   // Restricciones
   restricciones: RestriccionDictamen[];
   restricciones_otras?: string;
-  
+
   // Recomendaciones
   recomendaciones_medicas: string[];
   recomendaciones_epp: string[];
   recomendaciones_adicionales?: string;
-  
+
   // Vigencia
   vigencia_inicio: string; // ISO date
   vigencia_fin?: string; // ISO date
+  fecha_vigencia_inicio?: string; // Swarm
+  fecha_vigencia_fin?: string; // Swarm
+  fecha_emision?: string; // Swarm
+  restricciones_detalle?: string; // Swarm
   duracion_dias?: number;
-  
+
   // Médico responsable
   medico_responsable_id?: string;
   medico_nombre?: string;
   cedula_profesional?: string;
   especialidad_medico?: string;
   firma_digital_url?: string;
-  
+
   // Validación
   estudios_requeridos_completos: boolean;
   estudios_faltantes: string[];
   bloqueos_pendientes: BloqueoPendiente[];
-  
+  estudios_requeridos?: DictamenEstudioRequerido[];
+  historial_versiones?: VersionDictamen[];
+
   // Control de versiones
   estado: EstadoDictamen;
   version: number;
   es_version_final: boolean;
-  
+
   // Motivo de no aptitud
   motivo_no_apto?: string;
   cie10_no_apto?: string;
-  
+
   // Auditoría
   created_by?: string;
   updated_by?: string;
@@ -177,13 +190,22 @@ export interface DictamenEstudioRequerido {
   updated_at: string;
 }
 
-export type TipoEstudioRequerido = 
-  | 'audiometria' 
-  | 'espirometria' 
-  | 'laboratorio' 
-  | 'rx' 
-  | 'vision' 
-  | 'ecg' 
+export interface EstudioRequerido {
+  tipo: string;
+  nombre: string;
+  obligatorio: boolean;
+  completado: boolean;
+  fecha_completado?: string;
+  resultado?: string;
+}
+
+export type TipoEstudioRequerido =
+  | 'audiometria'
+  | 'espirometria'
+  | 'laboratorio'
+  | 'rx'
+  | 'vision'
+  | 'ecg'
   | 'otros';
 
 // =====================================================
@@ -262,25 +284,29 @@ export interface ResumenDictamenes {
 // =====================================================
 
 export const TIPO_EVALUACION_LABELS: Record<TipoEvaluacionDictamen, string> = {
-  ingreso: 'Pre-empleo / Ingreso',
+  preempleo: 'Pre-empleo / Ingreso',
+  ingreso: 'Ingreso',
   periodico: 'Examen Periódico',
   retorno: 'Retorno a Trabajo',
   egreso: 'Egreso / Término',
-  reubicacion: 'Reubicación Laboral'
+  reubicacion: 'Reubicación Laboral',
+  reincorporacion: 'Reincorporación'
 };
 
 export const RESULTADO_LABELS: Record<ResultadoDictamen, string> = {
   apto: 'APTO',
   apto_restricciones: 'APTO CON RESTRICCIONES',
   no_apto_temporal: 'NO APTO TEMPORALMENTE',
-  no_apto: 'NO APTO'
+  no_apto: 'NO APTO',
+  evaluacion_complementaria: 'EVALUACIÓN COMPLEMENTARIA'
 };
 
 export const RESULTADO_COLORS: Record<ResultadoDictamen, string> = {
   apto: 'bg-green-500',
   apto_restricciones: 'bg-yellow-500',
   no_apto_temporal: 'bg-orange-500',
-  no_apto: 'bg-red-500'
+  no_apto: 'bg-red-500',
+  evaluacion_complementaria: 'bg-blue-500'
 };
 
 export const ESTADO_LABELS: Record<EstadoDictamen, string> = {
@@ -288,7 +314,9 @@ export const ESTADO_LABELS: Record<EstadoDictamen, string> = {
   pendiente: 'Pendiente',
   completado: 'Completado',
   anulado: 'Anulado',
-  vencido: 'Vencido'
+  vencido: 'Vencido',
+  firmado: 'Firmado',
+  cancelado: 'Cancelado'
 };
 
 export const TIPO_RESTRICCION_LABELS: Record<TipoRestriccion, string> = {

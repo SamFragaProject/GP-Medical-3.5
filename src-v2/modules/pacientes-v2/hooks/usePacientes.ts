@@ -16,6 +16,7 @@ import {
   useMutation,
   useQueryClient,
   useInfiniteQuery,
+  keepPreviousData,
 } from '@tanstack/react-query';
 import { pacienteService } from '../services/pacienteService';
 import { useAuthContext } from '../../auth-v2/components/AuthProvider';
@@ -34,8 +35,8 @@ import type { PaginatedResult } from '../services/pacienteService';
 const QUERY_KEYS = {
   all: ['pacientes'] as const,
   lists: (empresaId: string) => [...QUERY_KEYS.all, 'list', empresaId] as const,
-  list: (empresaId: string, filters: PacienteFilters) =>
-    [...QUERY_KEYS.lists(empresaId), filters] as const,
+  list: (empresaId: string, filters: PacienteFilters, page: number, pageSize: number) =>
+    [...QUERY_KEYS.lists(empresaId), { filters, page, pageSize }] as const,
   details: (empresaId: string) => [...QUERY_KEYS.all, 'detail', empresaId] as const,
   detail: (empresaId: string, id: string) =>
     [...QUERY_KEYS.details(empresaId), id] as const,
@@ -49,7 +50,8 @@ interface UsePacientesOptions {
 
 export function usePacientes(options: UsePacientesOptions = {}) {
   const { pageSize = 20, enableRealtime = true } = options;
-  const { user, empresaId } = useAuthContext();
+  const { user } = useAuthContext();
+  const empresaId = user?.empresaId || '';
   const queryClient = useQueryClient();
 
   // Estado local para filtros y paginación
@@ -76,7 +78,7 @@ export function usePacientes(options: UsePacientesOptions = {}) {
    * Query: Listado paginado de pacientes
    */
   const pacientesQuery = useQuery<PaginatedResult<Paciente>, Error>({
-    queryKey: QUERY_KEYS.list(empresaId, { ...debouncedFilters, page, pageSize }),
+    queryKey: QUERY_KEYS.list(empresaId, debouncedFilters, page, pageSize),
     queryFn: () =>
       pacienteService.getPacientes(empresaId, {
         page,
@@ -85,7 +87,7 @@ export function usePacientes(options: UsePacientesOptions = {}) {
         sort,
       }),
     staleTime: 5 * 60 * 1000, // 5 minutos
-    keepPreviousData: true, // Mantener datos mientras carga nuevos
+    placeholderData: keepPreviousData,
     enabled: !!empresaId,
   });
 
@@ -109,19 +111,19 @@ export function usePacientes(options: UsePacientesOptions = {}) {
   const createMutation = useMutation<Paciente, Error, CreatePacienteInput>({
     mutationFn: (input) =>
       pacienteService.createPaciente(input, empresaId, user!.id),
-    
+
     onSuccess: (newPaciente) => {
       // Invalidar listados
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.lists(empresaId),
       });
-      
+
       // Agregar a caché
       queryClient.setQueryData(
         QUERY_KEYS.detail(empresaId, newPaciente.id),
         newPaciente
       );
-      
+
       // Actualizar stats
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.stats(empresaId),
@@ -135,11 +137,12 @@ export function usePacientes(options: UsePacientesOptions = {}) {
   const updateMutation = useMutation<
     Paciente,
     Error,
-    { id: string; input: UpdatePacienteInput }
+    { id: string; input: UpdatePacienteInput },
+    { previousPaciente: Paciente | undefined }
   >({
     mutationFn: ({ id, input }) =>
       pacienteService.updatePaciente(id, input, empresaId, user!.id),
-    
+
     onMutate: async ({ id, input }) => {
       // Cancelar queries en curso
       await queryClient.cancelQueries({
@@ -161,7 +164,7 @@ export function usePacientes(options: UsePacientesOptions = {}) {
 
       return { previousPaciente };
     },
-    
+
     onError: (err, { id }, context) => {
       // Rollback en error
       if (context?.previousPaciente) {
@@ -171,7 +174,7 @@ export function usePacientes(options: UsePacientesOptions = {}) {
         );
       }
     },
-    
+
     onSettled: (data, error, { id }) => {
       // Invalidar queries afectadas
       queryClient.invalidateQueries({
@@ -189,18 +192,18 @@ export function usePacientes(options: UsePacientesOptions = {}) {
   const deleteMutation = useMutation<void, Error, string>({
     mutationFn: (id) =>
       pacienteService.deletePaciente(id, empresaId, user!.id),
-    
+
     onSuccess: (_, id) => {
       // Invalidar listados
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.lists(empresaId),
       });
-      
+
       // Remover de caché
       queryClient.removeQueries({
         queryKey: QUERY_KEYS.detail(empresaId, id),
       });
-      
+
       // Actualizar stats
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.stats(empresaId),
@@ -214,7 +217,7 @@ export function usePacientes(options: UsePacientesOptions = {}) {
   const reactivateMutation = useMutation<void, Error, string>({
     mutationFn: (id) =>
       pacienteService.reactivatePaciente(id, empresaId, user!.id),
-    
+
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.lists(empresaId),
@@ -282,7 +285,7 @@ export function usePacientes(options: UsePacientesOptions = {}) {
         queryClient.invalidateQueries({
           queryKey: QUERY_KEYS.lists(empresaId),
         });
-        
+
         if (payload.eventType === 'DELETE') {
           queryClient.removeQueries({
             queryKey: QUERY_KEYS.detail(empresaId, payload.old.id),
@@ -312,16 +315,16 @@ export function usePacientes(options: UsePacientesOptions = {}) {
     pageSize,
     totalPages: pacientesQuery.data?.totalPages ?? 0,
     stats: statsQuery.data,
-    
+
     // Loading states
     isLoading: pacientesQuery.isLoading,
     isFetching: pacientesQuery.isFetching,
     isLoadingStats: statsQuery.isLoading,
-    
+
     // Errors
     error: pacientesQuery.error,
     statsError: statsQuery.error,
-    
+
     // Filtros
     filters,
     sort,
@@ -329,26 +332,26 @@ export function usePacientes(options: UsePacientesOptions = {}) {
     setFilter,
     clearFilters,
     setSorting,
-    
+
     // Paginación
     goToPage,
     nextPage,
     previousPage,
     hasNextPage: page < (pacientesQuery.data?.totalPages ?? 0),
     hasPreviousPage: page > 1,
-    
+
     // Acciones
     create: createMutation.mutate,
     update: updateMutation.mutate,
     delete: deleteMutation.mutate,
     reactivate: reactivateMutation.mutate,
-    
+
     // Loading de mutaciones
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
     isReactivating: reactivateMutation.isPending,
-    
+
     // Refetch
     refetch: pacientesQuery.refetch,
     refetchStats: statsQuery.refetch,
@@ -359,7 +362,8 @@ export function usePacientes(options: UsePacientesOptions = {}) {
  * Hook para un paciente específico
  */
 export function usePaciente(id: string | null) {
-  const { empresaId } = useAuthContext();
+  const { user } = useAuthContext();
+  const empresaId = user?.empresaId || '';
   const queryClient = useQueryClient();
 
   const query = useQuery<Paciente | null, Error>({

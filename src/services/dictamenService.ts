@@ -71,8 +71,8 @@ export const dictamenService = {
     let query = supabase
       .from('dictamenes_medicos')
       .select(
-        incluir_paciente 
-          ? '*, paciente:pacientes(id, nombre, apellido_paterno, apellido_materno)' 
+        incluir_paciente
+          ? '*, paciente:pacientes(id, nombre, apellido_paterno, apellido_materno)'
           : '*',
         { count: 'exact' }
       );
@@ -117,7 +117,7 @@ export const dictamenService = {
     }
 
     // Si se solicitaron estudios, cargarlos para cada dictamen
-    let dictamenes = data as DictamenMedico[];
+    let dictamenes = (data || []) as unknown as DictamenMedico[];
     if (incluir_estudios && dictamenes.length > 0) {
       const dictamenesIds = dictamenes.map(d => d.id);
       const { data: estudios } = await supabase
@@ -223,8 +223,8 @@ export const dictamenService = {
    * Crea automáticamente versión en auditoría si hay cambios significativos
    */
   async actualizar(
-    id: string, 
-    data: UpdateDictamenDTO, 
+    id: string,
+    data: UpdateDictamenDTO,
     usuario: User,
     motivoCambio?: string
   ): Promise<DictamenMedico> {
@@ -308,7 +308,7 @@ export const dictamenService = {
    * Requiere validación previa
    */
   async cerrarDictamen(
-    dictamenId: string, 
+    dictamenId: string,
     usuario: User,
     forzar: boolean = false
   ): Promise<void> {
@@ -382,7 +382,7 @@ export const dictamenService = {
     // Por ahora, generamos un PDF mock con jsPDF o similar
     // En implementación real, usar una librería como pdfmake o react-pdf
     const contenido = this.generarContenidoPDF(dictamen);
-    
+
     // Placeholder - retornar blob vacío por ahora
     // El componente frontend debe usar una librería PDF apropiada
     return new Blob([contenido], { type: 'application/json' });
@@ -454,24 +454,29 @@ export const dictamenService = {
     return {
       total: dictamenes.length,
       por_tipo: {
+        preempleo: dictamenes.filter(d => d.tipo_evaluacion === 'preempleo').length,
         ingreso: dictamenes.filter(d => d.tipo_evaluacion === 'ingreso').length,
         periodico: dictamenes.filter(d => d.tipo_evaluacion === 'periodico').length,
         retorno: dictamenes.filter(d => d.tipo_evaluacion === 'retorno').length,
         egreso: dictamenes.filter(d => d.tipo_evaluacion === 'egreso').length,
-        reubicacion: dictamenes.filter(d => d.tipo_evaluacion === 'reubicacion').length
+        reubicacion: dictamenes.filter(d => d.tipo_evaluacion === 'reubicacion').length,
+        reincorporacion: dictamenes.filter(d => d.tipo_evaluacion === 'reincorporacion').length
       },
       por_resultado: {
         apto: dictamenes.filter(d => d.resultado === 'apto').length,
         apto_restricciones: dictamenes.filter(d => d.resultado === 'apto_restricciones').length,
         no_apto_temporal: dictamenes.filter(d => d.resultado === 'no_apto_temporal').length,
-        no_apto: dictamenes.filter(d => d.resultado === 'no_apto').length
+        no_apto: dictamenes.filter(d => d.resultado === 'no_apto').length,
+        evaluacion_complementaria: dictamenes.filter(d => d.resultado === 'evaluacion_complementaria').length
       },
       por_estado: {
         borrador: dictamenes.filter(d => d.estado === 'borrador').length,
         pendiente: dictamenes.filter(d => d.estado === 'pendiente').length,
         completado: dictamenes.filter(d => d.estado === 'completado').length,
         anulado: dictamenes.filter(d => d.estado === 'anulado').length,
-        vencido: dictamenes.filter(d => d.estado === 'vencido').length
+        vencido: dictamenes.filter(d => d.estado === 'vencido').length,
+        firmado: dictamenes.filter(d => d.estado === 'firmado').length,
+        cancelado: dictamenes.filter(d => d.estado === 'cancelado').length
       },
       vencidos_30_dias: dictamenes.filter(d => {
         if (!d.vigencia_fin) return false;
@@ -493,7 +498,7 @@ export const dictamenService = {
   /**
    * Calcular estudios requeridos según puesto y tipo de evaluación
    */
-  private async calcularEstudiosRequeridos(
+  async calcularEstudiosRequeridos(
     dictamenId: string,
     pacienteId: string,
     tipoEvaluacion: string
@@ -514,29 +519,29 @@ export const dictamenService = {
 
     // Agregar estudios según riesgos específicos
     const estudiosAdicionales: typeof estudiosBase = [];
-    
+
     if (paciente?.riesgos_exposicion?.includes('ruido')) {
-      estudiosAdicionales.push({ 
-        tipo_estudio: 'audiometria', 
-        obligatorio: true, 
-        descripcion: 'Audiometría (exposición a ruido)' 
+      estudiosAdicionales.push({
+        tipo_estudio: 'audiometria',
+        obligatorio: true,
+        descripcion: 'Audiometría (exposición a ruido)'
       });
     }
-    
+
     if (paciente?.puesto_trabajo?.toLowerCase().includes('soldador')) {
-      estudiosAdicionales.push({ 
-        tipo_estudio: 'vision', 
-        obligatorio: true, 
-        descripcion: 'Visión de colores' 
+      estudiosAdicionales.push({
+        tipo_estudio: 'vision',
+        obligatorio: true,
+        descripcion: 'Visión de colores'
       });
     }
 
     if (tipoEvaluacion === 'ingreso') {
       // Estudios específicos para pre-empleo
-      estudiosBase.push({ 
-        tipo_estudio: 'rx', 
-        obligatorio: false, 
-        descripcion: 'Radiografía de tórax' 
+      estudiosBase.push({
+        tipo_estudio: 'rx',
+        obligatorio: false,
+        descripcion: 'Radiografía de tórax'
       });
     }
 
@@ -557,7 +562,7 @@ export const dictamenService = {
   /**
    * Generar contenido para PDF (placeholder)
    */
-  private generarContenidoPDF(dictamen: DictamenMedico): string {
+  generarContenidoPDF(dictamen: DictamenMedico): string {
     return JSON.stringify({
       folio: dictamen.folio,
       paciente: dictamen.paciente,

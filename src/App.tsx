@@ -1,6 +1,6 @@
 // Aplicación principal del ERP Médico
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AIChatWidget } from '@/components/ia/AIChatWidget'
 import { AuthProvider } from '@/contexts/AuthContext'
@@ -81,13 +81,64 @@ import PatientAppointments from '@/pages/pacientes/portal/PatientAppointments'
 import PatientHealth from '@/pages/pacientes/portal/PatientHealth'
 import PatientProfile from '@/pages/pacientes/portal/PatientProfile'
 import { NotFound } from '@/pages/NotFound'
-
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 // Chatbot V2 - Cargado dinámicamente según feature flag
 const ChatbotV2 = import.meta.env.VITE_USE_CHATBOT_V2 === 'true'
   ? React.lazy(() => import('../src-v2/modules/chatbot-v2/components/ChatbotWidget'))
   : null
+
+// === WRAPPERS PARA MÓDULOS SWARM ===
+const DictamenesRouteWrapper = () => {
+  const navigate = useNavigate();
+  return <ListaDictamenes
+    onNuevoDictamen={() => navigate('/medicina/dictamenes/nuevo')}
+    onVerDictamen={(id) => navigate(`/medicina/dictamenes/${id}`)}
+    onEditarDictamen={(id) => navigate(`/medicina/dictamenes/${id}`)}
+  />;
+};
+
+const DictamenWizardWrapper = () => {
+  const navigate = useNavigate();
+  return <DictamenWizard
+    onComplete={() => navigate('/medicina/dictamenes')}
+    onCancel={() => navigate('/medicina/dictamenes')}
+  />;
+};
+
+const AudiometriaFormWrapper = () => {
+  const navigate = useNavigate();
+  return <AudiometriaForm
+    onSubmit={() => navigate('/nom-011/programa')}
+    onCancel={() => navigate('/nom-011/programa')}
+  />;
+};
+
+const EvaluacionREBAWrapper = () => {
+  const navigate = useNavigate();
+  return <EvaluacionREBA
+    onSubmit={() => navigate('/medicina/matriz-riesgos')}
+    onCancel={() => navigate('/medicina/matriz-riesgos')}
+  />;
+};
+
+const EvaluacionNIOSHWrapper = () => {
+  const navigate = useNavigate();
+  return <EvaluacionNIOSH
+    onSubmit={() => navigate('/medicina/matriz-riesgos')}
+    onCancel={() => navigate('/medicina/matriz-riesgos')}
+  />;
+};
+
+const ColaTrabajoWrapper = () => {
+  const params = useParams();
+  return <ColaTrabajo sedeId="demo-sede" tipo={params.tipo as any} />;
+};
+
+const NuevoEpisodioWrapper = () => {
+  const navigate = useNavigate();
+  return <NuevoEpisodioWizard sedeId="demo-sede" isOpen={true} onClose={() => navigate('/episodios/pipeline')} />;
+};
 
 function App() {
   // Limpieza de sesión forzosa para evitar conflictos de versiones anteriores
@@ -201,27 +252,93 @@ function App() {
                       <Route path="/admin/ai-workbench" element={<ProtectedRoute resource="sistema"><Layout><AIWorkbench /></Layout></ProtectedRoute>} />
                       <Route path="/admin/webhooks" element={<ProtectedRoute resource="sistema"><Layout><WebhookSimulator /></Layout></ProtectedRoute>} />
                       <Route path="/admin/luxury-dashboard" element={<ProtectedRoute resource="sistema"><DashboardLuxury /></ProtectedRoute>} />
-                      
+
                       {/* === AGENT SWARM: Rutas ERP Pro === */}
                       {/* Dictámenes Médico-Laborales */}
-                      <Route path="/medicina/dictamenes" element={<ProtectedRoute resource="dictamenes"><Layout><ListaDictamenes /></Layout></ProtectedRoute>} />
-                      <Route path="/medicina/dictamenes/nuevo" element={<ProtectedRoute resource="dictamenes"><Layout><DictamenWizard /></Layout></ProtectedRoute>} />
-                      <Route path="/medicina/dictamenes/:id" element={<ProtectedRoute resource="dictamenes"><Layout><DictamenWizard /></Layout></ProtectedRoute>} />
-                      
+                      <Route path="/medicina/dictamenes" element={
+                        <ProtectedRoute resource="dictamenes">
+                          <Layout>
+                            <DictamenesRouteWrapper />
+                          </Layout>
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/medicina/dictamenes/nuevo" element={
+                        <ProtectedRoute resource="dictamenes">
+                          <Layout>
+                            <DictamenWizardWrapper />
+                          </Layout>
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/medicina/dictamenes/:id" element={
+                        <ProtectedRoute resource="dictamenes">
+                          <Layout>
+                            <DictamenWizardWrapper />
+                          </Layout>
+                        </ProtectedRoute>
+                      } />
+
                       {/* NOM-011 Conservación Auditiva */}
-                      <Route path="/nom-011/programa" element={<ProtectedRoute resource="nom011"><Layout><ProgramaAnualNOM011 /></Layout></ProtectedRoute>} />
-                      <Route path="/nom-011/audiometria/nuevo" element={<ProtectedRoute resource="nom011"><Layout><AudiometriaForm /></Layout></ProtectedRoute>} />
-                      
+                      <Route path="/nom-011/programa" element={
+                        <ProtectedRoute resource="nom011">
+                          <Layout>
+                            <ProgramaAnualNOM011 />
+                          </Layout>
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/nom-011/audiometria/nuevo" element={
+                        <ProtectedRoute resource="nom011">
+                          <Layout>
+                            <AudiometriaFormWrapper />
+                          </Layout>
+                        </ProtectedRoute>
+                      } />
+
                       {/* NOM-036 Ergonomía */}
-                      <Route path="/nom-036/evaluacion/reba" element={<ProtectedRoute resource="nom036"><Layout><EvaluacionREBA /></Layout></ProtectedRoute>} />
-                      <Route path="/nom-036/evaluacion/niosh" element={<ProtectedRoute resource="nom036"><Layout><EvaluacionNIOSH /></Layout></ProtectedRoute>} />
-                      
+                      <Route path="/nom-036/evaluacion/reba" element={
+                        <ProtectedRoute resource="nom036">
+                          <Layout>
+                            <EvaluacionREBAWrapper />
+                          </Layout>
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/nom-036/evaluacion/niosh" element={
+                        <ProtectedRoute resource="nom036">
+                          <Layout>
+                            <EvaluacionNIOSHWrapper />
+                          </Layout>
+                        </ProtectedRoute>
+                      } />
+
                       {/* Motor de Flujos - Episodios */}
-                      <Route path="/episodios/pipeline" element={<ProtectedRoute resource="episodios"><Layout><PipelineEpisodios /></Layout></ProtectedRoute>} />
-                      <Route path="/episodios/cola/:tipo" element={<ProtectedRoute resource="episodios"><Layout><ColaTrabajo /></Layout></ProtectedRoute>} />
-                      <Route path="/recepcion/checkin" element={<ProtectedRoute resource="recepcion"><Layout><CheckInRecepcion /></Layout></ProtectedRoute>} />
-                      <Route path="/recepcion/episodio/nuevo" element={<ProtectedRoute resource="recepcion"><Layout><NuevoEpisodioWizard /></Layout></ProtectedRoute>} />
-                      
+                      <Route path="/episodios/pipeline" element={
+                        <ProtectedRoute resource="episodios">
+                          <Layout>
+                            <PipelineEpisodios sedeId="demo-sede" />
+                          </Layout>
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/episodios/cola/:tipo" element={
+                        <ProtectedRoute resource="episodios">
+                          <Layout>
+                            <ColaTrabajoWrapper />
+                          </Layout>
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/recepcion/checkin" element={
+                        <ProtectedRoute resource="recepcion">
+                          <Layout>
+                            <CheckInRecepcion sedeId="demo-sede" />
+                          </Layout>
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/recepcion/episodio/nuevo" element={
+                        <ProtectedRoute resource="recepcion">
+                          <Layout>
+                            <NuevoEpisodioWrapper />
+                          </Layout>
+                        </ProtectedRoute>
+                      } />
+
                       <Route path="*" element={<NotFound />} />
                     </Routes>
 

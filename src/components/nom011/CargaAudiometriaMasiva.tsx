@@ -1,11 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { 
-  Upload, 
-  FileSpreadsheet, 
-  X, 
-  CheckCircle2, 
-  AlertCircle, 
+import {
+  Upload,
+  FileSpreadsheet,
+  X,
+  CheckCircle2,
+  AlertCircle,
   AlertTriangle,
   Download,
   Eye
@@ -58,25 +57,44 @@ export function CargaAudiometriaMasiva({ empresaId, onComplete, onCancel }: Carg
   const [loading, setLoading] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
   const [progreso, setProgreso] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (file) {
-      setArchivo(file);
-      procesarArchivo(file);
+  const handleFile = (file: File) => {
+    const validTypes = [
+      'text/csv',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ];
+
+    if (!validTypes.includes(file.type) && !file.name.endsWith('.csv') && !file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      toast.error('Formato de archivo no válido. Use CSV o Excel.');
+      return;
     }
-  }, []);
 
-  const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
-    onDrop,
-    accept: {
-      'text/csv': ['.csv'],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-excel': ['.xls'],
-    },
-    maxFiles: 1,
-    maxSize: 10 * 1024 * 1024, // 10MB
-  });
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('El archivo excede los 10MB permitidos.');
+      return;
+    }
+
+    setArchivo(file);
+    procesarArchivo(file);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  };
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const onDragLeave = () => {
+    setDragOver(false);
+  };
 
   const procesarArchivo = async (file: File) => {
     setLoading(true);
@@ -214,18 +232,29 @@ export function CargaAudiometriaMasiva({ empresaId, onComplete, onCancel }: Carg
         <Card className="border shadow-md">
           <CardContent className="p-8">
             <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-200 ${
-                isDragActive
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onClick={() => document.getElementById('file-input')?.click()}
+              className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-200 ${dragOver
                   ? 'border-emerald-500 bg-emerald-50'
                   : 'border-slate-300 hover:border-emerald-400 hover:bg-slate-50'
-              }`}
+                }`}
             >
-              <input {...getInputProps()} />
+              <input
+                id="file-input"
+                type="file"
+                className="hidden"
+                accept=".csv,.xlsx,.xls"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFile(file);
+                }}
+              />
               <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <FileSpreadsheet className="w-8 h-8 text-emerald-600" />
               </div>
-              {isDragActive ? (
+              {dragOver ? (
                 <p className="text-emerald-600 font-medium">Suelte el archivo aquí...</p>
               ) : (
                 <>
@@ -241,20 +270,6 @@ export function CargaAudiometriaMasiva({ empresaId, onComplete, onCancel }: Carg
                 </>
               )}
             </div>
-
-            {fileRejections.length > 0 && (
-              <div className="mt-4 p-4 bg-rose-50 rounded-lg border border-rose-200">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 text-rose-500 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-rose-800">Archivo no válido</p>
-                    <p className="text-sm text-rose-600">
-                      Asegúrese de subir un archivo CSV o Excel válido (máx. 10MB)
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
       ) : (
@@ -315,7 +330,7 @@ export function CargaAudiometriaMasiva({ empresaId, onComplete, onCancel }: Carg
                   </TableHeader>
                   <TableBody>
                     {registros.map((registro) => (
-                      <TableRow 
+                      <TableRow
                         key={registro.fila}
                         className={!registro.valido ? 'bg-rose-50/50' : ''}
                       >
@@ -396,10 +411,10 @@ export function CargaAudiometriaMasiva({ empresaId, onComplete, onCancel }: Carg
         </Button>
         {previewMode && (
           <>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setPreviewMode(false)} 
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPreviewMode(false)}
               className="rounded-full"
             >
               <X className="w-4 h-4 mr-2" />
