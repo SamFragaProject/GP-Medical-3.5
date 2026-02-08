@@ -63,6 +63,12 @@ import MatrizRiesgos from '@/pages/medicina/MatrizRiesgos'
 import ProgramaAnualSalud from '@/pages/medicina/ProgramaAnualSalud'
 import RecetaMedica from '@/pages/medicina/RecetaMedica'
 import Incapacidades from '@/pages/medicina/Incapacidades'
+
+// === AGENT SWARM: Nuevos módulos ERP Pro ===
+import { ListaDictamenes, DictamenWizard } from '@/components/dictamenes'
+import { ProgramaAnualNOM011, AudiometriaForm } from '@/components/nom011'
+import { EvaluacionREBA, EvaluacionNIOSH } from '@/components/nom036'
+import { PipelineEpisodios, ColaTrabajo, CheckInRecepcion, NuevoEpisodioWizard } from '@/components/episodios'
 import KioscoHome from '@/pages/kiosco/KioscoHome'
 import Identificacion from '@/pages/kiosco/Identificacion'
 import RegistroRapido from '@/pages/kiosco/RegistroRapido'
@@ -76,123 +82,168 @@ import PatientHealth from '@/pages/pacientes/portal/PatientHealth'
 import PatientProfile from '@/pages/pacientes/portal/PatientProfile'
 import { NotFound } from '@/pages/NotFound'
 
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+
 // Chatbot V2 - Cargado dinámicamente según feature flag
 const ChatbotV2 = import.meta.env.VITE_USE_CHATBOT_V2 === 'true'
   ? React.lazy(() => import('../src-v2/modules/chatbot-v2/components/ChatbotWidget'))
   : null
 
 function App() {
+  // Limpieza de sesión forzosa para evitar conflictos de versiones anteriores
+  React.useEffect(() => {
+    const CLEANUP_KEY = 'v3.5.4-cleanup-executed';
+    if (!localStorage.getItem(CLEANUP_KEY)) {
+      console.log('🧹 Ejecutando limpieza profunda de sesión para v3.5.4...');
+      localStorage.removeItem('GPMedical_user');
+      localStorage.removeItem('sb-access-token');
+      // No borrar todo para no perder preferencias, solo sesión
+      localStorage.setItem(CLEANUP_KEY, 'true');
+
+      // Si estamos en dashboard, redirigir a login para refrescar estado
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+  }, []);
+
   return (
-    <Router>
-      <GPMedicalProvider>
-        <AuthProvider>
-          <AbilityProvider>
-            <SystemProvider>
-              <CarritoProvider>
-                <div className="App">
-                  <Routes>
-                    {/* Rutas Públicas */}
-                    <Route path="/home" element={<Home />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                    <Route path="/privacidad" element={<AvisoPrivacidad />} />
-                    <Route path="/terminos" element={<TerminosCondiciones />} />
-                    <Route path="/aceptar-invitacion" element={<AceptarInvitacion />} />
+    <ErrorBoundary>
+      <Router>
+        <GPMedicalProvider>
+          <AuthProvider>
+            <AbilityProvider>
+              <SystemProvider>
+                <CarritoProvider>
+                  <div className="App">
+                    <Routes>
+                      {/* Ruta Raíz por defecto */}
+                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-                    {/* Kiosco */}
-                    <Route path="/kiosco" element={<KioscoHome />} />
-                    <Route path="/kiosco/identificacion" element={<Identificacion />} />
-                    <Route path="/kiosco/registro" element={<RegistroRapido />} />
-                    <Route path="/kiosco/firma" element={<FirmaConsento />} />
+                      {/* Rutas Públicas */}
+                      <Route path="/home" element={<Home />} />
+                      <Route path="/login" element={<LoginPage />} />
+                      <Route path="/register" element={<RegisterPage />} />
+                      <Route path="/privacidad" element={<AvisoPrivacidad />} />
+                      <Route path="/terminos" element={<TerminosCondiciones />} />
+                      <Route path="/aceptar-invitacion" element={<AceptarInvitacion />} />
 
-                    <Route path="/" element={<Home />} />
+                      {/* Kiosco */}
+                      <Route path="/kiosco" element={<KioscoHome />} />
+                      <Route path="/kiosco/identificacion" element={<Identificacion />} />
+                      <Route path="/kiosco/registro" element={<RegistroRapido />} />
+                      <Route path="/kiosco/firma" element={<FirmaConsento />} />
 
-                    {/* Portal de Pacientes */}
-                    <Route path="/pacientes/portal" element={
-                      <ProtectedRoute>
-                        <PatientLayout />
-                      </ProtectedRoute>
-                    }>
-                      <Route index element={<PatientHome />} />
-                      <Route path="citas" element={<PatientAppointments />} />
-                      <Route path="salud" element={<PatientHealth />} />
-                      <Route path="perfil" element={<PatientProfile />} />
-                    </Route>
+                      <Route path="/" element={<Home />} />
 
-                    {/* Rutas Protegidas */}
-                    <Route path="/dashboard" element={<ProtectedRoute resource="dashboard"><Layout><Dashboard /></Layout></ProtectedRoute>} />
-                    <Route path="/pacientes" element={<ProtectedRoute resource="pacientes"><Layout><Pacientes /></Layout></ProtectedRoute>} />
-                    <Route path="/normatividad/nom035" element={<ProtectedRoute resource="normatividad"><Layout><Nom035 /></Layout></ProtectedRoute>} />
-                    <Route path="/normatividad/nom036" element={<ProtectedRoute resource="normatividad"><Layout><Nom036 /></Layout></ProtectedRoute>} />
-                    <Route path="/normatividad/ley-silla" element={<ProtectedRoute resource="normatividad"><Layout><LeySilla /></Layout></ProtectedRoute>} />
-                    <Route path="/agenda" element={<ProtectedRoute resource="agenda"><Layout><Agenda /></Layout></ProtectedRoute>} />
-                    <Route path="/agenda/nueva" element={<ProtectedRoute resource="agenda"><Layout><NuevaCita /></Layout></ProtectedRoute>} />
-                    <Route path="/alertas" element={<ProtectedRoute resource="alertas"><Layout><AlertasMedicas /></Layout></ProtectedRoute>} />
-                    <Route path="/medicina/programa-anual" element={<ProtectedRoute resource="examenes"><Layout><ProgramaAnualSalud /></Layout></ProtectedRoute>} />
-                    <Route path="/examenes" element={<ProtectedRoute resource="examenes"><Layout><ExamenesOcupacionales /></Layout></ProtectedRoute>} />
-                    <Route path="/rayos-x" element={<ProtectedRoute resource="rayos_x"><Layout><RayosX /></Layout></ProtectedRoute>} />
-                    <Route path="/riesgos-trabajo" element={<ProtectedRoute resource="riesgos_trabajo"><Layout><RiesgosTrabajo /></Layout></ProtectedRoute>} />
-                    <Route path="/empresas" element={<ProtectedRoute resource="empresas"><Layout><GestionEmpresas /></Layout></ProtectedRoute>} />
-                    <Route path="/usuarios" element={<ProtectedRoute resource="usuarios"><Layout><Usuarios /></Layout></ProtectedRoute>} />
-                    <Route path="/sedes" element={<ProtectedRoute resource="sedes"><Layout><Sedes /></Layout></ProtectedRoute>} />
-                    <Route path="/inventario" element={<ProtectedRoute resource="inventario"><Layout><InventoryPage /></Layout></ProtectedRoute>} />
-                    <Route path="/historial" element={<ProtectedRoute resource="historial"><Layout><HistorialClinico /></Layout></ProtectedRoute>} />
-                    <Route path="/historial/:id" element={<ProtectedRoute resource="historial"><Layout><HistorialClinico /></Layout></ProtectedRoute>} />
-                    <Route path="/medicos" element={<ProtectedRoute resource="medicos"><Layout><Medicos /></Layout></ProtectedRoute>} />
-                    <Route path="/resultados" element={<ProtectedRoute resource="resultados"><Layout><Resultados /></Layout></ProtectedRoute>} />
-                    <Route path="/citas" element={<ProtectedRoute resource="citas"><Layout><MisCitas /></Layout></ProtectedRoute>} />
-                    <Route path="/evaluaciones" element={<ProtectedRoute resource="evaluaciones"><Layout><EvaluacionesRiesgo /></Layout></ProtectedRoute>} />
-                    <Route path="/ia" element={<ProtectedRoute resource="ia"><Layout><IA /></Layout></ProtectedRoute>} />
-                    <Route path="/medicina/estudios" element={<ProtectedRoute resource="examenes"><Layout><EstudiosMedicos /></Layout></ProtectedRoute>} />
-                    <Route path="/medicina/matriz-riesgos" element={<ProtectedRoute resource="evaluaciones"><Layout><MatrizRiesgos /></Layout></ProtectedRoute>} />
-                    <Route path="/medicina/recetas" element={<ProtectedRoute resource="prescripcion"><Layout><RecetaMedica /></Layout></ProtectedRoute>} />
-                    <Route path="/medicina/incapacidades" element={<ProtectedRoute resource="prescripcion"><Layout><Incapacidades /></Layout></ProtectedRoute>} />
-                    <Route path="/apps/extractor" element={<ProtectedRoute resource="ia"><Layout><ExtractorMedico /></Layout></ProtectedRoute>} />
-                    <Route path="/apps/reportes" element={<ProtectedRoute resource="ia"><Layout><GeneradorReportes /></Layout></ProtectedRoute>} />
-                    <Route path="/certificaciones" element={<ProtectedRoute resource="certificaciones"><Layout><Certificaciones /></Layout></ProtectedRoute>} />
-                    <Route path="/tienda" element={<ProtectedRoute resource="tienda"><Layout><Tienda /></Layout></ProtectedRoute>} />
-                    <Route path="/facturacion" element={<ProtectedRoute resource="facturacion"><Layout><Facturacion /></Layout></ProtectedRoute>} />
-                    <Route path="/reportes" element={<ProtectedRoute resource="reportes"><Layout><Reportes /></Layout></ProtectedRoute>} />
-                    <Route path="/configuracion" element={<ProtectedRoute resource="configuracion"><Layout><Configuracion /></Layout></ProtectedRoute>} />
-                    <Route path="/roles" element={<ProtectedRoute resource="roles_permisos"><Layout><GestionRoles /></Layout></ProtectedRoute>} />
-                    <Route path="/perfil" element={<ProtectedRoute><Layout><PerfilUsuario /></Layout></ProtectedRoute>} />
-                    <Route path="/rrhh" element={<ProtectedRoute resource="rrhh"><Layout><RRHH /></Layout></ProtectedRoute>} />
-                    <Route path="/recepcion/sala-espera" element={<ProtectedRoute resource="agenda"><Layout><SalaEspera /></Layout></ProtectedRoute>} />
-                    <Route path="/admin/suscripcion" element={<ProtectedRoute resource="configuracion"><Layout><Suscripcion /></Layout></ProtectedRoute>} />
-                    <Route path="/admin/menu-config" element={<ProtectedRoute resource="sistema"><Layout><PanelMenuConfig /></Layout></ProtectedRoute>} />
-                    <Route path="/admin/dashboard" element={<ProtectedRoute resource="sistema"><Layout><AdminDashboardWrapper /></Layout></ProtectedRoute>} />
-                    <Route path="/admin/god-mode" element={<ProtectedRoute resource="sistema"><Layout><SuperAdminGodMode /></Layout></ProtectedRoute>} />
-                    <Route path="/admin/empresas" element={<ProtectedRoute resource="empresas"><Layout><GestionEmpresas /></Layout></ProtectedRoute>} />
-                    <Route path="/admin/usuarios" element={<ProtectedRoute resource="usuarios"><Layout><Usuarios /></Layout></ProtectedRoute>} />
-                    <Route path="/admin/roles" element={<ProtectedRoute resource="roles_permisos"><Layout><GestionRoles /></Layout></ProtectedRoute>} />
-                    <Route path="/admin/empresas/:empresaId/usuarios" element={<ProtectedRoute resource="usuarios"><Layout><GestionUsuariosEmpresa /></Layout></ProtectedRoute>} />
-                    <Route path="/admin/empresas/:empresaId/roles" element={<ProtectedRoute resource="roles_permisos"><Layout><GestionRoles /></Layout></ProtectedRoute>} />
-                    <Route path="/admin/logs" element={<ProtectedRoute resource="sistema"><Layout><LogsView /></Layout></ProtectedRoute>} />
-                    <Route path="/admin/marketplace" element={<ProtectedRoute resource="sistema"><Layout><PluginMarketplace /></Layout></ProtectedRoute>} />
-                    <Route path="/admin/ai-workbench" element={<ProtectedRoute resource="sistema"><Layout><AIWorkbench /></Layout></ProtectedRoute>} />
-                    <Route path="/admin/webhooks" element={<ProtectedRoute resource="sistema"><Layout><WebhookSimulator /></Layout></ProtectedRoute>} />
-                    <Route path="/admin/luxury-dashboard" element={<ProtectedRoute resource="sistema"><DashboardLuxury /></ProtectedRoute>} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+                      {/* Portal de Pacientes */}
+                      <Route path="/pacientes/portal" element={
+                        <ProtectedRoute>
+                          <PatientLayout />
+                        </ProtectedRoute>
+                      }>
+                        <Route index element={<PatientHome />} />
+                        <Route path="citas" element={<PatientAppointments />} />
+                        <Route path="salud" element={<PatientHealth />} />
+                        <Route path="perfil" element={<PatientProfile />} />
+                      </Route>
 
-                  <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
+                      {/* Rutas Protegidas */}
+                      <Route path="/dashboard" element={<ProtectedRoute resource="dashboard"><Layout><Dashboard /></Layout></ProtectedRoute>} />
+                      <Route path="/pacientes" element={<ProtectedRoute resource="pacientes"><Layout><Pacientes /></Layout></ProtectedRoute>} />
+                      <Route path="/normatividad/nom035" element={<ProtectedRoute resource="normatividad"><Layout><Nom035 /></Layout></ProtectedRoute>} />
+                      <Route path="/normatividad/nom036" element={<ProtectedRoute resource="normatividad"><Layout><Nom036 /></Layout></ProtectedRoute>} />
+                      <Route path="/normatividad/ley-silla" element={<ProtectedRoute resource="normatividad"><Layout><LeySilla /></Layout></ProtectedRoute>} />
+                      <Route path="/agenda" element={<ProtectedRoute resource="agenda"><Layout><Agenda /></Layout></ProtectedRoute>} />
+                      <Route path="/agenda/nueva" element={<ProtectedRoute resource="agenda"><Layout><NuevaCita /></Layout></ProtectedRoute>} />
+                      <Route path="/alertas" element={<ProtectedRoute resource="alertas"><Layout><AlertasMedicas /></Layout></ProtectedRoute>} />
+                      <Route path="/medicina/programa-anual" element={<ProtectedRoute resource="examenes"><Layout><ProgramaAnualSalud /></Layout></ProtectedRoute>} />
+                      <Route path="/examenes" element={<ProtectedRoute resource="examenes"><Layout><ExamenesOcupacionales /></Layout></ProtectedRoute>} />
+                      <Route path="/rayos-x" element={<ProtectedRoute resource="rayos_x"><Layout><RayosX /></Layout></ProtectedRoute>} />
+                      <Route path="/riesgos-trabajo" element={<ProtectedRoute resource="riesgos_trabajo"><Layout><RiesgosTrabajo /></Layout></ProtectedRoute>} />
+                      <Route path="/empresas" element={<ProtectedRoute resource="empresas"><Layout><GestionEmpresas /></Layout></ProtectedRoute>} />
+                      <Route path="/usuarios" element={<ProtectedRoute resource="usuarios"><Layout><Usuarios /></Layout></ProtectedRoute>} />
+                      <Route path="/sedes" element={<ProtectedRoute resource="sedes"><Layout><Sedes /></Layout></ProtectedRoute>} />
+                      <Route path="/inventario" element={<ProtectedRoute resource="inventario"><Layout><InventoryPage /></Layout></ProtectedRoute>} />
+                      <Route path="/historial" element={<ProtectedRoute resource="historial"><Layout><HistorialClinico /></Layout></ProtectedRoute>} />
+                      <Route path="/historial/:id" element={<ProtectedRoute resource="historial"><Layout><HistorialClinico /></Layout></ProtectedRoute>} />
+                      <Route path="/medicos" element={<ProtectedRoute resource="medicos"><Layout><Medicos /></Layout></ProtectedRoute>} />
+                      <Route path="/resultados" element={<ProtectedRoute resource="resultados"><Layout><Resultados /></Layout></ProtectedRoute>} />
+                      <Route path="/citas" element={<ProtectedRoute resource="citas"><Layout><MisCitas /></Layout></ProtectedRoute>} />
+                      <Route path="/evaluaciones" element={<ProtectedRoute resource="evaluaciones"><Layout><EvaluacionesRiesgo /></Layout></ProtectedRoute>} />
+                      <Route path="/ia" element={<ProtectedRoute resource="ia"><Layout><IA /></Layout></ProtectedRoute>} />
+                      <Route path="/medicina/estudios" element={<ProtectedRoute resource="examenes"><Layout><EstudiosMedicos /></Layout></ProtectedRoute>} />
+                      <Route path="/medicina/matriz-riesgos" element={<ProtectedRoute resource="evaluaciones"><Layout><MatrizRiesgos /></Layout></ProtectedRoute>} />
+                      <Route path="/medicina/recetas" element={<ProtectedRoute resource="prescripcion"><Layout><RecetaMedica /></Layout></ProtectedRoute>} />
+                      <Route path="/medicina/incapacidades" element={<ProtectedRoute resource="prescripcion"><Layout><Incapacidades /></Layout></ProtectedRoute>} />
+                      <Route path="/apps/extractor" element={<ProtectedRoute resource="ia"><Layout><ExtractorMedico /></Layout></ProtectedRoute>} />
+                      <Route path="/apps/reportes" element={<ProtectedRoute resource="ia"><Layout><GeneradorReportes /></Layout></ProtectedRoute>} />
+                      <Route path="/certificaciones" element={<ProtectedRoute resource="certificaciones"><Layout><Certificaciones /></Layout></ProtectedRoute>} />
+                      <Route path="/tienda" element={<ProtectedRoute resource="tienda"><Layout><Tienda /></Layout></ProtectedRoute>} />
+                      <Route path="/facturacion" element={<ProtectedRoute resource="facturacion"><Layout><Facturacion /></Layout></ProtectedRoute>} />
+                      <Route path="/reportes" element={<ProtectedRoute resource="reportes"><Layout><Reportes /></Layout></ProtectedRoute>} />
+                      <Route path="/configuracion" element={<ProtectedRoute resource="configuracion"><Layout><Configuracion /></Layout></ProtectedRoute>} />
+                      <Route path="/roles" element={<ProtectedRoute resource="roles_permisos"><Layout><GestionRoles /></Layout></ProtectedRoute>} />
+                      <Route path="/perfil" element={<ProtectedRoute><Layout><PerfilUsuario /></Layout></ProtectedRoute>} />
+                      <Route path="/rrhh" element={<ProtectedRoute resource="rrhh"><Layout><RRHH /></Layout></ProtectedRoute>} />
+                      <Route path="/recepcion/sala-espera" element={<ProtectedRoute resource="agenda"><Layout><SalaEspera /></Layout></ProtectedRoute>} />
+                      <Route path="/admin/suscripcion" element={<ProtectedRoute resource="configuracion"><Layout><Suscripcion /></Layout></ProtectedRoute>} />
+                      <Route path="/admin/menu-config" element={<ProtectedRoute resource="sistema"><Layout><PanelMenuConfig /></Layout></ProtectedRoute>} />
+                      <Route path="/admin/dashboard" element={<ProtectedRoute resource="sistema"><Layout><AdminDashboardWrapper /></Layout></ProtectedRoute>} />
+                      <Route path="/admin/god-mode" element={<ProtectedRoute resource="sistema"><Layout><SuperAdminGodMode /></Layout></ProtectedRoute>} />
+                      <Route path="/admin/empresas" element={<ProtectedRoute resource="empresas"><Layout><GestionEmpresas /></Layout></ProtectedRoute>} />
+                      <Route path="/admin/usuarios" element={<ProtectedRoute resource="usuarios"><Layout><Usuarios /></Layout></ProtectedRoute>} />
+                      <Route path="/admin/roles" element={<ProtectedRoute resource="roles_permisos"><Layout><GestionRoles /></Layout></ProtectedRoute>} />
+                      <Route path="/admin/empresas/:empresaId/usuarios" element={<ProtectedRoute resource="usuarios"><Layout><GestionUsuariosEmpresa /></Layout></ProtectedRoute>} />
+                      <Route path="/admin/empresas/:empresaId/roles" element={<ProtectedRoute resource="roles_permisos"><Layout><GestionRoles /></Layout></ProtectedRoute>} />
+                      <Route path="/admin/logs" element={<ProtectedRoute resource="sistema"><Layout><LogsView /></Layout></ProtectedRoute>} />
+                      <Route path="/admin/marketplace" element={<ProtectedRoute resource="sistema"><Layout><PluginMarketplace /></Layout></ProtectedRoute>} />
+                      <Route path="/admin/ai-workbench" element={<ProtectedRoute resource="sistema"><Layout><AIWorkbench /></Layout></ProtectedRoute>} />
+                      <Route path="/admin/webhooks" element={<ProtectedRoute resource="sistema"><Layout><WebhookSimulator /></Layout></ProtectedRoute>} />
+                      <Route path="/admin/luxury-dashboard" element={<ProtectedRoute resource="sistema"><DashboardLuxury /></ProtectedRoute>} />
+                      
+                      {/* === AGENT SWARM: Rutas ERP Pro === */}
+                      {/* Dictámenes Médico-Laborales */}
+                      <Route path="/medicina/dictamenes" element={<ProtectedRoute resource="dictamenes"><Layout><ListaDictamenes /></Layout></ProtectedRoute>} />
+                      <Route path="/medicina/dictamenes/nuevo" element={<ProtectedRoute resource="dictamenes"><Layout><DictamenWizard /></Layout></ProtectedRoute>} />
+                      <Route path="/medicina/dictamenes/:id" element={<ProtectedRoute resource="dictamenes"><Layout><DictamenWizard /></Layout></ProtectedRoute>} />
+                      
+                      {/* NOM-011 Conservación Auditiva */}
+                      <Route path="/nom-011/programa" element={<ProtectedRoute resource="nom011"><Layout><ProgramaAnualNOM011 /></Layout></ProtectedRoute>} />
+                      <Route path="/nom-011/audiometria/nuevo" element={<ProtectedRoute resource="nom011"><Layout><AudiometriaForm /></Layout></ProtectedRoute>} />
+                      
+                      {/* NOM-036 Ergonomía */}
+                      <Route path="/nom-036/evaluacion/reba" element={<ProtectedRoute resource="nom036"><Layout><EvaluacionREBA /></Layout></ProtectedRoute>} />
+                      <Route path="/nom-036/evaluacion/niosh" element={<ProtectedRoute resource="nom036"><Layout><EvaluacionNIOSH /></Layout></ProtectedRoute>} />
+                      
+                      {/* Motor de Flujos - Episodios */}
+                      <Route path="/episodios/pipeline" element={<ProtectedRoute resource="episodios"><Layout><PipelineEpisodios /></Layout></ProtectedRoute>} />
+                      <Route path="/episodios/cola/:tipo" element={<ProtectedRoute resource="episodios"><Layout><ColaTrabajo /></Layout></ProtectedRoute>} />
+                      <Route path="/recepcion/checkin" element={<ProtectedRoute resource="recepcion"><Layout><CheckInRecepcion /></Layout></ProtectedRoute>} />
+                      <Route path="/recepcion/episodio/nuevo" element={<ProtectedRoute resource="recepcion"><Layout><NuevoEpisodioWizard /></Layout></ProtectedRoute>} />
+                      
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
 
-                  {/* Chatbot original */}
-                  <AIChatWidget />
+                    <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
 
-                  {/* Chatbot V2 - Cargado condicionalmente */}
-                  {ChatbotV2 && (
-                    <React.Suspense fallback={null}>
-                      <ChatbotV2 />
-                    </React.Suspense>
-                  )}
-                </div>
-              </CarritoProvider>
-            </SystemProvider>
-          </AbilityProvider>
-        </AuthProvider>
-      </GPMedicalProvider>
-    </Router>
+                    {/* Chatbot original */}
+                    <AIChatWidget />
+
+                    {/* Chatbot V2 - Cargado condicionalmente */}
+                    {ChatbotV2 && (
+                      <React.Suspense fallback={null}>
+                        <ChatbotV2 />
+                      </React.Suspense>
+                    )}
+                  </div>
+                </CarritoProvider>
+              </SystemProvider>
+            </AbilityProvider>
+          </AuthProvider>
+        </GPMedicalProvider>
+      </Router>
+    </ErrorBoundary>
   )
 }
 

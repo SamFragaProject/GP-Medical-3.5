@@ -55,40 +55,65 @@ export default function Login() {
   const demoProfiles = [
     {
       id: 'super',
-      label: 'ADMIN_GOD_MODE',
-      email: 'super@gpmedical.mx',
-      pass: 'super123',
+      label: 'SUPER_ADMIN',
+      subtitle: 'GPMedical Platform',
+      email: 'superadmin@gpmedical.mx',
+      pass: 'admin123',
       icon: Zap,
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',
       border: 'border-emerald-500/20'
     },
     {
-      id: 'admin_medico',
-      label: 'CLINICAL_NODE',
-      email: 'admin.medico@gpmedical.mx',
-      pass: 'demo123',
+      id: 'admin_mediwork',
+      label: 'ADMIN_EMPRESA',
+      subtitle: 'MediWork Ocupacional',
+      email: 'admin@mediwork.mx',
+      pass: 'admin123',
+      icon: Building2,
+      color: 'text-violet-400',
+      bg: 'bg-violet-500/10',
+      border: 'border-violet-500/20'
+    },
+    {
+      id: 'medico',
+      label: 'MÉDICO',
+      subtitle: 'Dr. Roberto Martínez',
+      email: 'dr.martinez@mediwork.mx',
+      pass: 'medico123',
       icon: Stethoscope,
       color: 'text-cyan-400',
       bg: 'bg-cyan-500/10',
       border: 'border-cyan-500/20'
     },
     {
-      id: 'asistente',
-      label: 'OPS_SUPPORT',
-      email: 'asistente.demo@gpmedical.mx',
-      pass: 'demo123',
+      id: 'recepcion',
+      label: 'RECEPCIÓN',
+      subtitle: 'Patricia Torres',
+      email: 'recepcion@mediwork.mx',
+      pass: 'recepcion123',
       icon: UserCheck,
       color: 'text-blue-400',
       bg: 'bg-blue-500/10',
       border: 'border-blue-500/20'
+    },
+    {
+      id: 'demo',
+      label: 'DEMO_USER',
+      subtitle: 'Clínica Demo',
+      email: 'demo@gpmedical.mx',
+      pass: 'demo123',
+      icon: HeartPulse,
+      color: 'text-rose-400',
+      bg: 'bg-rose-500/10',
+      border: 'border-rose-500/20'
     },
   ]
 
   const selectProfile = (p: typeof demoProfiles[0]) => {
     setEmail(p.email)
     setPassword(p.pass)
-    toast.success(`Protocolo ${p.label} cargado con éxito`, {
+    toast.success(`🔐 ${p.label} cargado: ${p.subtitle}`, {
       style: {
         background: '#020617',
         color: '#fff',
@@ -196,15 +221,15 @@ export default function Login() {
               </div>
 
               {/* Demo Profiles */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-5 gap-2">
                 {demoProfiles.map((profile) => (
                   <button
                     key={profile.id}
                     onClick={() => selectProfile(profile)}
-                    className={`p-3 rounded-2xl ${profile.bg} ${profile.border} border transition-all hover:scale-105 group/btn flex flex-col items-center gap-2`}
+                    className={`p-2 rounded-xl ${profile.bg} ${profile.border} border transition-all hover:scale-105 group/btn flex flex-col items-center gap-1`}
                   >
-                    <profile.icon className={`w-5 h-5 ${profile.color} group-hover/btn:animate-pulse`} />
-                    <span className={`text-[8px] font-black uppercase tracking-tighter ${profile.color}`}>{profile.label}</span>
+                    <profile.icon className={`w-4 h-4 ${profile.color} group-hover/btn:animate-pulse`} />
+                    <span className={`text-[7px] font-black uppercase tracking-tighter ${profile.color} leading-tight text-center`}>{profile.label}</span>
                   </button>
                 ))}
               </div>
@@ -282,15 +307,15 @@ export default function Login() {
             </div>
           </div>
         </motion.div>
-      </div>
+      </div >
 
       {/* Floating HUD Elements */}
-      <div className="fixed bottom-10 left-10 hidden xl:block">
+      < div className="fixed bottom-10 left-10 hidden xl:block" >
         <div className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md">
           <ShieldCheck className="w-4 h-4 text-emerald-500" />
           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">System Integrity Verified</span>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   )
 }

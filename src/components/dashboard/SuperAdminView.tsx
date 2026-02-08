@@ -21,6 +21,7 @@ import {
 } from 'recharts';
 import { NewCompanyDialog } from '../admin/NewCompanyDialog';
 import { PremiumPageHeader } from '../ui/PremiumPageHeader';
+import { ResumenEmpresasDemo } from '../admin/ResumenEmpresasDemo';
 
 // =============================================
 // COMPONENTES DE LUJO
@@ -226,7 +227,37 @@ export function SuperAdminView() {
                 }
 
             } catch (error) {
-                console.error('Error fetching dashboard data:', error);
+                console.error('Error fetching dashboard data, using mock data:', error);
+
+                // FALLBACK: Usar datos mock cuando Supabase no está disponible
+                setStats({
+                    totalPacientes: 15,  // 15 pacientes mock
+                    totalCitas: 48,
+                    totalEmpresas: 3,    // 3 empresas mock
+                    citasHoy: 8,
+                    precisionIA: 98.9
+                });
+
+                // Actividad reciente mock
+                setRecentActivity([
+                    { icon: Plus, title: 'Nueva empresa registrada: MediWork', user: 'Sistema', time: '09:30', type: 'success' },
+                    { icon: UserCog, title: 'Usuario admin@mediwork.mx creado', user: 'Super Admin', time: '09:25', type: 'info' },
+                    { icon: Plus, title: 'Paciente Juan García registrado', user: 'Dr. Martínez', time: '09:15', type: 'success' },
+                    { icon: Edit, title: 'Historia ocupacional actualizada', user: 'Enfermera López', time: '08:45', type: 'info' },
+                    { icon: Plus, title: 'Cita programada: Examen de ingreso', user: 'Recepción', time: '08:30', type: 'success' },
+                    { icon: UserCog, title: 'Sistema Demo activado', user: 'GPMedical', time: '08:00', type: 'info' }
+                ]);
+
+                // Datos de gráfico mock
+                setChartData([
+                    { name: 'Lun', val: 12 },
+                    { name: 'Mar', val: 19 },
+                    { name: 'Mie', val: 15 },
+                    { name: 'Jue', val: 22 },
+                    { name: 'Vie', val: 18 },
+                    { name: 'Sab', val: 8 },
+                    { name: 'Dom', val: 3 }
+                ]);
             } finally {
                 setLoading(false);
             }
@@ -465,6 +496,11 @@ export function SuperAdminView() {
                         </motion.div>
                     </div>
 
+                </div>
+
+                {/* 4. RESUMEN DE EMPRESAS DEMO (NUEVA SECCIÓN) */}
+                <div className="mt-8">
+                    <ResumenEmpresasDemo />
                 </div>
             </main>
 

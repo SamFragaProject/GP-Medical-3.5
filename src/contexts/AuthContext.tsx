@@ -188,15 +188,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // FALLBACK MODO OFFLINE / DEMO (ROBUSTO)
       // Si falla por CUALQUIER razón (error de red, usuario no encontrado, script no corrido), activamos demo.
       const offlineUsers: Record<string, User> = {
-        'super@gpmedical.mx': { id: 'mock-super', email: 'super@gpmedical.mx', nombre: 'Super Admin (Offline)', apellido_paterno: 'Demo', rol: 'super_admin', empresa_id: 'all', created_at: new Date().toISOString() },
-        'admin@gpmedical.mx': { id: 'mock-admin', email: 'admin@gpmedical.mx', nombre: 'Admin Clínica (Offline)', apellido_paterno: 'Demo', rol: 'admin_empresa', empresa_id: 'empresa-1', created_at: new Date().toISOString() },
-        'medico@gpmedical.mx': { id: 'mock-medico', email: 'medico@gpmedical.mx', nombre: 'Dr. Médico (Offline)', apellido_paterno: 'Demo', rol: 'medico', empresa_id: 'empresa-1', created_at: new Date().toISOString() },
-        'paciente@gpmedical.mx': { id: 'mock-paciente', email: 'paciente@gpmedical.mx', nombre: 'Paciente (Offline)', apellido_paterno: 'Demo', rol: 'paciente', empresa_id: 'empresa-1', created_at: new Date().toISOString() },
-        // Legacy .com
-        'sam@gpmedical.com': { id: 'mock-sam', email: 'sam@gpmedical.com', nombre: 'Sam (Offline)', apellido_paterno: 'Fraga', rol: 'super_admin', empresa_id: 'all', created_at: new Date().toISOString() },
-        'admin@empresa.com': { id: 'mock-admin-old', email: 'admin@empresa.com', nombre: 'Admin (Offline)', apellido_paterno: 'Demo', rol: 'admin_empresa', empresa_id: 'empresa-1', created_at: new Date().toISOString() },
-        'admin.medico@gpmedical.mx': { id: 'mock-admin-medico', email: 'admin.medico@gpmedical.mx', nombre: 'Dr. Admin Medico (Offline)', apellido_paterno: 'Demo', rol: 'admin_empresa', empresa_id: 'empresa-1', created_at: new Date().toISOString(), especialidad: 'Medicina del Trabajo' },
-        'asistente.demo@gpmedical.mx': { id: 'mock-asistente', email: 'asistente.demo@gpmedical.mx', nombre: 'Asistente Demo (Offline)', apellido_paterno: 'Demo', rol: 'asistente', empresa_id: 'empresa-1', created_at: new Date().toISOString() },
+        // ========= NUEVOS USUARIOS DEMO (v3.5.4) =========
+        'superadmin@gpmedical.mx': {
+          id: '00000000-0000-0000-0000-000000000001',
+          email: 'superadmin@gpmedical.mx',
+          nombre: 'Super Admin',
+          apellido_paterno: 'GPMedical',
+          rol: 'super_admin',
+          empresa_id: undefined,
+          created_at: new Date().toISOString()
+        },
+        'admin@mediwork.mx': {
+          id: 'u1a1b1c1-0001-0001-0001-000000000001',
+          email: 'admin@mediwork.mx',
+          nombre: 'Carlos',
+          apellido_paterno: 'Hernández',
+          rol: 'admin_empresa',
+          empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+          empresa: 'MediWork Ocupacional',
+          created_at: new Date().toISOString()
+        },
+        'dr.martinez@mediwork.mx': {
+          id: 'u1a1b1c1-0002-0002-0002-000000000002',
+          email: 'dr.martinez@mediwork.mx',
+          nombre: 'Roberto',
+          apellido_paterno: 'Martínez',
+          rol: 'medico',
+          empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+          empresa: 'MediWork Ocupacional',
+          cedula_profesional: '12345678',
+          especialidad: 'Medicina del Trabajo',
+          created_at: new Date().toISOString()
+        },
+        'recepcion@mediwork.mx': {
+          id: 'u1a1b1c1-0005-0005-0005-000000000005',
+          email: 'recepcion@mediwork.mx',
+          nombre: 'Patricia',
+          apellido_paterno: 'Torres',
+          rol: 'recepcion',
+          empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+          empresa: 'MediWork Ocupacional',
+          created_at: new Date().toISOString()
+        },
+        'demo@gpmedical.mx': {
+          id: 'u3a3b3c3-0001-0001-0001-000000000001',
+          email: 'demo@gpmedical.mx',
+          nombre: 'Usuario',
+          apellido_paterno: 'Demo',
+          rol: 'admin_empresa',
+          empresa_id: 'c3d4e5f6-a7b8-9012-cdef-345678901234',
+          empresa: 'Clínica Demo GPMedical',
+          created_at: new Date().toISOString()
+        },
+        // ========= LEGACY USERS (mantener compatibilidad) =========
+        'super@gpmedical.mx': { id: 'mock-super', email: 'super@gpmedical.mx', nombre: 'Super Admin (Legacy)', apellido_paterno: 'Demo', rol: 'super_admin', empresa_id: undefined, created_at: new Date().toISOString() },
+        'admin@gpmedical.mx': { id: 'mock-admin', email: 'admin@gpmedical.mx', nombre: 'Admin Clínica (Legacy)', apellido_paterno: 'Demo', rol: 'admin_empresa', empresa_id: 'empresa-1', created_at: new Date().toISOString() },
+        'medico@gpmedical.mx': { id: 'mock-medico', email: 'medico@gpmedical.mx', nombre: 'Dr. Médico (Legacy)', apellido_paterno: 'Demo', rol: 'medico', empresa_id: 'empresa-1', created_at: new Date().toISOString() },
+        'sam@gpmedical.com': { id: 'mock-sam', email: 'sam@gpmedical.com', nombre: 'Sam (Legacy)', apellido_paterno: 'Fraga', rol: 'super_admin', empresa_id: undefined, created_at: new Date().toISOString() },
       }
 
       const mockUser = offlineUsers[email.toLowerCase()]

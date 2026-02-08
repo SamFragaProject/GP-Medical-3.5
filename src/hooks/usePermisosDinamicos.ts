@@ -100,56 +100,61 @@ const PERMISOS_COMPLETOS: PermisosPorModulo = {
  * Módulos de respaldo (Fallback) para modo Offline o Demo
  * Define qué ve el usuario si no hay conexión con Supabase.
  */
-const MODULOS_FALLBACK: PermisoModulo[] = [
-    {
-        modulo_codigo: 'dashboard',
-        modulo_nombre: 'Dashboard',
-        modulo_ruta: '/dashboard',
-        modulo_icono: 'LayoutDashboard',
-        modulo_gradiente: 'from-blue-600 to-indigo-600',
-        puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true
-    },
-    {
-        modulo_codigo: 'pacientes',
-        modulo_nombre: 'Pacientes',
-        modulo_ruta: '/pacientes',
-        modulo_icono: 'Users',
-        modulo_gradiente: 'from-emerald-500 to-teal-500',
-        puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true
-    },
-    {
-        modulo_codigo: 'agenda',
-        modulo_nombre: 'Agenda',
-        modulo_ruta: '/agenda',
-        modulo_icono: 'Calendar',
-        modulo_gradiente: 'from-purple-500 to-pink-500',
-        puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true
-    },
-    {
-        modulo_codigo: 'examenes',
-        modulo_nombre: 'Exámenes',
-        modulo_ruta: '/examenes',
-        modulo_icono: 'Microscope',
-        modulo_gradiente: 'from-red-500 to-orange-500',
-        puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true
-    },
-    {
-        modulo_codigo: 'historial',
-        modulo_nombre: 'Historial',
-        modulo_ruta: '/historial',
-        modulo_icono: 'History',
-        modulo_gradiente: 'from-slate-600 to-gray-700',
-        puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true
-    },
-    {
-        modulo_codigo: 'ia',
-        modulo_nombre: 'IA Asistente',
-        modulo_ruta: '/ia',
-        modulo_icono: 'Sparkles',
-        modulo_gradiente: 'from-violet-500 to-fuchsia-500',
-        puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true
-    }
+// Catálogo maestro de módulos para Modo Demo/Offline
+const ALL_MODULES_CATALOG: PermisoModulo[] = [
+    { modulo_codigo: 'dashboard', modulo_nombre: 'Dashboard', modulo_ruta: '/dashboard', modulo_icono: 'LayoutDashboard', modulo_gradiente: 'from-blue-600 to-indigo-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'pacientes', modulo_nombre: 'Pacientes', modulo_ruta: '/pacientes', modulo_icono: 'Users', modulo_gradiente: 'from-emerald-500 to-teal-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'agenda', modulo_nombre: 'Agenda', modulo_ruta: '/agenda', modulo_icono: 'Calendar', modulo_gradiente: 'from-purple-500 to-pink-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'citas', modulo_nombre: 'Citas', modulo_ruta: '/citas', modulo_icono: 'CalendarDays', modulo_gradiente: 'from-purple-500 to-pink-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'estudios_medicos', modulo_nombre: 'Estudios Médicos', modulo_ruta: '/medicina/estudios', modulo_icono: 'Microscope', modulo_gradiente: 'from-red-500 to-orange-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'historial', modulo_nombre: 'Historial', modulo_ruta: '/historial', modulo_icono: 'History', modulo_gradiente: 'from-slate-600 to-gray-700', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'ia', modulo_nombre: 'IA Asistente', modulo_ruta: '/ia', modulo_icono: 'Sparkles', modulo_gradiente: 'from-violet-500 to-fuchsia-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'empresas', modulo_nombre: 'Empresas', modulo_ruta: '/admin/empresas', modulo_icono: 'Building2', modulo_gradiente: 'from-blue-700 to-cyan-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'usuarios', modulo_nombre: 'Usuarios', modulo_ruta: '/admin/usuarios', modulo_icono: 'UserCog', modulo_gradiente: 'from-orange-500 to-amber-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'roles_permisos', modulo_nombre: 'Roles', modulo_ruta: '/admin/roles', modulo_icono: 'Shield', modulo_gradiente: 'from-slate-700 to-slate-900', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'inventario', modulo_nombre: 'Inventario', modulo_ruta: '/inventario', modulo_icono: 'Package', modulo_gradiente: 'from-emerald-600 to-green-700', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'facturacion', modulo_nombre: 'Facturación', modulo_ruta: '/facturacion', modulo_icono: 'Receipt', modulo_gradiente: 'from-blue-500 to-cyan-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'reportes', modulo_nombre: 'Reportes', modulo_ruta: '/reportes', modulo_icono: 'FileBarChart', modulo_gradiente: 'from-indigo-500 to-purple-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'configuracion', modulo_nombre: 'Configuración', modulo_ruta: '/configuracion', modulo_icono: 'Settings', modulo_gradiente: 'from-gray-500 to-slate-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'sistema', modulo_nombre: 'Sistema', modulo_ruta: '/admin/dashboard', modulo_icono: 'Server', modulo_gradiente: 'from-slate-800 to-black', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'rrhh', modulo_nombre: 'RRHH', modulo_ruta: '/rrhh', modulo_icono: 'Users2', modulo_gradiente: 'from-pink-500 to-rose-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'medicos', modulo_nombre: 'Médicos', modulo_ruta: '/medicos', modulo_icono: 'Stethoscope', modulo_gradiente: 'from-teal-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'sedes', modulo_nombre: 'Sedes', modulo_ruta: '/sedes', modulo_icono: 'MapPin', modulo_gradiente: 'from-red-500 to-rose-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'alertas', modulo_nombre: 'Alertas', modulo_ruta: '/alertas', modulo_icono: 'Bell', modulo_gradiente: 'from-amber-500 to-orange-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'rayos_x', modulo_nombre: 'Rayos X', modulo_ruta: '/rayos-x', modulo_icono: 'Bone', modulo_gradiente: 'from-slate-500 to-slate-700', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'matriz_riesgos', modulo_nombre: 'Matriz Riesgos', modulo_ruta: '/medicina/matriz-riesgos', modulo_icono: 'ShieldAlert', modulo_gradiente: 'from-yellow-400 to-amber-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'programa_anual', modulo_nombre: 'Programa Anual', modulo_ruta: '/medicina/programa-anual', modulo_icono: 'CalendarRange', modulo_gradiente: 'from-blue-600 to-cyan-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'incapacidades', modulo_nombre: 'Incapacidades', modulo_ruta: '/medicina/incapacidades', modulo_icono: 'FileBarChart2', modulo_gradiente: 'from-rose-500 to-pink-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'normatividad', modulo_nombre: 'Normatividad', modulo_ruta: '/normatividad', modulo_icono: 'Scale', modulo_gradiente: 'from-blue-800 to-indigo-900', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'certificaciones', modulo_nombre: 'Certificaciones', modulo_ruta: '/certificaciones', modulo_icono: 'Award', modulo_gradiente: 'from-yellow-500 to-amber-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'tienda', modulo_nombre: 'Tienda', modulo_ruta: '/tienda', modulo_icono: 'ShoppingBag', modulo_gradiente: 'from-pink-400 to-rose-400', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'evaluaciones', modulo_nombre: 'Evaluaciones', modulo_ruta: '/evaluaciones', modulo_icono: 'ClipboardCheck', modulo_gradiente: 'from-green-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'resultados', modulo_nombre: 'Resultados', modulo_ruta: '/resultados', modulo_icono: 'FileCheck', modulo_gradiente: 'from-blue-400 to-cyan-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'prescripcion', modulo_nombre: 'Recetas Médicas', modulo_ruta: '/medicina/recetas', modulo_icono: 'Pill', modulo_gradiente: 'from-teal-400 to-green-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true }
 ];
+
+// Definición de Roles y sus módulos permitidos en modo Demo
+const DEMO_ROLE_PERMISSIONS: Record<string, string[]> = {
+    'super_admin': ['*'],
+    'admin_saas': ['*'],
+    'admin_empresa': ['dashboard', 'usuarios', 'configuracion', 'reportes', 'facturacion', 'rrhh', 'sedes', 'inventario', 'tienda', 'alertas', 'normatividad'],
+    'medico': ['dashboard', 'pacientes', 'agenda', 'citas', 'estudios_medicos', 'historial', 'prescripcion', 'ia', 'rayos_x', 'matriz_riesgos', 'programa_anual', 'incapacidades', 'evaluaciones', 'resultados', 'certificaciones'],
+    'enfermera': ['dashboard', 'pacientes', 'agenda', 'citas', 'historial', 'resultados', 'alertas'],
+    'recepcion': ['dashboard', 'agenda', 'citas', 'pacientes', 'tienda', 'facturacion', 'resultados'],
+    'asistente': ['dashboard', 'agenda', 'pacientes', 'citas'],
+    'contador_saas': ['dashboard', 'facturacion', 'reportes'],
+    'paciente': ['dashboard']
+};
+
+// Helper para obtener módulos según rol en demo
+function obtenerModulosDemo(rol: string | undefined): PermisoModulo[] {
+    const rolKey = rol || 'medico';
+    const permitidos = DEMO_ROLE_PERMISSIONS[rolKey] || DEMO_ROLE_PERMISSIONS['medico'];
+
+    if (permitidos.includes('*')) return ALL_MODULES_CATALOG;
+
+    return ALL_MODULES_CATALOG.filter(m => permitidos.includes(m.modulo_codigo));
+}
 
 function convertirPermiso(permiso: PermisoModulo | undefined): PermisosPorModulo {
     if (!permiso) return PERMISOS_VACIOS
@@ -187,14 +192,21 @@ export function usePermisosDinamicos(): UsePermisosDinamicosReturn {
                 return
             }
 
-            const isMockUser = user.id.startsWith('mock-') || user.id.startsWith('demo-')
+            const isMockUser = user.id.startsWith('mock-') ||
+                user.id.startsWith('demo-') ||
+                user.id.startsWith('00000000') ||
+                user.id.startsWith('u1a1b1c1') ||
+                user.id.startsWith('u3a3b3c3');
 
-            // Si es usuario mock/demo o estamos offline, usar permisos fallback
+            // Si es usuario mock/demo o estamos offline, usar permisos fallback filtrados por rol
             if (isMockUser) {
-                console.log('🔓 Modo Mock/Offline detectado en usePermisosDinamicos')
-                setPermisos(MODULOS_FALLBACK)
-                setIsSuperAdmin(user.rol === 'super_admin')
-                setAbility(defineAbilityFor(MODULOS_FALLBACK, user.rol === 'super_admin'))
+                console.log(`🔓 Modo Mock/Offline Activado. Rol: ${user.rol}`)
+                const modulosDemo = obtenerModulosDemo(user.rol);
+                setPermisos(modulosDemo)
+
+                const esSuper = user.rol === 'super_admin';
+                setIsSuperAdmin(esSuper)
+                setAbility(defineAbilityFor(modulosDemo, esSuper))
                 setLoading(false)
                 return
             }
@@ -212,7 +224,7 @@ export function usePermisosDinamicos(): UsePermisosDinamicosReturn {
                 const isSuperEnDB = await esSuperAdmin(user.id)
                 setIsSuperAdmin(isSuperEnDB)
 
-                // Obtener permisos
+                // Obtener permisos reales
                 const permisosUsuario = await obtenerPermisosUsuario(user.id)
                 setPermisos(permisosUsuario)
 
@@ -222,14 +234,15 @@ export function usePermisosDinamicos(): UsePermisosDinamicosReturn {
             }
         } catch (err) {
             console.error('Error cargando permisos:', err)
-            // Fallback de emergencia si es super_admin en context o si falla la conexión
+            // Fallback de emergencia Filtrado por Rol
+            const modulosDemo = obtenerModulosDemo(user.rol);
+            setPermisos(modulosDemo)
+
             if (user.rol === 'super_admin') {
                 setIsSuperAdmin(true)
-                setPermisos(MODULOS_FALLBACK)
-                setAbility(defineAbilityFor(MODULOS_FALLBACK, true))
+                setAbility(defineAbilityFor(modulosDemo, true))
             } else {
-                setPermisos(MODULOS_FALLBACK) // Dar acceso por defecto en error para no bloquear la UI en demo
-                setAbility(defineAbilityFor(MODULOS_FALLBACK, false))
+                setAbility(defineAbilityFor(modulosDemo, false))
                 setError('Error al cargar permisos (Modo Fallback)')
             }
         } finally {
@@ -356,7 +369,7 @@ export function useMenuModulos() {
     const { modulosVisibles, loading, isSuperAdmin, permisos } = usePermisosDinamicos()
 
     // Si no hay módulos cargados de Supabase o es un usuario demo, usar fallback (para Modo Offline/Demo)
-    const modulos = (modulosVisibles.length === 0) ? MODULOS_FALLBACK : modulosVisibles
+    const modulos = (modulosVisibles.length === 0) ? obtenerModulosDemo(user?.rol) : modulosVisibles
 
     return {
         modulos,

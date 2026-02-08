@@ -28,15 +28,23 @@ export function Dashboard() {
   const renderDashboardContent = () => {
     switch (user.rol) {
       case 'super_admin':
+      case 'admin_saas':
         return <SuperAdminView />
       case 'medico':
         return <DoctorView />
       case 'admin_empresa':
+      case 'contador_saas':
         return <AdminView />
+      case 'enfermera':
+      case 'recepcion':
+      case 'asistente':
+        return <AdminView /> // Usan vista de admin con permisos limitados
       case 'paciente':
         return <DashboardPaciente />
       default:
-        return <DashboardPaciente />
+        // Fallback para cualquier rol no manejado
+        console.warn(`Rol no manejado: ${user.rol}, mostrando AdminView`)
+        return <AdminView />
     }
   }
 

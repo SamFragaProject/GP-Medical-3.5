@@ -2,6 +2,31 @@
 // Reemplaza mockDataService con queries reales a la base de datos
 
 import { supabase } from '@/lib/supabase'
+import { mockDataService } from './mockDataService'
+
+// Helper para detectar modo demo desde servicio (sin hooks de React)
+const isDemoMode = () => {
+    try {
+        const userStr = localStorage.getItem('GPMedical_user');
+        if (!userStr) return false;
+        const user = JSON.parse(userStr);
+        return user.id.startsWith('mock-') ||
+            user.id.startsWith('demo-') ||
+            user.id.startsWith('u1a') ||
+            user.id.startsWith('0000');
+    } catch {
+        return false;
+    }
+}
+
+const getDemoUser = () => {
+    try {
+        const userStr = localStorage.getItem('GPMedical_user');
+        return userStr ? JSON.parse(userStr) : { role: 'invitado', id: 'unknown' };
+    } catch {
+        return { role: 'invitado', id: 'unknown' };
+    }
+}
 
 // ============================================
 // TIPOS
@@ -79,7 +104,20 @@ export interface Examen {
 
 export const pacientesService = {
     // Obtener todos los pacientes (filtrado automático por RLS)
+    // Obtener todos los pacientes (filtrado automático por RLS)
     async getAll() {
+        if (isDemoMode()) {
+            console.log('⚡ [DEMO] Cargando pacientes desde Mock Service')
+            const user = getDemoUser();
+            const data = await mockDataService.getPacientes({ role: user.rol || 'medico', id: user.id, empresa_id: user.empresa_id });
+            // Mapear al formato esperado por la vista
+            return data.map((p: any) => ({
+                ...p,
+                empresa_nombre: 'Empresa Demo',
+                sede_nombre: 'Sede Principal'
+            })) as Paciente[]
+        }
+
         const { data, error } = await supabase
             .from('pacientes')
             .select(`
@@ -147,6 +185,12 @@ export const pacientesService = {
 
     // Crear paciente
     async create(paciente: Omit<Paciente, 'id' | 'created_at'> & { legal_consent?: any, foto_base64?: string, firma_base64?: string }) {
+        if (isDemoMode()) {
+            console.log('⚡ [DEMO] Creando paciente localmente')
+            const { legal_consent, foto_base64, firma_base64, ...rest } = paciente
+            return await mockDataService.createPaciente(rest as any)
+        }
+
         const { legal_consent, foto_base64, firma_base64, ...patientData } = paciente
 
         // 1. Manejar archivos Base64 si existen
@@ -238,6 +282,11 @@ export const pacientesService = {
 
     // Actualizar paciente
     async update(id: string, updates: Partial<Paciente>) {
+        if (isDemoMode()) {
+            console.log('⚡ [DEMO] Actualizando paciente localmente')
+            return await mockDataService.updatePaciente(id, updates as any)
+        }
+
         const { data, error } = await supabase
             .from('pacientes')
             .update(updates)
@@ -271,6 +320,25 @@ export const pacientesService = {
 export const citasService = {
     // Obtener citas del día
     async getByDate(fecha: string) {
+        if (isDemoMode()) {
+            console.log('⚡ [DEMO] Mock Citas por fecha')
+            const user = getDemoUser()
+            const citas = await mockDataService.getCitas({ role: user.rol || 'medico', id: user.id || 'unknown', empresa_id: user.empresa_id })
+            // Filtrar y mapear
+            return citas.filter((c: any) => c.fechaHora.startsWith(fecha)).map((c: any) => ({
+                id: c.id,
+                fecha: c.fechaHora.split('T')[0],
+                hora_inicio: c.fechaHora.split('T')[1].substring(0, 5),
+                tipo: c.tipo,
+                estado: c.estado,
+                paciente: {
+                    id: c.paciente_id,
+                    nombre: 'Paciente Demo',
+                    apellido_paterno: 'Mock',
+                }
+            })) as Cita[]
+        }
+
         const { data, error } = await supabase
             .from('citas')
             .select(`

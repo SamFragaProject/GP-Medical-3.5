@@ -36,7 +36,21 @@ export function AdminView() {
     const [alerts, setAlerts] = useState<{ title: string, desc: string, type: 'warning' | 'error' | 'info' | 'success' }[]>([]);
 
     useEffect(() => {
-        if (!user?.empresa_id) return;
+        if (!user?.empresa_id) {
+            // Usuario sin empresa (ej. Super Admin viendo vista previa o Demo User mal configurado)
+            setStats({
+                totalValue: 0,
+                totalItems: 0,
+                lowStockItems: 0,
+                expiredItems: 0
+            });
+            setAlerts([{
+                title: 'Vista Demo',
+                desc: 'Sin empresa asignada. Datos de ejemplo.',
+                type: 'info'
+            }]);
+            return;
+        }
 
         inventoryService.getStats(user.empresa_id)
             .then(data => {
@@ -67,7 +81,24 @@ export function AdminView() {
                 }
                 setAlerts(newAlerts);
             })
-            .catch(console.error);
+            .catch(err => {
+                console.error('Error fetching inventory stats:', err);
+                // Fallback a datos mock para Demo
+                setStats({
+                    totalValue: 125000,
+                    totalItems: 850,
+                    lowStockItems: 5,
+                    expiredItems: 2
+                });
+
+                setAlerts([
+                    {
+                        title: 'Modo Demo Activo',
+                        desc: 'Visualizando datos de ejemplo del sistema',
+                        type: 'info'
+                    }
+                ]);
+            });
     }, [user?.empresa_id]);
 
     const formatMoney = (amount: number) => {

@@ -57,24 +57,47 @@ export function SpectacularSidebar() {
   const { user, logout } = useAuth();
   const { modulosVisibles: modulosDinamicos, loading, ability } = usePermisosDinamicos();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
 
   if (!user) return null;
 
-  // Navegación principal
-  const mainNavItems: { path: string; icon: any; label: string; color: 'emerald' | 'violet' | 'amber' | 'blue' | 'teal' | 'rose' | 'slate'; badge?: string }[] = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', color: 'emerald' },
-    { path: '/rayosx', icon: Zap, label: 'Rayos X & IA', color: 'violet', badge: 'IA' },
-    { path: '/riesgos-trabajo', icon: AlertCircle, label: 'Riesgos de Trabajo', color: 'amber', badge: 'ST-7' },
-    { path: '/rrhh', icon: Users, label: 'RRHH', color: 'blue' },
-    { path: '/recepcion/sala-espera', icon: Clock, label: 'Sala de Espera', color: 'blue' },
-    { path: '/facturacion', icon: CreditCard, label: 'Facturación', color: 'teal' },
+  // Mapa de iconos para renderizado dinámico
+  const getIcon = (iconName: string) => ICONO_MAP[iconName] || FileText;
+
+  // Items principales definidos manualmente pero protegidos por permisos
+  const potentialMainItems = [
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', color: 'emerald', permission: 'dashboard' },
+    { path: '/rayosx', icon: Zap, label: 'Rayos X & IA', color: 'violet', badge: 'IA', permission: 'rayos_x' },
+    { path: '/riesgos-trabajo', icon: AlertCircle, label: 'Riesgos de Trabajo', color: 'amber', badge: 'ST-7', permission: 'riesgos_trabajo' },
+    { path: '/rrhh', icon: Users, label: 'RRHH', color: 'blue', permission: 'rrhh' },
+    { path: '/recepcion/sala-espera', icon: Clock, label: 'Sala de Espera', color: 'blue', permission: 'agenda' },
+    { path: '/facturacion', icon: CreditCard, label: 'Facturación', color: 'teal', permission: 'facturacion' },
+  ] as const;
+
+  // Filtrar items principales según permisos
+  const mainNavItems = potentialMainItems.filter(item => ability.can('ver', item.permission as any));
+
+  // Admin items protegidos
+  const adminItems = [
+    { path: '/usuarios', icon: Shield, label: 'Usuarios', color: 'amber', permission: 'usuarios' },
+    { path: '/admin/empresas', icon: Building2, label: 'Empresas', color: 'blue', permission: 'empresas' },
+  ].filter(item => ability.can('ver', item.permission as any));
+
+  // Configuración protegida
+  const showConfig = ability.can('ver', 'configuracion' as any);
+
+  // Módulos dinámicos (excluyendo los que ya están en mainNavItems para evitar duplicados visuales si aplica)
+  // Nota: Mantenemos la lógica de renderizar módulos adicionales que no estén arriba
+  const excludedPaths: string[] = [
+    ...mainNavItems.map(i => i.path),
+    ...adminItems.map(i => i.path),
+    '/dashboard',
+    '/configuracion'
   ];
 
-  // Admin items
-  const adminItems: { path: string; icon: any; label: string; color: 'emerald' | 'violet' | 'amber' | 'blue' | 'teal' | 'rose' | 'slate'; badge?: string }[] = ability.can('ver', 'usuarios' as any) ? [
-    { path: '/usuarios', icon: Shield, label: 'Usuarios', color: 'amber' },
-  ] : [];
+  const additionalModules = modulosDinamicos.filter(m => {
+    const path = m.modulo_ruta || `/${m.modulo_codigo}`;
+    return !excludedPaths.includes(path) && !excludedPaths.some(p => path.startsWith(p));
+  });
 
   return (
     <motion.aside
@@ -130,10 +153,6 @@ export function SpectacularSidebar() {
               placeholder="Buscar..."
               className="flex-1 bg-transparent text-sm text-white placeholder:text-slate-600 focus:outline-none"
             />
-            <kbd className="hidden lg:flex items-center gap-0.5 px-1.5 py-0.5 bg-white/10 rounded text-[10px] text-slate-500 font-mono">
-              <Command className="w-2.5 h-2.5" />
-              K
-            </kbd>
           </div>
         </div>
       </div>
@@ -141,17 +160,19 @@ export function SpectacularSidebar() {
       {/* ===== NAVIGATION ===== */}
       <nav className="flex-1 overflow-y-auto px-3 scrollbar-hide">
         {/* Main Section */}
-        <div className="mb-6">
-          <p className="px-4 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-widest flex items-center gap-2">
-            <Layers className="w-3 h-3" />
-            Principal
-          </p>
-          <div className="space-y-1">
-            {mainNavItems.map((item) => (
-              <NavItem key={item.path} {...item} isActive={location.pathname === item.path} />
-            ))}
+        {mainNavItems.length > 0 && (
+          <div className="mb-6">
+            <p className="px-4 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-widest flex items-center gap-2">
+              <Layers className="w-3 h-3" />
+              Principal
+            </p>
+            <div className="space-y-1">
+              {mainNavItems.map((item) => (
+                <NavItem key={item.path} {...item} isActive={location.pathname === item.path} color={item.color as any} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Admin Section */}
         {adminItems.length > 0 && (
@@ -162,28 +183,27 @@ export function SpectacularSidebar() {
             </p>
             <div className="space-y-1">
               {adminItems.map((item) => (
-                <NavItem key={item.path} {...item} isActive={location.pathname === item.path} />
+                <NavItem key={item.path} {...item} isActive={location.pathname === item.path} color={item.color as any} />
               ))}
             </div>
           </div>
         )}
 
-        {/* Dynamic Modules */}
+        {/* Dynamic Modules (Restantes) */}
         {loading ? (
           <div className="flex justify-center p-4">
             <Loader2 className="animate-spin h-5 w-5 text-emerald-500" />
           </div>
-        ) : modulosDinamicos.length > 0 && (
+        ) : additionalModules.length > 0 && (
           <div className="mb-6">
             <p className="px-4 py-2 text-[10px] font-bold text-slate-600 uppercase tracking-widest flex items-center gap-2">
               <Hexagon className="w-3 h-3" />
-              Módulos
+              Más Módulos
             </p>
             <div className="space-y-1">
-              {modulosDinamicos.map((modulo) => {
+              {additionalModules.map((modulo) => {
                 const path = modulo.modulo_ruta || `/${modulo.modulo_codigo}`;
-                if (['/dashboard', '/rayosx', '/rrhh', '/usuarios'].includes(path)) return null;
-                const Icon = ICONO_MAP[modulo.modulo_icono] || FileText;
+                const Icon = getIcon(modulo.modulo_icono);
                 const isActive = location.pathname === path || location.pathname.startsWith(path + '/');
 
                 return (
@@ -201,16 +221,18 @@ export function SpectacularSidebar() {
           </div>
         )}
 
-        {/* Config */}
-        <div className="mb-6">
-          <NavItem
-            path="/configuracion"
-            icon={Settings}
-            label="Configuración"
-            color="slate"
-            isActive={location.pathname === '/configuracion'}
-          />
-        </div>
+        {/* Config (Protected) */}
+        {showConfig && (
+          <div className="mb-6">
+            <NavItem
+              path="/configuracion"
+              icon={Settings}
+              label="Configuración"
+              color="slate"
+              isActive={location.pathname === '/configuracion'}
+            />
+          </div>
+        )}
       </nav>
 
       {/* ===== FOOTER ===== */}
@@ -227,18 +249,18 @@ export function SpectacularSidebar() {
           <span className="text-[10px] text-slate-600 font-mono">v3.5.0</span>
         </div>
 
-        {/* User Profile */}
+        {/* User Profile - REAL DATA */}
         <div className="p-3 bg-gradient-to-br from-white/5 to-white/[0.02] rounded-2xl border border-white/5 hover:border-white/10 transition-colors group cursor-pointer">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-500/20">
-                S
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-500/20 uppercase">
+                {user.nombre?.charAt(0) || 'U'}
               </div>
               <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-[#0a0a0c] rounded-full" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">Samuel</p>
-              <p className="text-[10px] text-slate-500 truncate">Super Administrador</p>
+              <p className="text-sm font-semibold text-white truncate">{user.nombre || 'Usuario'} {user.apellido_paterno || ''}</p>
+              <p className="text-[10px] text-slate-500 truncate capitalize">{user.rol?.replace('_', ' ') || 'Invitado'}</p>
             </div>
             <button
               onClick={logout}
