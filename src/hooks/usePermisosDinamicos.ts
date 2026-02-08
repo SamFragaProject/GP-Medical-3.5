@@ -130,15 +130,19 @@ const ALL_MODULES_CATALOG: PermisoModulo[] = [
     { modulo_codigo: 'tienda', modulo_nombre: 'Tienda', modulo_ruta: '/tienda', modulo_icono: 'ShoppingBag', modulo_gradiente: 'from-pink-400 to-rose-400', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
     { modulo_codigo: 'evaluaciones', modulo_nombre: 'Evaluaciones', modulo_ruta: '/evaluaciones', modulo_icono: 'ClipboardCheck', modulo_gradiente: 'from-green-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
     { modulo_codigo: 'resultados', modulo_nombre: 'Resultados', modulo_ruta: '/resultados', modulo_icono: 'FileCheck', modulo_gradiente: 'from-blue-400 to-cyan-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'prescripcion', modulo_nombre: 'Recetas Médicas', modulo_ruta: '/medicina/recetas', modulo_icono: 'Pill', modulo_gradiente: 'from-teal-400 to-green-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true }
+    { modulo_codigo: 'prescripcion', modulo_nombre: 'Recetas Médicas', modulo_ruta: '/medicina/recetas', modulo_icono: 'Pill', modulo_gradiente: 'from-teal-400 to-green-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    // Nuevos módulos NOM
+    { modulo_codigo: 'dictamenes', modulo_nombre: 'Dictámenes', modulo_ruta: '/medicina/dictamenes', modulo_icono: 'FileText', modulo_gradiente: 'from-emerald-500 to-teal-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'nom011', modulo_nombre: 'NOM-011', modulo_ruta: '/nom-011/programa', modulo_icono: 'Activity', modulo_gradiente: 'from-amber-500 to-orange-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'episodios', modulo_nombre: 'Episodios', modulo_ruta: '/episodios', modulo_icono: 'ClipboardList', modulo_gradiente: 'from-cyan-500 to-blue-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true }
 ];
 
 // Definición de Roles y sus módulos permitidos en modo Demo
 const DEMO_ROLE_PERMISSIONS: Record<string, string[]> = {
     'super_admin': ['*'],
     'admin_saas': ['*'],
-    'admin_empresa': ['dashboard', 'usuarios', 'configuracion', 'reportes', 'facturacion', 'rrhh', 'sedes', 'inventario', 'tienda', 'alertas', 'normatividad', 'dictamenes', 'nom011', 'nom036', 'episodios'],
-    'medico': ['dashboard', 'pacientes', 'agenda', 'citas', 'estudios_medicos', 'historial', 'prescripcion', 'ia', 'rayos_x', 'matriz_riesgos', 'programa_anual', 'incapacidades', 'evaluaciones', 'resultados', 'certificaciones'],
+    'admin_empresa': ['dashboard', 'usuarios', 'configuracion', 'reportes', 'facturacion', 'rrhh', 'sedes', 'inventario', 'tienda', 'alertas', 'normatividad', 'dictamenes', 'nom011', 'nom036', 'episodios', 'recetas'],
+    'medico': ['dashboard', 'pacientes', 'agenda', 'citas', 'estudios_medicos', 'historial', 'prescripcion', 'ia', 'rayos_x', 'matriz_riesgos', 'programa_anual', 'incapacidades', 'evaluaciones', 'resultados', 'certificaciones', 'dictamenes', 'nom011', 'nom036', 'episodios', 'recetas'],
     'enfermera': ['dashboard', 'pacientes', 'agenda', 'citas', 'historial', 'resultados', 'alertas'],
     'recepcion': ['dashboard', 'agenda', 'citas', 'pacientes', 'tienda', 'facturacion', 'resultados'],
     'asistente': ['dashboard', 'agenda', 'pacientes', 'citas'],

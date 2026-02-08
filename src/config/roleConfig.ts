@@ -238,6 +238,7 @@ const ADMIN_EMPRESA_CONFIG: RoleViewConfig = {
     { title: 'Dictámenes', path: '/medicina/dictamenes', resource: 'dictamenes', icon: FileText, gradient: 'from-emerald-500 to-teal-500', visible: true },
     { title: 'NOM-011', path: '/nom-011/programa', resource: 'nom011', icon: Activity, gradient: 'from-amber-500 to-orange-500', visible: true },
     { title: 'NOM-036', path: '/nom-036/evaluacion/reba', resource: 'nom036', icon: ClipboardCheck, gradient: 'from-rose-500 to-pink-500', visible: true },
+    { title: 'Episodios', path: '/episodios', resource: 'episodios', icon: ClipboardList, gradient: 'from-cyan-500 to-blue-600', visible: true },
     // Administración
     { title: 'Personal Médico', path: '/medicos', resource: 'usuarios', icon: UserCheck, gradient: 'from-teal-500 to-cyan-500', visible: true },
     { title: 'Sedes', path: '/sedes', resource: 'sedes', icon: Building2, gradient: 'from-indigo-500 to-blue-500', visible: true },
@@ -304,6 +305,7 @@ const MEDICO_CONFIG: RoleViewConfig = {
     { title: 'Dictámenes', path: '/medicina/dictamenes', resource: 'dictamenes', icon: FileText, gradient: 'from-emerald-500 to-teal-500', visible: true },
     { title: 'NOM-011', path: '/nom-011/programa', resource: 'nom011', icon: Activity, gradient: 'from-amber-500 to-orange-500', visible: true },
     { title: 'NOM-036', path: '/nom-036/evaluacion/reba', resource: 'nom036', icon: ClipboardCheck, gradient: 'from-rose-500 to-pink-500', visible: true },
+    { title: 'Episodios', path: '/episodios', resource: 'episodios', icon: ClipboardList, gradient: 'from-cyan-500 to-blue-600', visible: true },
     // Otras funciones médicas
     { title: 'Evaluaciones', path: '/evaluaciones', resource: 'evaluaciones', icon: ClipboardCheck, gradient: 'from-teal-500 to-cyan-500', visible: true },
     { title: 'Certificaciones', path: '/certificaciones', resource: 'certificaciones', icon: FileText, gradient: 'from-indigo-500 to-blue-500', visible: true },
