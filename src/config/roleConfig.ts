@@ -234,15 +234,20 @@ const ADMIN_EMPRESA_CONFIG: RoleViewConfig = {
     { title: 'Agenda', path: '/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
     { title: 'Exámenes', path: '/examenes', resource: 'examenes', icon: Stethoscope, gradient: 'from-red-500 to-orange-500', visible: true },
     { title: 'Programa Salud', path: '/medicina/programa-anual', resource: 'examenes', icon: Activity, gradient: 'from-pink-500 to-rose-500', visible: true },
+    // Módulos ERP Pro - Normatividad
+    { title: 'Dictámenes', path: '/medicina/dictamenes', resource: 'dictamenes', icon: FileText, gradient: 'from-emerald-500 to-teal-500', visible: true },
+    { title: 'NOM-011', path: '/nom-011/programa', resource: 'nom011', icon: Activity, gradient: 'from-amber-500 to-orange-500', visible: true },
+    { title: 'NOM-036', path: '/nom-036/evaluacion/reba', resource: 'nom036', icon: ClipboardCheck, gradient: 'from-rose-500 to-pink-500', visible: true },
+    // Administración
     { title: 'Personal Médico', path: '/medicos', resource: 'usuarios', icon: UserCheck, gradient: 'from-teal-500 to-cyan-500', visible: true },
     { title: 'Sedes', path: '/sedes', resource: 'sedes', icon: Building2, gradient: 'from-indigo-500 to-blue-500', visible: true },
     { title: 'Facturación', path: '/facturacion', resource: 'facturacion', icon: CreditCard, gradient: 'from-yellow-500 to-amber-500', visible: true },
     { title: 'Inventario', path: '/inventario', resource: 'inventario', icon: Package, gradient: 'from-lime-500 to-green-500', visible: true },
+    { title: 'RRHH', path: '/rrhh', resource: 'rrhh', icon: Briefcase, gradient: 'from-violet-500 to-purple-600', visible: true },
     { title: 'Reportes', path: '/reportes', resource: 'reportes', icon: BarChart3, gradient: 'from-violet-500 to-purple-500', visible: true },
     { title: 'Configuración', path: '/configuracion', resource: 'configuracion', icon: Settings, gradient: 'from-gray-500 to-slate-600', visible: true },
-    // Nuevos
+    // Herramientas
     { title: 'IA Asistente', path: '/ia', resource: 'ia', icon: Sparkles, gradient: 'from-violet-500 to-fuchsia-500', visible: true },
-    { title: 'Tienda', path: '/tienda', resource: 'tienda', icon: Package, gradient: 'from-orange-500 to-red-500', visible: true },
     { title: 'Rayos X', path: '/rayos-x', resource: 'rayos_x', icon: Activity, gradient: 'from-blue-600 to-cyan-600', visible: true },
     { title: 'Alertas', path: '/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: true }
   ],
@@ -251,36 +256,38 @@ const ADMIN_EMPRESA_CONFIG: RoleViewConfig = {
     showCharts: true,
     showRecentActivity: true,
     showAlerts: true,
-    customWidgets: ['pacientes', 'citas', 'facturacion', 'personal']
+    customWidgets: ['pacientes', 'citas', 'facturacion', 'personal', 'dictamenes', 'episodios']
   },
   actions: {
-    canCreate: ['pacientes', 'citas', 'examenes', 'usuarios', 'sedes', 'facturacion', 'inventario'],
+    // Admin Empresa = Médico propietario con permisos administrativos completos
+    canCreate: ['pacientes', 'citas', 'examenes', 'usuarios', 'sedes', 'facturacion', 'inventario', 'recetas', 'dictamenes', 'certificaciones', 'evaluaciones', 'audiometrias', 'ergonomia'],
     canRead: ['*'],
-    canUpdate: ['pacientes', 'citas', 'examenes', 'usuarios', 'sedes', 'facturacion', 'inventario', 'configuracion'],
+    canUpdate: ['pacientes', 'citas', 'examenes', 'usuarios', 'sedes', 'facturacion', 'inventario', 'configuracion', 'recetas', 'dictamenes'],
     canDelete: ['pacientes', 'citas', 'examenes', 'usuarios', 'sedes', 'inventario'],
-    canExport: ['pacientes', 'citas', 'examenes', 'reportes', 'facturacion'],
-    canImport: ['pacientes', 'usuarios']
+    canExport: ['pacientes', 'citas', 'examenes', 'reportes', 'facturacion', 'dictamenes', 'nom011', 'nom036'],
+    canImport: ['pacientes', 'usuarios', 'audiometrias']
   },
   settings: {
     canViewGeneral: true,
-    canViewSecurity: false,
+    canViewSecurity: true,
     canViewBilling: true,
     canViewIntegrations: true,
     canViewNotifications: true,
-    canViewBackup: false
+    canViewBackup: true
   },
   modules: {
     pacientes: { canViewAll: true, canViewOwn: true, canEdit: true, canDelete: true, canExport: true, showAdvancedFilters: true },
     citas: { canViewAll: true, canViewOwn: true, canCreate: true, canEdit: true, canCancel: true, canReschedule: true },
-    examenes: { canViewAll: true, canViewOwn: true, canCreate: true, canEdit: true, canCertify: false },
-    recetas: { canCreate: false, canView: true, canEdit: false, canPrint: true, canDigitalSign: false },
-    historial: { canViewFull: true, canViewOwn: true, canAddNotes: false, canEdit: false },
+    examenes: { canViewAll: true, canViewOwn: true, canCreate: true, canEdit: true, canCertify: true },
+    // Admin Empresa PUEDE crear recetas (es médico propietario)
+    recetas: { canCreate: true, canView: true, canEdit: true, canPrint: true, canDigitalSign: true },
+    historial: { canViewFull: true, canViewOwn: true, canAddNotes: true, canEdit: true },
     facturacion: { canView: true, canCreate: true, canEdit: true, canApprove: true },
     inventario: { canView: true, canManage: true, canOrder: true },
     reportes: { canView: true, canGenerate: true, canExport: true },
     ia: { canAccess: true, canUseAssistant: true },
     tienda: { canView: true, canPurchase: true, canManageProducts: true },
-    rayos_x: { canView: true, canUpload: true, canAnnotate: false },
+    rayos_x: { canView: true, canUpload: true, canAnnotate: true },
     alertas: { canView: true, canManage: true, canReceive: true },
     rrhh: { canView: true, canManageEmpleados: true, canManageAsistencia: true, canManageVacaciones: true, canManageIncidencias: true, canViewOrganigrama: true }
   }
@@ -293,28 +300,32 @@ const MEDICO_CONFIG: RoleViewConfig = {
     { title: 'Mi Agenda', path: '/agenda', resource: 'citas', icon: Calendar, gradient: 'from-purple-500 to-pink-500', visible: true },
     { title: 'Programa Salud', path: '/medicina/programa-anual', resource: 'examenes', icon: Activity, gradient: 'from-pink-500 to-rose-500', visible: true },
     { title: 'Exámenes', path: '/examenes', resource: 'examenes', icon: Microscope, gradient: 'from-red-500 to-orange-500', visible: true },
+    // Módulos ERP Pro - Normatividad
+    { title: 'Dictámenes', path: '/medicina/dictamenes', resource: 'dictamenes', icon: FileText, gradient: 'from-emerald-500 to-teal-500', visible: true },
+    { title: 'NOM-011', path: '/nom-011/programa', resource: 'nom011', icon: Activity, gradient: 'from-amber-500 to-orange-500', visible: true },
+    { title: 'NOM-036', path: '/nom-036/evaluacion/reba', resource: 'nom036', icon: ClipboardCheck, gradient: 'from-rose-500 to-pink-500', visible: true },
+    // Otras funciones médicas
     { title: 'Evaluaciones', path: '/evaluaciones', resource: 'evaluaciones', icon: ClipboardCheck, gradient: 'from-teal-500 to-cyan-500', visible: true },
     { title: 'Certificaciones', path: '/certificaciones', resource: 'certificaciones', icon: FileText, gradient: 'from-indigo-500 to-blue-500', visible: true },
     { title: 'Mis Reportes', path: '/reportes', resource: 'reportes', icon: Activity, gradient: 'from-violet-500 to-purple-500', visible: true },
-    // Nuevos
+    // Herramientas
     { title: 'IA Asistente', path: '/ia', resource: 'ia', icon: Sparkles, gradient: 'from-violet-500 to-fuchsia-500', visible: true },
-    { title: 'Tienda', path: '/tienda', resource: 'tienda', icon: Package, gradient: 'from-orange-500 to-red-500', visible: true },
     { title: 'Rayos X', path: '/rayos-x', resource: 'rayos_x', icon: Activity, gradient: 'from-blue-600 to-cyan-600', visible: true },
     { title: 'Alertas', path: '/alertas', resource: 'alertas', icon: AlertCircle, gradient: 'from-red-600 to-rose-600', visible: true }
   ],
   dashboard: {
     showKPIs: true,
-    showCharts: false,
+    showCharts: true,
     showRecentActivity: true,
     showAlerts: true,
-    customWidgets: ['mis_citas', 'mis_pacientes', 'pendientes']
+    customWidgets: ['mis_citas', 'mis_pacientes', 'pendientes', 'dictamenes']
   },
   actions: {
-    canCreate: ['citas', 'examenes', 'recetas', 'certificaciones', 'evaluaciones'],
-    canRead: ['pacientes', 'citas', 'examenes', 'historial', 'reportes'],
-    canUpdate: ['citas', 'examenes', 'recetas', 'certificaciones', 'evaluaciones'],
+    canCreate: ['citas', 'examenes', 'recetas', 'certificaciones', 'evaluaciones', 'dictamenes', 'audiometrias', 'ergonomia'],
+    canRead: ['pacientes', 'citas', 'examenes', 'historial', 'reportes', 'dictamenes', 'nom011', 'nom036'],
+    canUpdate: ['citas', 'examenes', 'recetas', 'certificaciones', 'evaluaciones', 'dictamenes'],
     canDelete: ['citas'],
-    canExport: ['reportes', 'certificaciones'],
+    canExport: ['reportes', 'certificaciones', 'dictamenes', 'nom011', 'nom036'],
     canImport: []
   },
   settings: {
@@ -326,9 +337,9 @@ const MEDICO_CONFIG: RoleViewConfig = {
     canViewBackup: false
   },
   modules: {
-    pacientes: { canViewAll: false, canViewOwn: true, canEdit: true, canDelete: false, canExport: false, showAdvancedFilters: false },
-    citas: { canViewAll: false, canViewOwn: true, canCreate: true, canEdit: true, canCancel: true, canReschedule: true },
-    examenes: { canViewAll: false, canViewOwn: true, canCreate: true, canEdit: true, canCertify: true },
+    pacientes: { canViewAll: true, canViewOwn: true, canEdit: true, canDelete: false, canExport: true, showAdvancedFilters: true },
+    citas: { canViewAll: true, canViewOwn: true, canCreate: true, canEdit: true, canCancel: true, canReschedule: true },
+    examenes: { canViewAll: true, canViewOwn: true, canCreate: true, canEdit: true, canCertify: true },
     recetas: { canCreate: true, canView: true, canEdit: true, canPrint: true, canDigitalSign: true },
     historial: { canViewFull: true, canViewOwn: true, canAddNotes: true, canEdit: true },
     facturacion: { canView: false, canCreate: false, canEdit: false, canApprove: false },
