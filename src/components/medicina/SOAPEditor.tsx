@@ -18,7 +18,8 @@ import {
     FlaskConical,
     Pill,
     Clock,
-    Brain
+    Brain,
+    ClipboardList
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -72,11 +73,12 @@ export function SOAPEditor({ paciente, citaId, onSave, isLoading }: SOAPEditorPr
             proxima_cita: ''
         },
         ocupacional: {
+            tipo_evaluacion: 'ingreso' as 'ingreso' | 'periodico' | 'retorno' | 'egreso' | 'reubicacion' | 'especial',
             dictamen: 'pendiente' as 'apto' | 'restriccion' | 'no_apto' | 'pendiente',
             recomendaciones_empresa: '',
             vigencia_meses: 12
         },
-        especialidad: 'general',
+        especialidad: 'ocupacional',
         metadata_especialidad: {}
     })
 
@@ -606,6 +608,36 @@ export function SOAPEditor({ paciente, citaId, onSave, isLoading }: SOAPEditorPr
                                         <div>
                                             <h3 className="text-2xl font-black text-slate-900">Dictamen de Aptitud Laboral</h3>
                                             <p className="text-slate-500 text-sm">Evaluación final de aptitud física y mental para el puesto actual.</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Tipo de Evaluación */}
+                                    <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 space-y-4">
+                                        <Label className="text-slate-900 font-black text-sm uppercase tracking-widest flex items-center gap-2">
+                                            <ClipboardList size={16} className="text-blue-500" /> Tipo de Evaluación Ocupacional
+                                        </Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                            {[
+                                                { id: 'ingreso', label: 'Ingreso' },
+                                                { id: 'periodico', label: 'Periódico' },
+                                                { id: 'retorno', label: 'Retorno' },
+                                                { id: 'egreso', label: 'Egreso' },
+                                                { id: 'reubicacion', label: 'Reubicación' },
+                                                { id: 'especial', label: 'Especial' },
+                                            ].map((t) => (
+                                                <button
+                                                    key={t.id}
+                                                    onClick={() => setFormData({
+                                                        ...formData,
+                                                        ocupacional: { ...formData.ocupacional, tipo_evaluacion: t.id as any }
+                                                    })}
+                                                    className={`px-4 py-2 rounded-xl border text-xs font-bold transition-all ${formData.ocupacional.tipo_evaluacion === t.id
+                                                        ? 'bg-blue-600 text-white border-blue-600 shadow-md transform scale-105'
+                                                        : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}
+                                                >
+                                                    {t.label}
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
 

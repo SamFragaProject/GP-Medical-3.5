@@ -658,3 +658,97 @@ export const recetaService = {
     }
   },
 };
+
+// =====================================================
+// ESTUDIOS PARACLÍNICOS
+// =====================================================
+
+export const estudioService = {
+  async listByExpediente(expedienteId: string): Promise<EstudioParaclinico[]> {
+    const { data, error } = await supabase
+      .from('estudios_paraclinicos')
+      .select(`
+        *,
+        medico_solicita:medico_solicita_id(nombre),
+        medico_interpreta:medico_interpreta_id(nombre)
+      `)
+      .eq('expediente_id', expedienteId)
+      .order('fecha_solicitud', { ascending: false });
+
+    if (error) throw error;
+    return data as EstudioParaclinico[];
+  },
+
+  async getById(id: string): Promise<EstudioParaclinico | null> {
+    const { data, error } = await supabase
+      .from('estudios_paraclinicos')
+      .select(`
+        *,
+        audiometria:audiometrias(*),
+        espirometria:espirometrias(*),
+        laboratorio:laboratorios(*, resultados:laboratorios_detalle(*)),
+        medico_solicita:medico_solicita_id(nombre),
+        medico_interpreta:medico_interpreta_id(nombre)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+
+    return data as EstudioParaclinico;
+  },
+
+  async create(dto: Partial<EstudioParaclinico>): Promise<EstudioParaclinico> {
+    const { data, error } = await supabase
+      .from('estudios_paraclinicos')
+      .insert([dto])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as EstudioParaclinico;
+  },
+
+  async update(id: string, dto: Partial<EstudioParaclinico>): Promise<EstudioParaclinico> {
+    const { data, error } = await supabase
+      .from('estudios_paraclinicos')
+      .update(dto)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as EstudioParaclinico;
+  },
+};
+
+// =====================================================
+// CONSENTIMIENTOS INFORMADOS
+// =====================================================
+
+export const consentService = {
+  async listByExpediente(expedienteId: string): Promise<ConsentimientoInformado[]> {
+    const { data, error } = await supabase
+      .from('consentimientos_informados')
+      .select('*')
+      .eq('expediente_id', expedienteId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data as ConsentimientoInformado[];
+  },
+
+  async create(dto: Partial<ConsentimientoInformado>): Promise<ConsentimientoInformado> {
+    const { data, error } = await supabase
+      .from('consentimientos_informados')
+      .insert([dto])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ConsentimientoInformado;
+  },
+};

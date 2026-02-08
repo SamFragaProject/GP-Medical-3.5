@@ -29,6 +29,7 @@ import Tienda from '@/pages/Tienda'
 import LoginPage from '@/pages/Login'
 import RegisterPage from '@/pages/Register'
 import Home from '@/pages/Home'
+import AceptarInvitacion from '@/pages/AceptarInvitacion'
 import './App.css'
 import ExtractorMedico from '@/pages/apps/ExtractorMedico'
 import GeneradorReportes from '@/pages/apps/GeneradorReportes'
@@ -41,6 +42,7 @@ import Medicos from '@/pages/Medicos'
 import Resultados from '@/pages/Resultados'
 import MisCitas from '@/pages/MisCitas'
 import GestionRoles from '@/pages/admin/GestionRoles'
+import GestionUsuariosEmpresa from '@/pages/admin/GestionUsuariosEmpresa'
 import SuperAdminGodMode from '@/pages/admin/SuperAdminGodMode'
 import RiesgosTrabajo from '@/pages/RiesgosTrabajo'
 import DashboardLuxury from '@/pages/admin/DashboardLuxury'
@@ -75,7 +77,7 @@ import PatientProfile from '@/pages/pacientes/portal/PatientProfile'
 import { NotFound } from '@/pages/NotFound'
 
 // Chatbot V2 - Cargado dinámicamente según feature flag
-const ChatbotV2 = import.meta.env.VITE_USE_CHATBOT_V2 === 'true' 
+const ChatbotV2 = import.meta.env.VITE_USE_CHATBOT_V2 === 'true'
   ? React.lazy(() => import('../src-v2/modules/chatbot-v2/components/ChatbotWidget'))
   : null
 
@@ -95,6 +97,7 @@ function App() {
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/privacidad" element={<AvisoPrivacidad />} />
                     <Route path="/terminos" element={<TerminosCondiciones />} />
+                    <Route path="/aceptar-invitacion" element={<AceptarInvitacion />} />
 
                     {/* Kiosco */}
                     <Route path="/kiosco" element={<KioscoHome />} />
@@ -162,6 +165,8 @@ function App() {
                     <Route path="/admin/empresas" element={<ProtectedRoute resource="empresas"><Layout><GestionEmpresas /></Layout></ProtectedRoute>} />
                     <Route path="/admin/usuarios" element={<ProtectedRoute resource="usuarios"><Layout><Usuarios /></Layout></ProtectedRoute>} />
                     <Route path="/admin/roles" element={<ProtectedRoute resource="roles_permisos"><Layout><GestionRoles /></Layout></ProtectedRoute>} />
+                    <Route path="/admin/empresas/:empresaId/usuarios" element={<ProtectedRoute resource="usuarios"><Layout><GestionUsuariosEmpresa /></Layout></ProtectedRoute>} />
+                    <Route path="/admin/empresas/:empresaId/roles" element={<ProtectedRoute resource="roles_permisos"><Layout><GestionRoles /></Layout></ProtectedRoute>} />
                     <Route path="/admin/logs" element={<ProtectedRoute resource="sistema"><Layout><LogsView /></Layout></ProtectedRoute>} />
                     <Route path="/admin/marketplace" element={<ProtectedRoute resource="sistema"><Layout><PluginMarketplace /></Layout></ProtectedRoute>} />
                     <Route path="/admin/ai-workbench" element={<ProtectedRoute resource="sistema"><Layout><AIWorkbench /></Layout></ProtectedRoute>} />
@@ -171,10 +176,10 @@ function App() {
                   </Routes>
 
                   <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
-                  
+
                   {/* Chatbot original */}
                   <AIChatWidget />
-                  
+
                   {/* Chatbot V2 - Cargado condicionalmente */}
                   {ChatbotV2 && (
                     <React.Suspense fallback={null}>

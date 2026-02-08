@@ -15,15 +15,19 @@ import {
     Loader2,
     Trash2,
     Edit,
-    ExternalLink
+    ExternalLink,
+    Settings,
+    UserCog
 } from 'lucide-react'
 import { AdminLayout, AdminSearchBar, AdminLoadingState } from '@/components/admin/AdminLayout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { dataService } from '@/services/dataService'
+import { WizardCrearEmpresa } from '@/components/admin/WizardCrearEmpresa'
 import { NewCompanyDialog } from '@/components/admin/NewCompanyDialog'
 import toast from 'react-hot-toast'
+import { useNavigate } from 'react-router-dom'
 
 import {
     DropdownMenu,
@@ -34,9 +38,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export default function GestionEmpresas() {
+    const navigate = useNavigate()
     const [empresas, setEmpresas] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [busqueda, setBusqueda] = useState('')
+    const [isWizardOpen, setIsWizardOpen] = useState(false)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [selectedEmpresa, setSelectedEmpresa] = useState<any>(null)
 
@@ -84,10 +90,7 @@ export default function GestionEmpresas() {
             badges={[{ text: 'Multi-Tenancy', variant: 'info', icon: <Shield size={12} /> }]}
             actions={
                 <Button
-                    onClick={() => {
-                        setSelectedEmpresa(null)
-                        setIsDialogOpen(true)
-                    }}
+                    onClick={() => setIsWizardOpen(true)}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
                     <Plus size={16} className="mr-2" />
@@ -173,8 +176,17 @@ export default function GestionEmpresas() {
                                                 <DropdownMenuItem onClick={() => handleEdit(emp)} className="rounded-xl gap-3 font-bold text-xs py-2.5">
                                                     <Edit size={14} className="text-blue-600" /> Editar Datos
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="rounded-xl gap-3 font-bold text-xs py-2.5">
-                                                    <Users size={14} className="text-slate-600" /> Ver Usuarios
+                                                <DropdownMenuItem
+                                                    onClick={() => navigate(`/admin/empresas/${emp.id}/usuarios`)}
+                                                    className="rounded-xl gap-3 font-bold text-xs py-2.5"
+                                                >
+                                                    <UserCog size={14} className="text-slate-600" /> Gestionar Usuarios
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onClick={() => navigate(`/admin/empresas/${emp.id}/roles`)}
+                                                    className="rounded-xl gap-3 font-bold text-xs py-2.5"
+                                                >
+                                                    <Settings size={14} className="text-violet-600" /> Configurar Roles
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem
@@ -194,6 +206,14 @@ export default function GestionEmpresas() {
                 </div>
             )}
 
+            {/* Wizard para nueva empresa */}
+            <WizardCrearEmpresa
+                open={isWizardOpen}
+                onOpenChange={setIsWizardOpen}
+                onSuccess={cargarEmpresas}
+            />
+
+            {/* Dialog para editar empresa existente */}
             <NewCompanyDialog
                 open={isDialogOpen}
                 onOpenChange={setIsDialogOpen}
