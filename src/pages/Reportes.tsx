@@ -43,7 +43,7 @@ import { ROIAnalytics } from '@/components/reportes/ROIAnalytics'
 import { ReportsDashboard } from '@/components/reportes/ReportsDashboard'
 
 import toast from 'react-hot-toast'
-import { PremiumHeader } from '@/components/ui/PremiumHeader'
+import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader'
 import { Button } from '@/components/ui/button'
 
 export function Reportes() {
@@ -128,20 +128,18 @@ export function Reportes() {
   }
 
   return (
-    <div className="space-y-8">
-      <PremiumHeader
+    <div className="space-y-8 pb-12">
+      <PremiumPageHeader
         title="Intelligence & Analytics"
         subtitle="Soberanía de datos y análisis avanzado de salud ocupacional impulsado por GPMedical Core IA."
-        gradient={true}
-        badges={[
-          { text: 'Enterprise BI', variant: 'purple', icon: <Brain size={14} /> }
-        ]}
+        icon={BarChart3}
+        badge="ENTERPRISE BI"
         actions={
           <div className="flex items-center gap-3">
             <Button
               variant="premium"
+              className="h-12 px-8 shadow-xl shadow-blue-500/30 bg-white text-slate-900 hover:bg-slate-100 font-bold"
               onClick={() => handleCambiarVista('generador')}
-              className="h-11 px-6 shadow-xl shadow-emerald-500/20"
             >
               <FileText className="w-5 h-5 mr-2" />
               Nuevo Reporte
@@ -150,96 +148,98 @@ export function Reportes() {
         }
       />
 
-      <div className="flex bg-white/40 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-2xl shadow-blue-500/5">
-        {/* Sidebar de navegación */}
-        <div className="w-80 bg-white/50 border-r border-slate-200">
-          <div className="p-6">
-            {/* Filtros principales */}
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Filtros Globales</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Empresa</label>
-                  <select
-                    value={filtrosActivos.empresa}
-                    onChange={(e) => handleActualizarFiltros({ empresa: e.target.value })}
-                    className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none font-bold text-slate-700 text-xs cursor-pointer"
-                  >
-                    {empresas.map(empresa => (
-                      <option key={empresa.id} value={empresa.id}>{empresa.nombre}</option>
-                    ))}
-                  </select>
-                </div>
+      <div className="container mx-auto px-6 -mt-10 relative z-40">
+        <div className="flex bg-white/40 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-2xl shadow-blue-500/5">
+          {/* Sidebar de navegación */}
+          <div className="w-80 bg-white/50 border-r border-slate-200">
+            <div className="p-6">
+              {/* Filtros principales */}
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Filtros Globales</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Empresa</label>
+                    <select
+                      value={filtrosActivos.empresa}
+                      onChange={(e) => handleActualizarFiltros({ empresa: e.target.value })}
+                      className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none font-bold text-slate-700 text-xs cursor-pointer"
+                    >
+                      {empresas.map(empresa => (
+                        <option key={empresa.id} value={empresa.id}>{empresa.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Período</label>
-                  <div className="flex space-x-2">
-                    <input
-                      type="date"
-                      value={filtrosActivos.fechaInicio}
-                      onChange={(e) => handleActualizarFiltros({ fechaInicio: e.target.value })}
-                      className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-xs font-bold text-slate-700"
-                      placeholder="Inicio"
-                    />
-                    <input
-                      type="date"
-                      value={filtrosActivos.fechaFin}
-                      onChange={(e) => handleActualizarFiltros({ fechaFin: e.target.value })}
-                      className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-xs font-bold text-slate-700"
-                      placeholder="Fin"
-                    />
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Período</label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="date"
+                        value={filtrosActivos.fechaInicio}
+                        onChange={(e) => handleActualizarFiltros({ fechaInicio: e.target.value })}
+                        className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-xs font-bold text-slate-700"
+                        placeholder="Inicio"
+                      />
+                      <input
+                        type="date"
+                        value={filtrosActivos.fechaFin}
+                        onChange={(e) => handleActualizarFiltros({ fechaFin: e.target.value })}
+                        className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-xs font-bold text-slate-700"
+                        placeholder="Fin"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Navegación de vistas */}
-            <div>
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 px-3">Arquitectura de Datos</h3>
-              <div className="space-y-1.5">
-                {vistas.map((vista) => {
-                  const Icon = vista.icon
-                  const isActive = vistaActiva === vista.id
+              {/* Navegación de vistas */}
+              <div>
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 px-3">Arquitectura de Datos</h3>
+                <div className="space-y-1.5">
+                  {vistas.map((vista) => {
+                    const Icon = vista.icon
+                    const isActive = vistaActiva === vista.id
 
-                  return (
-                    <motion.button
-                      key={vista.id}
-                      whileHover={{ x: 6 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handleCambiarVista(vista.id)}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-left transition-all duration-300 ${isActive
-                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30'
-                        : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 border border-transparent hover:border-emerald-100'
-                        }`}
-                    >
-                      <div className={`p-1.5 rounded-lg transition-colors ${isActive ? 'bg-white/20' : 'bg-slate-100 group-hover:bg-emerald-100'}`}>
-                        <Icon size={18} className={isActive ? 'text-white' : 'text-slate-500'} />
-                      </div>
-                      <span className="text-sm font-bold">{vista.nombre}</span>
-                    </motion.button>
-                  )
-                })}
+                    return (
+                      <motion.button
+                        key={vista.id}
+                        whileHover={{ x: 6 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleCambiarVista(vista.id)}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-left transition-all duration-300 ${isActive
+                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30'
+                          : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 border border-transparent hover:border-emerald-100'
+                          }`}
+                      >
+                        <div className={`p-1.5 rounded-lg transition-colors ${isActive ? 'bg-white/20' : 'bg-slate-100 group-hover:bg-emerald-100'}`}>
+                          <Icon size={18} className={isActive ? 'text-white' : 'text-slate-500'} />
+                        </div>
+                        <span className="text-sm font-bold">{vista.nombre}</span>
+                      </motion.button>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Contenido principal */}
-        <div className="flex-1 p-8 overflow-y-auto max-h-[calc(100vh-250px)]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={vistaActiva}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
-              className="h-full"
-            >
-              {renderContenidoVista()}
-            </motion.div>
-          </AnimatePresence>
+          {/* Contenido principal */}
+          <div className="flex-1 p-8 overflow-y-auto max-h-[calc(100vh-250px)]">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={vistaActiva}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+                className="h-full"
+              >
+                {renderContenidoVista()}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

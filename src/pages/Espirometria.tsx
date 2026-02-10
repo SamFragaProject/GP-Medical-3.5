@@ -20,9 +20,10 @@ import {
     type Sexo,
 } from '@/types/espirometria';
 
-// =====================================================
-// HELPERS
-// =====================================================
+import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader';
+import { PremiumMetricCard } from '@/components/ui/PremiumMetricCard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const ClasificacionBadge: React.FC<{ clasificacion: ClasificacionEspirometria }> = ({ clasificacion }) => {
     const { bg, text } = CLASIFICACION_COLORS[clasificacion];
@@ -218,98 +219,121 @@ export default function Espirometria() {
     }), [estudios]);
 
     return (
-        <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">Espirometría</h1>
-                    <p className="text-white/50 mt-1">Pruebas de función pulmonar · NHANES III</p>
-                </div>
-                <button onClick={() => setShowForm(true)}
-                    className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-sm font-medium shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2">
-                    <Plus className="w-4 h-4" /> Nueva Espirometría
-                </button>
-            </div>
+        <div className="space-y-8 pb-12">
+            <PremiumPageHeader
+                title="Espirometría Pro"
+                subtitle="Pruebas de función pulmonar avanzadas con análisis de predichos NHANES III"
+                icon={Wind}
+                badge="SISTEMA ACTIVO"
+                actions={
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="premium"
+                            className="h-12 px-8 shadow-xl shadow-blue-500/30 bg-white text-slate-900 hover:bg-slate-100 font-bold"
+                            onClick={() => setShowForm(true)}
+                        >
+                            <Plus className="w-5 h-5 mr-2" />
+                            Nueva Espirometría
+                        </Button>
+                    </div>
+                }
+            />
 
-            {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2"><Activity className="w-4 h-4 text-blue-400" /><span className="text-sm text-white/50">Total</span></div>
-                    <div className="text-2xl font-bold text-white">{stats.total}</div>
+            <div className="container mx-auto px-6 -mt-10 relative z-40">
+                {/* KPIs Premium */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <PremiumMetricCard
+                        title="Total Pruebas"
+                        value={stats.total}
+                        subtitle="Historial clínico"
+                        icon={Activity}
+                        gradient="blue"
+                    />
+                    <PremiumMetricCard
+                        title="Normales"
+                        value={stats.normales}
+                        subtitle="Función óptima"
+                        icon={Wind}
+                        gradient="emerald"
+                        trend={{ value: 92, isPositive: true }}
+                    />
+                    <PremiumMetricCard
+                        title="Alterados"
+                        value={stats.alterados}
+                        subtitle="Seguimiento médico"
+                        icon={AlertTriangle}
+                        gradient="amber"
+                    />
+                    <PremiumMetricCard
+                        title="Obstrucción"
+                        value={stats.obstruccion}
+                        subtitle="Riesgo detectado"
+                        icon={BarChart3}
+                        gradient="rose"
+                    />
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2"><Wind className="w-4 h-4 text-emerald-400" /><span className="text-sm text-white/50">Normales</span></div>
-                    <div className="text-2xl font-bold text-emerald-400">{stats.normales}</div>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2"><AlertTriangle className="w-4 h-4 text-amber-400" /><span className="text-sm text-white/50">Alterados</span></div>
-                    <div className="text-2xl font-bold text-amber-400">{stats.alterados}</div>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2"><BarChart3 className="w-4 h-4 text-red-400" /><span className="text-sm text-white/50">Obstrucción</span></div>
-                    <div className="text-2xl font-bold text-red-400">{stats.obstruccion}</div>
-                </div>
-            </div>
 
-            <AnimatePresence>{showForm && <FormEspirometria onCrear={handleCrear} onCerrar={() => setShowForm(false)} />}</AnimatePresence>
+                <AnimatePresence>{showForm && <FormEspirometria onCrear={handleCrear} onCerrar={() => setShowForm(false)} />}</AnimatePresence>
 
-            {/* Filters */}
-            <div className="flex items-center gap-3 flex-wrap">
-                <div className="relative flex-1 min-w-[200px]">
-                    <Search className="w-4 h-4 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar paciente..."
-                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm placeholder:text-white/30" />
+                {/* Filters */}
+                <div className="flex items-center gap-3 flex-wrap">
+                    <div className="relative flex-1 min-w-[200px]">
+                        <Search className="w-4 h-4 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar paciente..."
+                            className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm placeholder:text-white/30" />
+                    </div>
+                    <select value={filtroClasificacion} onChange={e => setFiltroClasificacion(e.target.value)}
+                        className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm">
+                        <option value="">Todas</option>
+                        {Object.entries(CLASIFICACION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    </select>
                 </div>
-                <select value={filtroClasificacion} onChange={e => setFiltroClasificacion(e.target.value)}
-                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm">
-                    <option value="">Todas</option>
-                    {Object.entries(CLASIFICACION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
-            </div>
 
-            {/* List */}
-            {loading ? (
-                <div className="py-20 text-center text-white/40"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />Cargando...</div>
-            ) : estudios.length === 0 ? (
-                <div className="py-20 text-center">
-                    <Wind className="w-16 h-16 text-white/10 mx-auto mb-4" />
-                    <h3 className="text-white/60 text-lg font-medium mb-2">Sin espirometrías</h3>
-                    <p className="text-white/30 text-sm mb-4">Registra la primera prueba pulmonar.</p>
-                    <button onClick={() => setShowForm(true)} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium inline-flex items-center gap-2">
-                        <Plus className="w-4 h-4" /> Registrar
-                    </button>
-                </div>
-            ) : (
-                <div className="space-y-2">
-                    {estudios.map((e, i) => (
-                        <motion.div key={e.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                            className="bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/[0.07] hover:border-white/20 transition-all cursor-pointer group">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-1">
-                                        <User className="w-4 h-4 text-white/40" />
-                                        <span className="text-white font-semibold">{e.paciente?.nombre} {e.paciente?.apellido_paterno}</span>
-                                        <ClasificacionBadge clasificacion={e.clasificacion} />
-                                        <span className="bg-white/10 text-white/60 px-2 py-0.5 rounded text-xs">{e.calidad_prueba}</span>
+                {/* List */}
+                {loading ? (
+                    <div className="py-20 text-center text-white/40"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />Cargando...</div>
+                ) : estudios.length === 0 ? (
+                    <div className="py-20 text-center">
+                        <Wind className="w-16 h-16 text-white/10 mx-auto mb-4" />
+                        <h3 className="text-white/60 text-lg font-medium mb-2">Sin espirometrías</h3>
+                        <p className="text-white/30 text-sm mb-4">Registra la primera prueba pulmonar.</p>
+                        <button onClick={() => setShowForm(true)} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium inline-flex items-center gap-2">
+                            <Plus className="w-4 h-4" /> Registrar
+                        </button>
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        {estudios.map((e, i) => (
+                            <motion.div key={e.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
+                                className="bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/[0.07] hover:border-white/20 transition-all cursor-pointer group">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <User className="w-4 h-4 text-white/40" />
+                                            <span className="text-white font-semibold">{e.paciente?.nombre} {e.paciente?.apellido_paterno}</span>
+                                            <ClasificacionBadge clasificacion={e.clasificacion} />
+                                            <span className="bg-white/10 text-white/60 px-2 py-0.5 rounded text-xs">{e.calidad_prueba}</span>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-sm text-white/50">
+                                            <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(e.fecha_estudio).toLocaleDateString('es-MX')}</span>
+                                            <span>FVC: <b className="text-white">{e.fvc}L</b> ({e.fvc_porcentaje}%)</span>
+                                            <span>FEV1: <b className="text-white">{e.fev1}L</b> ({e.fev1_porcentaje}%)</span>
+                                            <span>FEV1/FVC: <b className="text-white">{e.fev1_fvc}%</b></span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-4 text-sm text-white/50">
-                                        <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(e.fecha_estudio).toLocaleDateString('es-MX')}</span>
-                                        <span>FVC: <b className="text-white">{e.fvc}L</b> ({e.fvc_porcentaje}%)</span>
-                                        <span>FEV1: <b className="text-white">{e.fev1}L</b> ({e.fev1_porcentaje}%)</span>
-                                        <span>FEV1/FVC: <b className="text-white">{e.fev1_fvc}%</b></span>
-                                    </div>
+                                    <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/50 transition-all" />
                                 </div>
-                                <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/50 transition-all" />
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            )}
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
 
-            {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" /> {error}
-                </div>
-            )}
+                {error && (
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" /> {error}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

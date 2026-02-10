@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Package, Search, Plus, AlertTriangle, CheckCircle,
   TrendingDown, TrendingUp, Filter, MoreVertical,
-  Pill, Syringe, Stethoscope, ShoppingCart, Loader2,
+  Pill, Syringe, Stethoscope, ShoppingCart, Loader2, Clock,
   ArrowUpRight, ArrowDownLeft, Database, Boxes,
   ChevronRight, Sparkles, RefreshCcw, Minus
 } from 'lucide-react'
@@ -111,29 +111,29 @@ export default function Inventario() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-12">
-      {/* Header Premium */}
+      {/* Header Premium - Gold Standard style */}
       <PremiumPageHeader
-        title="Gestión de Inventario"
-        subtitle="Control avanzado de medicamentos, insumos y equipo médico certificado"
+        title="Farmacia & Abastecimiento"
+        subtitle="Gestión integral de recetas, inventario crítico, compras y proveedores certificados"
         icon={Boxes}
-        badge="SISTEMA ACTIVO"
+        badge="MÓDULO DE SUMINISTROS"
         actions={
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
               onClick={fetchProductos}
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20 font-black h-12 rounded-2xl px-6"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20 font-black h-12 rounded-2xl px-6 transition-all"
             >
               <RefreshCcw className="w-4 h-4 mr-2" />
               Sincronizar
             </Button>
             <Button
               variant="premium"
-              className="h-12 px-8 shadow-xl shadow-emerald-500/20"
+              className="h-12 px-8 shadow-xl shadow-blue-500/30 bg-white text-slate-900 hover:bg-slate-100 font-bold"
               onClick={() => setIsNewProductOpen(true)}
             >
               <Plus className="w-5 h-5 mr-2" />
-              Nuevo Item
+              Nuevo Producto
             </Button>
           </div>
         }
@@ -143,33 +143,33 @@ export default function Inventario() {
         {/* Stats Grid Premium */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <PremiumMetricCard
-            title="Total Items"
+            title="Total Productos"
             value={stats.total}
-            subtitle="Catálogo registrado"
+            subtitle="Items registrados"
             icon={Package}
-            gradient="emerald"
-          />
-          <PremiumMetricCard
-            title="Suministro Saludable"
-            value={stats.ok}
-            subtitle="En niveles óptimos"
-            icon={CheckCircle}
-            gradient="emerald"
-            trend={{ value: 92, isPositive: true }}
+            gradient="blue"
           />
           <PremiumMetricCard
             title="Stock Bajo"
             value={stats.bajo}
-            subtitle="Requiere atención"
+            subtitle="Nivel de reabastecimiento"
             icon={TrendingDown}
             gradient="amber"
+            trend={{ value: 0, isPositive: true }}
           />
           <PremiumMetricCard
-            title="Estado Crítico"
+            title="Vencimientos"
             value={stats.critico}
-            subtitle="Acción inmediata"
-            icon={AlertTriangle}
+            subtitle="Críticos / Por caducar"
+            icon={Clock}
             gradient="rose"
+          />
+          <PremiumMetricCard
+            title="Valor Inventario"
+            value="$0"
+            subtitle="Valorización actual"
+            icon={ShoppingCart}
+            gradient="emerald"
           />
         </div>
 

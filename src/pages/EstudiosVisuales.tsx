@@ -20,9 +20,10 @@ import {
     type SnellenValue,
 } from '@/types/vision';
 
-// =====================================================
-// HELPERS
-// =====================================================
+import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader';
+import { PremiumMetricCard } from '@/components/ui/PremiumMetricCard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const VisualBadge: React.FC<{ clasificacion: ClasificacionVisual }> = ({ clasificacion }) => {
     const { bg, text } = CLASIFICACION_VISUAL_COLORS[clasificacion];
@@ -193,95 +194,118 @@ export default function EstudiosVisuales() {
     }), [estudios]);
 
     return (
-        <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">Estudios Visuales</h1>
-                    <p className="text-white/50 mt-1">Agudeza visual Snellen · Ishihara · Campimetría</p>
-                </div>
-                <button onClick={() => setShowForm(true)}
-                    className="px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl text-sm font-medium shadow-lg shadow-green-500/20 transition-all flex items-center gap-2">
-                    <Plus className="w-4 h-4" /> Nuevo Estudio
-                </button>
-            </div>
+        <div className="space-y-8 pb-12">
+            <PremiumPageHeader
+                title="Estudios Visuales"
+                subtitle="Evaluación integral de agudeza visual, ishihara y campimetría computarizada"
+                icon={Eye}
+                badge="SISTEMA ACTIVO"
+                actions={
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="premium"
+                            className="h-12 px-8 shadow-xl shadow-blue-500/30 bg-white text-slate-900 hover:bg-slate-100 font-bold"
+                            onClick={() => setShowForm(true)}
+                        >
+                            <Plus className="w-5 h-5 mr-2" />
+                            Nuevo Estudio
+                        </Button>
+                    </div>
+                }
+            />
 
-            {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2"><Eye className="w-4 h-4 text-blue-400" /><span className="text-sm text-white/50">Total</span></div>
-                    <div className="text-2xl font-bold text-white">{stats.total}</div>
+            <div className="container mx-auto px-6 -mt-10 relative z-40">
+                {/* KPIs Premium */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <PremiumMetricCard
+                        title="Total Estudios"
+                        value={stats.total}
+                        subtitle="Historial registrado"
+                        icon={Eye}
+                        gradient="blue"
+                    />
+                    <PremiumMetricCard
+                        title="Pacientes Normales"
+                        value={stats.normales}
+                        subtitle="Visión 20/20"
+                        icon={CheckCircle2}
+                        gradient="emerald"
+                        trend={{ value: 85, isPositive: true }}
+                    />
+                    <PremiumMetricCard
+                        title="Deficiencias"
+                        value={stats.deficientes}
+                        subtitle="Requiere atención"
+                        icon={AlertTriangle}
+                        gradient="amber"
+                    />
+                    <PremiumMetricCard
+                        title="Uso de Lentes"
+                        value={stats.lentes}
+                        subtitle="Corrección activa"
+                        icon={Glasses}
+                        gradient="purple"
+                    />
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /><span className="text-sm text-white/50">Normales</span></div>
-                    <div className="text-2xl font-bold text-emerald-400">{stats.normales}</div>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2"><AlertTriangle className="w-4 h-4 text-amber-400" /><span className="text-sm text-white/50">Deficientes</span></div>
-                    <div className="text-2xl font-bold text-amber-400">{stats.deficientes}</div>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2"><Glasses className="w-4 h-4 text-purple-400" /><span className="text-sm text-white/50">Usan lentes</span></div>
-                    <div className="text-2xl font-bold text-purple-400">{stats.lentes}</div>
-                </div>
-            </div>
 
-            <AnimatePresence>{showForm && <FormVision onCrear={handleCrear} onCerrar={() => setShowForm(false)} />}</AnimatePresence>
+                <AnimatePresence>{showForm && <FormVision onCrear={handleCrear} onCerrar={() => setShowForm(false)} />}</AnimatePresence>
 
-            {/* Search */}
-            <div className="relative">
-                <Search className="w-4 h-4 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar paciente..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm placeholder:text-white/30" />
-            </div>
-
-            {/* List */}
-            {loading ? (
-                <div className="py-20 text-center text-white/40"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />Cargando...</div>
-            ) : estudios.length === 0 ? (
-                <div className="py-20 text-center">
-                    <Eye className="w-16 h-16 text-white/10 mx-auto mb-4" />
-                    <h3 className="text-white/60 text-lg font-medium mb-2">Sin estudios visuales</h3>
-                    <button onClick={() => setShowForm(true)} className="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-sm font-medium inline-flex items-center gap-2">
-                        <Plus className="w-4 h-4" /> Registrar
-                    </button>
+                {/* Search */}
+                <div className="relative">
+                    <Search className="w-4 h-4 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar paciente..."
+                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm placeholder:text-white/30" />
                 </div>
-            ) : (
-                <div className="space-y-2">
-                    {estudios.map((e, i) => (
-                        <motion.div key={e.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                            className="bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/[0.07] hover:border-white/20 transition-all cursor-pointer group">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-1">
-                                        <User className="w-4 h-4 text-white/40" />
-                                        <span className="text-white font-semibold">{e.paciente?.nombre} {e.paciente?.apellido_paterno}</span>
-                                        <VisualBadge clasificacion={e.clasificacion} />
-                                        {e.apto_para_puesto ? (
-                                            <span className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">Apto</span>
-                                        ) : (
-                                            <span className="text-xs bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full">No Apto</span>
-                                        )}
+
+                {/* List */}
+                {loading ? (
+                    <div className="py-20 text-center text-white/40"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />Cargando...</div>
+                ) : estudios.length === 0 ? (
+                    <div className="py-20 text-center">
+                        <Eye className="w-16 h-16 text-white/10 mx-auto mb-4" />
+                        <h3 className="text-white/60 text-lg font-medium mb-2">Sin estudios visuales</h3>
+                        <button onClick={() => setShowForm(true)} className="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-sm font-medium inline-flex items-center gap-2">
+                            <Plus className="w-4 h-4" /> Registrar
+                        </button>
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        {estudios.map((e, i) => (
+                            <motion.div key={e.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
+                                className="bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/[0.07] hover:border-white/20 transition-all cursor-pointer group">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <User className="w-4 h-4 text-white/40" />
+                                            <span className="text-white font-semibold">{e.paciente?.nombre} {e.paciente?.apellido_paterno}</span>
+                                            <VisualBadge clasificacion={e.clasificacion} />
+                                            {e.apto_para_puesto ? (
+                                                <span className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">Apto</span>
+                                            ) : (
+                                                <span className="text-xs bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full">No Apto</span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-4 text-sm text-white/50">
+                                            <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(e.fecha_estudio).toLocaleDateString('es-MX')}</span>
+                                            <span>OD: <b className="text-white">{e.od_sin_correccion}</b></span>
+                                            <span>OI: <b className="text-white">{e.oi_sin_correccion}</b></span>
+                                            {e.usa_lentes && <span className="flex items-center gap-1"><Glasses className="w-3.5 h-3.5 text-purple-400" /> Usa lentes</span>}
+                                            {e.referencia_oftalmologo && <span className="text-amber-400">⚠ Referido</span>}
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-4 text-sm text-white/50">
-                                        <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(e.fecha_estudio).toLocaleDateString('es-MX')}</span>
-                                        <span>OD: <b className="text-white">{e.od_sin_correccion}</b></span>
-                                        <span>OI: <b className="text-white">{e.oi_sin_correccion}</b></span>
-                                        {e.usa_lentes && <span className="flex items-center gap-1"><Glasses className="w-3.5 h-3.5 text-purple-400" /> Usa lentes</span>}
-                                        {e.referencia_oftalmologo && <span className="text-amber-400">⚠ Referido</span>}
-                                    </div>
+                                    <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/50 transition-all" />
                                 </div>
-                                <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/50 transition-all" />
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            )}
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
 
-            {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" /> {error}
-                </div>
-            )}
+                {error && (
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" /> {error}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
