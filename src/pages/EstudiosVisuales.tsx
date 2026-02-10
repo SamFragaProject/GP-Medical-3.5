@@ -74,7 +74,7 @@ function FormVision({ onCrear, onCerrar }: {
 
     const SnellenSelect: React.FC<{ value: string; onChange: (v: string) => void; label: string }> = ({ value, onChange, label }) => (
         <div>
-            <label className="block text-xs text-white/50 mb-1">{label}</label>
+            <label className="block text-xs text-white mb-1">{label}</label>
             <select value={value} onChange={e => onChange(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm">
                 <option value="">—</option>
                 {SNELLEN_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
@@ -93,11 +93,11 @@ function FormVision({ onCrear, onCerrar }: {
 
             <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                    <label className="block text-sm text-white/60 mb-1">Empresa *</label>
+                    <label className="block text-sm text-white font-medium mb-1">Empresa *</label>
                     <input value={form.empresa_id} onChange={e => setForm(f => ({ ...f, empresa_id: e.target.value }))} placeholder="UUID" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
                 </div>
                 <div>
-                    <label className="block text-sm text-white/60 mb-1">Paciente *</label>
+                    <label className="block text-sm text-white font-medium mb-1">Paciente *</label>
                     <input value={form.paciente_id} onChange={e => setForm(f => ({ ...f, paciente_id: e.target.value }))} placeholder="UUID" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
                 </div>
             </div>
@@ -123,14 +123,14 @@ function FormVision({ onCrear, onCerrar }: {
             {/* Ishihara */}
             <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
-                    <label className="block text-sm text-white/60 mb-1">Placas Ishihara</label>
+                    <label className="block text-sm text-white font-medium mb-1">Placas Ishihara</label>
                     <select value={form.ishihara_placas_total} onChange={e => setForm(f => ({ ...f, ishihara_placas_total: Number(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm">
                         <option value={14}>14 placas</option>
                         <option value={38}>38 placas</option>
                     </select>
                 </div>
                 <div>
-                    <label className="block text-sm text-white/60 mb-1">Correctas</label>
+                    <label className="block text-sm text-white font-medium mb-1">Correctas</label>
                     <input type="number" value={form.ishihara_placas_correctas} onChange={e => setForm(f => ({ ...f, ishihara_placas_correctas: Number(e.target.value) }))} max={form.ishihara_placas_total} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
                 </div>
                 <div className="flex items-end pb-2 gap-4">

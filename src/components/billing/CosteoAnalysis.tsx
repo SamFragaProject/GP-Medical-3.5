@@ -80,7 +80,7 @@ export default function CosteoAnalysis() {
                     <h1 className="text-4xl font-black text-white italic tracking-tighter mt-2 mt-2">
                         ANÁLISIS DE <span className="text-emerald-500">COSTEO</span>
                     </h1>
-                    <p className="text-white/50 text-sm">Margen de utilidad real desglosado por operación clínica.</p>
+                    <p className="text-white/70 text-sm">Margen de utilidad real desglosado por operación clínica.</p>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -138,7 +138,7 @@ export default function CosteoAnalysis() {
                         {resumen?.total_pacientes.toLocaleString()}
                     </Metric>
                     <Flex className="mt-4">
-                        <Text className="text-white/40 text-xs italic">Corte: Hoy</Text>
+                        <Text className="text-white/60 text-xs italic">Corte: Hoy</Text>
                     </Flex>
                 </Card>
             </div>

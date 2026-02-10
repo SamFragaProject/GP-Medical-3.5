@@ -87,15 +87,15 @@ function FormEspirometria({ onCrear, onCerrar }: {
             {/* Datos paciente */}
             <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
-                    <label className="block text-sm text-white/60 mb-1">Empresa *</label>
+                    <label className="block text-sm text-white mb-1 font-medium">Empresa *</label>
                     <input value={form.empresa_id} onChange={e => setForm(f => ({ ...f, empresa_id: e.target.value }))} placeholder="UUID" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
                 </div>
                 <div>
-                    <label className="block text-sm text-white/60 mb-1">Paciente *</label>
+                    <label className="block text-sm text-white font-medium mb-1">Paciente *</label>
                     <input value={form.paciente_id} onChange={e => setForm(f => ({ ...f, paciente_id: e.target.value }))} placeholder="UUID" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
                 </div>
                 <div>
-                    <label className="block text-sm text-white/60 mb-1">Sexo</label>
+                    <label className="block text-sm text-white font-medium mb-1">Sexo</label>
                     <select value={form.sexo} onChange={e => setForm(f => ({ ...f, sexo: e.target.value as Sexo }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm">
                         <option value="masculino">Masculino</option>
                         <option value="femenino">Femenino</option>
@@ -105,19 +105,19 @@ function FormEspirometria({ onCrear, onCerrar }: {
 
             <div className="grid grid-cols-4 gap-4 mb-4">
                 <div>
-                    <label className="block text-sm text-white/60 mb-1">Edad</label>
+                    <label className="block text-sm text-white font-medium mb-1">Edad</label>
                     <input type="number" value={form.edad} onChange={e => setForm(f => ({ ...f, edad: Number(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
                 </div>
                 <div>
-                    <label className="block text-sm text-white/60 mb-1">Talla (cm)</label>
+                    <label className="block text-sm text-white font-medium mb-1">Talla (cm)</label>
                     <input type="number" value={form.talla_cm} onChange={e => setForm(f => ({ ...f, talla_cm: Number(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
                 </div>
                 <div>
-                    <label className="block text-sm text-white/60 mb-1">Peso (kg)</label>
+                    <label className="block text-sm text-white font-medium mb-1">Peso (kg)</label>
                     <input type="number" value={form.peso_kg} onChange={e => setForm(f => ({ ...f, peso_kg: Number(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
                 </div>
                 <div>
-                    <label className="block text-sm text-white/60 mb-1">Intentos</label>
+                    <label className="block text-sm text-white font-medium mb-1">Intentos</label>
                     <input type="number" value={form.numero_intentos} onChange={e => setForm(f => ({ ...f, numero_intentos: Number(e.target.value) }))} min={1} max={8} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
                 </div>
             </div>

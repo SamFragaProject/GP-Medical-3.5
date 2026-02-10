@@ -397,7 +397,17 @@ export function Layout({ children }: LayoutProps) {
       >
         <div className="container mx-auto px-6 py-8">
           <Breadcrumbs />
-          {children || <Outlet />}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+            >
+              {children || <Outlet />}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
 

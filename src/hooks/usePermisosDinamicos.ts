@@ -148,8 +148,8 @@ const ALL_MODULES_CATALOG: PermisoModulo[] = [
 const DEMO_ROLE_PERMISSIONS: Record<string, string[]> = {
     'super_admin': ['*'],
     'admin_saas': ['*'],
-    'admin_empresa': ['dashboard', 'usuarios', 'configuracion', 'reportes', 'facturacion', 'rrhh', 'sedes', 'inventario', 'tienda', 'alertas', 'normatividad', 'dictamenes', 'nom011', 'nom036', 'episodios', 'recetas', 'vigilancia_epidemiologica', 'campanias', 'cotizaciones', 'cxc'],
-    'medico': ['dashboard', 'pacientes', 'agenda', 'citas', 'estudios_medicos', 'historial', 'prescripcion', 'ia', 'rayos_x', 'matriz_riesgos', 'programa_anual', 'incapacidades', 'evaluaciones', 'resultados', 'certificaciones', 'dictamenes', 'nom011', 'nom036', 'episodios', 'recetas', 'examen_medico', 'vigilancia_epidemiologica', 'campanias', 'espirometria', 'vision'],
+    'admin_empresa': ['dashboard', 'usuarios', 'configuracion', 'reportes', 'facturacion', 'rrhh', 'sedes', 'inventario', 'tienda', 'alertas', 'normatividad', 'dictamenes', 'nom011', 'nom036', 'episodios', 'recetas', 'vigilancia_epidemiologica', 'campanias', 'cotizaciones', 'cxc', 'espirometria', 'vision', 'legal/evidencias', 'operaciones/ordenes', 'inventario/lotes', 'admin/costeo'],
+    'medico': ['dashboard', 'pacientes', 'agenda', 'citas', 'estudios_medicos', 'historial', 'prescripcion', 'ia', 'rayos_x', 'matriz_riesgos', 'programa_anual', 'incapacidades', 'evaluaciones', 'resultados', 'certificaciones', 'dictamenes', 'nom011', 'nom036', 'episodios', 'recetas', 'examen_medico', 'vigilancia_epidemiologica', 'campanias', 'espirometria', 'vision', 'legal/evidencias'],
     'enfermera': ['dashboard', 'pacientes', 'agenda', 'citas', 'historial', 'resultados', 'alertas', 'examen_medico', 'espirometria', 'vision'],
     'recepcion': ['dashboard', 'agenda', 'citas', 'pacientes', 'tienda', 'facturacion', 'resultados', 'campanias', 'cotizaciones', 'cxc'],
     'asistente': ['dashboard', 'agenda', 'pacientes', 'citas'],
