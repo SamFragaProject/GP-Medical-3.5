@@ -135,40 +135,40 @@ function RegistrarPagoModal({ cuenta, onPago, onCerrar }: {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
                 onClick={e => e.stopPropagation()}
-                className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-md"
+                className="bg-white border border-slate-200 rounded-3xl p-8 w-full max-w-md shadow-2xl"
             >
-                <h3 className="text-lg font-semibold text-white mb-4">💰 Registrar Pago</h3>
-                <div className="text-sm text-white/50 mb-4">
-                    <span className="text-white">{cuenta.cliente_nombre}</span> · Saldo: <span className="text-amber-400 font-medium">{formatMoney(cuenta.saldo_pendiente)}</span>
+                <h3 className="text-xl font-bold text-slate-900 mb-4">💰 Registrar Pago</h3>
+                <div className="text-sm text-slate-500 mb-6">
+                    <span className="text-slate-900 font-semibold">{cuenta.cliente_nombre}</span> · Saldo: <span className="text-amber-600 font-bold">{formatMoney(cuenta.saldo_pendiente)}</span>
                 </div>
 
                 <div className="space-y-3">
                     <div>
-                        <label className="block text-sm text-white/60 mb-1">Monto *</label>
+                        <label className="block text-sm text-slate-700 mb-1 font-medium">Monto *</label>
                         <input
                             type="number"
                             value={form.monto}
                             onChange={e => setForm(f => ({ ...f, monto: Number(e.target.value) }))}
                             max={cuenta.saldo_pendiente}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500/20 transition-all"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-sm text-white/60 mb-1">Fecha</label>
+                            <label className="block text-sm text-slate-700 mb-1 font-medium">Fecha</label>
                             <input
                                 type="date"
                                 value={form.fecha_pago}
                                 onChange={e => setForm(f => ({ ...f, fecha_pago: e.target.value }))}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm text-white/60 mb-1">Método</label>
+                            <label className="block text-sm text-slate-700 mb-1 font-medium">Método</label>
                             <select
                                 value={form.metodo_pago}
                                 onChange={e => setForm(f => ({ ...f, metodo_pago: e.target.value as MetodoPago }))}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm"
                             >
                                 {Object.entries(METODOS_PAGO_LABELS).map(([k, v]) => (
                                     <option key={k} value={k}>{v}</option>
@@ -177,13 +177,13 @@ function RegistrarPagoModal({ cuenta, onPago, onCerrar }: {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm text-white/60 mb-1">Referencia</label>
+                        <label className="block text-sm text-slate-700 mb-1 font-medium">Referencia</label>
                         <input
                             type="text"
                             value={form.referencia}
                             onChange={e => setForm(f => ({ ...f, referencia: e.target.value }))}
                             placeholder="No. transferencia, cheque, etc."
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/30"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm placeholder:text-slate-400"
                         />
                     </div>
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -193,12 +193,12 @@ function RegistrarPagoModal({ cuenta, onPago, onCerrar }: {
                             onChange={e => setForm(f => ({ ...f, complemento_cfdi: e.target.checked }))}
                             className="w-4 h-4 rounded border-white/20 bg-white/5 text-blue-500"
                         />
-                        <span className="text-sm text-white/60">Requiere complemento de pago CFDI</span>
+                        <span className="text-sm text-slate-600 font-medium">Requiere complemento de pago CFDI</span>
                     </label>
                 </div>
 
-                <div className="flex gap-3 mt-6">
-                    <button onClick={onCerrar} className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/70 rounded-xl text-sm transition-all">
+                <div className="flex gap-3 mt-8">
+                    <button onClick={onCerrar} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-semibold transition-all">
                         Cancelar
                     </button>
                     <button
@@ -271,8 +271,8 @@ export default function CuentasPorCobrar() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">Cuentas por Cobrar</h1>
-                    <p className="text-white/50 mt-1">Aging, pagos y cobranza</p>
+                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Cuentas por Cobrar</h1>
+                    <p className="text-slate-500 mt-1">Aging, pagos y cobranza</p>
                 </div>
             </div>
 
@@ -288,7 +288,7 @@ export default function CuentasPorCobrar() {
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                         placeholder="Buscar por cliente o folio..."
-                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm placeholder:text-white/30 focus:border-blue-500/50 transition-all"
+                        className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     />
                 </div>
                 <select
@@ -326,18 +326,18 @@ export default function CuentasPorCobrar() {
                     <p className="text-white/30 text-sm">Las CxC se generan automáticamente al facturar.</p>
                 </div>
             ) : (
-                <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+                <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
                     <table className="w-full">
-                        <thead className="bg-white/5">
+                        <thead className="bg-slate-50/50">
                             <tr>
-                                <th className="text-left px-4 py-3 text-xs font-medium text-white/50 uppercase">Folio</th>
-                                <th className="text-left px-4 py-3 text-xs font-medium text-white/50 uppercase">Cliente</th>
-                                <th className="text-left px-4 py-3 text-xs font-medium text-white/50 uppercase">Vence</th>
-                                <th className="text-right px-4 py-3 text-xs font-medium text-white/50 uppercase">Original</th>
-                                <th className="text-right px-4 py-3 text-xs font-medium text-white/50 uppercase">Saldo</th>
-                                <th className="text-center px-4 py-3 text-xs font-medium text-white/50 uppercase">Aging</th>
-                                <th className="text-center px-4 py-3 text-xs font-medium text-white/50 uppercase">Estado</th>
-                                <th className="text-right px-4 py-3 text-xs font-medium text-white/50 uppercase">Acción</th>
+                                <th className="text-left px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Folio</th>
+                                <th className="text-left px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
+                                <th className="text-left px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Vence</th>
+                                <th className="text-right px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Original</th>
+                                <th className="text-right px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Saldo</th>
+                                <th className="text-center px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Aging</th>
+                                <th className="text-center px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th>
+                                <th className="text-right px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Acción</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -349,19 +349,19 @@ export default function CuentasPorCobrar() {
                                     transition={{ delay: i * 0.02 }}
                                     className="border-t border-white/5 hover:bg-white/5 transition-all"
                                 >
-                                    <td className="px-4 py-3 text-sm text-white font-mono">{c.folio_factura || '-'}</td>
-                                    <td className="px-4 py-3">
-                                        <div className="text-sm text-white font-medium">{c.cliente_nombre}</div>
-                                        <div className="text-xs text-white/40">{c.cliente_rfc}</div>
+                                    <td className="px-5 py-4 text-sm text-slate-900 font-mono font-medium">{c.folio_factura || '-'}</td>
+                                    <td className="px-5 py-4">
+                                        <div className="text-sm text-slate-900 font-bold">{c.cliente_nombre}</div>
+                                        <div className="text-xs text-slate-500 font-medium">{c.cliente_rfc}</div>
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-white/60">
+                                    <td className="px-5 py-4 text-sm text-slate-600 font-medium">
                                         {new Date(c.fecha_vencimiento).toLocaleDateString('es-MX')}
                                         {c.dias_vencidos > 0 && (
-                                            <span className="text-red-400 text-xs ml-1">({c.dias_vencidos}d)</span>
+                                            <span className="text-red-500 font-bold text-xs ml-1">({c.dias_vencidos}d)</span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-white/60 text-right">{formatMoney(c.monto_original)}</td>
-                                    <td className="px-4 py-3 text-sm text-white font-bold text-right">{formatMoney(c.saldo_pendiente)}</td>
+                                    <td className="px-5 py-4 text-sm text-slate-500 text-right font-medium">{formatMoney(c.monto_original)}</td>
+                                    <td className="px-5 py-4 text-sm text-slate-900 font-black text-right">{formatMoney(c.saldo_pendiente)}</td>
                                     <td className="px-4 py-3 text-center">
                                         <span
                                             className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold"

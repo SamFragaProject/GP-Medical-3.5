@@ -90,29 +90,29 @@ function WizardCotizacion({ onCrear, onCerrar }: { onCrear: (dto: CrearCotizacio
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm"
+            className="bg-white border border-slate-200 rounded-3xl p-8 shadow-xl shadow-blue-500/5 mb-8"
         >
-            <h3 className="text-lg font-semibold text-white mb-4">📝 Nueva Cotización</h3>
+            <h3 className="text-xl font-bold text-slate-900 mb-6">📝 Nueva Cotización</h3>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                    <label className="block text-sm text-white/60 mb-1">ID Empresa *</label>
+                    <label className="block text-sm text-slate-700 font-medium mb-1">ID Empresa *</label>
                     <input
                         type="text"
                         value={form.empresa_id || ''}
                         onChange={e => setForm(f => ({ ...f, empresa_id: e.target.value }))}
                         placeholder="UUID de la empresa"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/30 focus:border-blue-500/50 transition-all"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm text-white/60 mb-1">Cliente *</label>
+                    <label className="block text-sm text-slate-700 font-medium mb-1">Cliente *</label>
                     <input
                         type="text"
                         value={form.cliente_nombre || ''}
                         onChange={e => setForm(f => ({ ...f, cliente_nombre: e.target.value }))}
                         placeholder="Nombre del cliente"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/30 focus:border-blue-500/50 transition-all"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     />
                 </div>
                 <div>
@@ -126,12 +126,12 @@ function WizardCotizacion({ onCrear, onCerrar }: { onCrear: (dto: CrearCotizacio
                     />
                 </div>
                 <div>
-                    <label className="block text-sm text-white/60 mb-1">Vigencia hasta</label>
+                    <label className="block text-sm text-slate-700 font-medium mb-1">Vigencia hasta</label>
                     <input
                         type="date"
                         value={form.fecha_vigencia || ''}
                         onChange={e => setForm(f => ({ ...f, fecha_vigencia: e.target.value }))}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-blue-500/50 transition-all"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
                     />
                 </div>
             </div>
@@ -194,7 +194,7 @@ function WizardCotizacion({ onCrear, onCerrar }: { onCrear: (dto: CrearCotizacio
             )}
 
             <div className="flex gap-3 mt-4">
-                <button onClick={onCerrar} className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/70 rounded-xl text-sm transition-all">
+                <button onClick={onCerrar} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-semibold transition-all">
                     Cancelar
                 </button>
                 <button
@@ -258,8 +258,8 @@ export default function Cotizaciones() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">Cotizaciones</h1>
-                    <p className="text-white/50 mt-1">Propuestas comerciales para empresas</p>
+                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Cotizaciones</h1>
+                    <p className="text-slate-500 mt-1">Propuestas comerciales para empresas</p>
                 </div>
                 <button
                     onClick={() => setShowWizard(true)}
@@ -271,21 +271,21 @@ export default function Cotizaciones() {
 
             {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2"><FileText className="w-4 h-4 text-blue-400" /><span className="text-sm text-white/50">Total</span></div>
-                    <div className="text-2xl font-bold text-white">{stats.total}</div>
+                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2"><FileText className="w-4 h-4 text-blue-500" /><span className="text-sm text-slate-500">Total</span></div>
+                    <div className="text-2xl font-bold text-slate-900">{stats.total}</div>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2"><Send className="w-4 h-4 text-amber-400" /><span className="text-sm text-white/50">Enviadas</span></div>
-                    <div className="text-2xl font-bold text-white">{stats.enviadas}</div>
+                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2"><Send className="w-4 h-4 text-amber-500" /><span className="text-sm text-slate-500">Enviadas</span></div>
+                    <div className="text-2xl font-bold text-slate-900">{stats.enviadas}</div>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /><span className="text-sm text-white/50">Aceptadas</span></div>
-                    <div className="text-2xl font-bold text-white">{stats.aceptadas}</div>
+                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-500" /><span className="text-sm text-slate-500">Aceptadas</span></div>
+                    <div className="text-2xl font-bold text-slate-900">{stats.aceptadas}</div>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-green-400" /><span className="text-sm text-white/50">Monto Total</span></div>
-                    <div className="text-2xl font-bold text-white">{formatMoney(stats.monto)}</div>
+                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-green-600" /><span className="text-sm text-slate-500">Monto Total</span></div>
+                    <div className="text-2xl font-bold text-slate-900">{formatMoney(stats.monto)}</div>
                 </div>
             </div>
 

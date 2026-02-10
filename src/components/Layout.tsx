@@ -386,7 +386,7 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       <main
-        className="bg-[#020617] overflow-y-auto relative"
+        className="bg-gradient-to-br from-white via-slate-50/50 to-blue-50/30 overflow-y-auto relative"
         style={{
           marginLeft: sidebarOpen ? '320px' : '80px',
           marginTop: (location.pathname.includes('/dashboard') || location.pathname.includes('/ia')) ? '0' : '80px',

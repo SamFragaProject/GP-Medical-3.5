@@ -460,7 +460,7 @@ export default function Campanias() {
     // VISTA LISTA DE CAMPAÑAS
     // =====================================================
     return (
-        <div className="max-w-7xl mx-auto px-6 py-8 space-y-6 bg-[#020617] min-h-screen">
+        <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>

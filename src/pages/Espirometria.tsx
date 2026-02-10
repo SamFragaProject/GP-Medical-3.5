@@ -80,23 +80,23 @@ function FormEspirometria({ onCrear, onCerrar }: {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm"
+            className="bg-white border border-slate-200 rounded-3xl p-8 shadow-xl shadow-blue-500/5"
         >
-            <h3 className="text-lg font-semibold text-white mb-4">🫁 Nueva Espirometría</h3>
+            <h3 className="text-xl font-bold text-slate-900 mb-6">🫁 Nueva Espirometría</h3>
 
             {/* Datos paciente */}
             <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
-                    <label className="block text-sm text-white mb-1 font-medium">Empresa *</label>
-                    <input value={form.empresa_id} onChange={e => setForm(f => ({ ...f, empresa_id: e.target.value }))} placeholder="UUID" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
+                    <label className="block text-sm text-slate-700 mb-1 font-medium">Empresa *</label>
+                    <input value={form.empresa_id} onChange={e => setForm(f => ({ ...f, empresa_id: e.target.value }))} placeholder="UUID" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500/20 transition-all" />
                 </div>
                 <div>
-                    <label className="block text-sm text-white font-medium mb-1">Paciente *</label>
-                    <input value={form.paciente_id} onChange={e => setForm(f => ({ ...f, paciente_id: e.target.value }))} placeholder="UUID" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
+                    <label className="block text-sm text-slate-700 font-medium mb-1">Paciente *</label>
+                    <input value={form.paciente_id} onChange={e => setForm(f => ({ ...f, paciente_id: e.target.value }))} placeholder="UUID" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500/20 transition-all" />
                 </div>
                 <div>
-                    <label className="block text-sm text-white font-medium mb-1">Sexo</label>
-                    <select value={form.sexo} onChange={e => setForm(f => ({ ...f, sexo: e.target.value as Sexo }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm">
+                    <label className="block text-sm text-slate-700 font-medium mb-1">Sexo</label>
+                    <select value={form.sexo} onChange={e => setForm(f => ({ ...f, sexo: e.target.value as Sexo }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500/20 transition-all">
                         <option value="masculino">Masculino</option>
                         <option value="femenino">Femenino</option>
                     </select>
