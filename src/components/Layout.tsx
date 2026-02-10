@@ -385,25 +385,25 @@ export function Layout({ children }: LayoutProps) {
         </header>
       )}
 
-      {/* Contenido principal */}
       <main
-        className="bg-background overflow-y-auto"
+        className="bg-[#020617] overflow-y-auto relative"
         style={{
           marginLeft: sidebarOpen ? '320px' : '80px',
           marginTop: (location.pathname.includes('/dashboard') || location.pathname.includes('/ia')) ? '0' : '80px',
           height: (location.pathname.includes('/dashboard') || location.pathname.includes('/ia')) ? '100vh' : 'calc(100vh - 80px)',
-          transition: 'margin-left 0.3s'
+          transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
         }}
       >
-        <div className="container mx-auto px-6 py-8">
+        <div className="container mx-auto px-6 py-8 min-h-full flex flex-col">
           <Breadcrumbs />
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="flex-1"
             >
               {children || <Outlet />}
             </motion.div>

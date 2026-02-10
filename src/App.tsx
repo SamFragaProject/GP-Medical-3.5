@@ -236,6 +236,11 @@ function App() {
                         {/* Rutas Protegidas Ensueltas en Layout */}
                         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                           <Route path="/dashboard" element={<ProtectedRoute resource="dashboard"><Dashboard /></ProtectedRoute>} />
+
+                          {/* Redirecciones Estructurales */}
+                          <Route path="/normatividad" element={<Navigate to="/normatividad/nom035" replace />} />
+                          <Route path="/episodios" element={<Navigate to="/episodios/pipeline" replace />} />
+
                           <Route path="/pacientes" element={<ProtectedRoute resource="pacientes"><Pacientes /></ProtectedRoute>} />
                           <Route path="/normatividad/nom035" element={<ProtectedRoute resource="normatividad"><Nom035 /></ProtectedRoute>} />
                           <Route path="/normatividad/nom036" element={<ProtectedRoute resource="normatividad"><Nom036 /></ProtectedRoute>} />
@@ -337,16 +342,6 @@ function App() {
                     </Suspense>
 
                     <Toaster />
-
-                    {/* Chatbot original */}
-                    <AIChatWidget />
-
-                    {/* Chatbot V2 - Cargado condicionalmente */}
-                    {ChatbotV2 && (
-                      <React.Suspense fallback={null}>
-                        <ChatbotV2 />
-                      </React.Suspense>
-                    )}
                   </div>
                 </CarritoProvider>
               </SystemProvider>
