@@ -135,24 +135,26 @@ export function AlertasMedicas() {
         {/* Header Premium */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <PremiumHeader
-            title="Alertas de Seguimiento Médico"
-            subtitle="Sistema de notificaciones para vencimientos y seguimientos médicos"
+            title="Alertas Médicas Pro"
+            subtitle="Inteligencia preventiva y seguimiento médico en tiempo real"
             gradient={true}
             badges={[
-              { text: `${alertasActivas.length} Activas`, variant: "danger", icon: <Bell size={14} /> }
+              { text: `${alertasActivas.length} Activas`, variant: "danger", icon: <Bell size={14} /> },
+              { text: `${alertasVencidas.length} Críticas`, variant: "purple", icon: <Clock size={14} /> }
             ]}
+            actions={
+              <div className="flex items-center gap-3">
+                <Button variant="outline" className="rounded-xl border-slate-200 hover:bg-slate-50">
+                  <Download className="mr-2 h-4 w-4" />
+                  Exportar
+                </Button>
+                <Button className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl px-6">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Configurar
+                </Button>
+              </div>
+            }
           />
-
-          <div className="flex items-center space-x-3">
-            <Button variant="outline" className="rounded-xl border-gray-200 hover:bg-gray-50">
-              <Download className="mr-2 h-4 w-4" />
-              Exportar
-            </Button>
-            <Button variant="outline" className="rounded-xl border-gray-200 hover:bg-gray-50">
-              <Settings className="mr-2 h-4 w-4" />
-              Configurar
-            </Button>
-          </div>
         </div>
 
         {/* Estadísticas principales - Premium */}

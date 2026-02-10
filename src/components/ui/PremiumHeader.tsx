@@ -13,6 +13,7 @@ interface PremiumHeaderProps {
     gradient?: boolean;
     className?: string;
     children?: ReactNode;
+    actions?: ReactNode;
 }
 
 const badgeVariants = {
@@ -29,7 +30,8 @@ export function PremiumHeader({
     badges = [],
     gradient = true,
     className = '',
-    children
+    children,
+    actions
 }: PremiumHeaderProps) {
     return (
         <motion.div
@@ -92,7 +94,10 @@ export function PremiumHeader({
                         ))}
                     </motion.div>
                 )}
-                {children}
+                <div className="flex items-center gap-4">
+                    {actions}
+                    {children}
+                </div>
             </div>
         </motion.div>
     );

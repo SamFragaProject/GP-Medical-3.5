@@ -43,7 +43,7 @@ import { ROIAnalytics } from '@/components/reportes/ROIAnalytics'
 import { ReportsDashboard } from '@/components/reportes/ReportsDashboard'
 
 import toast from 'react-hot-toast'
-import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader'
+import { PremiumHeader } from '@/components/ui/PremiumHeader'
 import { Button } from '@/components/ui/button'
 
 export function Reportes() {
@@ -128,12 +128,14 @@ export function Reportes() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-green-50">
-      <PremiumPageHeader
-        title="Predictive Intelligence & Analytics"
+    <div className="space-y-8">
+      <PremiumHeader
+        title="Intelligence & Analytics"
         subtitle="Soberanía de datos y análisis avanzado de salud ocupacional impulsado por GPMedical Core IA."
-        icon={Brain}
-        badge="ENTERPRISE BI"
+        gradient={true}
+        badges={[
+          { text: 'Enterprise BI', variant: 'purple', icon: <Brain size={14} /> }
+        ]}
         actions={
           <div className="flex items-center gap-3">
             <Button
@@ -144,22 +146,13 @@ export function Reportes() {
               <FileText className="w-5 h-5 mr-2" />
               Nuevo Reporte
             </Button>
-
-            <Button
-              variant="outline"
-              onClick={() => handleCambiarVista('exportador')}
-              className="h-11 px-6 rounded-xl border-slate-200 hover:border-emerald-200 hover:text-emerald-600 font-bold"
-            >
-              <Download className="w-5 h-5 mr-2" />
-              Exportación
-            </Button>
           </div>
         }
       />
 
-      <div className="flex">
+      <div className="flex bg-white/40 backdrop-blur-xl rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-2xl shadow-blue-500/5">
         {/* Sidebar de navegación */}
-        <div className="w-80 bg-white border-r border-gray-200 shadow-sm min-h-[calc(100vh-73px)]">
+        <div className="w-80 bg-white/50 border-r border-slate-200">
           <div className="p-6">
             {/* Filtros principales */}
             <div className="mb-6">
@@ -232,14 +225,14 @@ export function Reportes() {
         </div>
 
         {/* Contenido principal */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-8 overflow-y-auto max-h-[calc(100vh-250px)]">
           <AnimatePresence mode="wait">
             <motion.div
               key={vistaActiva}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2 }}
               className="h-full"
             >
               {renderContenidoVista()}
@@ -248,5 +241,5 @@ export function Reportes() {
         </div>
       </div>
     </div>
-  )
+  );
 }

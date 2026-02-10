@@ -386,7 +386,7 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       <main
-        className="bg-gradient-to-br from-white via-slate-50/50 to-blue-50/30 overflow-y-auto relative"
+        className="bg-gradient-to-br from-white via-slate-50/50 to-blue-50/30 overflow-y-auto overflow-x-hidden relative"
         style={{
           marginLeft: sidebarOpen ? '320px' : '80px',
           marginTop: (location.pathname.includes('/dashboard') || location.pathname.includes('/ia')) ? '0' : '80px',
@@ -394,16 +394,16 @@ export function Layout({ children }: LayoutProps) {
           transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
         }}
       >
-        <div className="container mx-auto px-6 py-8 min-h-full flex flex-col">
+        <div className="container mx-auto px-6 py-8 min-h-full flex flex-col relative">
           <Breadcrumbs />
-          <AnimatePresence mode="wait">
+          <AnimatePresence initial={false}>
             <motion.div
               key={location.pathname}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="flex-1"
+              transition={{ duration: 0.1 }}
+              className="flex-1 w-full"
             >
               {children || <Outlet />}
             </motion.div>

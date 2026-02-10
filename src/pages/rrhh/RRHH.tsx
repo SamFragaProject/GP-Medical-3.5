@@ -36,6 +36,8 @@ import type {
     Employee,
     VacationRequest
 } from '@/types/rrhh'
+import { PremiumHeader } from '@/components/ui/PremiumHeader'
+import { PremiumMetricCard } from '@/components/ui/PremiumMetricCard'
 
 export default function RRHH() {
     // Auth
@@ -147,58 +149,80 @@ export default function RRHH() {
     ]
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
-            >
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg">
-                            <Briefcase className="h-6 w-6 text-white" />
-                        </div>
-                        Recursos Humanos
-                    </h1>
-                    <p className="text-slate-500 mt-1">
-                        Gestión integral de personal, nómina y vacaciones
-                    </p>
-                </div>
+        <div className="space-y-8">
+            <PremiumHeader
+                title="Recursos Humanos"
+                subtitle="Gestión integral de personal, nómina y evaluaciones de desempeño"
+                gradient={true}
+                badges={[
+                    { text: `${empleados.length} Empleados`, variant: 'info', icon: <Users size={14} /> },
+                    { text: 'Empresa Certificada', variant: 'success', icon: <Briefcase size={14} /> }
+                ]}
+                actions={
+                    <div className="flex items-center gap-3">
+                        <Button variant="outline" className="rounded-xl" onClick={loadData} disabled={loading}>
+                            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                            Sincronizar
+                        </Button>
+                        <Button onClick={handleNewEmpleado} className="bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-500/20 rounded-xl">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Nuevo Empleado
+                        </Button>
+                    </div>
+                }
+            />
 
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
-                        <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                        Actualizar
-                    </Button>
-                    <Button variant="outline" size="sm">
-                        <Download className="h-4 w-4 mr-2" />
-                        Exportar
-                    </Button>
-                    <Button onClick={handleNewEmpleado}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nuevo Empleado
-                    </Button>
-                </div>
-            </motion.div>
+            {/* KPIs Rápidos */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <PremiumMetricCard
+                    title="Total Plantilla"
+                    value={empleados.length}
+                    subtitle="Colaboradores activos"
+                    icon={Users}
+                    gradient="blue"
+                />
+                <PremiumMetricCard
+                    title="Vacaciones"
+                    value={vacaciones.filter(v => v.estado === 'pendiente').length}
+                    subtitle="Solicitudes pendientes"
+                    icon={Palmtree}
+                    gradient="amber"
+                />
+                <PremiumMetricCard
+                    title="Nómina"
+                    value="98%"
+                    subtitle="Cumplimiento periodo"
+                    icon={DollarSign}
+                    gradient="emerald"
+                />
+                <PremiumMetricCard
+                    title="Evaluaciones"
+                    value="12"
+                    subtitle="Pendientes este mes"
+                    icon={Brain}
+                    gradient="purple"
+                />
+            </div>
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="bg-slate-100/80 p-1 rounded-xl w-full sm:w-auto overflow-x-auto flex-nowrap justify-start">
-                    {tabs.map(tab => {
-                        const Icon = tab.icon
-                        return (
-                            <TabsTrigger
-                                key={tab.id}
-                                value={tab.id}
-                                className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg"
-                            >
-                                <Icon className="h-4 w-4" />
-                                <span >{tab.label}</span>
-                            </TabsTrigger>
-                        )
-                    })}
-                </TabsList>
+                <div className="flex items-center justify-between bg-white/50 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200 w-fit">
+                    <TabsList className="bg-transparent gap-1">
+                        {tabs.map(tab => {
+                            const Icon = tab.icon
+                            return (
+                                <TabsTrigger
+                                    key={tab.id}
+                                    value={tab.id}
+                                    className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-sm rounded-xl px-6 py-2.5 transition-all font-bold text-slate-500"
+                                >
+                                    <Icon className="h-4 w-4" />
+                                    <span>{tab.label}</span>
+                                </TabsTrigger>
+                            )
+                        })}
+                    </TabsList>
+                </div>
 
                 {/* Empleados Tab */}
                 <TabsContent value="empleados" className="space-y-6">
