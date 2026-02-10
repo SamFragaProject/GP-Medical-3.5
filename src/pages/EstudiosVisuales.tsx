@@ -75,8 +75,8 @@ function FormVision({ onCrear, onCerrar }: {
 
     const SnellenSelect: React.FC<{ value: string; onChange: (v: string) => void; label: string }> = ({ value, onChange, label }) => (
         <div>
-            <label className="block text-xs text-white mb-1">{label}</label>
-            <select value={value} onChange={e => onChange(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm">
+            <label className="block text-xs text-slate-500 mb-1">{label}</label>
+            <select value={value} onChange={e => onChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/20">
                 <option value="">—</option>
                 {SNELLEN_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -124,26 +124,26 @@ function FormVision({ onCrear, onCerrar }: {
             {/* Ishihara */}
             <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
-                    <label className="block text-sm text-white font-medium mb-1">Placas Ishihara</label>
-                    <select value={form.ishihara_placas_total} onChange={e => setForm(f => ({ ...f, ishihara_placas_total: Number(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm">
+                    <label className="block text-sm text-slate-700 font-medium mb-1">Placas Ishihara</label>
+                    <select value={form.ishihara_placas_total} onChange={e => setForm(f => ({ ...f, ishihara_placas_total: Number(e.target.value) }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-900 text-sm">
                         <option value={14}>14 placas</option>
                         <option value={38}>38 placas</option>
                     </select>
                 </div>
                 <div>
-                    <label className="block text-sm text-white font-medium mb-1">Correctas</label>
-                    <input type="number" value={form.ishihara_placas_correctas} onChange={e => setForm(f => ({ ...f, ishihara_placas_correctas: Number(e.target.value) }))} max={form.ishihara_placas_total} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
+                    <label className="block text-sm text-slate-700 font-medium mb-1">Correctas</label>
+                    <input type="number" value={form.ishihara_placas_correctas} onChange={e => setForm(f => ({ ...f, ishihara_placas_correctas: Number(e.target.value) }))} max={form.ishihara_placas_total} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-900 text-sm" />
                 </div>
                 <div className="flex items-end pb-2 gap-4">
                     <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked={form.usa_lentes} onChange={e => setForm(f => ({ ...f, usa_lentes: e.target.checked }))} className="w-4 h-4 rounded" />
-                        <span className="text-sm text-white/60">Usa lentes</span>
+                        <input type="checkbox" checked={form.usa_lentes} onChange={e => setForm(f => ({ ...f, usa_lentes: e.target.checked }))} className="w-4 h-4 rounded border-slate-300" />
+                        <span className="text-sm text-slate-600">Usa lentes</span>
                     </label>
                 </div>
             </div>
 
             <div className="flex gap-3 mt-4">
-                <button onClick={onCerrar} className="px-4 py-2 bg-white/5 rounded-xl text-sm text-white/70 hover:bg-white/10">Cancelar</button>
+                <button onClick={onCerrar} className="px-4 py-2 bg-slate-100/50 rounded-xl text-sm text-slate-600 hover:bg-slate-100 transition-colors">Cancelar</button>
                 <button onClick={handleSubmit} disabled={loading || !form.empresa_id || !form.paciente_id}
                     className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl text-sm font-medium disabled:opacity-40 flex items-center justify-center gap-2">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />} Registrar Estudio Visual
@@ -252,19 +252,19 @@ export default function EstudiosVisuales() {
 
                 {/* Search */}
                 <div className="relative">
-                    <Search className="w-4 h-4 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar paciente..."
-                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm placeholder:text-white/30" />
+                        className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 transition-all" />
                 </div>
 
                 {/* List */}
                 {loading ? (
-                    <div className="py-20 text-center text-white/40"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />Cargando...</div>
+                    <div className="py-20 text-center text-slate-400"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />Cargando...</div>
                 ) : estudios.length === 0 ? (
                     <div className="py-20 text-center">
-                        <Eye className="w-16 h-16 text-white/10 mx-auto mb-4" />
-                        <h3 className="text-white/60 text-lg font-medium mb-2">Sin estudios visuales</h3>
-                        <button onClick={() => setShowForm(true)} className="px-5 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl text-sm font-medium inline-flex items-center gap-2">
+                        <Eye className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+                        <h3 className="text-slate-400 text-lg font-medium mb-2">Sin estudios visuales</h3>
+                        <button onClick={() => setShowForm(true)} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-medium inline-flex items-center gap-2">
                             <Plus className="w-4 h-4" /> Registrar
                         </button>
                     </div>
@@ -272,28 +272,28 @@ export default function EstudiosVisuales() {
                     <div className="space-y-2">
                         {estudios.map((e, i) => (
                             <motion.div key={e.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                                className="bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/[0.07] hover:border-white/20 transition-all cursor-pointer group">
+                                className="bg-white border border-slate-100 rounded-2xl p-4 hover:bg-slate-50 hover:shadow-md transition-all cursor-pointer group">
                                 <div className="flex items-center justify-between">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-3 mb-1">
-                                            <User className="w-4 h-4 text-white/40" />
-                                            <span className="text-white font-semibold">{e.paciente?.nombre} {e.paciente?.apellido_paterno}</span>
+                                            <User className="w-4 h-4 text-slate-400" />
+                                            <span className="text-slate-900 font-semibold">{e.paciente?.nombre} {e.paciente?.apellido_paterno}</span>
                                             <VisualBadge clasificacion={e.clasificacion} />
                                             {e.apto_para_puesto ? (
-                                                <span className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">Apto</span>
+                                                <span className="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-bold border border-emerald-100">Apto</span>
                                             ) : (
-                                                <span className="text-xs bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full">No Apto</span>
+                                                <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full font-bold border border-red-100">No Apto</span>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-4 text-sm text-white/50">
+                                        <div className="flex items-center gap-4 text-sm text-slate-500">
                                             <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(e.fecha_estudio).toLocaleDateString('es-MX')}</span>
-                                            <span>OD: <b className="text-white">{e.od_sin_correccion}</b></span>
-                                            <span>OI: <b className="text-white">{e.oi_sin_correccion}</b></span>
-                                            {e.usa_lentes && <span className="flex items-center gap-1"><Glasses className="w-3.5 h-3.5 text-purple-400" /> Usa lentes</span>}
-                                            {e.referencia_oftalmologo && <span className="text-amber-400">⚠ Referido</span>}
+                                            <span>OD: <b className="text-slate-900">{e.od_sin_correccion}</b></span>
+                                            <span>OI: <b className="text-slate-900">{e.oi_sin_correccion}</b></span>
+                                            {e.usa_lentes && <span className="flex items-center gap-1 font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100"><Glasses className="w-3.5 h-3.5" /> Usa lentes</span>}
+                                            {e.referencia_oftalmologo && <span className="text-amber-600 font-bold">⚠ Referido</span>}
                                         </div>
                                     </div>
-                                    <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/50 transition-all" />
+                                    <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition-all" />
                                 </div>
                             </motion.div>
                         ))}

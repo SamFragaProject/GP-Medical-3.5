@@ -6,8 +6,8 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, Search, FileText, DollarSign, Send, CheckCircle2,
-    XCircle, Clock, ArrowRight, Copy, Loader2, ChevronRight,
-    Building2, Calendar, Receipt, TrendingUp, AlertTriangle, Eye, Trash2
+    Clock, Loader2, ChevronRight,
+    Building2, Calendar, Receipt, Trash2, Eye, AlertTriangle
 } from 'lucide-react';
 import { cotizacionService } from '@/services/cotizacionService';
 import {
@@ -20,6 +20,11 @@ import {
     type ConceptoCotizacion,
     type FiltrosCotizacion,
 } from '@/types/cotizacion';
+
+import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader';
+import { PremiumMetricCard } from '@/components/ui/PremiumMetricCard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 // =====================================================
 // BADGES & HELPERS
@@ -87,67 +92,69 @@ function WizardCotizacion({ onCrear, onCerrar }: { onCrear: (dto: CrearCotizacio
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="bg-white border border-slate-200 rounded-3xl p-8 shadow-xl shadow-blue-500/5 mb-8"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-2xl shadow-blue-500/10 mb-8"
         >
-            <h3 className="text-xl font-bold text-slate-900 mb-6">📝 Nueva Cotización</h3>
+            <h3 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                    <FileText size={20} />
+                </div>
+                Nueva Cotización
+            </h3>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label className="block text-sm text-slate-700 font-medium mb-1">ID Empresa *</label>
-                    <input
-                        type="text"
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">ID Empresa *</label>
+                    <Input
                         value={form.empresa_id || ''}
                         onChange={e => setForm(f => ({ ...f, empresa_id: e.target.value }))}
                         placeholder="UUID de la empresa"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        className="h-12 bg-slate-50 border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 font-medium"
                     />
                 </div>
-                <div>
-                    <label className="block text-sm text-slate-700 font-medium mb-1">Cliente *</label>
-                    <input
-                        type="text"
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Cliente *</label>
+                    <Input
                         value={form.cliente_nombre || ''}
                         onChange={e => setForm(f => ({ ...f, cliente_nombre: e.target.value }))}
                         placeholder="Nombre del cliente"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        className="h-12 bg-slate-50 border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 font-medium"
                     />
                 </div>
-                <div>
-                    <label className="block text-sm text-white/60 mb-1">RFC</label>
-                    <input
-                        type="text"
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">RFC</label>
+                    <Input
                         value={form.cliente_rfc || ''}
                         onChange={e => setForm(f => ({ ...f, cliente_rfc: e.target.value.toUpperCase() }))}
                         placeholder="RFC del cliente"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm uppercase placeholder:text-white/30 focus:border-blue-500/50 transition-all"
+                        className="h-12 bg-slate-50 border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 font-medium uppercase"
                     />
                 </div>
-                <div>
-                    <label className="block text-sm text-slate-700 font-medium mb-1">Vigencia hasta</label>
-                    <input
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Vigencia hasta</label>
+                    <Input
                         type="date"
                         value={form.fecha_vigencia || ''}
                         onChange={e => setForm(f => ({ ...f, fecha_vigencia: e.target.value }))}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        className="h-12 bg-slate-50 border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 font-medium"
                     />
                 </div>
             </div>
 
             {/* Catálogo de servicios */}
-            <div className="mb-4">
-                <label className="block text-sm text-white/60 mb-2">Agregar servicio del catálogo</label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-[200px] overflow-y-auto pr-2">
+            <div className="mb-8">
+                <label className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4 block ml-1">Seleccionar Servicios</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
                     {CATALOGO_SERVICIOS.map(srv => (
                         <button
                             key={srv.codigo}
                             onClick={() => agregarServicio(srv.codigo)}
-                            className="text-left p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs text-white/70 hover:text-white transition-all"
+                            className="text-left p-4 bg-slate-50 hover:bg-white border border-slate-200 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/10 rounded-2xl transition-all group"
                         >
-                            <div className="font-medium truncate">{srv.nombre}</div>
-                            <div className="text-white/40">{formatMoney(srv.precio_sugerido)} / {srv.unidad}</div>
+                            <div className="font-bold text-slate-900 truncate mb-1 text-sm group-hover:text-blue-600">{srv.nombre}</div>
+                            <div className="text-slate-500 font-bold text-xs">{formatMoney(srv.precio_sugerido)}</div>
                         </button>
                     ))}
                 </div>
@@ -155,56 +162,65 @@ function WizardCotizacion({ onCrear, onCerrar }: { onCrear: (dto: CrearCotizacio
 
             {/* Conceptos agregados */}
             {conceptos.length > 0 && (
-                <div className="mb-4 space-y-2">
-                    <div className="text-sm text-white/60 font-medium">Conceptos ({conceptos.length})</div>
-                    {conceptos.map((c, i) => (
-                        <div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
-                            <div className="flex-1 text-sm text-white/80 truncate">{c.descripcion}</div>
-                            <input
-                                type="number"
-                                value={c.cantidad}
-                                onChange={e => updateConcepto(i, 'cantidad', Number(e.target.value))}
-                                min={1}
-                                className="w-16 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-white text-sm text-center"
-                            />
-                            <input
-                                type="number"
-                                value={c.precio_unitario}
-                                onChange={e => updateConcepto(i, 'precio_unitario', Number(e.target.value))}
-                                className="w-24 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-white text-sm text-right"
-                            />
-                            <div className="w-24 text-right text-sm text-white font-medium">
-                                {formatMoney(c.cantidad * c.precio_unitario * (1 - (c.descuento_porcentaje || 0) / 100))}
+                <div className="mb-8 space-y-3">
+                    <div className="text-sm font-black text-slate-900 uppercase tracking-widest ml-1">Resumen de Conceptos</div>
+                    <div className="space-y-2">
+                        {conceptos.map((c, i) => (
+                            <div key={i} className="flex items-center gap-4 p-4 bg-blue-50/50 border border-blue-100 rounded-[1.5rem] hover:bg-blue-50 transition-colors">
+                                <div className="flex-1 text-sm font-black text-slate-900 truncate">{c.descripcion}</div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-slate-400">CANT:</span>
+                                    <input
+                                        type="number"
+                                        value={c.cantidad}
+                                        onChange={e => updateConcepto(i, 'cantidad', Number(e.target.value))}
+                                        min={1}
+                                        className="w-16 h-10 bg-white border border-blue-200 rounded-xl text-center font-bold text-blue-600 focus:ring-4 focus:ring-blue-100"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-slate-400">PRECIO:</span>
+                                    <input
+                                        type="number"
+                                        value={c.precio_unitario}
+                                        onChange={e => updateConcepto(i, 'precio_unitario', Number(e.target.value))}
+                                        className="w-32 h-10 bg-white border border-blue-200 rounded-xl text-right px-3 font-bold text-slate-900"
+                                    />
+                                </div>
+                                <div className="w-32 text-right text-base font-black text-blue-700">
+                                    {formatMoney(c.cantidad * c.precio_unitario * (1 - (c.descuento_porcentaje || 0) / 100))}
+                                </div>
+                                <button onClick={() => eliminarConcepto(i)} className="p-2 hover:bg-red-500 hover:text-white rounded-xl text-slate-400 transition-all">
+                                    <Trash2 size={18} />
+                                </button>
                             </div>
-                            <button onClick={() => eliminarConcepto(i)} className="p-1 hover:bg-red-500/20 rounded-lg text-white/30 hover:text-red-400 transition-all">
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                        </div>
-                    ))}
-                    <div className="flex justify-end space-y-1 text-sm">
-                        <div className="w-64 space-y-1">
-                            <div className="flex justify-between text-white/50"><span>Subtotal</span><span>{formatMoney(subtotal)}</span></div>
-                            <div className="flex justify-between text-white/50"><span>IVA 16%</span><span>{formatMoney(iva)}</span></div>
-                            <div className="flex justify-between text-white font-bold text-base border-t border-white/10 pt-1">
-                                <span>Total</span><span>{formatMoney(total)}</span>
+                        ))}
+                    </div>
+
+                    <div className="flex justify-end pt-6 border-t border-slate-100">
+                        <div className="w-80 space-y-2 bg-slate-50 p-6 rounded-[2rem] border border-slate-200 shadow-inner">
+                            <div className="flex justify-between text-slate-500 font-bold"><span>Subtotal</span><span>{formatMoney(subtotal)}</span></div>
+                            <div className="flex justify-between text-slate-500 font-bold"><span>IVA (16%)</span><span>{formatMoney(iva)}</span></div>
+                            <div className="flex justify-between text-slate-900 font-black text-xl border-t border-slate-200 pt-2 mt-2">
+                                <span>Total</span><span className="text-blue-600">{formatMoney(total)}</span>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className="flex gap-3 mt-4">
-                <button onClick={onCerrar} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-semibold transition-all">
+            <div className="flex gap-4 mt-8">
+                <Button variant="ghost" onClick={onCerrar} className="h-14 px-8 rounded-2xl font-bold text-slate-500 hover:bg-slate-100">
                     Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={handleCrear}
                     disabled={loading || !form.empresa_id || !form.cliente_nombre || conceptos.length === 0}
-                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+                    className="flex-1 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-[1.5rem] font-bold shadow-xl shadow-blue-500/30 hover:shadow-blue-500/40 transition-all disabled:opacity-40"
                 >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                    Crear Cotización
-                </button>
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <CheckCircle2 className="w-5 h-5 mr-2" />}
+                    Confirmar y Crear Cotización
+                </Button>
             </div>
         </motion.div>
     );
@@ -254,126 +270,153 @@ export default function Cotizaciones() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Cotizaciones</h1>
-                    <p className="text-slate-500 mt-1">Propuestas comerciales para empresas</p>
-                </div>
-                <button
-                    onClick={() => setShowWizard(true)}
-                    className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-medium shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
-                >
-                    <Plus className="w-4 h-4" /> Nueva Cotización
-                </button>
-            </div>
+        <div className="space-y-8 pb-12">
+            <PremiumPageHeader
+                title="Panel de Cotizaciones"
+                subtitle="Gestión avanzada de propuestas comerciales para empresas y convenios"
+                icon={FileText}
+                badge="GESTIÓN COMERCIAL"
+                actions={
+                    <Button
+                        variant="premium"
+                        onClick={() => setShowWizard(true)}
+                        className="h-12 px-8 bg-white text-slate-900 hover:bg-slate-100 font-black shadow-xl shadow-blue-500/20"
+                    >
+                        <Plus className="w-5 h-5 mr-2" />
+                        Nueva Cotización
+                    </Button>
+                }
+            />
 
-            {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2"><FileText className="w-4 h-4 text-blue-500" /><span className="text-sm text-slate-500">Total</span></div>
-                    <div className="text-2xl font-bold text-slate-900">{stats.total}</div>
-                </div>
-                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2"><Send className="w-4 h-4 text-amber-500" /><span className="text-sm text-slate-500">Enviadas</span></div>
-                    <div className="text-2xl font-bold text-slate-900">{stats.enviadas}</div>
-                </div>
-                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-500" /><span className="text-sm text-slate-500">Aceptadas</span></div>
-                    <div className="text-2xl font-bold text-slate-900">{stats.aceptadas}</div>
-                </div>
-                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2"><DollarSign className="w-4 h-4 text-green-600" /><span className="text-sm text-slate-500">Monto Total</span></div>
-                    <div className="text-2xl font-bold text-slate-900">{formatMoney(stats.monto)}</div>
-                </div>
-            </div>
-
-            {/* Wizard */}
-            <AnimatePresence>
-                {showWizard && <WizardCotizacion onCrear={handleCrear} onCerrar={() => setShowWizard(false)} />}
-            </AnimatePresence>
-
-            {/* Filters */}
-            <div className="flex items-center gap-3 flex-wrap">
-                <div className="relative flex-1 min-w-[200px]">
-                    <Search className="w-4 h-4 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        placeholder="Buscar por folio o cliente..."
-                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm placeholder:text-white/30 focus:border-blue-500/50 transition-all"
+            <div className="container mx-auto px-6 -mt-10 relative z-40">
+                {/* KPIs Premium */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <PremiumMetricCard
+                        title="Total Cotizaciones"
+                        value={stats.total}
+                        subtitle="Historial de propuestas"
+                        icon={FileText}
+                        gradient="blue"
+                    />
+                    <PremiumMetricCard
+                        title="Enviadas"
+                        value={stats.enviadas}
+                        subtitle="Pendientes de firma"
+                        icon={Send}
+                        gradient="purple"
+                    />
+                    <PremiumMetricCard
+                        title="Cerradas / Aceptadas"
+                        value={stats.aceptadas}
+                        subtitle="Conversión exitosa"
+                        icon={CheckCircle2}
+                        gradient="emerald"
+                        trend={{ value: 12, isPositive: true }}
+                    />
+                    <PremiumMetricCard
+                        title="Volumen Facturable"
+                        value={formatMoney(stats.monto)}
+                        subtitle="Proyección ingresos"
+                        icon={DollarSign}
+                        gradient="amber"
                     />
                 </div>
-                <select
-                    value={filtroEstado}
-                    onChange={e => setFiltroEstado(e.target.value as EstadoCotizacion | '')}
-                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm"
-                >
-                    <option value="">Todos</option>
-                    {Object.entries(ESTADOS_COTIZACION_LABELS).map(([k, v]) => (
-                        <option key={k} value={k}>{v}</option>
-                    ))}
-                </select>
+
+                <AnimatePresence>
+                    {showWizard && <WizardCotizacion onCrear={handleCrear} onCerrar={() => setShowWizard(false)} />}
+                </AnimatePresence>
+
+                {/* Filtros y Buscador */}
+                <div className="bg-white/40 backdrop-blur-xl border border-white/60 p-3 rounded-[2rem] shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center">
+                    <div className="relative flex-1 group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                        <Input
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            placeholder="Buscar por folio, cliente o RFC..."
+                            className="pl-12 h-12 bg-white/50 border-white/60 rounded-2xl focus:ring-4 focus:ring-blue-100 transition-all font-bold"
+                        />
+                    </div>
+                    <select
+                        value={filtroEstado}
+                        onChange={e => setFiltroEstado(e.target.value as EstadoCotizacion | '')}
+                        className="h-12 px-6 bg-white/50 border border-white/60 rounded-2xl text-slate-700 font-bold focus:ring-4 focus:ring-blue-100 transition-all outline-none min-w-[200px]"
+                    >
+                        <option value="">Todos los estados</option>
+                        {Object.entries(ESTADOS_COTIZACION_LABELS).map(([k, v]) => (
+                            <option key={k} value={k}>{v}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Listado */}
+                {loading ? (
+                    <div className="py-32 text-center text-slate-400">
+                        <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 opacity-20" />
+                        <p className="font-black uppercase tracking-widest text-xs">Sincronizando propuestas...</p>
+                    </div>
+                ) : cotizaciones.length === 0 ? (
+                    <div className="py-32 text-center bg-white/20 backdrop-blur-md rounded-[3rem] border border-white/40 shadow-inner">
+                        <FileText className="w-24 h-24 text-slate-200 mx-auto mb-6" />
+                        <h3 className="text-2xl font-black text-slate-400 mb-2">Sin registros activos</h3>
+                        <p className="text-slate-400 font-medium mb-8">Inicia una nueva propuesta comercial para visualizarla aquí.</p>
+                        <Button onClick={() => setShowWizard(true)} className="rounded-2xl h-12 px-8 bg-blue-600 font-bold">
+                            <Plus size={20} className="mr-2" /> Crear Primera Cotización
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-3">
+                        {cotizaciones.map((cot, i) => (
+                            <motion.div
+                                key={cot.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.03 }}
+                                className="bg-white/80 backdrop-blur-md border border-white/60 rounded-[1.5rem] p-5 hover:bg-white hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-pointer group flex items-center justify-between"
+                            >
+                                <div className="flex items-center gap-6">
+                                    <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all border border-slate-100">
+                                        <FileText size={24} />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <span className="text-blue-600 font-black font-mono text-sm">{cot.folio}</span>
+                                            <h3 className="text-slate-900 font-bold text-lg">{cot.cliente_nombre}</h3>
+                                            <EstadoBadge estado={cot.estado} />
+                                        </div>
+                                        <div className="flex items-center gap-4 text-sm text-slate-500 font-bold">
+                                            <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 opacity-50" /> {new Date(cot.fecha_emision).toLocaleDateString('es-MX')}</span>
+                                            <span className="flex items-center gap-1.5"><Receipt className="w-4 h-4 opacity-50" /> {cot.conceptos?.length || 0} CONCEPTOS</span>
+                                            {cot.empresa?.nombre && (
+                                                <span className="flex items-center gap-1.5"><Building2 className="w-4 h-4 opacity-50" /> {cot.empresa.nombre}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-8">
+                                    <div className="text-right">
+                                        <div className="text-2xl font-black text-slate-900">{formatMoney(cot.total)}</div>
+                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{cot.moneda}</div>
+                                    </div>
+                                    <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                        <ChevronRight size={20} />
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
             </div>
 
-            {/* List */}
-            {loading ? (
-                <div className="py-20 text-center text-white/40">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                    Cargando cotizaciones...
-                </div>
-            ) : cotizaciones.length === 0 ? (
-                <div className="py-20 text-center">
-                    <FileText className="w-16 h-16 text-white/10 mx-auto mb-4" />
-                    <h3 className="text-white/60 text-lg font-medium mb-2">Sin cotizaciones</h3>
-                    <p className="text-white/30 text-sm mb-4">Crea tu primera cotización para empezar.</p>
-                    <button onClick={() => setShowWizard(true)} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium inline-flex items-center gap-2">
-                        <Plus className="w-4 h-4" /> Crear cotización
-                    </button>
-                </div>
-            ) : (
-                <div className="space-y-3">
-                    {cotizaciones.map((cot, i) => (
-                        <motion.div
-                            key={cot.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.03 }}
-                            className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/[0.07] hover:border-white/20 transition-all cursor-pointer group"
-                        >
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-1">
-                                        <span className="text-white font-mono text-sm bg-white/10 px-2 py-0.5 rounded">{cot.folio}</span>
-                                        <h3 className="text-white font-semibold">{cot.cliente_nombre}</h3>
-                                        <EstadoBadge estado={cot.estado} />
-                                    </div>
-                                    <div className="flex items-center gap-4 text-sm text-white/50">
-                                        <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(cot.fecha_emision).toLocaleDateString('es-MX')}</span>
-                                        <span className="flex items-center gap-1"><Receipt className="w-3.5 h-3.5" /> {cot.conceptos?.length || 0} conceptos</span>
-                                        {cot.empresa?.nombre && (
-                                            <span className="flex items-center gap-1"><Building2 className="w-3.5 h-3.5" /> {cot.empresa.nombre}</span>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <div className="text-right">
-                                        <div className="text-xl font-bold text-white">{formatMoney(cot.total)}</div>
-                                        <div className="text-xs text-white/40">{cot.moneda}</div>
-                                    </div>
-                                    <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/50 transition-all" />
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            )}
-
             {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" /> {error}
+                <div className="mx-auto max-w-2xl p-6 bg-red-50 border border-red-100 rounded-[2rem] text-red-600 text-sm font-bold flex items-center gap-4 shadow-xl shadow-red-500/5">
+                    <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600">
+                        <AlertTriangle size={24} />
+                    </div>
+                    <div>
+                        <p className="uppercase tracking-widest text-[10px] mb-1">Error de Sincronización</p>
+                        <p>{error}</p>
+                    </div>
                 </div>
             )}
         </div>

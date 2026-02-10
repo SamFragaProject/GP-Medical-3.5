@@ -94,7 +94,7 @@
   }
 
   body {
-    background: #ffffff !important;
+    background: #f8fafc !important;
     font-family: 'Instrument Sans', sans-serif;
     position: relative;
     width: 100%;
@@ -111,7 +111,7 @@
     background:
       radial-gradient(ellipse at 10% 10%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
       radial-gradient(ellipse at 90% 90%, rgba(14, 165, 233, 0.04) 0%, transparent 50%),
-      #ffffff;
+      #f8fafc;
     pointer-events: none;
   }
 

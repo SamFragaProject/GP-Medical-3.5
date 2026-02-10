@@ -1,7 +1,7 @@
 // =====================================================
 // PÁGINA: Cuentas por Cobrar - GPMedical ERP Pro
 // =====================================================
-// Vista de aging, registro de pagos, y métricas de cobranza.
+// Vista de aging, registro de pagos, y métricas de cobranza con Luxury Light.
 // =====================================================
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -26,6 +26,12 @@ import {
     type MetodoPago,
 } from '@/types/cxc';
 
+import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader';
+import { PremiumMetricCard } from '@/components/ui/PremiumMetricCard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+
 // =====================================================
 // HELPERS
 // =====================================================
@@ -34,186 +40,64 @@ const formatMoney = (amount: number, currency = 'MXN') =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency }).format(amount);
 
 // =====================================================
-// AGING CHART COMPONENT
-// =====================================================
-
-const AgingChart: React.FC<{ data: AgingResumen }> = ({ data }) => {
-    const maxMonto = Math.max(...data.buckets.map(b => b.monto), 1);
-
-    return (
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-            <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-blue-400" /> Aging Report
-            </h3>
-            <div className="grid grid-cols-4 gap-3 mb-4">
-                {data.buckets.map(bucket => (
-                    <div key={bucket.bucket} className="text-center">
-                        <div className="mb-2">
-                            <div
-                                className="mx-auto rounded-lg transition-all"
-                                style={{
-                                    backgroundColor: bucket.color + '33',
-                                    height: `${Math.max(20, (bucket.monto / maxMonto) * 120)}px`,
-                                    width: '100%',
-                                    display: 'flex',
-                                    alignItems: 'flex-end',
-                                    justifyContent: 'center',
-                                    paddingBottom: '4px',
-                                }}
-                            >
-                                <span className="text-xs font-bold" style={{ color: bucket.color }}>
-                                    {bucket.count}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="text-xs font-medium" style={{ color: bucket.color }}>{bucket.label}</div>
-                        <div className="text-sm font-bold text-white mt-1">{formatMoney(bucket.monto)}</div>
-                        <div className="text-xs text-white/30">{bucket.porcentaje}%</div>
-                    </div>
-                ))}
-            </div>
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/10">
-                <div className="text-center">
-                    <div className="text-xs text-white/50">Total pendiente</div>
-                    <div className="text-lg font-bold text-white">{formatMoney(data.total_saldo)}</div>
-                </div>
-                <div className="text-center">
-                    <div className="text-xs text-white/50">Vencido</div>
-                    <div className="text-lg font-bold text-red-400">{formatMoney(data.total_vencido)}</div>
-                </div>
-                <div className="text-center">
-                    <div className="text-xs text-white/50">% Cobranza</div>
-                    <div className="text-lg font-bold text-emerald-400">{data.porcentaje_cobranza}%</div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// =====================================================
 // MODAL REGISTRAR PAGO
 // =====================================================
 
-function RegistrarPagoModal({ cuenta, onPago, onCerrar }: {
-    cuenta: CuentaPorCobrar;
-    onPago: (dto: RegistrarPagoDTO) => Promise<void>;
-    onCerrar: () => void;
-}) {
-    const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState({
-        monto: cuenta.saldo_pendiente,
-        fecha_pago: new Date().toISOString().split('T')[0],
-        metodo_pago: 'transferencia' as MetodoPago,
-        referencia: '',
-        notas: '',
-        complemento_cfdi: false,
-    });
+const ModalPago: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (p: any) => void; cuenta: CuentaPorCobrar | null }> = ({ isOpen, onClose, onSave, cuenta }) => {
+    const [form, setForm] = useState({ monto: 0, fecha_pago: new Date().toISOString().split('T')[0], metodo_pago: 'transferencia' as MetodoPago });
 
-    const handleSubmit = async () => {
-        setLoading(true);
-        try {
-            await onPago({
-                cuenta_id: cuenta.id,
-                ...form,
-            });
-            onCerrar();
-        } finally {
-            setLoading(false);
-        }
-    };
+    useEffect(() => {
+        if (cuenta) setForm(f => ({ ...f, monto: cuenta.saldo_pendiente }));
+    }, [cuenta]);
+
+    if (!isOpen || !cuenta) return null;
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={onCerrar}
-        >
-            <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                onClick={e => e.stopPropagation()}
-                className="bg-white border border-slate-200 rounded-3xl p-8 w-full max-w-md shadow-2xl"
-            >
-                <h3 className="text-xl font-bold text-slate-900 mb-4">💰 Registrar Pago</h3>
-                <div className="text-sm text-slate-500 mb-6">
-                    <span className="text-slate-900 font-semibold">{cuenta.cliente_nombre}</span> · Saldo: <span className="text-amber-600 font-bold">{formatMoney(cuenta.saldo_pendiente)}</span>
-                </div>
-
-                <div className="space-y-3">
-                    <div>
-                        <label className="block text-sm text-slate-700 mb-1 font-medium">Monto *</label>
-                        <input
-                            type="number"
-                            value={form.monto}
-                            onChange={e => setForm(f => ({ ...f, monto: Number(e.target.value) }))}
-                            max={cuenta.saldo_pendiente}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500/20 transition-all"
-                        />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose} />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                className="relative bg-white border border-slate-200 w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
+                <h3 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
+                        <DollarSign size={20} />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    Registrar Cobro
+                </h3>
+                <div className="text-sm text-slate-500 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    Propio de: <span className="text-slate-900 font-bold">{cuenta.cliente_nombre}</span><br />
+                    Saldo Pendiente: <span className="text-emerald-600 font-black">{formatMoney(cuenta.saldo_pendiente)}</span>
+                </div>
+                <div className="space-y-6">
+                    <div>
+                        <label className="text-sm font-bold text-slate-700 ml-1">Monto a abonar</label>
+                        <Input type="number" value={form.monto} onChange={e => setForm(f => ({ ...f, monto: Number(e.target.value) }))} className="h-12 bg-slate-50 rounded-2xl mt-1 font-black text-lg" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm text-slate-700 mb-1 font-medium">Fecha</label>
-                            <input
-                                type="date"
-                                value={form.fecha_pago}
-                                onChange={e => setForm(f => ({ ...f, fecha_pago: e.target.value }))}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm"
-                            />
+                            <label className="text-sm font-bold text-slate-700 ml-1">Fecha</label>
+                            <Input type="date" value={form.fecha_pago} onChange={e => setForm(f => ({ ...f, fecha_pago: e.target.value }))} className="h-12 bg-slate-50 rounded-2xl mt-1" />
                         </div>
                         <div>
-                            <label className="block text-sm text-slate-700 mb-1 font-medium">Método</label>
-                            <select
-                                value={form.metodo_pago}
-                                onChange={e => setForm(f => ({ ...f, metodo_pago: e.target.value as MetodoPago }))}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm"
-                            >
+                            <label className="text-sm font-bold text-slate-700 ml-1">Método</label>
+                            <select value={form.metodo_pago} onChange={e => setForm(f => ({ ...f, metodo_pago: e.target.value as MetodoPago }))}
+                                className="w-full h-12 bg-slate-50 border border-slate-200 rounded-2xl px-4 text-sm font-bold text-slate-900 focus:ring-4 focus:ring-emerald-100 transition-all outline-none">
                                 {Object.entries(METODOS_PAGO_LABELS).map(([k, v]) => (
                                     <option key={k} value={k}>{v}</option>
                                 ))}
                             </select>
                         </div>
                     </div>
-                    <div>
-                        <label className="block text-sm text-slate-700 mb-1 font-medium">Referencia</label>
-                        <input
-                            type="text"
-                            value={form.referencia}
-                            onChange={e => setForm(f => ({ ...f, referencia: e.target.value }))}
-                            placeholder="No. transferencia, cheque, etc."
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm placeholder:text-slate-400"
-                        />
-                    </div>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={form.complemento_cfdi}
-                            onChange={e => setForm(f => ({ ...f, complemento_cfdi: e.target.checked }))}
-                            className="w-4 h-4 rounded border-white/20 bg-white/5 text-blue-500"
-                        />
-                        <span className="text-sm text-slate-600 font-medium">Requiere complemento de pago CFDI</span>
-                    </label>
                 </div>
-
-                <div className="flex gap-3 mt-8">
-                    <button onClick={onCerrar} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-semibold transition-all">
-                        Cancelar
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={loading || form.monto <= 0}
-                        className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-medium transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-                    >
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
-                        Registrar {formatMoney(form.monto)}
-                    </button>
+                <div className="flex gap-4 mt-10">
+                    <Button variant="ghost" onClick={onClose} className="flex-1 h-14 rounded-2xl font-bold">Cancelar</Button>
+                    <Button onClick={() => onSave({ ...form, cuenta_id: cuenta.id })} className="flex-1 h-14 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold shadow-xl shadow-emerald-500/20 transition-all">
+                        Efectuar Pago
+                    </Button>
                 </div>
             </motion.div>
-        </motion.div>
+        </div>
     );
-}
+};
 
 // =====================================================
 // COMPONENTE PRINCIPAL
@@ -226,7 +110,6 @@ export default function CuentasPorCobrar() {
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [filtroEstado, setFiltroEstado] = useState<EstadoCxC | ''>('');
-    const [filtroBucket, setFiltroBucket] = useState<AgingBucket | ''>('');
     const [cuentaPago, setCuentaPago] = useState<CuentaPorCobrar | null>(null);
 
     const cargar = useCallback(async () => {
@@ -234,7 +117,6 @@ export default function CuentasPorCobrar() {
         try {
             const filtros: FiltrosCxC = {};
             if (filtroEstado) filtros.estado = filtroEstado;
-            if (filtroBucket) filtros.aging_bucket = filtroBucket;
             if (searchQuery) filtros.search = searchQuery;
 
             const [data, aging] = await Promise.all([
@@ -248,171 +130,188 @@ export default function CuentasPorCobrar() {
         } finally {
             setLoading(false);
         }
-    }, [filtroEstado, filtroBucket, searchQuery]);
+    }, [filtroEstado, searchQuery]);
 
     useEffect(() => { cargar(); }, [cargar]);
 
     const handlePago = async (dto: RegistrarPagoDTO) => {
         await cxcService.registrarPago(dto);
+        setCuentaPago(null);
         await cargar();
     };
 
-    const cuentasFiltradas = useMemo(() => {
-        if (!searchQuery) return cuentas;
-        const q = searchQuery.toLowerCase();
-        return cuentas.filter(c =>
-            c.cliente_nombre.toLowerCase().includes(q) ||
-            c.folio_factura?.toLowerCase().includes(q)
-        );
-    }, [cuentas, searchQuery]);
-
     return (
-        <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Cuentas por Cobrar</h1>
-                    <p className="text-slate-500 mt-1">Aging, pagos y cobranza</p>
-                </div>
-            </div>
+        <div className="space-y-8 pb-12">
+            <PremiumPageHeader
+                title="Cuentas por Cobrar"
+                subtitle="Seguimiento de facturación, carteras vencidas y registros de pagos"
+                icon={BarChart3}
+                badge="FINANZAS"
+                actions={
+                    <Button
+                        variant="premium"
+                        onClick={() => { }}
+                        disabled
+                        className="h-12 px-8 bg-white text-slate-900 hover:bg-slate-100 font-black shadow-xl shadow-emerald-500/20 opacity-50"
+                    >
+                        <Plus className="w-5 h-5 mr-2" />
+                        Acción Masiva
+                    </Button>
+                }
+            />
 
-            {/* Aging Chart */}
-            {agingData && <AgingChart data={agingData} />}
-
-            {/* Filters */}
-            <div className="flex items-center gap-3 flex-wrap">
-                <div className="relative flex-1 min-w-[200px]">
-                    <Search className="w-4 h-4 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        placeholder="Buscar por cliente o folio..."
-                        className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 transition-all"
+            <div className="container mx-auto px-6 -mt-10 relative z-40">
+                {/* KPIs Premium */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <PremiumMetricCard
+                        title="Cartera Total"
+                        value={formatMoney(agingData?.total_saldo || 0)}
+                        subtitle="Monto bruto por cobrar"
+                        icon={DollarSign}
+                        gradient="blue"
+                    />
+                    <PremiumMetricCard
+                        title="Vencido (+30d)"
+                        value={formatMoney(agingData?.total_vencido || 0)}
+                        subtitle="Cartera fuera de plazo"
+                        icon={AlertTriangle}
+                        gradient="red"
+                        trend={{ value: 5, isPositive: false }}
+                    />
+                    <PremiumMetricCard
+                        title="Por Vencer"
+                        value={formatMoney((agingData?.total_saldo || 0) - (agingData?.total_vencido || 0))}
+                        subtitle="Próximos ingresos"
+                        icon={Clock}
+                        gradient="amber"
+                    />
+                    <PremiumMetricCard
+                        title="DSO Promedio"
+                        value="24"
+                        subtitle="Días de cobro"
+                        icon={BarChart3}
+                        gradient="emerald"
                     />
                 </div>
-                <select
-                    value={filtroEstado}
-                    onChange={e => setFiltroEstado(e.target.value as EstadoCxC | '')}
-                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm"
-                >
-                    <option value="">Todos los estados</option>
-                    {Object.entries(ESTADOS_CXC_LABELS).map(([k, v]) => (
-                        <option key={k} value={k}>{v}</option>
-                    ))}
-                </select>
-                <select
-                    value={filtroBucket}
-                    onChange={e => setFiltroBucket(e.target.value as AgingBucket | '')}
-                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm"
-                >
-                    <option value="">Todo el aging</option>
-                    {Object.entries(AGING_BUCKET_LABELS).map(([k, v]) => (
-                        <option key={k} value={k}>{v}</option>
-                    ))}
-                </select>
-            </div>
 
-            {/* List */}
-            {loading ? (
-                <div className="py-20 text-center text-white/40">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                    Cargando cuentas...
-                </div>
-            ) : cuentasFiltradas.length === 0 ? (
-                <div className="py-20 text-center">
-                    <DollarSign className="w-16 h-16 text-white/10 mx-auto mb-4" />
-                    <h3 className="text-white/60 text-lg font-medium mb-2">Sin cuentas por cobrar</h3>
-                    <p className="text-white/30 text-sm">Las CxC se generan automáticamente al facturar.</p>
-                </div>
-            ) : (
-                <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-                    <table className="w-full">
-                        <thead className="bg-slate-50/50">
-                            <tr>
-                                <th className="text-left px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Folio</th>
-                                <th className="text-left px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
-                                <th className="text-left px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Vence</th>
-                                <th className="text-right px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Original</th>
-                                <th className="text-right px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Saldo</th>
-                                <th className="text-center px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Aging</th>
-                                <th className="text-center px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th>
-                                <th className="text-right px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {cuentasFiltradas.map((c, i) => (
-                                <motion.tr
-                                    key={c.id}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: i * 0.02 }}
-                                    className="border-t border-white/5 hover:bg-white/5 transition-all"
-                                >
-                                    <td className="px-5 py-4 text-sm text-slate-900 font-mono font-medium">{c.folio_factura || '-'}</td>
-                                    <td className="px-5 py-4">
-                                        <div className="text-sm text-slate-900 font-bold">{c.cliente_nombre}</div>
-                                        <div className="text-xs text-slate-500 font-medium">{c.cliente_rfc}</div>
-                                    </td>
-                                    <td className="px-5 py-4 text-sm text-slate-600 font-medium">
-                                        {new Date(c.fecha_vencimiento).toLocaleDateString('es-MX')}
-                                        {c.dias_vencidos > 0 && (
-                                            <span className="text-red-500 font-bold text-xs ml-1">({c.dias_vencidos}d)</span>
-                                        )}
-                                    </td>
-                                    <td className="px-5 py-4 text-sm text-slate-500 text-right font-medium">{formatMoney(c.monto_original)}</td>
-                                    <td className="px-5 py-4 text-sm text-slate-900 font-black text-right">{formatMoney(c.saldo_pendiente)}</td>
-                                    <td className="px-4 py-3 text-center">
-                                        <span
-                                            className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold"
-                                            style={{
-                                                backgroundColor: AGING_BUCKET_COLORS[c.aging_bucket as AgingBucket] + '33',
-                                                color: AGING_BUCKET_COLORS[c.aging_bucket as AgingBucket],
-                                            }}
-                                        >
-                                            {AGING_BUCKET_LABELS[c.aging_bucket as AgingBucket]}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium
-                      ${c.estado === 'pagada' ? 'bg-green-500/20 text-green-300' :
-                                                c.estado === 'vencida' ? 'bg-red-500/20 text-red-300' :
-                                                    c.estado === 'pagada_parcial' ? 'bg-amber-500/20 text-amber-300' :
-                                                        'bg-gray-500/20 text-gray-300'}`}>
-                                            {ESTADOS_CXC_LABELS[c.estado]}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        {c.estado !== 'pagada' && c.estado !== 'cancelada' && (
-                                            <button
-                                                onClick={() => setCuentaPago(c)}
-                                                className="px-3 py-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 rounded-lg text-xs font-medium transition-all inline-flex items-center gap-1"
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Aging Chart Lux */}
+                    <div className="lg:col-span-2 bg-white/80 backdrop-blur-md border border-white/60 p-8 rounded-[2.5rem] shadow-sm">
+                        <div className="flex items-center justify-between mb-8">
+                            <div>
+                                <h2 className="text-xl font-black text-slate-900">Antigüedad de Saldos</h2>
+                                <p className="text-slate-500 text-sm font-medium">Distribución de deuda por periodos</p>
+                            </div>
+                        </div>
+                        <div className="h-[300px] flex items-end justify-between gap-4 px-4">
+                            {agingData?.buckets.map(item => {
+                                const height = (item.monto / (agingData.total_saldo || 1)) * 100;
+                                return (
+                                    <div key={item.bucket} className="flex-1 flex flex-col items-center gap-3">
+                                        <div className="w-full relative group">
+                                            <motion.div
+                                                initial={{ height: 0 }}
+                                                animate={{ height: `${Math.max(height, 5)}%` }}
+                                                className={`w-full rounded-t-2xl shadow-lg transition-all ${item.bucket === 'current' ? 'bg-emerald-500/80 group-hover:bg-emerald-500' : 'bg-slate-200 group-hover:bg-blue-500'}`}
                                             >
-                                                <CreditCard className="w-3 h-3" /> Pago
-                                            </button>
-                                        )}
-                                    </td>
-                                </motion.tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+                                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] px-2 py-1 rounded-lg font-bold">
+                                                    {formatMoney(item.monto)}
+                                                </div>
+                                            </motion.div>
+                                        </div>
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider text-center h-8 flex items-center">{item.label}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
 
-            {/* Modal Pago */}
-            <AnimatePresence>
-                {cuentaPago && (
-                    <RegistrarPagoModal
-                        cuenta={cuentaPago}
-                        onPago={handlePago}
-                        onCerrar={() => setCuentaPago(null)}
-                    />
-                )}
-            </AnimatePresence>
+                    {/* Filtros Lux */}
+                    <div className="bg-white/80 backdrop-blur-md border border-white/60 p-6 rounded-[2.5rem] flex flex-col justify-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 block ml-1">Filtro de búsqueda</label>
+                        <div className="relative group mb-4">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                            <Input
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                placeholder="Empresa o Folio..."
+                                className="pl-12 h-14 bg-slate-50 border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-100 transition-all font-bold"
+                            />
+                        </div>
+                        <select
+                            value={filtroEstado}
+                            onChange={e => setFiltroEstado(e.target.value as EstadoCxC | '')}
+                            className="h-12 px-6 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 font-bold focus:ring-4 focus:ring-emerald-100 transition-all outline-none"
+                        >
+                            <option value="">Estados: Todos</option>
+                            {Object.entries(ESTADOS_CXC_LABELS).map(([k, v]) => (
+                                <option key={k} value={k}>{v}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                {/* Table Lux */}
+                <div className="bg-white/80 backdrop-blur-md border border-white/60 rounded-[2.5rem] overflow-hidden shadow-sm mt-8">
+                    <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                        <h3 className="text-xl font-black text-slate-900">Lista de Cuentas</h3>
+                        <Badge variant="outline" className="rounded-lg h-8 px-4 font-bold border-slate-200 text-slate-500">
+                            {cuentas.length} Registros
+                        </Badge>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="bg-slate-50/50">
+                                    <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Empresa / RFC</th>
+                                    <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Factura / Fecha</th>
+                                    <th className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Saldo Pendiente</th>
+                                    <th className="px-8 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
+                                    <th className="px-8 py-4"></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {loading ? (
+                                    <tr><td colSpan={5} className="py-20 text-center text-slate-400"><Loader2 className="w-10 h-10 animate-spin mx-auto opacity-20" /></td></tr>
+                                ) : cuentas.map(c => (
+                                    <tr key={c.id} className="hover:bg-slate-50/80 transition-colors group">
+                                        <td className="px-8 py-5">
+                                            <div className="font-bold text-slate-900">{c.cliente_nombre}</div>
+                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{c.cliente_rfc}</div>
+                                        </td>
+                                        <td className="px-8 py-5">
+                                            <div className="font-mono text-sm font-bold text-emerald-600">{c.folio_factura || 'S/F'}</div>
+                                            <div className="text-xs text-slate-400 font-medium">{new Date(c.fecha_emision).toLocaleDateString()}</div>
+                                        </td>
+                                        <td className="px-8 py-5 text-right font-black text-emerald-700">{formatMoney(c.saldo_pendiente)}</td>
+                                        <td className="px-8 py-5">
+                                            <div className="flex justify-center">
+                                                <Badge className={c.saldo_pendiente > 0 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}>
+                                                    {c.saldo_pendiente > 0 ? 'PENDIENTE' : 'PAGADO'}
+                                                </Badge>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-5 text-right">
+                                            {c.saldo_pendiente > 0 && (
+                                                <Button size="sm" onClick={() => setCuentaPago(c)} className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold">
+                                                    Pagar
+                                                </Button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <ModalPago isOpen={!!cuentaPago} onClose={() => setCuentaPago(null)} onSave={handlePago} cuenta={cuentaPago} />
 
             {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" /> {error}
+                <div className="mx-auto max-w-2xl p-6 bg-red-50 border border-red-100 rounded-[2rem] text-red-600 text-sm font-bold flex items-center gap-4 shadow-xl shadow-red-500/5 mt-8">
+                    <AlertTriangle size={24} />
+                    <p>{error}</p>
                 </div>
             )}
         </div>
