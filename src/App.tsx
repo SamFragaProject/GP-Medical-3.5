@@ -1,4 +1,4 @@
-// Aplicación principal del ERP Médico
+// Aplicación principal del ERP Médico - v3.5.6-stable
 import React, { Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
