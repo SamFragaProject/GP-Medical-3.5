@@ -31,28 +31,23 @@ interface NuevaFacturaProps {
     onClose: () => void
 }
 
+import { useFacturacion } from '@/hooks/useFacturacion'
+
 export function NuevaFactura({ open, onClose }: NuevaFacturaProps) {
     const { user } = useAuth()
+    const { clientes, refresh: refreshFacturas } = useFacturacion()
     const [step, setStep] = React.useState(1)
     const [loading, setLoading] = React.useState(false)
 
     // Form State
     const [selectedCliente, setSelectedCliente] = React.useState<ClienteFiscal | null>(null)
     const [busquedaCliente, setBusquedaCliente] = React.useState('')
-    const [clientes, setClientes] = React.useState<ClienteFiscal[]>([])
-
     const [conceptos, setConceptos] = React.useState<any[]>([
         { servicioId: '85121500', cantidad: 1, servicioNombre: 'Consulta Médica General', precioUnitario: 0, total: 0, descuento: 0, impuesto: 0 }
     ])
 
     const [metodoPago, setMetodoPago] = React.useState<MetodoPago>('PUE')
     const [formaPago, setFormaPago] = React.useState<FormaPago>('01')
-
-    React.useEffect(() => {
-        if (open && user?.empresa_id) {
-            billingService.getClientes(user.empresa_id).then(setClientes)
-        }
-    }, [open, user?.empresa_id])
 
     const subtotal = conceptos.reduce((acc, c) => acc + (c.cantidad * c.precioUnitario), 0)
     const iva = subtotal * 0.16 // Simplificado

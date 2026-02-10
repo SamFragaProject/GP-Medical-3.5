@@ -373,19 +373,26 @@ export const dictamenService = {
   },
 
   /**
-   * Generar PDF del dictamen
-   * TODO: Implementar generación real con librería PDF
+   * Generar PDF del dictamen utilizando pdfGeneratorService
    */
-  async generarPDF(dictamenId: string): Promise<Blob> {
+  async generarPDF(dictamenId: string): Promise<void> {
     const dictamen = await this.obtener(dictamenId);
 
-    // Por ahora, generamos un PDF mock con jsPDF o similar
-    // En implementación real, usar una librería como pdfmake o react-pdf
-    const contenido = this.generarContenidoPDF(dictamen);
+    // Generar el HTML
+    const { pdfGeneratorService } = await import('./pdfGeneratorService');
 
-    // Placeholder - retornar blob vacío por ahora
-    // El componente frontend debe usar una librería PDF apropiada
-    return new Blob([contenido], { type: 'application/json' });
+    const html = pdfGeneratorService.generateDictamen({
+      dictamen,
+      empresa: { nombre: 'GPMedical Client' }, // En una implementación real, obtener nombre de empresa
+      medico: dictamen.medico,
+      firmas: {
+        medico: dictamen.medico?.firma_digital,
+        trabajador: dictamen.paciente?.firma_digital
+      }
+    });
+
+    // Abrir ventana de impresión
+    pdfGeneratorService.printDocument(html, `Dictamen_${dictamen.folio || dictamen.id}.pdf`);
   },
 
   /**

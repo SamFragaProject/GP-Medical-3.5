@@ -225,6 +225,23 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
             })}
           </div>
         )}
+
+        {/* Intelligence Bureau Quick Access */}
+        <div className="pt-6 mt-6 border-t border-white/5">
+          <p className="px-5 text-[10px] font-black text-violet-400/60 uppercase tracking-[0.2em] mb-3">Intelligence Bureau</p>
+          <Link to="/vigilancia-epidemiologica" className="block">
+            <div className={`group flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 ${isItemActive('/vigilancia-epidemiologica')
+                ? 'bg-violet-500/10 text-violet-400 border-l-4 border-violet-500 shadow-[0_0_15px_-5px_rgba(139,92,246,0.3)]'
+                : 'text-slate-500 hover:text-violet-300 hover:bg-violet-500/5'
+              }`}>
+              <div className="relative">
+                <Brain className={`w-5 h-5 transition-colors ${isItemActive('/vigilancia-epidemiologica') ? 'text-violet-400' : 'text-slate-500 group-hover:text-violet-400'}`} />
+                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-violet-400 rounded-full animate-pulse" />
+              </div>
+              <span className={`text-sm font-semibold ${isItemActive('/vigilancia-epidemiologica') ? 'text-violet-300' : ''}`}>Centro de IA</span>
+            </div>
+          </Link>
+        </div>
       </div>
 
       {/* User Profile Footer */}

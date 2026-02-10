@@ -14,186 +14,15 @@ import toast from 'react-hot-toast'
 import { citasService, pacientesService, usuariosService } from '@/services/dataService'
 import { useAuth } from '@/contexts/AuthContext'
 
-// Datos demo/mock para desarrollo
-const PACIENTES_DEMO: Paciente[] = [
-  {
-    id: '1',
-    nombre: 'Juan Carlos',
-    apellidoPaterno: 'García',
-    apellidoMaterno: 'López',
-    email: 'juan.garcia@empresa.com',
-    telefono: '+52 555 123 4567',
-    empresa: 'Empresa ABC',
-    puesto: 'Operador de Maquinaria',
-    numEmpleado: 'EMP001',
-    fechaNacimiento: new Date('1985-03-15'),
-    genero: 'M',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01')
-  },
-  {
-    id: '2',
-    nombre: 'María Elena',
-    apellidoPaterno: 'Rodríguez',
-    apellidoMaterno: 'Sánchez',
-    email: 'maria.rodriguez@empresa.com',
-    telefono: '+52 555 234 5678',
-    empresa: 'Empresa ABC',
-    puesto: 'Administradora',
-    numEmpleado: 'EMP002',
-    fechaNacimiento: new Date('1990-07-22'),
-    genero: 'F',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01')
-  },
-  {
-    id: '3',
-    nombre: 'Pedro Antonio',
-    apellidoPaterno: 'Martínez',
-    apellidoMaterno: 'Hernández',
-    email: 'pedro.martinez@empresa.com',
-    telefono: '+52 555 345 6789',
-    empresa: 'Empresa DEF',
-    puesto: 'Soldador',
-    numEmpleado: 'EMP003',
-    fechaNacimiento: new Date('1982-11-08'),
-    genero: 'M',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01')
-  }
-]
+// Demo constants removed in favor of real services
 
-const DOCTORES_DEMO: Doctor[] = [
-  {
-    id: '1',
-    nombre: 'Dr. Roberto',
-    apellidoPaterno: 'Vargas',
-    apellidoMaterno: 'Morales',
-    email: 'dr.vargas@GPMedical.com',
-    telefono: '+52 555 111 2222',
-    especialidad: 'Medicina del Trabajo',
-    cedulaProfesional: '1234567',
-    disponible: true,
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01')
-  },
-  {
-    id: '2',
-    nombre: 'Dra. Carmen',
-    apellidoPaterno: 'López',
-    apellidoMaterno: 'Silva',
-    email: 'dra.lopez@GPMedical.com',
-    telefono: '+52 555 222 3333',
-    especialidad: 'Medicina del Trabajo',
-    cedulaProfesional: '2345678',
-    disponible: true,
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01')
-  }
-]
-
-const TIPOS_CONSULTA_DEMO: TipoConsulta[] = [
-  {
-    id: '1',
-    nombre: 'Examen Ocupacional',
-    descripcion: 'Evaluación médica completa para ingreso laboral',
-    duracionMinutos: 60,
-    color: '#00BFA6',
-    precio: 1500,
-    activo: true
-  },
-  {
-    id: '2',
-    nombre: 'Consulta de Seguimiento',
-    descripcion: 'Consulta de control post-examen',
-    duracionMinutos: 30,
-    color: '#4F46E5',
-    precio: 800,
-    activo: true
-  },
-  {
-    id: '3',
-    nombre: 'Certificación Médica',
-    descripcion: 'Emisión de certificaciones de aptitud',
-    duracionMinutos: 15,
-    color: '#F59E0B',
-    precio: 300,
-    activo: true
-  },
-  {
-    id: '4',
-    nombre: 'Evaluación Anual',
-    descripcion: 'Revisión médica anual programada',
-    duracionMinutos: 45,
-    color: '#EF4444',
-    precio: 1200,
-    activo: true
-  }
-]
-
-const CITAS_DEMO: Cita[] = [
-  {
-    id: '1',
-    pacienteId: '1',
-    doctorId: '1',
-    tipoConsultaId: '1',
-    fechaHora: new Date(Date.now() + 1000 * 60 * 60 * 2), // 2 horas desde ahora
-    duracionMinutos: 60,
-    estado: 'programada',
-    motivoConsulta: 'Examen de ingreso laboral',
-    notas: 'Paciente nuevo en la empresa',
-    recordatorioEnviado: false,
-    creadaPor: '1',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    paciente: PACIENTES_DEMO[0],
-    doctor: DOCTORES_DEMO[0],
-    tipoConsulta: TIPOS_CONSULTA_DEMO[0]
-  },
-  {
-    id: '2',
-    pacienteId: '2',
-    doctorId: '1',
-    tipoConsultaId: '2',
-    fechaHora: new Date(Date.now() + 1000 * 60 * 60 * 4), // 4 horas desde ahora
-    duracionMinutos: 30,
-    estado: 'programada',
-    motivoConsulta: 'Seguimiento post-examen',
-    notas: 'Revisar resultados de laboratorio',
-    recordatorioEnviado: true,
-    creadaPor: '1',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    paciente: PACIENTES_DEMO[1],
-    doctor: DOCTORES_DEMO[0],
-    tipoConsulta: TIPOS_CONSULTA_DEMO[1]
-  },
-  {
-    id: '3',
-    pacienteId: '3',
-    doctorId: '2',
-    tipoConsultaId: '3',
-    fechaHora: new Date(Date.now() + 1000 * 60 * 60 * 24), // Mañana
-    duracionMinutos: 15,
-    estado: 'programada',
-    motivoConsulta: 'Certificación de aptitud',
-    notas: 'Emitir certificado',
-    recordatorioEnviado: false,
-    creadaPor: '1',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    paciente: PACIENTES_DEMO[2],
-    doctor: DOCTORES_DEMO[1],
-    tipoConsulta: TIPOS_CONSULTA_DEMO[2]
-  }
-]
 
 export function useAgenda() {
   const { user } = useAuth()
   const [citas, setCitas] = useState<Cita[]>([])
   const [pacientes, setPacientes] = useState<Paciente[]>([])
   const [doctores, setDoctores] = useState<Doctor[]>([])
-  const [tiposConsulta, setTiposConsulta] = useState<TipoConsulta[]>(TIPOS_CONSULTA_DEMO)
+  const [tiposConsulta, setTiposConsulta] = useState<TipoConsulta[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -260,9 +89,7 @@ export function useAgenda() {
 
       console.log('✅ Citas cargadas desde Supabase:', data.length)
 
-      console.log('✅ Citas cargadas desde Supabase:', data.length)
-
-      // Eliminar el uso de CITAS_DEMO como fallback
+      // Si no hay citas, devolver array vacío
       if (data.length === 0) {
         setCitas([])
         setLoading(false)
@@ -273,15 +100,15 @@ export function useAgenda() {
       const citasMapeadas = data.map(c => ({
         id: c.id,
         pacienteId: c.paciente_id,
-        doctorId: c.medico_id || '1',
-        tipoConsultaId: '1',
+        doctorId: c.medico_id || '',
+        tipoConsultaId: '1', // Default
         fechaHora: new Date(`${c.fecha}T${c.hora_inicio}`),
         duracionMinutos: 30,
-        estado: c.estado as EstadoCita,
+        estado: (c.estado === 'confirmada' ? 'en_proceso' : c.estado) as EstadoCita,
         motivoConsulta: c.notas || '',
         notas: c.notas || '',
         recordatorioEnviado: false,
-        creadaPor: '1',
+        creadaPor: 'system',
         createdAt: new Date(c.created_at),
         updatedAt: new Date(c.created_at),
         // Relaciones
@@ -290,18 +117,24 @@ export function useAgenda() {
           nombre: c.paciente.nombre,
           apellidoPaterno: c.paciente.apellido_paterno,
           apellidoMaterno: c.paciente.apellido_materno || '',
-          email: '',
-          telefono: '',
-          empresa: '',
-          puesto: '',
-          numEmpleado: '',
-          fechaNacimiento: new Date(),
-          genero: 'M',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        } : { id: c.paciente_id, nombre: 'Paciente', apellidoPaterno: 'Desconocido' } as any,
-        doctor: doctores.find(d => d.id === c.medico_id) || { id: '1', nombre: 'Dr.', apellidoPaterno: 'No asignado' } as any,
-        tipoConsulta: TIPOS_CONSULTA_DEMO.find(t => t.nombre.toLowerCase().includes(c.tipo?.toLowerCase() || '')) || TIPOS_CONSULTA_DEMO[0]
+          email: (c.paciente as any).email || '',
+          telefono: (c.paciente as any).telefono || '',
+          empresa: (c.paciente as any).empresa_nombre || '',
+          puesto: (c.paciente as any).puesto || '',
+          numEmpleado: (c.paciente as any).numero_empleado || '',
+          fechaNacimiento: (c.paciente as any).fecha_nacimiento ? new Date((c.paciente as any).fecha_nacimiento) : new Date(),
+          genero: ((c.paciente as any).genero || 'M') as 'M' | 'F',
+          createdAt: new Date((c.paciente as any).created_at || Date.now()),
+          updatedAt: new Date((c.paciente as any).created_at || Date.now())
+        } : undefined,
+        doctor: doctores.find(d => d.id === c.medico_id),
+        tipoConsulta: {
+          id: '1',
+          nombre: c.tipo || 'Consulta',
+          duracionMinutos: 30,
+          color: '#10b981',
+          activo: true
+        }
       })) as Cita[]
 
       let citasFiltradas = citasMapeadas
@@ -337,10 +170,8 @@ export function useAgenda() {
       setCitas(citasFiltradas)
       return citasFiltradas
     } catch (err) {
-      console.warn('⚠️ Error al obtener citas (Usando datos demo):', err)
-      // Usar CITAS_DEMO como fallback
-      setCitas(CITAS_DEMO)
-      return CITAS_DEMO
+      setCitas([])
+      return []
     } finally {
       setLoading(false)
     }
@@ -350,18 +181,7 @@ export function useAgenda() {
   const crearCita = useCallback(async (formulario: FormularioCita) => {
     setLoading(true)
     try {
-      const nuevaCitaData = {
-        paciente_id: formulario.pacienteId,
-        medico_id: formulario.doctorId,
-        fechaHora: formulario.fechaHora.toISOString(),
-        duracion: formulario.duracionMinutos || 30,
-        tipo: 'consulta_general', // Default
-        estado: 'programada' as const,
-        motivo: formulario.motivoConsulta,
-        notas: formulario.notas,
-        empresa_id: user?.empresa_id || ''
-      }
-      // Usar servicio real de Supabase
+      // Crear cita en Supabase
       await citasService.create({
         empresa_id: user?.empresa_id || '',
         paciente_id: formulario.pacienteId,
@@ -470,6 +290,25 @@ export function useAgenda() {
     )
   }, [pacientes])
 
+  // Refresh completo de la agenda
+  const refreshAgenda = useCallback(() => {
+    loadInitialData()
+  }, [])
+
+  // Estadísticas de citas para dashboard
+  const estadisticas = {
+    total: citas.length,
+    programadas: citas.filter(c => c.estado === 'programada').length,
+    enProceso: citas.filter(c => c.estado === 'en_proceso').length,
+    completadas: citas.filter(c => c.estado === 'completada').length,
+    canceladas: citas.filter(c => c.estado === 'cancelada').length,
+    noShow: citas.filter(c => c.estado === 'no_show').length,
+    hoy: citas.filter(c => {
+      const today = new Date();
+      return c.fechaHora.toDateString() === today.toDateString();
+    }).length
+  }
+
   return {
     // Estado
     citas,
@@ -478,6 +317,7 @@ export function useAgenda() {
     tiposConsulta,
     loading,
     error,
+    estadisticas,
 
     // Funciones principales
     obtenerCitas,
@@ -486,6 +326,7 @@ export function useAgenda() {
     cancelarCita,
     checkInPaciente,
     completarCita,
+    refreshAgenda,
 
     // Utilidades
     obtenerEventosCalendario,

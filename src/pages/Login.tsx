@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ShieldCheck,
@@ -15,7 +15,10 @@ import {
   Cpu,
   Fingerprint,
   Terminal,
-  Network
+  Network,
+  Database,
+  Brain,
+  Server
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -36,6 +39,44 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // Estado de Servicios
+  const [sysStatus, setSysStatus] = useState({
+    supabase: 'checking' as 'online' | 'offline' | 'checking',
+    ia: 'checking' as 'online' | 'offline' | 'checking',
+  })
+
+  useEffect(() => {
+    const checkServices = async () => {
+      // Supabase
+      try {
+        const sbUrl = import.meta.env.VITE_SUPABASE_URL;
+        if (sbUrl) {
+          const r = await fetch(`${sbUrl}/rest/v1/`, {
+            headers: { 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '' },
+            signal: AbortSignal.timeout(3000)
+          });
+          setSysStatus(s => ({ ...s, supabase: r.ok ? 'online' : 'offline' }));
+        }
+      } catch {
+        setSysStatus(s => ({ ...s, supabase: 'offline' }));
+      }
+
+      // Servicio IA (configurable via env)
+      try {
+        const aiUrl = import.meta.env.VITE_AI_SERVICE_URL;
+        if (aiUrl) {
+          const r = await fetch(`${aiUrl}/`, { signal: AbortSignal.timeout(3000) });
+          setSysStatus(s => ({ ...s, ia: r.ok ? 'online' : 'offline' }));
+        } else {
+          setSysStatus(s => ({ ...s, ia: 'offline' }));
+        }
+      } catch {
+        setSysStatus(s => ({ ...s, ia: 'offline' }));
+      }
+    };
+    checkServices();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email || !password) return toast.error('Se requieren credenciales de acceso')
@@ -43,7 +84,6 @@ export default function Login() {
     setLoading(true)
     try {
       await login(email, password)
-      // AuthContext handles state, Navigate is safer than window.location.href
       navigate('/dashboard');
     } catch (error) {
       // Error already handled by AuthContext toast
@@ -121,6 +161,16 @@ export default function Login() {
       }
     })
   }
+
+  const statusDot = (s: string) =>
+    s === 'online' ? 'bg-emerald-400' :
+      s === 'offline' ? 'bg-red-400' :
+        'bg-amber-400 animate-pulse';
+
+  const statusText = (s: string) =>
+    s === 'online' ? 'ONLINE' :
+      s === 'offline' ? 'OFFLINE' :
+        'CHECKING';
 
   return (
     <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6 selection:bg-emerald-500/30 overflow-hidden relative">
@@ -307,15 +357,51 @@ export default function Login() {
             </div>
           </div>
         </motion.div>
-      </div >
+      </div>
 
-      {/* Floating HUD Elements */}
-      < div className="fixed bottom-10 left-10 hidden xl:block" >
+      {/* Live System Status HUD */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.2 }}
+        className="fixed bottom-8 left-8 hidden xl:block"
+      >
+        <div className="p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl space-y-2.5 min-w-[200px]">
+          <div className="flex items-center gap-2 mb-3">
+            <Server className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em]">System Status</span>
+          </div>
+          {[
+            { label: 'Supabase DB', status: sysStatus.supabase, Icon: Database },
+            { label: 'IA Cloud', status: sysStatus.ia, Icon: Brain },
+          ].map(({ label, status, Icon }) => (
+            <div key={label} className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Icon className="w-3 h-3 text-slate-500" />
+                <span className="text-[9px] text-slate-500 font-bold">{label}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className={`w-1.5 h-1.5 rounded-full ${statusDot(status)}`} />
+                <span className={`text-[8px] font-black uppercase tracking-wider ${status === 'online' ? 'text-emerald-400' :
+                  status === 'offline' ? 'text-red-400' :
+                    'text-amber-400'
+                  }`}>
+                  {statusText(status)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Version Badge */}
+      <div className="fixed bottom-8 right-8 hidden xl:block">
         <div className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md">
           <ShieldCheck className="w-4 h-4 text-emerald-500" />
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">System Integrity Verified</span>
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">v3.5 • Intelligence Bureau</span>
         </div>
-      </div >
-    </div >
+      </div>
+    </div>
   )
 }
+

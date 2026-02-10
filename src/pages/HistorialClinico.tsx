@@ -945,7 +945,8 @@ export default function HistorialClinico() {
                       try {
                         await consultasService.createPrescripcion({
                           ...pres,
-                          medico_id: user?.id
+                          medico_id: user?.id,
+                          empresa_id: displayedPaciente.empresa_id
                         })
                         toast.success('Receta guardada exitosamente')
                         cargarHistorial()

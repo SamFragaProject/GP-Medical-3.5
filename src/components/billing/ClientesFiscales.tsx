@@ -8,28 +8,11 @@ import { useAuth } from '@/contexts/AuthContext'
 import { ClienteFiscal } from '@/types/facturacion'
 import { Badge } from '@/components/ui/badge'
 
+import { useFacturacion } from '@/hooks/useFacturacion'
+
 export function ClientesFiscales() {
-    const { user } = useAuth()
-    const [clientes, setClientes] = React.useState<ClienteFiscal[]>([])
-    const [loading, setLoading] = React.useState(true)
+    const { clientes, loading } = useFacturacion()
     const [busqueda, setBusqueda] = React.useState('')
-
-    React.useEffect(() => {
-        if (user?.empresa_id) {
-            loadClientes()
-        }
-    }, [user?.empresa_id])
-
-    const loadClientes = async () => {
-        try {
-            const data = await billingService.getClientes(user!.empresa_id)
-            setClientes(data)
-        } catch (error) {
-            console.error('Error loading clientes:', error)
-        } finally {
-            setLoading(false)
-        }
-    }
 
     const filtered = clientes.filter(c =>
         c.razonSocial.toLowerCase().includes(busqueda.toLowerCase()) ||

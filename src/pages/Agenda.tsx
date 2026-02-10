@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { statsService, sedesService } from '@/services/dataService'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { NewAppointmentDialog } from '@/components/agenda/NewAppointmentDialog'
@@ -36,6 +37,7 @@ import {
 } from 'recharts'
 import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader'
 import { PremiumMetricCard } from '@/components/ui/PremiumMetricCard'
+import { DataContainer } from '@/components/ui/DataContainer'
 
 // Interfaces
 interface MetricasAgenda {
@@ -178,45 +180,31 @@ export const Agenda = () => {
       const fetchMetrics = async () => {
         setLoadingMetrics(true)
         try {
-          const today = new Date().toISOString().split('T')[0]
-
-          const [
-            { count: citasHoyCount },
-            { count: completadas },
-            { count: pendientes },
-            { count: canceladas },
-            { data: sedesData }
-          ] = await Promise.all([
-            supabase.from('citas').select('*', { count: 'exact', head: true }).eq('fecha', today),
-            supabase.from('citas').select('*', { count: 'exact', head: true }).eq('estado', 'completada'),
-            supabase.from('citas').select('*', { count: 'exact', head: true }).eq('estado', 'pendiente'),
-            supabase.from('citas').select('*', { count: 'exact', head: true }).eq('estado', 'cancelada'),
-            supabase.from('sedes').select('id, nombre').limit(5)
+          const [agendaStats, sedesData] = await Promise.all([
+            statsService.getAgendaStats(),
+            sedesService.getAll()
           ])
 
-          const total = (completadas || 0) + (canceladas || 0)
-          const tasa = total > 0 ? Math.round(((completadas || 0) / total) * 100) : 100
-
           setMetricas({
-            citasHoy: citasHoyCount || 0,
-            citasCompletadas: completadas || 0,
-            citasPendientes: pendientes || 0,
-            citasCanceladas: canceladas || 0,
+            citasHoy: agendaStats.citasHoy,
+            citasCompletadas: agendaStats.citasCompletadas,
+            citasPendientes: agendaStats.citasPendientes,
+            citasCanceladas: agendaStats.citasCanceladas,
             promedioTiempoEspera: 12,
-            tasaCumplimiento: tasa
+            tasaCumplimiento: agendaStats.tasaCumplimiento
           })
 
           if (sedesData) {
-            setSedes(sedesData.map((s, idx) => ({
+            setSedes(sedesData.map((s: any) => ({
               nombre: s.nombre,
-              citasHoy: Math.floor(Math.random() * 50) + 10,
-              medicosActivos: Math.floor(Math.random() * 10) + 2,
-              ocupacion: Math.floor(Math.random() * 40) + 50,
-              satisfaccion: (4 + Math.random()).toFixed(1) as any
+              citasHoy: 0, // En el futuro obtendremos esto por sede
+              medicosActivos: 0,
+              ocupacion: 0,
+              satisfaccion: 5
             })))
           }
         } catch (error) {
-          console.error('Error:', error)
+          console.error('Error fetching agenda stats:', error)
         } finally {
           setLoadingMetrics(false)
         }
@@ -266,11 +254,13 @@ export const Agenda = () => {
 
         <div className="w-full px-8 py-8 space-y-8">
           {/* Stats Grid */}
-          {loadingMetrics ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-            </div>
-          ) : (
+          <DataContainer
+            loading={loadingMetrics}
+            error={null}
+            data={metricas}
+            onRetry={() => window.location.reload()}
+            hideEmpty
+          >
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <AgendaStatCard icon={CalendarIcon} title="Citas Hoy" value={metricas.citasHoy} color="blue" trend={{ direction: 'up', value: '+8%' }} />
               <AgendaStatCard icon={CheckCircle} title="Completadas" value={metricas.citasCompletadas} subtitle="Históricas" color="emerald" />
@@ -279,7 +269,7 @@ export const Agenda = () => {
               <AgendaStatCard icon={Zap} title="Predicción IA" value="Alta" subtitle="Carga mañana" color="orange" trend={{ direction: 'up', value: '92%' }} />
               <AgendaStatCard icon={Activity} title="Cumplimiento" value={`${metricas.tasaCumplimiento}%`} color="slate" trend={{ direction: 'up', value: '+2%' }} />
             </div>
-          )}
+          </DataContainer>
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

@@ -701,11 +701,27 @@ export const nom036Service = {
   /**
    * Generar PDF del reporte
    */
-  async generarPDFReporte(empresaId: string, anio: number): Promise<Blob> {
+  async generarPDFReporte(empresaId: string, anio: number): Promise<void> {
     const reporte = await this.generarReporteNOM036(empresaId, anio);
+    const matriz = await this.obtenerMatrizRiesgos(empresaId);
 
-    // Placeholder - el componente frontend debe usar una librería PDF
-    return new Blob([JSON.stringify(reporte, null, 2)], { type: 'application/json' });
+    // Obtener datos de la empresa
+    const { data: empresa } = await supabase
+      .from('empresas')
+      .select('*')
+      .eq('id', empresaId)
+      .single();
+
+    const { pdfGeneratorService } = await import('./pdfGeneratorService');
+
+    const html = pdfGeneratorService.generateNom036Report({
+      empresa: empresa || { nombre: 'Empresa no encontrada' },
+      reporte,
+      matriz,
+      fecha: new Date().toLocaleDateString('es-MX')
+    });
+
+    pdfGeneratorService.printDocument(html, `NOM-036-${empresa?.nombre || 'Reporte'}.pdf`);
   },
 
   // ==========================================

@@ -12,8 +12,10 @@ import {
   Save,
   X,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  ShieldCheck
 } from 'lucide-react';
+import { SignaturePad } from '@/components/shared/SignaturePad';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -257,14 +259,31 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
                 </div>
 
                 {/* Componente de firma digital */}
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">
-                    Firma del Médico <span className="text-red-500">*</span>
-                  </label>
-                  <div className="p-8 border-2 border-dashed border-slate-300 rounded-lg bg-slate-50 text-center">
-                    <FileSignature className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                    <p className="text-sm text-slate-500">
-                      Área de firma digital
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-black text-white/40 uppercase tracking-widest">
+                      Firma del Médico Responsable <span className="text-rose-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setValue('firma_digital', '')}
+                      className="text-[10px] font-black uppercase text-rose-400 hover:text-rose-300 transition-colors"
+                    >
+                      Limpiar Firma
+                    </button>
+                  </div>
+
+                  <div className="bg-white/5 border-2 border-dashed border-white/10 rounded-3xl overflow-hidden p-4">
+                    <SignaturePad
+                      onSave={(signatureUrl) => setValue('firma_digital', signatureUrl)}
+                      onClear={() => setValue('firma_digital', '')}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+                    <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                    <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider leading-tight">
+                      Esta firma será estampada digitalmente en el dictamen PDF y vinculada a su cédula profesional.
                     </p>
                   </div>
                 </div>
@@ -292,10 +311,10 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
               <div className="flex flex-col items-center">
                 <div
                   className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${isActive
-                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30'
-                      : isCompleted
-                        ? 'bg-emerald-100 text-emerald-600'
-                        : 'bg-slate-100 text-slate-400'
+                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30'
+                    : isCompleted
+                      ? 'bg-emerald-100 text-emerald-600'
+                      : 'bg-slate-100 text-slate-400'
                     }`}
                 >
                   {isCompleted ? (

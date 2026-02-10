@@ -90,6 +90,66 @@ const DEMO_PACIENTES: Paciente[] = [
     alertas_activas: 0,
     empresa_id: 'empresa-demo-1',
     user_id: 'user-paciente-2'
+  },
+  {
+    id: '3',
+    numero_empleado: 'EMP003',
+    nombre: 'Roberto',
+    apellido_paterno: 'Hernández',
+    apellido_materno: 'Sánchez',
+    genero: 'masculino',
+    fecha_nacimiento: '1978-11-30',
+    email: 'roberto.h@constructora.com',
+    telefono: '555-9876',
+    fecha_ingreso: '2015-06-01',
+    estatus: 'activo',
+    puesto_trabajo: {
+      nombre: 'Soldador Especializado',
+      departamento: 'Mantenimiento'
+    },
+    proximos_examenes: 1,
+    alertas_activas: 2,
+    empresa_id: 'empresa-demo-1'
+  },
+  {
+    id: '4',
+    numero_empleado: 'EMP004',
+    nombre: 'Ana Sofía',
+    apellido_paterno: 'Villalobos',
+    apellido_materno: 'Castro',
+    genero: 'femenino',
+    fecha_nacimiento: '1995-05-12',
+    email: 'ana.sofia@tecnologia.io',
+    telefono: '555-4433',
+    fecha_ingreso: '2022-02-15',
+    estatus: 'activo',
+    puesto_trabajo: {
+      nombre: 'Ingeniera de Sistemas',
+      departamento: 'TI'
+    },
+    proximos_examenes: 0,
+    alertas_activas: 0,
+    empresa_id: 'empresa-demo-1'
+  },
+  {
+    id: '5',
+    numero_empleado: 'EMP005',
+    nombre: 'Ricardo',
+    apellido_paterno: 'Mendoza',
+    apellido_materno: 'Solis',
+    genero: 'masculino',
+    fecha_nacimiento: '1982-01-20',
+    email: 'rmendoza@logistica.mx',
+    telefono: '555-2211',
+    fecha_ingreso: '2018-09-10',
+    estatus: 'activo',
+    puesto_trabajo: {
+      nombre: 'Chofer de Carga Pesada',
+      departamento: 'Logística'
+    },
+    proximos_examenes: 3,
+    alertas_activas: 1,
+    empresa_id: 'empresa-demo-1'
   }
 ]
 
@@ -159,7 +219,7 @@ class MockDataService {
 
     // SIMULACIÓN RLS
     if (currentUser.role === 'super_admin') return todos
-    
+
     if (currentUser.role === 'admin_empresa' || currentUser.role === 'medico') {
       return todos.filter(p => p.empresa_id === currentUser.empresa_id || !p.empresa_id) // !p.empresa_id para legacy
     }
@@ -191,7 +251,7 @@ class MockDataService {
     const todos = this.getCollection<Paciente>('mock_pacientes')
     const index = todos.findIndex(p => p.id === id)
     if (index === -1) throw new Error('Paciente no encontrado')
-    
+
     todos[index] = { ...todos[index], ...updates }
     this.setCollection('mock_pacientes', todos)
     return todos[index]
@@ -248,7 +308,7 @@ class MockDataService {
     const todas = this.getCollection<Cita>('mock_citas')
     const index = todas.findIndex(c => c.id === id)
     if (index === -1) throw new Error('Cita no encontrada')
-    
+
     todas[index] = { ...todas[index], ...updates }
     this.setCollection('mock_citas', todas)
     return todas[index]

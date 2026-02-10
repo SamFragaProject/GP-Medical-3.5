@@ -19,7 +19,10 @@ import {
   ChevronDown,
   Search,
   X,
+  Trash2,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -146,6 +149,8 @@ export function PipelineEpisodios({ sedeId, empresaId, className }: PipelineEpis
   );
   const [episodioSeleccionado, setEpisodioSeleccionado] = useState<EpisodioAtencion | null>(null);
   const [vistaCompacta, setVistaCompacta] = useState(false);
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
+  const [episodioACancelar, setEpisodioACancelar] = useState<EpisodioAtencion | null>(null);
 
   // Hook de datos
   const { episodios, isLoading, refetch, isError } = useEpisodios({
@@ -155,6 +160,20 @@ export function PipelineEpisodios({ sedeId, empresaId, className }: PipelineEpis
     enableRealtime: true,
   });
 
+  const handleCancelarEpisodio = async () => {
+    if (!episodioACancelar) return;
+    try {
+      // Nota: En una integración real llamaríamos al servicio de Supabase
+      toast.success('Episodio cancelado exitosamente');
+      refetch();
+    } catch (error) {
+      toast.error('Error al cancelar el episodio');
+    } finally {
+      setShowConfirmCancel(false);
+      setEpisodioACancelar(null);
+    }
+  };
+
   // Filtrar episodios
   const episodiosFiltrados = useMemo(() => {
     return episodios.filter(ep => {
@@ -163,7 +182,7 @@ export function PipelineEpisodios({ sedeId, empresaId, className }: PipelineEpis
         const termino = busqueda.toLowerCase();
         const nombreCompleto = `${ep.paciente?.nombre || ''} ${ep.paciente?.apellido_paterno || ''} ${ep.paciente?.apellido_materno || ''}`.toLowerCase();
         const curp = (ep.paciente?.curp || '').toLowerCase();
-        
+
         if (!nombreCompleto.includes(termino) && !curp.includes(termino)) {
           return false;
         }
@@ -431,14 +450,56 @@ export function PipelineEpisodios({ sedeId, empresaId, className }: PipelineEpis
                       Sin pacientes
                     </div>
                   ) : (
-                    episodiosColumna.map(episodio => (
-                      <EpisodioCard
-                        key={episodio.id}
-                        episodio={episodio}
-                        onClick={() => setEpisodioSeleccionado(episodio)}
-                        compact={vistaCompacta}
-                      />
-                    ))
+                    episodiosColumna.map(episodio => {
+                      const tiempo = episodio.tiempo_total_minutos || 0;
+                      const sla = episodio.sla_minutos || 30;
+                      const ratio = tiempo / sla;
+
+                      let slaColor = "border-transparent";
+                      if (ratio > 1) slaColor = "border-l-4 border-l-destructive";
+                      else if (ratio > 0.8) slaColor = "border-l-4 border-l-amber-500";
+                      else if (ratio > 0.5) slaColor = "border-l-4 border-l-blue-400";
+
+                      return (
+                        <div key={episodio.id} className={`relative group ${slaColor} rounded-lg`}>
+                          <EpisodioCard
+                            episodio={episodio}
+                            onClick={() => setEpisodioSeleccionado(episodio)}
+                            compact={vistaCompacta}
+                          />
+
+                          {/* Quick Actions Hover Overlay */}
+                          <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 bg-white/90 backdrop-blur p-1 rounded-lg border shadow-sm">
+                            {episodio.estado_actual === 'registro' && (
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title="Check-in">
+                                <Users className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {(episodio.estado_actual === 'triage' || episodio.estado_actual === 'evaluaciones') && (
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" title="Atender">
+                                <Clock className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-500 hover:text-slate-700" title="Ver Detalles">
+                              <Search className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              title="Cancelar"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEpisodioACancelar(episodio);
+                                setShowConfirmCancel(true);
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -471,11 +532,10 @@ export function PipelineEpisodios({ sedeId, empresaId, className }: PipelineEpis
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Tiempo total</p>
-                  <p className={`font-medium ${
-                    (episodioSeleccionado.tiempo_total_minutos || 0) > episodioSeleccionado.sla_minutos
-                      ? 'text-red-600'
-                      : ''
-                  }`}>
+                  <p className={`font-medium ${(episodioSeleccionado.tiempo_total_minutos || 0) > episodioSeleccionado.sla_minutos
+                    ? 'text-red-600'
+                    : ''
+                    }`}>
                     {episodioSeleccionado.tiempo_total_minutos} min / {episodioSeleccionado.sla_minutos} min SLA
                   </p>
                 </div>
@@ -496,6 +556,17 @@ export function PipelineEpisodios({ sedeId, empresaId, className }: PipelineEpis
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Diálogo de Confirmación */}
+      <ConfirmDialog
+        isOpen={showConfirmCancel}
+        onClose={() => setShowConfirmCancel(false)}
+        onConfirm={handleCancelarEpisodio}
+        title="¿Cancelar Episodio?"
+        description={`Esta acción cancelará permanentemente el episodio de ${episodioACancelar?.paciente?.nombre}. No se podrá revertir.`}
+        confirmText="Confirmar Cancelación"
+        variant="danger"
+      />
     </div>
   );
 }

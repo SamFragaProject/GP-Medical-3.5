@@ -8,7 +8,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-    // Handle CORS preflight requests
     if (req.method === 'OPTIONS') {
         return new Response(null, { headers: corsHeaders })
     }
@@ -17,17 +16,12 @@ serve(async (req) => {
         const supabaseAdmin = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-            {
-                auth: {
-                    autoRefreshToken: false,
-                    persistSession: false
-                }
-            }
+            { auth: { autoRefreshToken: false, persistSession: false } }
         )
 
         const { email, password, nombre, apellido_paterno, empresa_id, rol, permisos } = await req.json()
 
-        // 1. Validar datos
+        // 1. Validar datos obligatorios
         if (!email || !password || !empresa_id || !rol) {
             throw new Error('Faltan campos obligatorios: email, password, empresa_id, rol')
         }
@@ -36,13 +30,8 @@ serve(async (req) => {
         const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email,
             password,
-            email_confirm: true, // Auto confirmar
-            user_metadata: {
-                nombre,
-                apellido_paterno,
-                empresa_id,
-                rol // Guardamos el rol como metadata también
-            }
+            email_confirm: true,
+            user_metadata: { nombre, apellido_paterno, empresa_id, rol }
         })
 
         if (authError) throw authError
@@ -51,7 +40,6 @@ serve(async (req) => {
         const userId = authUser.user.id
 
         // 3. Crear perfil en tabla 'profiles'
-        // Nota: Usamos 'profiles' según 000_init_schema.sql
         const { error: profileError } = await supabaseAdmin
             .from('profiles')
             .insert({
@@ -65,14 +53,12 @@ serve(async (req) => {
             })
 
         if (profileError) {
-            // Rollback: Eliminar usuario de Auth si falla la creación del perfil
             await supabaseAdmin.auth.admin.deleteUser(userId)
             throw new Error(`Error creando perfil: ${profileError.message}`)
         }
 
         // 4. Asignar Rol en tabla 'user_roles'
-        // Buscar ID del rol por nombre
-        const { data: roleData, error: roleError } = await supabaseAdmin
+        const { data: roleData } = await supabaseAdmin
             .from('roles')
             .select('id')
             .eq('nombre', rol)
@@ -81,34 +67,41 @@ serve(async (req) => {
         if (roleData) {
             const { error: userRoleError } = await supabaseAdmin
                 .from('user_roles')
-                .insert({
-                    user_id: userId,
-                    role_id: roleData.id,
-                    empresa_id: empresa_id
-                })
+                .insert({ user_id: userId, role_id: roleData.id, empresa_id })
 
             if (userRoleError) {
                 console.error('Error asignando rol en user_roles:', userRoleError)
-                // No hacemos rollback completo aquí, pero es importante notarlo
             }
         } else {
-            console.warn(`Rol '${rol}' no encontrado en tabla roles, saltando asignación en user_roles`)
+            console.warn(`Rol '${rol}' no encontrado en tabla roles, saltando asignación`)
         }
 
-        // 5. Enviar Email de Bienvenida
-        const resendApiKey = Deno.env.get('RESEND_API_KEY')
-        if (resendApiKey) {
-            // Import dinámico si es necesario, pero mejor arriba. Añadire el import arriba en otro chunk o asumo que puedo ponerlo aqui?
-            // Mejor usar un bloque de reemplazo grande para incluir el import arriba es arriesgado.
-            // Voy a usar fetch directo a la funcion 'send-email' para reutilizar logica? 
-            // No, mejor usar la libreria aqui directamente.
+        // 5. Guardar permisos granulares (si se enviaron)
+        if (permisos && Array.isArray(permisos) && permisos.length > 0) {
+            const permisosRows = permisos.map((p: any) => ({
+                user_id: userId,
+                empresa_id,
+                modulo: p.modulo,
+                ver: p.ver ?? false,
+                crear: p.crear ?? false,
+                editar: p.editar ?? false,
+                borrar: p.borrar ?? false,
+                exportar: p.exportar ?? false,
+                aprobar: p.aprobar ?? false,
+                firmar: p.firmar ?? false,
+                imprimir: p.imprimir ?? false,
+            }))
 
-            // NOTA: Para este environment, necesitamos importar Resend arriba. 
-            // Voy a hacer esto en dos pasos o usar fetch a la API de Resend directamente para no depender de la libreria npm si hay problemas de importacion complejos, 
-            // pero Deno soporta npm: imports bien.
+            const { error: permisosError } = await supabaseAdmin
+                .from('user_permissions')
+                .insert(permisosRows)
+
+            if (permisosError) {
+                console.error('Error guardando permisos granulares:', permisosError)
+            }
         }
 
-        // Mejor voy a invocar la funcion 'send-email' que acabo de crear! Asi reutilizo codigo y configuracion.
+        // 6. Enviar Email de Bienvenida
         try {
             await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
                 method: 'POST',
@@ -120,16 +113,24 @@ serve(async (req) => {
                     to: [email],
                     subject: 'Bienvenido a GPMedical',
                     html: `
-                        <div style="font-family: sans-serif; color: #333;">
-                            <h1 style="color: #0ea5e9;">Bienvenido a GPMedical</h1>
-                            <p>Hola <strong>${nombre} ${apellido_paterno}</strong>,</p>
-                            <p>Tu cuenta ha sido creada exitosamente en el sistema.</p>
-                            <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                                <p style="margin: 0;"><strong>Rol asignado:</strong> ${rol}</p>
-                                <p style="margin: 10px 0 0;"><strong>Contraseña temporal:</strong> ${password}</p>
+                        <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                            <div style="background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); padding: 40px; border-radius: 16px 16px 0 0;">
+                                <h1 style="color: #fff; margin: 0; font-size: 28px;">🏥 GPMedical</h1>
+                                <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0;">Sistema Integral de Medicina Ocupacional</p>
                             </div>
-                            <p>Por favor ingresa al sistema y cambia tu contraseña inmediatamente.</p>
-                            <a href="${req.headers.get('origin') || 'https://gpmedical.app'}" style="background: #0ea5e9; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Ir al Sistema</a>
+                            <div style="background: #fff; padding: 32px; border: 1px solid #e5e7eb; border-top: none;">
+                                <p style="font-size: 18px;">Hola <strong>${nombre} ${apellido_paterno}</strong>,</p>
+                                <p>Tu cuenta ha sido creada exitosamente en el sistema.</p>
+                                <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #7c3aed;">
+                                    <p style="margin: 0; font-weight: 600;">📋 Rol asignado: <span style="color: #7c3aed;">${rol}</span></p>
+                                    <p style="margin: 12px 0 0;">🔑 Contraseña temporal: <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px;">${password}</code></p>
+                                </div>
+                                <p style="color: #ef4444; font-weight: 600;">⚠️ Cambia tu contraseña inmediatamente al iniciar sesión.</p>
+                                <a href="${req.headers.get('origin') || 'https://gpmedical.app'}" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: 600; margin-top: 16px;">Acceder al Sistema →</a>
+                            </div>
+                            <div style="text-align: center; padding: 16px; color: #9ca3af; font-size: 12px;">
+                                GPMedical 3.5 • Intelligence Bureau • Medicina Ocupacional
+                            </div>
                         </div>
                     `
                 })
@@ -138,11 +139,12 @@ serve(async (req) => {
             console.error('Error invocando send-email:', emailError)
         }
 
-        // 6. Devolver éxito
+        // 7. Devolver éxito
         return new Response(
             JSON.stringify({
                 user: authUser.user,
-                message: 'Usuario creado exitosamente'
+                message: 'Usuario creado exitosamente',
+                permisos_guardados: permisos?.length || 0
             }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },

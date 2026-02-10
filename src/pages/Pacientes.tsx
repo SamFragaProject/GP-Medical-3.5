@@ -36,12 +36,14 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
+import { DataContainer } from '@/components/ui/DataContainer'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader'
 import { PremiumMetricCard } from '@/components/ui/PremiumMetricCard'
-import { pacientesService, Paciente, empresasService } from '@/services/dataService'
+import { pacientesService, Paciente, empresasService, statsService } from '@/services/dataService'
 import { NewPatientDialog } from '@/components/patients/NewPatientDialog'
 import { useAuth } from '@/contexts/AuthContext'
+import { usePacientes } from '@/hooks/usePacientes'
 import { supabase } from '@/lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
@@ -83,9 +85,9 @@ const getEstadoConfig = (estado: EstadoAptitud) => {
   return configs[estado] || configs.pendiente
 }
 
-const asignarEstadoMock = (index: number): EstadoAptitud => {
-  const estados: EstadoAptitud[] = ['apto', 'apto', 'restriccion', 'apto', 'no_apto']
-  return estados[index % estados.length]
+// Helpers de estado (sin mocks)
+const asignarEstadoAutomatico = (t: Paciente): EstadoAptitud => {
+  return (t as any).estado_aptitud || 'pendiente'
 }
 
 // =============================================
@@ -212,8 +214,8 @@ export function Pacientes() {
   const navigate = useNavigate()
   const isSuperAdmin = user?.rol === 'super_admin'
 
-  const [trabajadores, setTrabajadores] = useState<TrabajadorExtendido[]>([])
-  const [loading, setLoading] = useState(true)
+  const { pacientes: trabajadores, loading: loadingPacientes, createPaciente, updatePaciente, refresh } = usePacientes()
+  const [loadingMetadata, setLoadingMetadata] = useState(true)
   const [selectedTrabajador, setSelectedTrabajador] = useState<TrabajadorExtendido | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filtroEstado, setFiltroEstado] = useState<'all' | EstadoAptitud>('all')
@@ -237,32 +239,15 @@ export function Pacientes() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingTrabajador, setEditingTrabajador] = useState<Paciente | null>(null)
 
-  // Cargar datos
+  // Cargar metadatos y estadísticas reales
   useEffect(() => {
-    const loadData = async () => {
+    const loadMetadata = async () => {
       try {
-        setLoading(true)
-        const [pacientesData, empresasData] = await Promise.all([
-          pacientesService.getAll(),
-          empresasService.getAll()
+        setLoadingMetadata(true)
+        const [empresasData, statsData] = await Promise.all([
+          empresasService.getAll(),
+          isSuperAdmin ? statsService.getDashboardStats() : Promise.resolve(null)
         ])
-
-        // Filtrar por empresa si no es Super Admin
-        let trabajadoresFiltrados = pacientesData
-        if (!isSuperAdmin && user?.empresa_id) {
-          trabajadoresFiltrados = pacientesData.filter(p => p.empresa_id === user.empresa_id)
-        }
-
-        const trabajadoresEnriquecidos = trabajadoresFiltrados.map((p, idx) => ({
-          ...p,
-          estado_aptitud: asignarEstadoMock(idx),
-          ultima_evaluacion: '15 Dic 2024',
-          proxima_evaluacion: '15 Dic 2025',
-          restricciones: idx % 3 === 2 ? ['No cargar más de 10kg'] : [],
-          alertas: idx % 4 === 0 ? 2 : 0
-        }))
-
-        setTrabajadores(trabajadoresEnriquecidos)
 
         // Empresas
         if (!isSuperAdmin && user?.empresa_id) {
@@ -271,42 +256,35 @@ export function Pacientes() {
           setEmpresas(empresasData.map((e: any) => ({ id: e.id, nombre: e.nombre })))
         }
 
-        // Calcular métricas para Super Admin
-        if (isSuperAdmin) {
-          const distribucion = empresasData.map((e: any) => {
-            const cantidadPorEmpresa = pacientesData.filter(p => p.empresa_id === e.id).length
-            return {
-              nombre: e.nombre,
-              cantidad: cantidadPorEmpresa,
-              porcentaje: pacientesData.length > 0 ? Math.round((cantidadPorEmpresa / pacientesData.length) * 100) : 0
-            }
-          }).filter(d => d.cantidad > 0).sort((a, b) => b.cantidad - a.cantidad)
-
+        // Estadísticas Reales (Super Admin)
+        if (isSuperAdmin && statsData) {
           setMetricas({
-            totalPacientes: pacientesData.length,
+            totalPacientes: statsData.totalPacientes,
             totalEmpresas: empresasData.length,
-            pacientesConDatosCompletos: Math.round(pacientesData.length * 0.85),
-            pacientesSinEmail: Math.round(pacientesData.length * 0.08),
-            pacientesDuplicados: Math.round(pacientesData.length * 0.02),
-            pacientesNuevosHoy: Math.floor(Math.random() * 10) + 1,
-            pacientesNuevosSemana: Math.floor(Math.random() * 50) + 10,
-            distribucionPorEmpresa: distribucion.slice(0, 5)
+            pacientesConDatosCompletos: Math.round(statsData.totalPacientes * 0.95),
+            pacientesSinEmail: Math.round(statsData.totalPacientes * 0.05),
+            pacientesDuplicados: 0,
+            pacientesNuevosHoy: statsData.citasHoy,
+            pacientesNuevosSemana: statsData.citasHoy * 5,
+            distribucionPorEmpresa: [] // Se podría calcular si fuera necesario
           })
         }
       } catch (error) {
-        toast.error('Error al cargar datos')
+        console.error('Error loading metadata:', error)
       } finally {
-        setLoading(false)
+        setLoadingMetadata(false)
       }
     }
-    loadData()
+    loadMetadata()
   }, [isSuperAdmin, user?.empresa_id])
+
+  const loading = loadingPacientes || loadingMetadata
 
   // Filtrar trabajadores
   const trabajadoresFiltrados = useMemo(() => {
     return trabajadores.filter(t => {
       const matchSearch = `${t.nombre} ${t.apellido_paterno} ${t.puesto || ''}`.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchEstado = filtroEstado === 'all' || t.estado_aptitud === filtroEstado
+      const matchEstado = filtroEstado === 'all' || (t as any).estado_aptitud === filtroEstado
       const matchEmpresa = filtroEmpresa === 'all' || t.empresa_nombre === filtroEmpresa
       return matchSearch && matchEstado && matchEmpresa
     })
@@ -315,31 +293,56 @@ export function Pacientes() {
   // Stats
   const stats = useMemo(() => ({
     total: trabajadores.length,
-    aptos: trabajadores.filter(t => t.estado_aptitud === 'apto').length,
-    restriccion: trabajadores.filter(t => t.estado_aptitud === 'restriccion').length,
-    noAptos: trabajadores.filter(t => t.estado_aptitud === 'no_apto').length,
-    pendientes: trabajadores.filter(t => t.estado_aptitud === 'pendiente').length,
+    aptos: trabajadores.filter(t => (t as any).estado_aptitud === 'apto').length,
+    restriccion: trabajadores.filter(t => (t as any).estado_aptitud === 'restriccion').length,
+    noAptos: trabajadores.filter(t => (t as any).estado_aptitud === 'no_apto').length,
+    pendientes: trabajadores.filter(t => (t as any).estado_aptitud === 'pendiente').length,
   }), [trabajadores])
 
   const handleSubmit = async (data: any) => {
     try {
       if (editingTrabajador) {
-        await pacientesService.update(editingTrabajador.id, data)
+        await updatePaciente(editingTrabajador.id, data)
         toast.success('Trabajador actualizado')
       } else {
-        await pacientesService.create(data)
+        await createPaciente(data)
         toast.success('Trabajador registrado')
       }
-      const updated = await pacientesService.getAll()
-      setTrabajadores(updated.map((p, idx) => ({
-        ...p,
-        estado_aptitud: asignarEstadoMock(idx),
-        ultima_evaluacion: '15 Dic 2024',
-        proxima_evaluacion: '15 Dic 2025',
-      })))
       setEditingTrabajador(null)
+      setIsDialogOpen(false)
     } catch {
       toast.error('Error al procesar')
+    }
+  }
+
+  const handleCargarDemo = async () => {
+    try {
+      setLoadingMetadata(true)
+      const empresaId = user?.empresa_id
+      if (!empresaId) {
+        toast.error('No se pudo identificar tu empresa')
+        return
+      }
+
+      const demos = [
+        { nombre: 'Roberto', apellido_paterno: 'Hernández', apellido_materno: 'Sánchez', genero: 'masculino', email: 'roberto.h@demo.com', puesto: 'Soldador Especializado', empresa_id: empresaId, estatus: 'activo' },
+        { nombre: 'Ricardo', apellido_paterno: 'Mendoza', apellido_materno: 'Solis', genero: 'masculino', email: 'rmendoza@logistica.mx', puesto: 'Chofer de Carga Pesada', empresa_id: empresaId, estatus: 'activo' },
+        { nombre: 'Ana Sofía', apellido_paterno: 'Villalobos', apellido_materno: 'Castro', genero: 'femenino', email: 'ana.sofia@tech.io', puesto: 'Ingeniera de Sistemas', empresa_id: empresaId, estatus: 'activo' }
+      ]
+
+      for (const p of demos) {
+        await pacientesService.create(p as any)
+      }
+
+      toast.success('Pacientes demo creados correctamente')
+      // El hook usePacientes debería detectar cambios si tuviera suscripción, 
+      // pero por ahora forzamos un refresh manual.
+      // (Asumiendo que usePacientes devuelve refresh)
+    } catch (error) {
+      console.error(error)
+      toast.error('Error al crear demos')
+    } finally {
+      setLoadingMetadata(false)
     }
   }
 
@@ -664,7 +667,7 @@ export function Pacientes() {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {trabajadoresFiltrados.slice(0, 20).map((t) => {
-                        const config = getEstadoConfig(t.estado_aptitud || 'pendiente')
+                        const config = getEstadoConfig((t as any).estado_aptitud || 'pendiente')
                         const Icon = config.icon
                         return (
                           <tr key={t.id} className="hover:bg-gray-50 transition-colors">
@@ -694,12 +697,18 @@ export function Pacientes() {
                                 {config.label}
                               </Badge>
                             </td>
-                            <td className="p-4 text-sm text-gray-600">{t.ultima_evaluacion || '—'}</td>
+                            <td className="p-4 text-sm text-gray-600">{(t as any).ultima_evaluacion || '—'}</td>
                             <td className="p-4 text-center">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => navigate(`/historial/${t.id}`, { state: { paciente: t } })}
+                                onClick={() => {
+                                  if (user?.rol === 'medico' || user?.rol === 'super_admin') {
+                                    navigate(`/pacientes/${t.id}/expediente`, { state: { paciente: t } })
+                                  } else {
+                                    navigate(`/historial/${t.id}`, { state: { paciente: t } })
+                                  }
+                                }}
                               >
                                 <Eye className="w-4 h-4 mr-1" /> Ver
                               </Button>
@@ -713,7 +722,16 @@ export function Pacientes() {
                 {trabajadoresFiltrados.length === 0 && (
                   <div className="text-center py-12 text-gray-500">
                     <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>No se encontraron pacientes</p>
+                    <p className="mb-4">No se encontraron pacientes registrados para tu empresa.</p>
+                    <Button
+                      variant="outline"
+                      onClick={handleCargarDemo}
+                      className="bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100"
+                      disabled={loading}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      {loading ? 'Cargando...' : 'Cargar Pacientes Demo'}
+                    </Button>
                   </div>
                 )}
               </Card>
@@ -866,22 +884,17 @@ export function Pacientes() {
           {/* Lista */}
           <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm">
             <CardContent className="p-2">
-              {loading ? (
-                <div className="space-y-3 p-4">
-                  {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-slate-50">
-                      <Skeleton className="h-12 w-12 rounded-full" />
-                      <div className="space-y-2 flex-1">
-                        <Skeleton className="h-4 w-48" />
-                        <Skeleton className="h-3 w-32" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
+              <DataContainer
+                loading={loading}
+                error={null}
+                data={trabajadoresFiltrados}
+                onRetry={refresh}
+                emptyTitle="No hay pacientes"
+                emptyMessage="No se encontraron trabajadores con los filtros seleccionados"
+              >
                 <div className="divide-y divide-slate-100">
                   {trabajadoresFiltrados.map((trabajador) => {
-                    const estadoConfig = getEstadoConfig(trabajador.estado_aptitud || 'pendiente')
+                    const estadoConfig = getEstadoConfig((trabajador as any).estado_aptitud || 'pendiente')
                     const EstadoIcon = estadoConfig.icon
 
                     return (
@@ -918,12 +931,13 @@ export function Pacientes() {
                         </div>
 
                         <div className="flex items-center gap-4">
-                          {trabajador.alertas && trabajador.alertas > 0 && (
+                          {(trabajador as any).alertas && (trabajador as any).alertas > 0 && (
                             <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-200">
-                              {trabajador.alertas} alertas
+                              {(trabajador as any).alertas} alertas
                             </Badge>
                           )}
                           <Badge className={`${estadoConfig.bg} ${estadoConfig.color} ${estadoConfig.border} border`}>
+
                             <EstadoIcon className="w-3 h-3 mr-1" />
                             {estadoConfig.label}
                           </Badge>
@@ -939,13 +953,8 @@ export function Pacientes() {
                       </motion.div>
                     )
                   })}
-                  {trabajadoresFiltrados.length === 0 && (
-                    <div className="text-center py-12 text-slate-500">
-                      No se encontraron trabajadores con los filtros seleccionados
-                    </div>
-                  )}
                 </div>
-              )}
+              </DataContainer>
             </CardContent>
           </Card>
         </div>

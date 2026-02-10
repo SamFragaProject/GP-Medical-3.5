@@ -71,7 +71,7 @@ export const normatividadService = {
         if (error) throw error
 
         // Procesamiento simple en cliente (para MVP)
-        const stats = {
+        const stats: any = {
             total: data.length,
             riesgo_nulo: data.filter(r => r.resultado_calculado === 'nulo').length,
             riesgo_bajo: data.filter(r => r.resultado_calculado === 'bajo').length,
@@ -80,6 +80,46 @@ export const normatividadService = {
             riesgo_muy_alto: data.filter(r => r.resultado_calculado === 'muy_alto').length,
             requiere_valoracion: data.filter(r => r.resultado_calculado === 'requiere_valoracion').length // Para ATS
         }
+
+        // Determinar riesgo más frecuente
+        const counts = [
+            { id: 'Muy Alto', value: stats.riesgo_muy_alto },
+            { id: 'Alto', value: stats.riesgo_alto },
+            { id: 'Medio', value: stats.riesgo_medio },
+            { id: 'Bajo', value: stats.riesgo_bajo },
+            { id: 'Nulo', value: stats.riesgo_nulo }
+        ]
+        stats.riesgo_mas_frecuente = counts.sort((a, b) => b.value - a.value)[0].id
+
         return stats
+    },
+
+    async generarPDFReporte(campanaId: string) {
+        const { data: campana } = await supabase
+            .from('nom035_campanas')
+            .select('*')
+            .eq('id', campanaId)
+            .single()
+
+        if (!campana) throw new Error('Campaña no encontrada')
+
+        const stats = await this.getEstadisticasCampana(campanaId)
+
+        const { data: empresa } = await supabase
+            .from('empresas')
+            .select('*')
+            .eq('id', campana.empresa_id)
+            .single()
+
+        const { pdfGeneratorService } = await import('./pdfGeneratorService')
+
+        const html = pdfGeneratorService.generateNom035Report({
+            empresa: empresa || { nombre: 'Empresa no encontrada' },
+            campana,
+            stats,
+            fecha: new Date().toLocaleDateString('es-MX')
+        })
+
+        pdfGeneratorService.printDocument(html, `NOM-035-${campana.nombre}.pdf`)
     }
 }

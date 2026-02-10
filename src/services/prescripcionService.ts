@@ -47,47 +47,75 @@ export interface Incapacidad {
 export const prescripcionService = {
     // === RECETAS ===
     async createReceta(receta: Partial<RecetaMedica>, detalles: Omit<DetalleReceta, 'id' | 'receta_id'>[]) {
-        // 1. Crear Cabecera
+        // 1. Crear Cabecera en `recetas`
         const { data: recetaData, error: recetaError } = await supabase
-            .from('recetas_medicas')
-            .insert(receta)
+            .from('recetas')
+            .insert({
+                paciente_id: receta.paciente_id,
+                medico_id: receta.medico_id,
+                empresa_id: receta.empresa_id, // Añadido en migración
+                diagnostico: receta.diagnostico_principal,
+                estado: 'activa',
+                // Guardar extras en metadata JSONB
+                metadata: {
+                    alergias: receta.alergias_conocidas,
+                    peso: receta.peso_kg,
+                    talla: receta.talla_cm
+                }
+            })
             .select()
             .single()
 
         if (recetaError) throw recetaError
 
-        // 2. Crear Detalles
-        const detallesConId = detalles.map(d => ({
-            ...d,
-            receta_id: recetaData.id
+        // 2. Crear Detalles en `recetas_detalle`
+        // Preparamos los datos para inserción (solo columnas válidas)
+        const dbDetalles = detalles.map(d => ({
+            receta_id: recetaData.id,
+            medicamento_nombre: d.nombre_medicamento,
+            dosis: d.dosis,
+            frecuencia: d.frecuencia,
+            duracion: d.duracion,
+            cantidad_solicitada: d.cantidad,
+            via_administracion: d.via_administracion
         }))
 
         const { error: detallesError } = await supabase
-            .from('detalles_receta')
-            .insert(detallesConId)
+            .from('recetas_detalle')
+            .insert(dbDetalles)
 
         if (detallesError) throw detallesError
 
-        // 3. ACTUALIZAR INVENTARIO (EJE 13)
-        // Descontar stock si el medicamento proviene del inventario
+        // 3. Registrar Evento Clínico (Historial Unificado)
+        // Esto asegura que la receta aparezca en el Timeline del paciente
+        await supabase.from('eventos_clinicos').insert({
+            paciente_id: receta.paciente_id,
+            empresa_id: receta.empresa_id,
+            tipo_evento: 'receta', // Debe coincidir con filtro de historial
+            descripcion: `Receta folio ${recetaData.id.slice(0, 8)}: ${receta.diagnostico_principal || 'Sin diagnóstico'}`,
+            metadata: { prescripcion_id: recetaData.id },
+            created_by: receta.medico_id
+        })
+
+        // 4. ACTUALIZAR INVENTARIO (EJE 13)
+        // Usamos los detalles originales que traen inventario_id
         try {
-            await Promise.all(detallesConId.map(async (detalle) => {
+            await Promise.all(detalles.map(async (detalle) => {
                 if (detalle.inventario_id) {
                     await inventoryService.registrarMovimiento({
                         empresa_id: receta.empresa_id!,
+                        usuario_id: receta.medico_id!,
                         item_id: detalle.inventario_id,
                         tipo_movimiento: 'salida_receta',
-                        cantidad: detalle.cantidad,
+                        cantidad: detalle.cantidad, // Service handles absolute value
+                        observaciones: `Dispensación receta ${recetaData.id.slice(0, 8)}`,
                         referencia_id: recetaData.id,
-                        origen_ref: 'recetas_medicas',
-                        usuario_id: receta.medico_id,
-                        observaciones: `Receta Folio: ${recetaData.id.slice(0, 8)}`
+                        origen_ref: 'receta'
                     })
                 }
             }))
         } catch (invError) {
             console.error('Error actualizando inventario:', invError)
-            // No bloqueamos la receta si falla el inventario, pero alertamos (o manejamos rollback idealmente)
         }
 
         return recetaData
@@ -95,14 +123,14 @@ export const prescripcionService = {
 
     async getRecetasPaciente(pacienteId: string) {
         const { data, error } = await supabase
-            .from('recetas_medicas')
+            .from('recetas')
             .select(`
                 *,
-                detalles:detalles_receta(*),
-                medico:profiles(full_name, especialidad)
+                detalles:recetas_detalle(*),
+                medico:profiles(nombre, apellido_paterno, especialidad)
             `)
             .eq('paciente_id', pacienteId)
-            .order('fecha_emision', { ascending: false })
+            .order('created_at', { ascending: false })
 
         if (error) throw error
         return data as RecetaMedica[]

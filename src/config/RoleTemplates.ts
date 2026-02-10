@@ -29,6 +29,11 @@ export const MODULOS_SISTEMA = [
     { codigo: 'usuarios', nombre: 'Gestión de Usuarios', icono: 'UserCog', categoria: 'configuracion' },
     { codigo: 'analytics', nombre: 'Analytics', icono: 'TrendingUp', categoria: 'especial' },
     { codigo: 'ia', nombre: 'Asistente IA', icono: 'Brain', categoria: 'especial' },
+    { codigo: 'campanias', nombre: 'Campañas Masivas', icono: 'ClipboardList', categoria: 'operativo' },
+    { codigo: 'cotizaciones', nombre: 'Cotizaciones', icono: 'FileText', categoria: 'administrativo' },
+    { codigo: 'cxc', nombre: 'Cuentas por Cobrar', icono: 'DollarSign', categoria: 'administrativo' },
+    { codigo: 'espirometria', nombre: 'Espirometría', icono: 'Wind', categoria: 'clinico' },
+    { codigo: 'vision', nombre: 'Estudios Visuales', icono: 'Eye', categoria: 'clinico' },
 ] as const
 
 export type ModuloCodigo = typeof MODULOS_SISTEMA[number]['codigo']
@@ -122,6 +127,11 @@ export const ROLE_TEMPLATES: RolTemplate[] = [
             { modulo: 'usuarios', ver: true, crear: true, editar: true, borrar: true, exportar: true, aprobar: false, firmar: false, imprimir: false },
             { modulo: 'analytics', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
             { modulo: 'ia', ver: true, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
+            { modulo: 'campanias', ver: true, crear: true, editar: true, borrar: true, exportar: true, aprobar: true, firmar: false, imprimir: true },
+            { modulo: 'cotizaciones', ver: true, crear: true, editar: true, borrar: true, exportar: true, aprobar: true, firmar: false, imprimir: true },
+            { modulo: 'cxc', ver: true, crear: true, editar: true, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'espirometria', ver: true, crear: true, editar: true, borrar: true, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'vision', ver: true, crear: true, editar: true, borrar: true, exportar: true, aprobar: false, firmar: false, imprimir: true },
         ]
     },
 
@@ -151,6 +161,11 @@ export const ROLE_TEMPLATES: RolTemplate[] = [
             { modulo: 'usuarios', ver: false, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
             { modulo: 'analytics', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
             { modulo: 'ia', ver: true, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
+            { modulo: 'campanias', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'cotizaciones', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'cxc', ver: false, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
+            { modulo: 'espirometria', ver: true, crear: true, editar: true, borrar: false, exportar: true, aprobar: false, firmar: true, imprimir: true },
+            { modulo: 'vision', ver: true, crear: true, editar: true, borrar: false, exportar: true, aprobar: false, firmar: true, imprimir: true },
         ]
     },
 
@@ -237,6 +252,64 @@ export const ROLE_TEMPLATES: RolTemplate[] = [
             { modulo: 'configuracion', ver: false, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
             { modulo: 'usuarios', ver: false, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
             { modulo: 'analytics', ver: false, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
+            { modulo: 'ia', ver: true, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
+        ]
+    },
+
+    {
+        id: 'higienista',
+        nombre: 'Higienista Industrial',
+        descripcion: 'Monitoreo de riesgos laborales, mediciones y cumplimiento NOM',
+        icono: 'Shield',
+        color: '#14B8A6',
+        gradiente: 'from-teal-500 to-cyan-600',
+        nivel_jerarquia: 3,
+        es_sistema: true,
+        permisos: [
+            { modulo: 'dashboard', ver: true, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
+            { modulo: 'pacientes', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'agenda', ver: true, crear: true, editar: true, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'historial_clinico', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'examenes', ver: true, crear: true, editar: true, borrar: false, exportar: true, aprobar: false, firmar: true, imprimir: true },
+            { modulo: 'certificaciones', ver: true, crear: true, editar: true, borrar: false, exportar: true, aprobar: true, firmar: true, imprimir: true },
+            { modulo: 'evaluaciones', ver: true, crear: true, editar: true, borrar: false, exportar: true, aprobar: true, firmar: true, imprimir: true },
+            { modulo: 'farmacia', ver: false, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
+            { modulo: 'facturacion', ver: false, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
+            { modulo: 'inventario', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'reportes', ver: true, crear: true, editar: false, borrar: false, exportar: true, aprobar: false, firmar: true, imprimir: true },
+            { modulo: 'rrhh', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'configuracion', ver: false, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
+            { modulo: 'usuarios', ver: false, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
+            { modulo: 'analytics', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'ia', ver: true, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
+        ]
+    },
+
+    {
+        id: 'auditor_sst',
+        nombre: 'Auditor SST',
+        descripcion: 'Auditoría de Seguridad y Salud en el Trabajo (STPS)',
+        icono: 'Activity',
+        color: '#EF4444',
+        gradiente: 'from-red-500 to-rose-600',
+        nivel_jerarquia: 2,
+        es_sistema: true,
+        permisos: [
+            { modulo: 'dashboard', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'pacientes', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'agenda', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'historial_clinico', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'examenes', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'certificaciones', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: true, firmar: false, imprimir: true },
+            { modulo: 'evaluaciones', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: true, firmar: false, imprimir: true },
+            { modulo: 'farmacia', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'facturacion', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'inventario', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'reportes', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: true, firmar: false, imprimir: true },
+            { modulo: 'rrhh', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
+            { modulo: 'configuracion', ver: false, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
+            { modulo: 'usuarios', ver: false, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
+            { modulo: 'analytics', ver: true, crear: false, editar: false, borrar: false, exportar: true, aprobar: false, firmar: false, imprimir: true },
             { modulo: 'ia', ver: true, crear: false, editar: false, borrar: false, exportar: false, aprobar: false, firmar: false, imprimir: false },
         ]
     },

@@ -22,27 +22,10 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
+import { useFacturacion } from '@/hooks/useFacturacion'
+
 export function FacturacionDashboard() {
-    const { user } = useAuth()
-    const [facturas, setFacturas] = React.useState<CFDI[]>([])
-    const [loading, setLoading] = React.useState(true)
-
-    React.useEffect(() => {
-        if (user?.empresa_id) {
-            loadFacturas()
-        }
-    }, [user?.empresa_id])
-
-    const loadFacturas = async () => {
-        try {
-            const data = await billingService.getFacturas(user!.empresa_id)
-            setFacturas(data)
-        } catch (error) {
-            console.error('Error loading facturas:', error)
-        } finally {
-            setLoading(false)
-        }
-    }
+    const { facturas, loading } = useFacturacion()
 
     const stats = [
         { label: 'Facturado Mes', value: '$45,200', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },

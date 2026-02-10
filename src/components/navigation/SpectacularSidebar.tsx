@@ -42,7 +42,8 @@ import {
   Layers,
   Command,
   Moon,
-  Sun
+  Sun,
+  Brain
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermisosDinamicos } from '@/hooks/usePermisosDinamicos';
@@ -71,6 +72,7 @@ export function SpectacularSidebar() {
     { path: '/rrhh', icon: Users, label: 'RRHH', color: 'blue', permission: 'rrhh' },
     { path: '/recepcion/sala-espera', icon: Clock, label: 'Sala de Espera', color: 'blue', permission: 'agenda' },
     { path: '/facturacion', icon: CreditCard, label: 'Facturación', color: 'teal', permission: 'facturacion' },
+    { path: '/reportes/vigilancia', icon: Brain, label: 'Vigilancia Epidemiológica', color: 'emerald', badge: 'IA', permission: 'reportes' },
   ] as const;
 
   // Filtrar items principales según permisos
@@ -237,6 +239,29 @@ export function SpectacularSidebar() {
 
       {/* ===== FOOTER ===== */}
       <div className="relative z-10 p-4 space-y-3">
+        {/* Intelligence Bureau Status */}
+        <Link
+          to="/reportes/vigilancia"
+          className="block p-3 bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-transparent rounded-xl border border-violet-500/10 hover:border-violet-500/20 transition-all group cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                <Brain className="w-4 h-4 text-white" />
+              </div>
+              <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border border-[#0a0a0c]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-black text-violet-300 uppercase tracking-widest">Intelligence Bureau</p>
+              <p className="text-[9px] text-slate-500 font-medium mt-0.5">Motor IA • Alertas Activas</p>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-[8px] font-black rounded">3</span>
+              <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[8px] font-black rounded">1</span>
+            </div>
+          </div>
+        </Link>
+
         {/* Status Bar */}
         <div className="flex items-center justify-between px-3 py-2 bg-white/5 rounded-xl border border-white/5">
           <div className="flex items-center gap-2">
@@ -272,6 +297,7 @@ export function SpectacularSidebar() {
           </div>
         </div>
       </div>
+
     </motion.aside>
   );
 }

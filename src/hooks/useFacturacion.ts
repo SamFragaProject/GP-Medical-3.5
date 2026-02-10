@@ -1,23 +1,22 @@
 // Hook personalizado para el módulo de Facturación & Seguros
 import { useState, useEffect, useCallback } from 'react'
-import { 
-  Cliente, 
-  Factura, 
-  ServicioMedico, 
-  Pago, 
+import {
+  Cliente,
+  Factura,
+  ServicioMedico,
+  Pago,
   NotaCredito,
   Seguro,
   PlanPrecios,
   ReporteFinanciero,
-  EstadoCuenta,
   AlertaVencimiento,
-  FacturacionRecurrente,
-  ConciliacionPagos,
-  ConfiguracionSeguro
 } from '@/types/facturacion'
 import toast from 'react-hot-toast'
+import { billingService } from '@/services/billingService'
+import { useAuth } from '@/contexts/AuthContext'
 
 export function useFacturacion() {
+  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -30,13 +29,40 @@ export function useFacturacion() {
   const [notasCredito, setNotasCredito] = useState<NotaCredito[]>([])
   const [alertasVencimiento, setAlertasVencimiento] = useState<AlertaVencimiento[]>([])
 
-  // Mock data initialization
+  // Load initial data
   useEffect(() => {
-    initializeMockData()
-  }, [])
+    if (user?.empresa_id) {
+      loadInitialData()
+    }
+  }, [user?.empresa_id])
 
-  const initializeMockData = () => {
-    // Servicios médicos mock
+  const loadInitialData = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const [clientesData, facturasData, planesData] = await Promise.all([
+        billingService.getClientes(user!.empresa_id),
+        billingService.getFacturas(user!.empresa_id),
+        billingService.getPlanes()
+      ])
+
+      // Cast needed because internal types match but might have different property naming
+      setClientes(clientesData as any)
+      setFacturas(facturasData as any)
+      setPlanes(planesData as any)
+
+      // Seguros and Servicios are still static for now as they lack DB tables
+      initializeStaticData()
+    } catch (err: any) {
+      console.error('Error loading billing data:', err)
+      setError(err.message || 'Error al cargar datos de facturación')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const initializeStaticData = () => {
+    // Servicios médicos (Future: migrate to database)
     setServicios([
       {
         id: '1',
@@ -67,203 +93,27 @@ export function useFacturacion() {
         impuestos: 72,
         categoria: 'Laboratorio',
         activo: true
-      },
-      {
-        id: '4',
-        nombre: 'Espirometría',
-        codigo: 'ESP001',
-        descripcion: 'Examen de función pulmonar',
-        precio: 350,
-        impuestos: 56,
-        categoria: 'Laboratorio',
-        activo: true
-      },
-      {
-        id: '5',
-        nombre: 'Evaluación Ergonómica',
-        codigo: 'ERG001',
-        descripcion: 'Evaluación completa del puesto de trabajo',
-        precio: 2500,
-        impuestos: 400,
-        categoria: 'Evaluación',
-        activo: true
       }
     ])
 
-    // Clientes mock
-    setClientes([
-      {
-        id: '1',
-        rfc: 'MOL850215ABC',
-        razonSocial: 'MOLINA INDUSTRIAL SA DE CV',
-        email: 'compras@molina.com',
-        telefono: '555-0123',
-        direccion: {
-          calle: 'Av. Industrial',
-          numero: '123',
-          colonia: 'Industrial',
-          ciudad: 'México',
-          estado: 'CDMX',
-          cp: '03100',
-          pais: 'México'
-        },
-        tipo: 'moral',
-        regimenFiscal: '601',
-        usoCFDI: 'G03'
-      },
-      {
-        id: '2',
-        rfc: 'IMSS850301',
-        razonSocial: 'INSTITUTO MEXICANO DEL SEGURO SOCIAL',
-        email: 'facturacion@imss.gob.mx',
-        direccion: {
-          calle: 'Av. Paseo de la Reforma',
-          numero: '476',
-          colonia: 'Cuauhtémoc',
-          ciudad: 'México',
-          estado: 'CDMX',
-          cp: '06500',
-          pais: 'México'
-        },
-        tipo: 'moral',
-        regimenFiscal: '603',
-        usoCFDI: 'G03'
-      },
-      {
-        id: '3',
-        rfc: 'GARC800501ABC',
-        razonSocial: 'Juan García López',
-        email: 'juan.garcia@empresa.com',
-        telefono: '555-0456',
-        direccion: {
-          calle: 'Calle Principal',
-          numero: '456',
-          colonia: 'Centro',
-          ciudad: 'México',
-          estado: 'CDMX',
-          cp: '06000',
-          pais: 'México'
-        },
-        tipo: 'fisica',
-        regimenFiscal: '612',
-        usoCFDI: 'G03'
-      }
-    ])
-
-    // Seguros mock
+    // Seguros mock (Future: migrate to database)
     setSeguros([
       {
         id: '1',
-        nombre: 'Instituto Mexicano del Seguro Social',
+        nombre: 'IMSS',
         codigo: 'IMSS',
         tipo: 'IMSS',
         activo: true,
         configuracion: {
           requierePreautorizacion: false,
           diasPreautorizacion: 0,
-          precioPorProcedimiento: {
-            'CMO001': 800,
-            'EMA001': 1500
-          },
-          descuento: 15,
+          precioPorProcedimiento: {},
+          descuento: 0,
           copago: 0,
-          cobertura: 85,
-          limites: {
-            anual: 50000,
-            mensual: 5000
-          },
+          cobertura: 100,
+          limites: { anual: 0, mensual: 0 },
           codigosAutorizacion: []
         }
-      },
-      {
-        id: '2',
-        nombre: 'Instituto de Seguridad y Servicios Sociales de los Trabajadores del Estado',
-        codigo: 'ISSSTE',
-        tipo: 'ISSSTE',
-        activo: true,
-        configuracion: {
-          requierePreautorizacion: true,
-          diasPreautorizacion: 5,
-          precioPorProcedimiento: {
-            'CMO001': 750,
-            'EMA001': 1400
-          },
-          descuento: 12,
-          copago: 50,
-          cobertura: 80,
-          limites: {
-            anual: 45000,
-            mensual: 4500
-          },
-          codigosAutorizacion: []
-        }
-      }
-    ])
-
-    // Facturas mock
-    const hoy = new Date()
-    const hace30Dias = new Date(hoy.getTime() - 30 * 24 * 60 * 60 * 1000)
-    
-    setFacturas([
-      {
-        id: '1',
-        folio: 'F-001',
-        fechaEmision: hace30Dias,
-        fechaVencimiento: new Date(hace30Dias.getTime() + 30 * 24 * 60 * 60 * 1000),
-        cliente: clientes[0] || {
-          id: '1',
-          rfc: 'MOL850215ABC',
-          razonSocial: 'MOLINA INDUSTRIAL SA DE CV',
-          email: 'compras@molina.com',
-          direccion: {
-            calle: 'Av. Industrial',
-            numero: '123',
-            colonia: 'Industrial',
-            ciudad: 'México',
-            estado: 'CDMX',
-            cp: '03100',
-            pais: 'México'
-          },
-          tipo: 'moral',
-          regimenFiscal: '601',
-          usoCFDI: 'G03'
-        },
-        servicios: [
-          {
-            id: '1',
-            servicioId: '1',
-            servicioNombre: 'Consulta Médica Ocupacional',
-            cantidad: 2,
-            precioUnitario: 800,
-            descuento: 0,
-            impuesto: 256,
-            total: 1856
-          }
-        ],
-        subtotal: 1600,
-        impuestos: 256,
-        total: 1856,
-        moneda: 'MXN',
-        estado: 'pendiente' as const,
-        metodoPago: 'PUE',
-        lugarExpedicion: 'CDMX',
-        regimeFiscal: '601',
-        usoCFDI: 'G03',
-        serie: 'F',
-        numero: 1,
-        created_at: hace30Dias,
-        updated_at: hace30Dias
-      }
-    ])
-
-    setAlertasVencimiento([
-      {
-        id: '1',
-        facturaId: '1',
-        diasRestantes: 5,
-        nivelUrgencia: 'alta',
-        mensaje: 'Factura F-001 vence en 5 días',
-        fechaLimite: new Date(hoy.getTime() + 5 * 24 * 60 * 60 * 1000)
       }
     ])
   }
@@ -272,72 +122,47 @@ export function useFacturacion() {
   const crearFactura = useCallback(async (facturaData: Partial<Factura>): Promise<Factura> => {
     setLoading(true)
     try {
-      // Validar datos requeridos
-      if (!facturaData.cliente) {
-        throw new Error('Cliente es requerido')
-      }
-      if (!facturaData.servicios || facturaData.servicios.length === 0) {
-        throw new Error('Servicios son requeridos')
-      }
+      if (!user) throw new Error('Usuario no autenticado')
 
-      // Simular creación de factura
-      const nuevaFactura: Factura = {
-        id: Date.now().toString(),
-        folio: `F-${String(facturas.length + 1).padStart(3, '0')}`,
-        fechaEmision: new Date(),
-        fechaVencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        cliente: facturaData.cliente,
-        servicios: facturaData.servicios,
-        subtotal: facturaData.subtotal || 0,
-        impuestos: facturaData.impuestos || 0,
-        total: facturaData.total || 0,
-        moneda: facturaData.moneda || 'MXN',
-        estado: 'pendiente' as const,
-        metodoPago: facturaData.metodoPago || 'PUE',
-        lugarExpedicion: facturaData.lugarExpedicion || 'CDMX',
-        regimeFiscal: facturaData.regimeFiscal || '601',
-        usoCFDI: facturaData.usoCFDI || 'G03',
-        serie: 'F',
-        numero: facturas.length + 1,
-        created_at: new Date(),
-        updated_at: new Date(),
-        ...facturaData
-      }
+      const res = await billingService.createFacturaBorrador(
+        {
+          ...facturaData,
+          empresa_id: user.empresa_id,
+          estado: 'borrador',
+          fecha_emision: new Date().toISOString()
+        } as any,
+        facturaData.servicios as any
+      )
 
-      setFacturas(prev => [...prev, nuevaFactura])
+      await loadInitialData()
       toast.success('Factura creada exitosamente')
-      return nuevaFactura
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error al crear factura'
-      setError(errorMessage)
-      toast.error(errorMessage)
-      throw new Error(errorMessage)
+      return res as any
+    } catch (err: any) {
+      toast.error(err.message || 'Error al crear factura')
+      throw err
     } finally {
       setLoading(false)
     }
-  }, [facturas.length])
+  }, [user, facturas.length])
 
   const generarCFDI = useCallback(async (facturaId: string): Promise<string> => {
     setLoading(true)
     try {
-      // Simular generación de CFDI 4.0
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      const cfdiUUID = `CFDI-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
-      
-      setFacturas(prev => prev.map(f => 
-        f.id === facturaId 
-          ? { ...f, cfdiUUID, estado: 'pagada' as const }
-          : f
-      ))
-      
+      // Simulation of CFDI generation 4.0 (In production this would call a real SAT provider)
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      const cfdiUUID = crypto.randomUUID().toUpperCase()
+
+      await billingService.updateEstadoFactura(facturaId, {
+        estado: 'timbrada',
+        cfdiUUID
+      } as any)
+
+      await loadInitialData()
       toast.success('CFDI 4.0 generado exitosamente')
       return cfdiUUID
-    } catch (err) {
-      const errorMessage = 'Error al generar CFDI'
-      setError(errorMessage)
-      toast.error(errorMessage)
-      throw new Error(errorMessage)
+    } catch (err: any) {
+      toast.error('Error al generar CFDI')
+      throw err
     } finally {
       setLoading(false)
     }
@@ -346,34 +171,26 @@ export function useFacturacion() {
   const procesarPago = useCallback(async (facturaId: string, pagoData: Partial<Pago>): Promise<Pago> => {
     setLoading(true)
     try {
+      // Simulation of payment processing
+      await billingService.updateEstadoFactura(facturaId, {
+        estado: 'pagada'
+      } as any)
+
       const nuevoPago: Pago = {
         id: Date.now().toString(),
         facturaId,
         monto: pagoData.monto || 0,
         fechaPago: new Date(),
         metodoPago: pagoData.metodoPago || 'TRANSFERENCIA',
-        estado: 'completado' as const
+        estado: 'completado'
       }
 
-      // Actualizar estado de factura
-      setFacturas(prev => prev.map(f => {
-        if (f.id === facturaId) {
-          const totalPagado = f.total // En producción se calcularía con pagos reales
-          return {
-            ...f,
-            estado: totalPagado >= f.total ? 'pagada' as const : 'pendiente' as const
-          }
-        }
-        return f
-      }))
-
+      await loadInitialData()
       toast.success('Pago procesado exitosamente')
       return nuevoPago
-    } catch (err) {
-      const errorMessage = 'Error al procesar pago'
-      setError(errorMessage)
-      toast.error(errorMessage)
-      throw new Error(errorMessage)
+    } catch (err: any) {
+      toast.error('Error al procesar pago')
+      throw err
     } finally {
       setLoading(false)
     }
@@ -383,38 +200,36 @@ export function useFacturacion() {
   const generarReporteFinanciero = useCallback(async (fechaInicio: Date, fechaFin: Date): Promise<ReporteFinanciero> => {
     setLoading(true)
     try {
-      // Simular generación de reporte
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Optimization: use existing facturas state instead of new query if possible
+      const reportFacturas = facturas.filter(f =>
+        new Date(f.fechaEmision) >= fechaInicio && new Date(f.fechaEmision) <= fechaFin
+      )
 
-      const reporte: ReporteFinanciero = {
+      const ingresosTotales = reportFacturas.reduce((acc, f) => acc + f.total, 0)
+      const ingresosCobrados = reportFacturas.filter(f => f.estado === 'pagada' || f.estado === 'timbrada').reduce((acc, f) => acc + f.total, 0)
+
+      return {
         periodo: { fechaInicio, fechaFin },
-        ingresosTotales: 156750,
-        ingresosCobrados: 142300,
-        ingresosPendientes: 14450,
-        gastosOperativos: 45200,
-        utilidadNeta: 111550,
-        facturasEmitidas: 89,
-        facturasPagadas: 76,
-        facturasVencidas: 8,
-        clientesActivos: 23,
-        ticketPromedio: 1760,
-        crecimientoVsPeriodoAnterior: 15.3
+        ingresosTotales,
+        ingresosCobrados,
+        ingresosPendientes: ingresosTotales - ingresosCobrados,
+        gastosOperativos: 0,
+        utilidadNeta: ingresosCobrados,
+        facturasEmitidas: reportFacturas.length,
+        facturasPagadas: reportFacturas.filter(f => f.estado === 'pagada').length,
+        facturasVencidas: 0,
+        clientesActivos: Array.from(new Set(reportFacturas.map(f => f.cliente?.id))).length,
+        ticketPromedio: reportFacturas.length > 0 ? ingresosTotales / reportFacturas.length : 0,
+        crecimientoVsPeriodoAnterior: 0
       }
-
-      return reporte
-    } catch (err) {
-      const errorMessage = 'Error al generar reporte'
-      setError(errorMessage)
-      throw new Error(errorMessage)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [facturas])
 
-  // Funciones para seguros
   const procesarConSeguro = useCallback(async (
-    seguroId: string, 
-    serviciosIds: string[], 
+    seguroId: string,
+    serviciosIds: string[],
     datosPaciente: any
   ): Promise<{ costoPaciente: number; costoSeguro: number; autorizado: boolean }> => {
     setLoading(true)
@@ -436,20 +251,14 @@ export function useFacturacion() {
       return {
         costoPaciente: Math.round(costoPaciente),
         costoSeguro: Math.round(costoSeguro),
-        autorizado: true // En producción verificaría preautorización
+        autorizado: true
       }
-    } catch (err) {
-      const errorMessage = 'Error al procesar con seguro'
-      setError(errorMessage)
-      toast.error(errorMessage)
-      throw new Error(errorMessage)
     } finally {
       setLoading(false)
     }
   }, [seguros, servicios])
 
   return {
-    // Estados
     loading,
     error,
     clientes,
@@ -459,19 +268,15 @@ export function useFacturacion() {
     planes,
     notasCredito,
     alertasVencimiento,
-
-    // Funciones
+    refresh: loadInitialData,
     crearFactura,
     generarCFDI,
     procesarPago,
     generarReporteFinanciero,
     procesarConSeguro,
-    
-    // Utility functions
     getClienteById: (id: string) => clientes.find(c => c.id === id),
     getServicioById: (id: string) => servicios.find(s => s.id === id),
     getFacturaById: (id: string) => facturas.find(f => f.id === id),
-    
     clearError: () => setError(null)
   }
 }

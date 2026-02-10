@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   FileText,
   Plus,
@@ -12,15 +12,21 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  Clock
+  Clock,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DataContainer } from '@/components/ui/DataContainer';
 import { usePermisosDinamicos } from '@/hooks/usePermisosDinamicos';
-import { toast } from 'react-hot-toast';
+import { dictamenService } from '@/services/dictamenService';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import type { DictamenMedico, TipoEvaluacionDictamen as TipoEvaluacion, ResultadoDictamen, EstadoDictamen } from '@/types/dictamen';
 
 interface ListaDictamenesProps {
@@ -31,23 +37,23 @@ interface ListaDictamenesProps {
 
 const resultadosColors: Record<ResultadoDictamen, { badge: string; icon: React.ReactNode }> = {
   apto: {
-    badge: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     icon: <CheckCircle2 className="w-4 h-4 text-emerald-600" />
   },
   apto_restricciones: {
-    badge: 'bg-amber-100 text-amber-800 border-amber-200',
+    badge: 'bg-amber-50 text-amber-700 border-amber-200',
     icon: <AlertCircle className="w-4 h-4 text-amber-600" />
   },
   no_apto_temporal: {
-    badge: 'bg-orange-100 text-orange-800 border-orange-200',
+    badge: 'bg-orange-50 text-orange-700 border-orange-200',
     icon: <Clock className="w-4 h-4 text-orange-600" />
   },
   no_apto: {
-    badge: 'bg-rose-100 text-rose-800 border-rose-200',
+    badge: 'bg-rose-50 text-rose-700 border-rose-200',
     icon: <XCircle className="w-4 h-4 text-rose-600" />
   },
   evaluacion_complementaria: {
-    badge: 'bg-blue-100 text-blue-800 border-blue-200',
+    badge: 'bg-blue-50 text-blue-700 border-blue-200',
     icon: <AlertCircle className="w-4 h-4 text-blue-600" />
   },
 };
@@ -72,146 +78,69 @@ const tipoEvaluacionLabels: Record<TipoEvaluacion, string> = {
   reincorporacion: 'Reincorporación',
 };
 
-// Datos de ejemplo
-const dictamenesEjemplo: DictamenMedico[] = [
-  {
-    id: '1',
-    paciente_id: 'p1',
-    expediente_id: 'e1',
-    empresa_id: 'emp1',
-    tipo_evaluacion: 'ingreso',
-    resultado: 'apto',
-    restricciones: [],
-    restricciones_detalle: '',
-    recomendaciones_medicas: ['Mantener hábitos saludables'],
-    recomendaciones_epp: ['lentes_seguridad'],
-    fecha_emision: '2026-02-08',
-    fecha_vigencia_inicio: '2026-02-08',
-    fecha_vigencia_fin: '2027-02-08',
-    vigencia_inicio: '2026-02-08',
-    estado: 'firmado',
-    paciente: {
-      id: 'p1',
-      nombre: 'Juan Carlos',
-      apellido_paterno: 'Martínez',
-      apellido_materno: 'López',
-      puesto: 'Operador de maquinaria',
-    },
-    empresa: {
-      id: 'emp1',
-      nombre: 'Constructora del Norte S.A.',
-    },
-    created_at: '2026-02-08T10:00:00Z',
-    updated_at: '2026-02-08T10:00:00Z',
-    folio: 'DICT-001',
-    estudios_requeridos_completos: true,
-    estudios_faltantes: [],
-    bloqueos_pendientes: [],
-    version: 1,
-    es_version_final: true,
-  },
-  {
-    id: '2',
-    paciente_id: 'p2',
-    expediente_id: 'e2',
-    empresa_id: 'emp1',
-    tipo_evaluacion: 'periodico',
-    resultado: 'apto_restricciones',
-    restricciones: [{
-      codigo: 'R003',
-      descripcion: 'No exponerse a ruido superior a 80dB',
-      tipo: 'fisica'
-    }],
-    restricciones_detalle: 'No exponerse a ruido superior a 80dB',
-    recomendaciones_medicas: ['Usar protección auditiva permanente'],
-    recomendaciones_epp: ['tapones_auditivos', 'protector_auditivo'],
-    fecha_emision: '2026-02-07',
-    fecha_vigencia_inicio: '2026-02-07',
-    fecha_vigencia_fin: '2027-02-07',
-    vigencia_inicio: '2026-02-07',
-    estado: 'completado',
-    paciente: {
-      id: 'p2',
-      nombre: 'María Elena',
-      apellido_paterno: 'García',
-      apellido_materno: 'Santos',
-      puesto: 'Operaria de producción',
-    },
-    empresa: {
-      id: 'emp1',
-      nombre: 'Constructora del Norte S.A.',
-    },
-    created_at: '2026-02-07T14:30:00Z',
-    updated_at: '2026-02-07T14:30:00Z',
-    folio: 'DICT-002',
-    estudios_requeridos_completos: true,
-    estudios_faltantes: [],
-    bloqueos_pendientes: [],
-    version: 1,
-    es_version_final: true,
-  },
-  {
-    id: '3',
-    paciente_id: 'p3',
-    expediente_id: 'e3',
-    empresa_id: 'emp2',
-    tipo_evaluacion: 'retorno',
-    resultado: 'apto',
-    restricciones: [],
-    restricciones_detalle: '',
-    recomendaciones_medicas: ['Retorno gradual a actividades'],
-    recomendaciones_epp: [],
-    fecha_emision: '2026-02-06',
-    fecha_vigencia_inicio: '2026-02-06',
-    vigencia_inicio: '2026-02-06',
-    estado: 'firmado',
-    paciente: {
-      id: 'p3',
-      nombre: 'Roberto',
-      apellido_paterno: 'Hernández',
-      apellido_materno: 'Flores',
-      puesto: 'Almacenista',
-    },
-    empresa: {
-      id: 'emp2',
-      nombre: 'Distribuidora Nacional S.A.',
-    },
-    created_at: '2026-02-06T09:00:00Z',
-    updated_at: '2026-02-06T09:00:00Z',
-    folio: 'DICT-003',
-    estudios_requeridos_completos: true,
-    estudios_faltantes: [],
-    bloqueos_pendientes: [],
-    version: 1,
-    es_version_final: true,
-  },
-];
-
 export function ListaDictamenes({ onNuevoDictamen, onVerDictamen, onEditarDictamen }: ListaDictamenesProps) {
+  const { user } = useAuth();
   const { puede } = usePermisosDinamicos();
-  const [dictamenes, setDictamenes] = useState<DictamenMedico[]>(dictamenesEjemplo);
-  const [loading, setLoading] = useState(false);
+  const [dictamenes, setDictamenes] = useState<DictamenMedico[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroTipo, setFiltroTipo] = useState<TipoEvaluacion | 'todos'>('todos');
   const [filtroResultado, setFiltroResultado] = useState<ResultadoDictamen | 'todos'>('todos');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const limit = 10;
 
-  const dictamenesFiltrados = dictamenes.filter(d => {
-    const matchesSearch =
-      d.paciente?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      d.paciente?.apellido_paterno.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      d.empresa?.nombre.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTipo = filtroTipo === 'todos' || d.tipo_evaluacion === filtroTipo;
-    const matchesResultado = filtroResultado === 'todos' || d.resultado === filtroResultado;
-    return matchesSearch && matchesTipo && matchesResultado;
-  });
+  const fetchDictamenes = useCallback(async () => {
+    if (!user?.empresa_id) return;
 
-  const handleExportarPDF = (id: string) => {
-    toast.success('Descargando PDF del dictamen...');
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await dictamenService.listar({
+        empresa_id: user.empresa_id,
+        tipo_evaluacion: filtroTipo === 'todos' ? undefined : filtroTipo,
+        resultado: filtroResultado === 'todos' ? undefined : filtroResultado,
+      }, {
+        page,
+        limit,
+        ordenar_por: 'created_at',
+        direccion: 'desc'
+      });
+
+      setDictamenes(response.data);
+      setTotal(response.total);
+    } catch (err: any) {
+      console.error('Error fetching dictámenes:', err);
+      setError('No se pudieron cargar los dictámenes médico-laborales.');
+      toast.error('Error al sincronizar con el servidor');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.empresa_id, filtroTipo, filtroResultado, page]);
+
+  useEffect(() => {
+    fetchDictamenes();
+  }, [fetchDictamenes]);
+
+  const handleExportarPDF = async (id: string, folio: string) => {
+    try {
+      toast.loading(`Generando PDF para ${folio}...`, { id: 'pdf-gen' });
+      await dictamenService.generarPDF(id);
+      toast.success('PDF generado exitosamente', { id: 'pdf-gen' });
+    } catch (err) {
+      toast.error('Error al generar el documento técnico', { id: 'pdf-gen' });
+    }
   };
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('es-MX');
+    return new Date(dateStr).toLocaleDateString('es-MX', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
   };
 
   return (
@@ -219,188 +148,203 @@ export function ListaDictamenes({ onNuevoDictamen, onVerDictamen, onEditarDictam
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Dictámenes Médico-Laborales</h1>
-          <p className="text-slate-500">Gestión de evaluaciones de aptitud laboral</p>
+          <h1 className="text-2xl font-black text-slate-900">Dictámenes Médico-Laborales</h1>
+          <p className="text-slate-500 font-medium italic">Gestión avanzada de aptitud y vigilancia de la salud</p>
         </div>
         {puede('dictamenes', 'crear') && (
           <Button
             onClick={onNuevoDictamen}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-500/20 font-bold"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Nuevo Dictamen
+            Emisión de Dictamen
           </Button>
         )}
       </div>
 
       {/* Filtros */}
-      <Card className="border shadow-sm">
-        <CardContent className="p-4">
+      <Card className="border-none shadow-xl bg-white rounded-3xl overflow-hidden">
+        <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
-                placeholder="Buscar por paciente o empresa..."
+                placeholder="Buscar por paciente, folio o empresa..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-12 h-12 rounded-xl bg-slate-50 border-none focus-visible:ring-emerald-500 font-medium"
               />
             </div>
             <div className="flex gap-2">
               <select
-                className="px-3 py-2 rounded-md border border-gray-200 bg-white text-sm"
+                className="px-4 py-2 rounded-xl border-none bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-emerald-500"
                 value={filtroTipo}
-                onChange={(e) => setFiltroTipo(e.target.value as TipoEvaluacion | 'todos')}
+                onChange={(e) => { setFiltroTipo(e.target.value as TipoEvaluacion | 'todos'); setPage(1); }}
               >
-                <option value="todos">Todos los tipos</option>
-                <option value="preempleo">Preempleo</option>
-                <option value="periodico">Periódico</option>
-                <option value="retorno">Retorno</option>
-                <option value="egreso">Egreso</option>
-                <option value="reubicacion">Reubicación</option>
+                <option value="todos">Todos los Tipos</option>
+                {Object.entries(tipoEvaluacionLabels).map(([val, label]) => (
+                  <option key={val} value={val}>{label}</option>
+                ))}
               </select>
               <select
-                className="px-3 py-2 rounded-md border border-gray-200 bg-white text-sm"
+                className="px-4 py-2 rounded-xl border-none bg-slate-50 text-sm font-bold text-slate-600 focus:ring-2 focus:ring-emerald-500"
                 value={filtroResultado}
-                onChange={(e) => setFiltroResultado(e.target.value as ResultadoDictamen | 'todos')}
+                onChange={(e) => { setFiltroResultado(e.target.value as ResultadoDictamen | 'todos'); setPage(1); }}
               >
-                <option value="todos">Todos los resultados</option>
+                <option value="todos">Todos los Resultados</option>
                 <option value="apto">Apto</option>
-                <option value="apto_restricciones">Apto con Restricciones</option>
+                <option value="apto_restricciones">Apto c/ Restricciones</option>
                 <option value="no_apto_temporal">No Apto Temporal</option>
                 <option value="no_apto">No Apto</option>
               </select>
+              <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl" onClick={fetchDictamenes}>
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Tabla */}
-      <Card className="border shadow-md">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-50/50">
-                <TableHead>Paciente</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Resultado</TableHead>
-                <TableHead>Vigencia</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {dictamenesFiltrados.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-slate-500">
-                    <FileText className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                    <p>No se encontraron dictámenes</p>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                dictamenesFiltrados.map((dictamen) => (
-                  <TableRow key={dictamen.id} className="hover:bg-slate-50/50">
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          {dictamen.paciente?.nombre} {dictamen.paciente?.apellido_paterno}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {dictamen.paciente?.puesto}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {dictamen.empresa?.nombre}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {tipoEvaluacionLabels[dictamen.tipo_evaluacion]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${resultadosColors[dictamen.resultado].badge}`}>
-                        {resultadosColors[dictamen.resultado].icon}
-                        <span>
-                          {dictamen.resultado === 'apto' && 'Apto'}
-                          {dictamen.resultado === 'apto_restricciones' && 'Apto con Restricciones'}
-                          {dictamen.resultado === 'no_apto_temporal' && 'No Apto Temporal'}
-                          {dictamen.resultado === 'no_apto' && 'No Apto'}
-                          {dictamen.resultado === 'evaluacion_complementaria' && 'Eval. Complementaria'}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <p>{formatDate(dictamen.fecha_vigencia_inicio)}</p>
-                        {dictamen.fecha_vigencia_fin && (
-                          <p className="text-xs text-slate-500">
-                            al {formatDate(dictamen.fecha_vigencia_fin)}
+      <DataContainer
+        loading={loading}
+        error={error}
+        data={dictamenes}
+        onRetry={fetchDictamenes}
+        loadingMessage="Sincronizando expedientes digitales..."
+        emptyAction={onNuevoDictamen}
+        emptyActionLabel="Emitir Primer Dictamen"
+      >
+        <Card className="border-none shadow-2xl bg-white rounded-3xl overflow-hidden">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/50 hover:bg-slate-50/50 border-b border-slate-100">
+                    <TableHead className="font-bold text-slate-400 uppercase tracking-widest text-[10px] py-4">Paciente</TableHead>
+                    <TableHead className="font-bold text-slate-400 uppercase tracking-widest text-[10px] py-4">Evaluación</TableHead>
+                    <TableHead className="font-bold text-slate-400 uppercase tracking-widest text-[10px] py-4">Resultado Clínico</TableHead>
+                    <TableHead className="font-bold text-slate-400 uppercase tracking-widest text-[10px] py-4">Vigencia</TableHead>
+                    <TableHead className="font-bold text-slate-400 uppercase tracking-widest text-[10px] py-4">Estado</TableHead>
+                    <TableHead className="text-right font-bold text-slate-400 uppercase tracking-widest text-[10px] py-4 pr-6">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dictamenes.map((dictamen) => (
+                    <TableRow key={dictamen.id} className="hover:bg-slate-50/30 transition-colors border-b border-slate-50 last:border-0 group">
+                      <TableCell className="py-4">
+                        <div className="pl-2">
+                          <p className="font-black text-slate-900 group-hover:text-emerald-700 transition-colors">
+                            {dictamen.paciente?.nombre} {dictamen.paciente?.apellido_paterno}
                           </p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={`text-xs ${estadoColors[dictamen.estado]}`}>
-                        {dictamen.estado === 'borrador' && 'Borrador'}
-                        {dictamen.estado === 'pendiente' && 'Pendiente'}
-                        {dictamen.estado === 'completado' && 'Completado'}
-                        {dictamen.estado === 'anulado' && 'Anulado'}
-                        {dictamen.estado === 'vencido' && 'Vencido'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onVerDictamen(dictamen.id)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        {puede('dictamenes', 'editar') && dictamen.estado !== 'completado' && (
+                          <p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter mt-0.5">
+                            {dictamen.folio || `#${dictamen.id.slice(0, 8)}`}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="rounded-lg bg-white border-slate-100 text-slate-600 font-bold px-3 py-1">
+                          {tipoEvaluacionLabels[dictamen.tipo_evaluacion]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-2xl text-xs font-black border transition-all ${resultadosColors[dictamen.resultado]?.badge || 'bg-slate-50 border-slate-100'}`}>
+                          {resultadosColors[dictamen.resultado]?.icon}
+                          <span className="uppercase tracking-wide">
+                            {dictamen.resultado === 'apto' && 'Apto'}
+                            {dictamen.resultado === 'apto_restricciones' && 'Apto con Restricciones'}
+                            {dictamen.resultado === 'no_apto_temporal' && 'No Apto Temporal'}
+                            {dictamen.resultado === 'no_apto' && 'No Apto'}
+                            {dictamen.resultado === 'evaluacion_complementaria' && 'Eval. Complementaria'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-black text-slate-700">{formatDate(dictamen.fecha_vigencia_inicio || dictamen.vigencia_inicio)}</span>
+                          {dictamen.vigencia_fin && (
+                            <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              Expira: {formatDate(dictamen.vigencia_fin)}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`rounded-xl px-3 py-1 font-black text-[10px] tracking-widest uppercase border-none ${estadoColors[dictamen.estado]}`}>
+                          {dictamen.estado}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right pr-6">
+                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button
                             variant="ghost"
-                            size="sm"
-                            onClick={() => onEditarDictamen(dictamen.id)}
-                            className="h-8 w-8 p-0"
+                            size="icon"
+                            onClick={() => onVerDictamen(dictamen.id)}
+                            className="h-10 w-10 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50"
+                            title="Ver Detalle"
                           >
-                            <Edit2 className="w-4 h-4" />
+                            <Eye className="w-5 h-5" />
                           </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleExportarPDF(dictamen.id)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                          {puede('dictamenes', 'editar') && (dictamen.estado === 'borrador' || dictamen.estado === 'pendiente') && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => onEditarDictamen(dictamen.id)}
+                              className="h-10 w-10 text-slate-400 hover:text-amber-600 hover:bg-amber-50"
+                              title="Editar"
+                            >
+                              <Edit2 className="w-5 h-5" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleExportarPDF(dictamen.id, dictamen.folio || dictamen.id)}
+                            className="h-10 w-10 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                            title="Descargar PDF Técnico"
+                          >
+                            <Download className="w-5 h-5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
-      {/* Paginación (placeholder) */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">
-          Mostrando {dictamenesFiltrados.length} de {dictamenes.length} dictámenes
-        </p>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled>
-            Anterior
-          </Button>
-          <Button variant="outline" size="sm" disabled>
-            Siguiente
-          </Button>
-        </div>
-      </div>
+            {/* Paginación */}
+            <div className="p-6 border-t border-slate-50 flex items-center justify-between bg-slate-50/30">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                Mostrando <span className="text-slate-900 font-black">{dictamenes.length}</span> de <span className="text-slate-900 font-black">{total}</span> registros
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 1}
+                  onClick={() => setPage(p => p - 1)}
+                  className="rounded-xl border-slate-200 h-10 px-4 font-black text-[10px] uppercase tracking-widest"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page * limit >= total}
+                  onClick={() => setPage(p => p + 1)}
+                  className="rounded-xl border-slate-200 h-10 px-4 font-black text-[10px] uppercase tracking-widest"
+                >
+                  Siguiente
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </DataContainer>
     </div>
   );
 }

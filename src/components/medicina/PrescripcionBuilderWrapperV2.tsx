@@ -17,6 +17,7 @@ import { medicamentosDisponibles } from './PrescripcionBuilderInline'
 import toast from 'react-hot-toast'
 import { useAuditLog } from '@/hooks/useAuditLog'
 import './hc_rx_v2.css'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface WrapperProps {
   paciente: {
@@ -31,13 +32,14 @@ interface WrapperProps {
 }
 
 export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
+  const { user } = useAuth()
   const enabled = isHcRxV2Enabled()
   const [state, setState] = useState<PrescripcionBuilderInlineState | null>(null)
   const commandsRef = useRef<any>(null)
   const [drawer, setDrawer] = useState<string | null>(null) // simple drawer state placeholder
-  const [previewScrollKey] = useState(()=>Date.now())
+  const [previewScrollKey] = useState(() => Date.now())
   const [focusElement, setFocusElement] = useState<HTMLElement | null>(null)
-  const [mode, setMode] = useState<'manual'|'rapido'|'voz'>(() => {
+  const [mode, setMode] = useState<'manual' | 'rapido' | 'voz'>(() => {
     if (typeof window !== 'undefined') {
       const m = localStorage.getItem('HC_RX_MODE_LAST') as any
       if (m === 'manual' || m === 'rapido' || m === 'voz') return m
@@ -49,10 +51,10 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
   const [fuzzyQuery, setFuzzyQuery] = useState('')
   const [fuzzyResults, setFuzzyResults] = useState<any[]>([])
   const fuseRef = useRef<any>(null)
-    const { logAction } = useAuditLog()
-    const [showDraftBanner, setShowDraftBanner] = useState(false)
-    const [lastSaved, setLastSaved] = useState<string>('')
-    const [codigosCIE10, setCodigosCIE10] = useState<Array<{ codigo: string; descripcion: string }>>([])
+  const { logAction } = useAuditLog()
+  const [showDraftBanner, setShowDraftBanner] = useState(false)
+  const [lastSaved, setLastSaved] = useState<string>('')
+  const [codigosCIE10, setCodigosCIE10] = useState<Array<{ codigo: string; descripcion: string }>>([])
 
   // Track focus to restore after step changes (acceptance criteria)
   useEffect(() => {
@@ -71,7 +73,7 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
       if (e.ctrlKey && e.key === '/') { e.preventDefault(); commandsRef.current?.focusSearch(); return }
       if (e.altKey && e.key.toLowerCase() === 's') { e.preventDefault(); commandsRef.current?.signAndPdf(); return }
       if (e.altKey && e.key.toLowerCase() === 'd') { e.preventDefault(); commandsRef.current?.duplicateLast?.(); return }
-      if (e.shiftKey && e.key === '?') { e.preventDefault(); setShowHelpModes(s=>!s); return }
+      if (e.shiftKey && e.key === '?') { e.preventDefault(); setShowHelpModes(s => !s); return }
       if (e.key === 'Escape') { if (drawer) { e.preventDefault(); setDrawer(null) } else if (showHelpModes) { e.preventDefault(); setShowHelpModes(false) } }
     }
     window.addEventListener('keydown', handler)
@@ -79,9 +81,9 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
   }, [drawer, enabled, showHelpModes])
 
   // Open telemetry
-  useEffect(() => { if (enabled) logAction({ action:'ROUTE_ACCESS', resourceType:'historial', actionType:'HC_OPEN' }) }, [enabled])
+  useEffect(() => { if (enabled) logAction({ action: 'ROUTE_ACCESS', resourceType: 'historial', actionType: 'HC_OPEN' }) }, [enabled])
   // Mode telemetry
-  useEffect(() => { if (enabled) logAction({ action:'RESOURCE_ACCESS', resourceType:'prescripcion', actionType:'RX_MODE_CHANGE', details:{ mode } }) }, [mode])
+  useEffect(() => { if (enabled) logAction({ action: 'RESOURCE_ACCESS', resourceType: 'prescripcion', actionType: 'RX_MODE_CHANGE', details: { mode } }) }, [mode])
 
   // Autosave every 10s when dirty
   useEffect(() => {
@@ -90,17 +92,17 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
     try {
       const raw = localStorage.getItem(key)
       if (raw) setShowDraftBanner(true)
-    } catch {}
+    } catch { }
     const interval = setInterval(() => {
       if (!state) return
       const snapshot = JSON.stringify(state)
       if (snapshot !== lastSaved) {
         commandsRef.current?.saveDraft?.()
         const ts = new Date()
-        const stamp = ts.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' })
+        const stamp = ts.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
         toast.success(`Borrador guardado ${stamp}`)
         setLastSaved(snapshot)
-        logAction({ action:'RESOURCE_ACCESS', resourceType:'prescripcion', actionType:'RX_SAVE_DRAFT' })
+        logAction({ action: 'RESOURCE_ACCESS', resourceType: 'prescripcion', actionType: 'RX_SAVE_DRAFT' })
       }
     }, 10000)
     return () => clearInterval(interval)
@@ -108,13 +110,13 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
 
   // Persist mode
   useEffect(() => {
-    try { localStorage.setItem('HC_RX_MODE_LAST', mode) } catch {}
+    try { localStorage.setItem('HC_RX_MODE_LAST', mode) } catch { }
   }, [mode])
 
   const parseRapid = () => {
     if (!rapidText.trim()) { toast.error('Ingresa texto para parsear'); return }
     const lines = rapidText.split(/[;\n]+/).map(l => l.trim()).filter(Boolean)
-    const freqMap: Record<string,string> = { 'c/6h':'cada 6 horas','c/8h':'cada 8 horas','c/12h':'cada 12 horas','c/24h':'cada 24 horas' }
+    const freqMap: Record<string, string> = { 'c/6h': 'cada 6 horas', 'c/8h': 'cada 8 horas', 'c/12h': 'cada 12 horas', 'c/24h': 'cada 24 horas' }
     const parsed: { nombre: string; dosis?: string; frecuencia?: string; duracion?: string; via_administracion?: string }[] = []
     for (const line of lines) {
       const regex = /^(?<nombre>[a-zA-ZÁÉÍÓÚÑáéíóúñ ]+?)\s+(?<dosisNum>\d+[\/,\.]?\d*)\s*(?<dosisUnit>mg|g|mcg|ml)?\s*(?<via>VO|IV|IM|SC)?\s*(?<freq>c\/\d+h|PRN|prn|segun\s+necesidad)?\s*(?:x\s*(?<duracion>\d+d))?/i
@@ -124,13 +126,13 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
         const dosis = [m.groups.dosisNum, m.groups.dosisUnit].filter(Boolean).join(' ')
         const via = m.groups.via || 'VO'
         let frecuencia = m.groups.freq || ''
-        frecuencia = freqMap[frecuencia] || (frecuencia.toLowerCase()==='prn' ? 'según necesidad' : frecuencia)
-        const duracion = m.groups.duracion ? m.groups.duracion.replace('d',' días') : ''
+        frecuencia = freqMap[frecuencia] || (frecuencia.toLowerCase() === 'prn' ? 'según necesidad' : frecuencia)
+        const duracion = m.groups.duracion ? m.groups.duracion.replace('d', ' días') : ''
         parsed.push({ nombre, dosis, frecuencia, duracion, via_administracion: via })
       } else {
         const dur = /x\s*(\d+)d/.exec(line)
         const nombreToken = line.split(/\s+/)[0]
-        parsed.push({ nombre: nombreToken, duracion: dur? dur[1]+' días': undefined })
+        parsed.push({ nombre: nombreToken, duracion: dur ? dur[1] + ' días' : undefined })
       }
     }
     if (!parsed.length) { toast.error('No se pudo parsear'); return }
@@ -142,13 +144,13 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
   // Fuzzy search init
   useEffect(() => {
     if (!fuseRef.current) {
-      fuseRef.current = new Fuse(medicamentosDisponibles, { keys: ['nombre_comercial','nombre_generico','categoria'], threshold: 0.3 })
+      fuseRef.current = new Fuse(medicamentosDisponibles, { keys: ['nombre_comercial', 'nombre_generico', 'categoria'], threshold: 0.3 })
     }
   }, [])
 
   useEffect(() => {
     if (fuzzyQuery.trim().length === 0) { setFuzzyResults([]); return }
-    const res = fuseRef.current.search(fuzzyQuery.trim()).slice(0, 8).map((r:any)=>r.item)
+    const res = fuseRef.current.search(fuzzyQuery.trim()).slice(0, 8).map((r: any) => r.item)
     setFuzzyResults(res)
   }, [fuzzyQuery])
 
@@ -159,7 +161,7 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
     window.print()
     toast.success('PDF generado')
     commandsRef.current?.signAndPdf()
-    logAction({ action:'RESOURCE_ACCESS', resourceType:'prescripcion', actionType:'RX_PDF_VIEW' })
+    logAction({ action: 'RESOURCE_ACCESS', resourceType: 'prescripcion', actionType: 'RX_PDF_VIEW' })
   }
 
   if (!enabled) {
@@ -181,11 +183,11 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
             <span className="font-medium">Borrador encontrado - última edición guardada</span>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="border-amber-400 text-amber-700 hover:bg-amber-100" onClick={()=>{
-              try { const raw = localStorage.getItem(`HC_RX_DRAFT_${props.paciente.id}`); if (raw) { const s = JSON.parse(raw); commandsRef.current?.restoreDraft?.(s) } } catch {}
+            <Button size="sm" variant="outline" className="border-amber-400 text-amber-700 hover:bg-amber-100" onClick={() => {
+              try { const raw = localStorage.getItem(`HC_RX_DRAFT_${props.paciente.id}`); if (raw) { const s = JSON.parse(raw); commandsRef.current?.restoreDraft?.(s) } } catch { }
               setShowDraftBanner(false)
             }}>Restaurar</Button>
-            <Button size="sm" variant="ghost" className="text-amber-600 hover:bg-amber-100" onClick={()=>{ try { localStorage.removeItem(`HC_RX_DRAFT_${props.paciente.id}`) } catch {} setShowDraftBanner(false) }}>Descartar</Button>
+            <Button size="sm" variant="ghost" className="text-amber-600 hover:bg-amber-100" onClick={() => { try { localStorage.removeItem(`HC_RX_DRAFT_${props.paciente.id}`) } catch { } setShowDraftBanner(false) }}>Descartar</Button>
           </div>
         </motion.div>
       )}
@@ -195,23 +197,23 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
           {/* Segmented control modos - Estilos mejorados */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-3">
             <div role="radiogroup" aria-label="Modo de ingreso" className="hc-segmented-control">
-              {(['manual','rapido','voz'] as const).map(opt => (
+              {(['manual', 'rapido', 'voz'] as const).map(opt => (
                 <motion.button
                   key={opt}
                   role="radio"
-                  aria-checked={mode===opt}
-                  onClick={()=>setMode(opt)}
+                  aria-checked={mode === opt}
+                  onClick={() => setMode(opt)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className="hc-segmented-btn"
-                >{opt==='manual'?'✍️ Manual': opt==='rapido'?'⚡ Rápido':'🎤 Voz'}</motion.button>
+                >{opt === 'manual' ? '✍️ Manual' : opt === 'rapido' ? '⚡ Rápido' : '🎤 Voz'}</motion.button>
               ))}
             </div>
             <div className="text-[11px] text-gray-600 flex items-center gap-2" aria-live="polite">
-              {mode==='manual' && 'Modo manual: usa formularios y búsqueda estándar.'}
-              {mode==='rapido' && 'Modo rápido: pega texto estructurado y parsea medicamentos.'}
-              {mode==='voz' && 'Modo voz: dicta diagnóstico y notas, controla con F2.'}
-              <button onClick={()=>setShowHelpModes(s=>!s)} className="ml-auto px-2 py-1 rounded bg-gray-100 text-gray-600 text-[10px] flex items-center gap-1" title="¿Qué es cada modo? (Shift+?)"><Info className="h-3 w-3"/>Ayuda</button>
+              {mode === 'manual' && 'Modo manual: usa formularios y búsqueda estándar.'}
+              {mode === 'rapido' && 'Modo rápido: pega texto estructurado y parsea medicamentos.'}
+              {mode === 'voz' && 'Modo voz: dicta diagnóstico y notas, controla con F2.'}
+              <button onClick={() => setShowHelpModes(s => !s)} className="ml-auto px-2 py-1 rounded bg-gray-100 text-gray-600 text-[10px] flex items-center gap-1" title="¿Qué es cada modo? (Shift+?)"><Info className="h-3 w-3" />Ayuda</button>
             </div>
             {showHelpModes && (
               <div className="text-[11px] bg-white border rounded p-3 space-y-1" role="region" aria-label="Ayuda modos">
@@ -222,23 +224,23 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
               </div>
             )}
           </motion.div>
-          {mode==='rapido' && state?.paso===2 && (
+          {mode === 'rapido' && state?.paso === 2 && (
             <div className="space-y-2">
               <label className="text-xs font-medium">Entrada rápida (separa medicamentos con ;)</label>
               <textarea
                 value={rapidText}
-                onChange={e=>setRapidText(e.target.value)}
+                onChange={e => setRapidText(e.target.value)}
                 rows={3}
                 placeholder="Ej: amoxicilina 500 mg VO c/8h x 7d; paracetamol 500 mg PRN; ibuprofeno 400 mg VO c/8h x 5d"
                 className="w-full text-xs p-2 border rounded-md focus:ring-2 focus:ring-primary/60"
               />
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={parseRapid}>Parsear</Button>
-                <Button size="sm" variant="ghost" disabled={!rapidText.trim()} onClick={()=>setRapidText('')}>Limpiar</Button>
+                <Button size="sm" variant="ghost" disabled={!rapidText.trim()} onClick={() => setRapidText('')}>Limpiar</Button>
               </div>
             </div>
           )}
-          {mode==='voz' && state?.paso===1 && (
+          {mode === 'voz' && state?.paso === 1 && (
             <div className="text-[11px] text-primary flex items-center gap-2">
               {commandsRef.current?.voiceSupported?.() ? (commandsRef.current?.isMicActive?.() ? 'Dictando... (F2 para detener)' : 'Micrófono listo (F2 para dictar)') : 'Voz no soportada, usa modo manual'}
             </div>
@@ -270,7 +272,7 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
                 }}
                 onCorrect={() => commandsRef.current?.correctGrammar?.()}
               />
-              
+
               {/* Buscador CIE-10 */}
               <Card className="mt-4">
                 <CardHeader className="pb-3">
@@ -306,18 +308,18 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
                 <input
                   type="text"
                   value={fuzzyQuery}
-                  onChange={e=>setFuzzyQuery(e.target.value)}
+                  onChange={e => setFuzzyQuery(e.target.value)}
                   placeholder="Buscar por nombre, genérico o categoría..."
                   className="w-full px-3 py-2 text-xs border rounded-md focus:ring-2 focus:ring-primary/60"
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto">
-                  {(fuzzyResults.length? fuzzyResults : medicamentosDisponibles.slice(0,8)).map((m:any,idx:number)=>(
+                  {(fuzzyResults.length ? fuzzyResults : medicamentosDisponibles.slice(0, 8)).map((m: any, idx: number) => (
                     <div key={idx} className="border rounded-md p-2 flex flex-col gap-1 hover:border-primary">
                       <div className="text-xs font-medium">{m.nombre_comercial} <span className="text-[10px] text-gray-500">{m.concentracion}</span></div>
                       <div className="text-[10px] text-gray-500">{m.nombre_generico} · {m.categoria}</div>
                       <button
                         type="button"
-                        onClick={()=>commandsRef.current?.addParsedMedicamentos?.([{ nombre: m.nombre_comercial, dosis: m.dosis_recomendada, frecuencia: m.frecuencia_opciones?.[0], duracion: m.max_dias? m.max_dias+' días': '' }])}
+                        onClick={() => commandsRef.current?.addParsedMedicamentos?.([{ nombre: m.nombre_comercial, dosis: m.dosis_recomendada, frecuencia: m.frecuencia_opciones?.[0], duracion: m.max_dias ? m.max_dias + ' días' : '' }])}
                         className="text-[10px] mt-1 px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20"
                       >Añadir</button>
                     </div>
@@ -331,26 +333,26 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
             <CardHeader className="pb-2 flex flex-row justify-between items-center">
               <CardTitle className="text-sm">Información relevante</CardTitle>
               {props.paciente.alergias && (
-                <Badge variant="destructive" className="text-xs flex items-center gap-1"><AlertTriangle className="h-3 w-3"/>Alergias</Badge>
+                <Badge variant="destructive" className="text-xs flex items-center gap-1"><AlertTriangle className="h-3 w-3" />Alergias</Badge>
               )}
             </CardHeader>
             <CardContent className="pt-0">
               <div className="flex flex-wrap gap-2 text-xs">
                 {props.paciente.alergias && (
-                  <button onClick={()=>setDrawer('alergias')} className="px-2 py-1 rounded-full bg-red-100 text-red-700">Alergias</button>
+                  <button onClick={() => setDrawer('alergias')} className="px-2 py-1 rounded-full bg-red-100 text-red-700">Alergias</button>
                 )}
                 {props.paciente.enfermedades_cronicas && (
-                  <button onClick={()=>setDrawer('cronicas')} className="px-2 py-1 rounded-full bg-amber-100 text-amber-700">Enf. crónicas</button>
+                  <button onClick={() => setDrawer('cronicas')} className="px-2 py-1 rounded-full bg-amber-100 text-amber-700">Enf. crónicas</button>
                 )}
-                <button onClick={()=>setDrawer('signos')} className="px-2 py-1 rounded-full bg-blue-100 text-blue-700">Signos vitales</button>
-                <button onClick={()=>setDrawer('estudios')} className="px-2 py-1 rounded-full bg-purple-100 text-purple-700">Últimos estudios</button>
-                <button onClick={()=>setDrawer('recetas')} className="px-2 py-1 rounded-full bg-green-100 text-green-700">Recetas previas</button>
+                <button onClick={() => setDrawer('signos')} className="px-2 py-1 rounded-full bg-blue-100 text-blue-700">Signos vitales</button>
+                <button onClick={() => setDrawer('estudios')} className="px-2 py-1 rounded-full bg-purple-100 text-purple-700">Últimos estudios</button>
+                <button onClick={() => setDrawer('recetas')} className="px-2 py-1 rounded-full bg-green-100 text-green-700">Recetas previas</button>
               </div>
               {drawer && (
                 <div className="mt-3 text-xs border rounded-md p-3 bg-gray-50" role="dialog" aria-label={`Detalle ${drawer}`}>
                   <div className="flex justify-between mb-2">
                     <strong className="capitalize">{drawer}</strong>
-                    <button className="text-gray-500" onClick={()=>setDrawer(null)}>Cerrar (Esc)</button>
+                    <button className="text-gray-500" onClick={() => setDrawer(null)}>Cerrar (Esc)</button>
                   </div>
                   <p className="text-gray-600">Contenido demo de {drawer}. Aquí se listarían datos clínicos detallados.</p>
                 </div>
@@ -372,10 +374,10 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
               <PrescriptionPreview
                 pacienteNombre={`${props.paciente.nombre} ${props.paciente.apellido_paterno}`}
                 diagnostico={state?.diagnostico || ''}
-                medicamentos={(state?.medicamentosSeleccionados || []).map((m,i)=>({...m,index:i})) as any}
+                medicamentos={(state?.medicamentosSeleccionados || []).map((m, i) => ({ ...m, index: i })) as any}
                 observaciones={state?.observaciones || ''}
                 fecha={new Date()}
-                medico={'Dr. Luna Rivera'}
+                medico={user ? `${user.nombre} ${user.apellido_paterno || ''} ${user.apellido_materno || ''}`.trim() : 'Dr. Usuario'}
               />
             </motion.div>
           </div>
@@ -389,15 +391,15 @@ export function PrescripcionBuilderWrapperV2(props: WrapperProps) {
           <span>Modo: {mode}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={saveDraft} title="Guardar borrador (autosave próximamente)"><Save className="h-4 w-4 mr-1"/>Guardar borrador</Button>
-          <Button variant="outline" size="sm" onClick={()=>commandsRef.current?.prev()} disabled={state?.paso===1}><ArrowLeft className="h-4 w-4 mr-1"/>Anterior</Button>
+          <Button variant="outline" size="sm" onClick={saveDraft} title="Guardar borrador (autosave próximamente)"><Save className="h-4 w-4 mr-1" />Guardar borrador</Button>
+          <Button variant="outline" size="sm" onClick={() => commandsRef.current?.prev()} disabled={state?.paso === 1}><ArrowLeft className="h-4 w-4 mr-1" />Anterior</Button>
           {state?.paso! < 3 && (
-            <Button size="sm" onClick={()=>commandsRef.current?.next()} disabled={state?.paso===3 || (state?.paso===1 && !(state?.diagnostico||'').trim()) || (state?.paso===2 && (state?.medicamentosSeleccionados.length||0)===0)}><ArrowRight className="h-4 w-4 mr-1"/>Siguiente</Button>
+            <Button size="sm" onClick={() => commandsRef.current?.next()} disabled={state?.paso === 3 || (state?.paso === 1 && !(state?.diagnostico || '').trim()) || (state?.paso === 2 && (state?.medicamentosSeleccionados.length || 0) === 0)}><ArrowRight className="h-4 w-4 mr-1" />Siguiente</Button>
           )}
-          {state?.paso===3 && (
-            <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={signPdf} title="Firmar y generar PDF (Alt+S)"><FileSignature className="h-4 w-4 mr-1"/>Firmar & PDF</Button>
+          {state?.paso === 3 && (
+            <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={signPdf} title="Firmar y generar PDF (Alt+S)"><FileSignature className="h-4 w-4 mr-1" />Firmar & PDF</Button>
           )}
-          {state?.paso===2 && <Button variant="outline" size="sm" onClick={()=>commandsRef.current?.duplicateLast?.()} title="Duplicar último (Alt+D)">Duplicar último</Button>}
+          {state?.paso === 2 && <Button variant="outline" size="sm" onClick={() => commandsRef.current?.duplicateLast?.()} title="Duplicar último (Alt+D)">Duplicar último</Button>}
         </div>
       </div>
     </div>

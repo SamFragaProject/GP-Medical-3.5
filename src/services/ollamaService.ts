@@ -70,6 +70,70 @@ export async function getInstalledModels(): Promise<string[]> {
   }
 }
 
+/**
+ * Estado detallado de Ollama (para System Status HUD)
+ */
+export async function getOllamaStatus(): Promise<{
+  online: boolean;
+  version?: string;
+  models: string[];
+  modelCount: number;
+  defaultModelAvailable: boolean;
+}> {
+  try {
+    const [versionRes, modelsRes] = await Promise.all([
+      fetch(`${OLLAMA_BASE_URL}/api/version`, { signal: AbortSignal.timeout(3000) }).catch(() => null),
+      fetch(`${OLLAMA_BASE_URL}/api/tags`, { signal: AbortSignal.timeout(3000) }).catch(() => null)
+    ]);
+
+    if (!versionRes?.ok) {
+      return { online: false, models: [], modelCount: 0, defaultModelAvailable: false };
+    }
+
+    const versionData = await versionRes.json();
+    const modelsData = modelsRes?.ok ? await modelsRes.json() : { models: [] };
+    const modelNames = modelsData.models?.map((m: { name: string }) => m.name) || [];
+
+    return {
+      online: true,
+      version: versionData.version,
+      models: modelNames,
+      modelCount: modelNames.length,
+      defaultModelAvailable: modelNames.some((n: string) => n.includes('llama3'))
+    };
+  } catch {
+    return { online: false, models: [], modelCount: 0, defaultModelAvailable: false };
+  }
+}
+
+/**
+ * Obtener información detallada de un modelo específico
+ */
+export async function getModelInfo(modelName: string): Promise<{
+  name: string;
+  size: string;
+  quantization: string;
+  family: string;
+} | null> {
+  try {
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/show`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: modelName })
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return {
+      name: modelName,
+      size: data.details?.parameter_size || 'unknown',
+      quantization: data.details?.quantization_level || 'unknown',
+      family: data.details?.family || 'unknown'
+    };
+  } catch {
+    return null;
+  }
+}
+
 // Prompt del sistema para asistente médico integral (Cerebro del ERP)
 const MEDICAL_SYSTEM_PROMPT = `Eres GPMedical EX, el cerebro de inteligencia artificial de este ERP Médico. 
 Tu misión es actuar como un copiloto experto para médicos y administradores de salud ocupacional.
@@ -93,8 +157,6 @@ REGLAS DE ORO:
  * Análisis de visión médica (Rayos X, estudios, etc.)
  * Requiere un modelo que soporte visión como 'llava'
  */
-// Análisis de visión médica (Rayos X, estudios, etc.)
-// Requiere un modelo que soporte visión como 'llava'
 export async function analyzeMedicalImage(
   imagePath: string, // Base64 o URL
   prompt: string = "Analiza esta imagen médica y describe hallazgos relevantes para salud ocupacional."
@@ -383,6 +445,8 @@ Mensaje: "${message}"`;
 export default {
   isOllamaAvailable,
   getInstalledModels,
+  getOllamaStatus,
+  getModelInfo,
   chatWithOllama,
   chatWithHistory,
   generateEmbedding,

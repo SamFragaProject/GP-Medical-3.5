@@ -1,383 +1,321 @@
-import React, { useState } from 'react';
-import { 
-  Ear, 
-  Users, 
-  Calendar, 
-  TrendingUp, 
-  AlertTriangle, 
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Ear,
+  Users,
+  Calendar,
+  TrendingUp,
+  AlertTriangle,
   CheckCircle2,
   HardHat,
   GraduationCap,
   ChevronRight,
-  FileText
+  FileText,
+  Plus,
+  RefreshCw
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
 } from 'recharts';
 import { SemaforoNOM011Badge } from './SemaforoNOM011';
-import type { ResumenProgramaNOM011, TrabajadorExpuesto } from '@/types/nom011';
-
-// Datos de ejemplo
-const resumenEjemplo: ResumenProgramaNOM011 = {
-  anio: 2026,
-  trabajadores_expuestos: 45,
-  trabajadores_estudiados: 38,
-  porcentaje_avance: 84,
-  semaforos: {
-    verde: 30,
-    amarillo: 5,
-    rojo: 3,
-  },
-  epp: {
-    entregado: 40,
-    capacitado: 35,
-  },
-  capacitaciones: {
-    programadas: 4,
-    realizadas: 2,
-  },
-  estudios_por_mes: [
-    { mes: 'Ene', cantidad: 8 },
-    { mes: 'Feb', cantidad: 12 },
-    { mes: 'Mar', cantidad: 6 },
-    { mes: 'Abr', cantidad: 0 },
-    { mes: 'May', cantidad: 0 },
-    { mes: 'Jun', cantidad: 0 },
-    { mes: 'Jul', cantidad: 0 },
-    { mes: 'Ago', cantidad: 0 },
-    { mes: 'Sep', cantidad: 0 },
-    { mes: 'Oct', cantidad: 0 },
-    { mes: 'Nov', cantidad: 0 },
-    { mes: 'Dic', cantidad: 0 },
-  ],
-};
-
-const trabajadoresRiesgoEjemplo: TrabajadorExpuesto[] = [
-  {
-    id: '1',
-    paciente_id: 'p1',
-    empresa_id: 'e1',
-    programa_id: 'pr1',
-    puesto: 'Operador de maquinaria',
-    area: 'Producción',
-    nivel_exposicion_db: 92,
-    tiempo_exposicion_horas: 8,
-    epp_entregado: true,
-    fecha_entrega_epp: '2026-01-15',
-    tipo_epp: 'Protector auditivo de copa',
-    audiometria_base_completada: true,
-    fecha_audiometria_base: '2026-01-10',
-    audiometria_anual_completada: true,
-    fecha_audiometria_anual: '2026-02-05',
-    semaforo_actual: 'rojo',
-    paciente: {
-      id: 'p1',
-      nombre: 'Juan Carlos',
-      apellido_paterno: 'Martínez',
-      apellido_materno: 'López',
-    },
-    created_at: '2026-01-10T00:00:00Z',
-    updated_at: '2026-02-05T00:00:00Z',
-  },
-  {
-    id: '2',
-    paciente_id: 'p2',
-    empresa_id: 'e1',
-    programa_id: 'pr1',
-    puesto: 'Soldador',
-    area: 'Manufactura',
-    nivel_exposicion_db: 88,
-    tiempo_exposicion_horas: 6,
-    epp_entregado: true,
-    fecha_entrega_epp: '2026-01-20',
-    tipo_epp: 'Tapones auditivos',
-    audiometria_base_completada: true,
-    fecha_audiometria_base: '2026-01-15',
-    audiometria_anual_completada: true,
-    fecha_audiometria_anual: '2026-02-06',
-    semaforo_actual: 'rojo',
-    paciente: {
-      id: 'p2',
-      nombre: 'Roberto',
-      apellido_paterno: 'Hernández',
-      apellido_materno: 'Flores',
-    },
-    created_at: '2026-01-15T00:00:00Z',
-    updated_at: '2026-02-06T00:00:00Z',
-  },
-  {
-    id: '3',
-    paciente_id: 'p3',
-    empresa_id: 'e1',
-    programa_id: 'pr1',
-    puesto: 'Operario de prensa',
-    area: 'Producción',
-    nivel_exposicion_db: 85,
-    tiempo_exposicion_horas: 8,
-    epp_entregado: false,
-    audiometria_base_completada: true,
-    fecha_audiometria_base: '2026-01-12',
-    audiometria_anual_completada: true,
-    fecha_audiometria_anual: '2026-02-04',
-    semaforo_actual: 'amarillo',
-    paciente: {
-      id: 'p3',
-      nombre: 'María Elena',
-      apellido_paterno: 'García',
-      apellido_materno: 'Santos',
-    },
-    created_at: '2026-01-12T00:00:00Z',
-    updated_at: '2026-02-04T00:00:00Z',
-  },
-];
+import { DataContainer } from '@/components/ui/DataContainer';
+import { nom011Service } from '@/services/nom011Service';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import type { ReporteAnualNom011, EstudioAudiometria } from '@/types/nom011';
 
 const COLORS = ['#22c55e', '#f59e0b', '#ef4444'];
 
 export function ProgramaAnualNOM011() {
-  const [resumen] = useState<ResumenProgramaNOM011>(resumenEjemplo);
-  const [trabajadoresRiesgo] = useState<TrabajadorExpuesto[]>(trabajadoresRiesgoEjemplo);
+  const { user } = useAuth();
+  const [resumen, setResumen] = useState<ReporteAnualNom011 | null>(null);
+  const [trabajadoresRiesgo, setTrabajadoresRiesgo] = useState<EstudioAudiometria[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [anioActual] = useState(new Date().getFullYear());
 
-  const datosSemaforo = [
-    { name: 'Normal', value: resumen.semaforos.verde, color: '#22c55e' },
-    { name: 'Observación', value: resumen.semaforos.amarillo, color: '#f59e0b' },
-    { name: 'Daño', value: resumen.semaforos.rojo, color: '#ef4444' },
-  ];
+  const fetchData = useCallback(async () => {
+    if (!user?.empresa_id) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [dataResumen, dataEstudios] = await Promise.all([
+        nom011Service.generarReporteAnual(user.empresa_id, anioActual),
+        nom011Service.listarAudiometrias({
+          empresa_id: user.empresa_id,
+          semaforo: 'rojo' // Solo mostramos los de riesgo crítico en la sección inferior
+        })
+      ]);
+
+      setResumen(dataResumen);
+      setTrabajadoresRiesgo(dataEstudios.data);
+    } catch (err: any) {
+      console.error('Error fetching NOM-011 data:', err);
+      setError('No se pudo cargar el programa anual de conservación auditiva.');
+      toast.error('Error al sincronizar con el Intelligence Bureau');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.empresa_id, anioActual]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const datosSemaforo = resumen ? [
+    { name: 'Normal', value: resumen.por_semaforo.verde, color: '#22c55e' },
+    { name: 'Observación', value: resumen.por_semaforo.amarillo, color: '#f59e0b' },
+    { name: 'Daño', value: resumen.por_semaforo.rojo, color: '#ef4444' },
+  ] : [];
+
+  const chartData = resumen ? [
+    { mes: 'Estudios', cantidad: resumen.total_evaluados }
+  ] : [];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Ear className="w-8 h-8 text-emerald-600" />
-            Programa Anual NOM-011
-          </h1>
-          <p className="text-slate-500">
-            Conservación de la Audición - Año {resumen.anio}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="rounded-full">
-            <FileText className="w-4 h-4 mr-2" />
-            Reporte
-          </Button>
-          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full">
-            <Calendar className="w-4 h-4 mr-2" />
-            Nueva Audiometría
-          </Button>
-        </div>
-      </div>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border shadow-md">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-slate-500">Trabajadores Expuestos</p>
-                <p className="text-2xl font-bold text-slate-900">{resumen.trabajadores_expuestos}</p>
-              </div>
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-blue-600" />
-              </div>
+    <DataContainer
+      loading={loading}
+      error={error}
+      data={resumen}
+      onRetry={fetchData}
+      loadingMessage="Analizando salud auditiva poblacional..."
+    >
+      {resumen && (
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+                <Ear className="w-8 h-8 text-emerald-600" />
+                Programa Anual NOM-011
+              </h1>
+              <p className="text-slate-500 font-medium">
+                Conservación de la Audición - Año {resumen.anio}
+              </p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border shadow-md">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-slate-500">Estudios Completados</p>
-                <p className="text-2xl font-bold text-slate-900">{resumen.trabajadores_estudiados}</p>
-                <p className="text-xs text-emerald-600">
-                  {resumen.porcentaje_avance}% del programa
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="rounded-xl border-slate-200" onClick={() => fetchData()}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Actualizar
+              </Button>
+              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-500/20">
+                <Calendar className="w-4 h-4 mr-2" />
+                Gestionar Programa
+              </Button>
             </div>
-            <Progress value={resumen.porcentaje_avance} className="mt-2 h-1.5" />
-          </CardContent>
-        </Card>
-
-        <Card className="border shadow-md">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-slate-500">EPP Entregado</p>
-                <p className="text-2xl font-bold text-slate-900">{resumen.epp.entregado}</p>
-                <p className="text-xs text-slate-500">
-                  {Math.round((resumen.epp.entregado / resumen.trabajadores_expuestos) * 100)}% cobertura
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <HardHat className="w-5 h-5 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border shadow-md">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-slate-500">Capacitaciones</p>
-                <p className="text-2xl font-bold text-slate-900">{resumen.capacitaciones.realizadas}</p>
-                <p className="text-xs text-slate-500">
-                  de {resumen.capacitaciones.programadas} programadas
-                </p>
-              </div>
-              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 text-amber-600" />
-              </div>
-            </div>
-            <Progress 
-              value={(resumen.capacitaciones.realizadas / resumen.capacitaciones.programadas) * 100} 
-              className="mt-2 h-1.5" 
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Gráficas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Estudios por mes */}
-        <Card className="border shadow-md">
-          <CardHeader className="bg-slate-50/50">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-emerald-600" />
-              Estudios por Mes
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={resumen.estudios_por_mes}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip 
-                    formatter={(value) => [`${value} estudios`, 'Cantidad']}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                  />
-                  <Bar dataKey="cantidad" fill="#10b981" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Distribución de semáforos */}
-        <Card className="border shadow-md">
-          <CardHeader className="bg-slate-50/50">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-emerald-600" />
-              Distribución de Resultados
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="h-[250px] flex items-center">
-              <ResponsiveContainer width="50%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={datosSemaforo}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {datosSemaforo.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex-1 space-y-3">
-                {datosSemaforo.map((item) => (
-                  <div key={item.name} className="flex items-center gap-3">
-                    <div 
-                      className="w-4 h-4 rounded-full" 
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-sm text-slate-600 flex-1">{item.name}</span>
-                    <span className="font-bold text-slate-900">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Trabajadores en riesgo */}
-      <Card className="border shadow-md border-rose-100">
-        <CardHeader className="bg-rose-50/50">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2 text-rose-800">
-              <AlertTriangle className="w-5 h-5" />
-              Trabajadores con Riesgo Auditivo
-            </CardTitle>
-            <Badge variant="destructive">{trabajadoresRiesgo.length} casos</Badge>
           </div>
-          <CardDescription className="text-rose-600">
-            Trabajadores con semáforo amarillo o rojo que requieren seguimiento
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-3">
-            {trabajadoresRiesgo.map((trabajador) => (
-              <div 
-                key={trabajador.id} 
-                className="flex items-center justify-between p-4 bg-white rounded-lg border border-rose-100 hover:border-rose-200 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <SemaforoNOM011Badge estado={trabajador.semaforo_actual || 'verde'} />
+
+          {/* KPIs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="border-none shadow-xl bg-white rounded-3xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-semibold text-slate-900">
-                      {trabajador.paciente?.nombre} {trabajador.paciente?.apellido_paterno}
-                    </p>
-                    <p className="text-sm text-slate-500">
-                      {trabajador.puesto} • {trabajador.area}
-                    </p>
-                    <div className="flex items-center gap-3 mt-1 text-xs">
-                      <span className="text-slate-400">
-                        Exposición: {trabajador.nivel_exposicion_db} dB
-                      </span>
-                      {!trabajador.epp_entregado && (
-                        <Badge variant="outline" className="text-rose-600 border-rose-200">
-                          Sin EPP
-                        </Badge>
-                      )}
-                    </div>
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Población Expuesta</p>
+                    <p className="text-3xl font-black text-slate-900">{resumen.total_trabajadores_expuestos}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+                    <Users className="w-6 h-6 text-blue-600" />
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" className="rounded-full">
-                  Ver detalle
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-            ))}
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-xl bg-white rounded-3xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Estudios Realizados</p>
+                    <p className="text-3xl font-black text-slate-900">{resumen.total_evaluados}</p>
+                    <p className="text-xs font-bold text-emerald-600 mt-1 flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3" />
+                      {resumen.porcentaje_cobertura}% de meta
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                  </div>
+                </div>
+                <Progress value={resumen.porcentaje_cobertura} className="mt-4 h-2 bg-slate-100" />
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-xl bg-white rounded-3xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">EPP Entregado</p>
+                    <p className="text-3xl font-black text-slate-900">{resumen.total_epp_entregado}</p>
+                    <p className="text-xs font-bold text-slate-500 mt-1">
+                      {resumen.porcentaje_uso_conforme}% cumplimiento
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center">
+                    <HardHat className="w-6 h-6 text-purple-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-xl bg-white rounded-3xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Áreas Críticas</p>
+                    <p className="text-3xl font-black text-slate-900">{resumen.areas_requieren_intervencion}</p>
+                    <p className="text-xs font-bold text-rose-500 mt-1">
+                      de {resumen.areas_evaluadas} áreas evaluadas
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center">
+                    <AlertTriangle className="w-6 h-6 text-rose-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+
+          {/* Gráficas */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="border-none shadow-xl bg-white rounded-3xl overflow-hidden">
+              <CardHeader className="p-6 pb-0">
+                <CardTitle className="text-lg font-black flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-emerald-600" />
+                  Estado de Avance
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="h-[250px] flex flex-col items-center justify-center text-center">
+                  <p className="text-slate-400 text-sm mb-4">Sincronización con el Programa Anual</p>
+                  <div className="w-full max-w-xs mx-auto">
+                    <div className="flex justify-between text-xs font-bold text-slate-500 mb-2">
+                      <span>COBERTURA</span>
+                      <span>{resumen.porcentaje_cobertura}%</span>
+                    </div>
+                    <Progress value={resumen.porcentaje_cobertura} className="h-4 rounded-full" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-xl bg-white rounded-3xl overflow-hidden">
+              <CardHeader className="p-6 pb-0">
+                <CardTitle className="text-lg font-black flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-emerald-600" />
+                  Distribución de Resultados HL
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="h-[250px] flex items-center">
+                  <ResponsiveContainer width="50%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={datosSemaforo}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {datosSemaforo.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex-1 space-y-3 pr-4">
+                    {datosSemaforo.map((item) => (
+                      <div key={item.name} className="flex items-center gap-3">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="text-xs font-bold text-slate-500 flex-1 uppercase tracking-wider">{item.name}</span>
+                        <span className="font-black text-slate-900 text-lg">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Trabajadores en riesgo */}
+          <Card className="border-none shadow-xl bg-rose-50/30 rounded-3xl overflow-hidden border border-rose-100">
+            <CardHeader className="p-6">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl font-black flex items-center gap-2 text-rose-900">
+                  <AlertTriangle className="w-6 h-6" />
+                  Casos Críticos que Requieren Intervención
+                </CardTitle>
+                <Badge className="bg-rose-100 text-rose-700 border-rose-200 hover:bg-rose-100 rounded-lg px-4 font-black">
+                  {trabajadoresRiesgo.length} ALERTAS
+                </Badge>
+              </div>
+              <CardDescription className="text-rose-600 font-medium">
+                Trabajadores con daño auditivo confirmado (Semáforo Rojo) según criterios NOM-011.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <div className="space-y-3">
+                {trabajadoresRiesgo.length === 0 ? (
+                  <div className="bg-white/50 rounded-2xl p-8 text-center border border-dashed border-rose-200">
+                    <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3 opacity-50" />
+                    <p className="text-slate-500 font-bold">No se detectan casos críticos en este momento.</p>
+                  </div>
+                ) : (
+                  trabajadoresRiesgo.map((estudio) => (
+                    <div
+                      key={estudio.id}
+                      className="flex items-center justify-between p-5 bg-white rounded-2xl shadow-sm border border-rose-100 hover:shadow-md transition-all active:scale-[0.99] cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center group-hover:bg-rose-100 transition-colors">
+                          <Ear className="w-6 h-6 text-rose-600" />
+                        </div>
+                        <div>
+                          <p className="font-black text-slate-900 text-lg">
+                            {estudio.paciente?.nombre} {estudio.paciente?.apellido_paterno}
+                          </p>
+                          <div className="flex items-center gap-3 mt-1 text-sm font-bold">
+                            <span className="text-rose-600">
+                              HL Izq: {estudio.oi_4000hz} dB • HL Der: {estudio.od_4000hz} dB
+                            </span>
+                            <span className="text-slate-300">|</span>
+                            <span className="text-slate-400 uppercase tracking-widest text-[10px]">
+                              Fecha: {new Date(estudio.fecha_estudio).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" className="rounded-xl hover:bg-rose-50 text-rose-600 font-black uppercase text-[10px] tracking-widest">
+                        Expediente
+                        <ChevronRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </DataContainer>
   );
 }

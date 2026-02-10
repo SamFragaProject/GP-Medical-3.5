@@ -5,6 +5,7 @@ import DashboardPaciente from './DashboardPaciente'
 import { DoctorView } from '@/components/dashboard/DoctorView'
 import { AdminView } from '@/components/dashboard/AdminView'
 import { SuperAdminView } from '@/components/dashboard/SuperAdminView'
+import { ReceptionView } from '@/components/dashboard/ReceptionView'
 import { Sparkles } from 'lucide-react'
 import { useMeta } from '@/hooks/useMeta'
 
@@ -38,7 +39,7 @@ export function Dashboard() {
       case 'enfermera':
       case 'recepcion':
       case 'asistente':
-        return <AdminView /> // Usan vista de admin con permisos limitados
+        return <ReceptionView />
       case 'paciente':
         return <DashboardPaciente />
       default:

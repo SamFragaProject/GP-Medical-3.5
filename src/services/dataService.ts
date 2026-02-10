@@ -113,6 +113,8 @@ export const pacientesService = {
             // Mapear al formato esperado por la vista
             return data.map((p: any) => ({
                 ...p,
+                created_at: p.created_at || new Date().toISOString(),
+                puesto: p.puesto || (p.puesto_trabajo?.nombre) || '',
                 empresa_nombre: 'Empresa Demo',
                 sede_nombre: 'Sede Principal'
             })) as Paciente[]
@@ -188,7 +190,12 @@ export const pacientesService = {
         if (isDemoMode()) {
             console.log('⚡ [DEMO] Creando paciente localmente')
             const { legal_consent, foto_base64, firma_base64, ...rest } = paciente
-            return await mockDataService.createPaciente(rest as any)
+            const result = await mockDataService.createPaciente(rest as any)
+            return {
+                ...result,
+                created_at: new Date().toISOString(),
+                puesto: (result as any).puesto || (result as any).puesto_trabajo?.nombre || ''
+            } as Paciente
         }
 
         const { legal_consent, foto_base64, firma_base64, ...patientData } = paciente
@@ -284,7 +291,12 @@ export const pacientesService = {
     async update(id: string, updates: Partial<Paciente>) {
         if (isDemoMode()) {
             console.log('⚡ [DEMO] Actualizando paciente localmente')
-            return await mockDataService.updatePaciente(id, updates as any)
+            const result = await mockDataService.updatePaciente(id, updates as any)
+            return {
+                ...result,
+                created_at: (result as any).created_at || new Date().toISOString(),
+                puesto: (result as any).puesto || (result as any).puesto_trabajo?.nombre || ''
+            } as Paciente
         }
 
         const { data, error } = await supabase
@@ -722,6 +734,31 @@ export const statsService = {
             citasHoy: citasHoy || 0,
             examenesPendientes: examenesPendientes || 0
         }
+    },
+
+    // Estadísticas detalladas de agenda
+    async getAgendaStats() {
+        const today = new Date().toISOString().split('T')[0]
+
+        const [
+            { count: totalHoy },
+            { count: completadas },
+            { count: pendientes },
+            { count: canceladas }
+        ] = await Promise.all([
+            supabase.from('citas').select('*', { count: 'exact', head: true }).eq('fecha', today),
+            supabase.from('citas').select('*', { count: 'exact', head: true }).eq('estado', 'completada'),
+            supabase.from('citas').select('*', { count: 'exact', head: true }).eq('estado', 'programada'),
+            supabase.from('citas').select('*', { count: 'exact', head: true }).eq('estado', 'cancelada')
+        ])
+
+        return {
+            citasHoy: totalHoy || 0,
+            citasCompletadas: completadas || 0,
+            citasPendientes: pendientes || 0,
+            citasCanceladas: canceladas || 0,
+            tasaCumplimiento: totalHoy && totalHoy > 0 ? Math.round(((completadas || 0) / totalHoy) * 100) : 100
+        }
     }
 }
 
@@ -744,14 +781,15 @@ export const consultasService = {
 
     // Crear prescripción (Receta)
     async createPrescripcion(prescripcion: any) {
-        // 1. Insertar la prescripción base
+        // 1. Insertar la receta base en `recetas`
         const { data: rec, error: recError } = await supabase
-            .from('prescripciones')
+            .from('recetas')
             .insert({
                 paciente_id: prescripcion.paciente_id,
                 medico_id: prescripcion.medico_id,
+                empresa_id: prescripcion.empresa_id, // Añadido en migración
                 diagnostico: prescripcion.diagnostico,
-                observaciones: prescripcion.observaciones,
+                indicaciones_generales: prescripcion.observaciones, // Mapeo correcto
                 estado: 'activa'
             })
             .select()
@@ -759,24 +797,26 @@ export const consultasService = {
 
         if (recError) throw recError
 
-        // 2. Insertar los medicamentos vinculados
+        // 2. Insertar los medicamentos vinculados en `recetas_detalle`
         const meds = prescripcion.medicamentos.map((m: any) => ({
-            prescripcion_id: rec.id,
-            nombre: m.nombre,
+            receta_id: rec.id,
+            medicamento_nombre: m.nombre, // Mapeo correcto
             dosis: m.dosis,
             frecuencia: m.frecuencia,
             duracion: m.duracion,
-            via_administracion: m.via_administracion
+            via_administracion: m.via_administracion,
+            cantidad_solicitada: 1 // Default
         }))
 
-        const { error: medsError } = await supabase.from('medicamentos_prescritos').insert(meds)
+        const { error: medsError } = await supabase.from('recetas_detalle').insert(meds)
         if (medsError) throw medsError
 
         // 3. Registrar como evento clínico automático
         await supabase.from('eventos_clinicos').insert({
             paciente_id: prescripcion.paciente_id,
+            empresa_id: prescripcion.empresa_id,
             tipo_evento: 'prescripcion',
-            descripcion: `Receta generada: ${prescripcion.diagnostico.substring(0, 50)}...`,
+            descripcion: `Receta generada: ${prescripcion.diagnostico ? prescripcion.diagnostico.substring(0, 50) : 'Sin diagnóstico'}...`,
             metadata: { prescripcion_id: rec.id }
         })
 

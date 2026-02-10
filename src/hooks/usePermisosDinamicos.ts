@@ -134,19 +134,28 @@ const ALL_MODULES_CATALOG: PermisoModulo[] = [
     // Nuevos módulos NOM
     { modulo_codigo: 'dictamenes', modulo_nombre: 'Dictámenes', modulo_ruta: '/medicina/dictamenes', modulo_icono: 'FileText', modulo_gradiente: 'from-emerald-500 to-teal-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
     { modulo_codigo: 'nom011', modulo_nombre: 'NOM-011', modulo_ruta: '/nom-011/programa', modulo_icono: 'Activity', modulo_gradiente: 'from-amber-500 to-orange-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'episodios', modulo_nombre: 'Episodios', modulo_ruta: '/episodios', modulo_icono: 'ClipboardList', modulo_gradiente: 'from-cyan-500 to-blue-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true }
+    { modulo_codigo: 'episodios', modulo_nombre: 'Episodios', modulo_ruta: '/episodios/pipeline', modulo_icono: 'ClipboardList', modulo_gradiente: 'from-cyan-500 to-blue-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'examen_medico', modulo_nombre: 'Examen Médico', modulo_ruta: '/pacientes', modulo_icono: 'Stethoscope', modulo_gradiente: 'from-emerald-600 to-emerald-800', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'vigilancia_epidemiologica', modulo_nombre: 'Vigilancia Epidemiológica', modulo_ruta: '/reportes/vigilancia', modulo_icono: 'Brain', modulo_gradiente: 'from-emerald-500 to-blue-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'campanias', modulo_nombre: 'Campañas Masivas', modulo_ruta: '/campanias', modulo_icono: 'ClipboardList', modulo_gradiente: 'from-orange-500 to-amber-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'cotizaciones', modulo_nombre: 'Cotizaciones', modulo_ruta: '/cotizaciones', modulo_icono: 'FileText', modulo_gradiente: 'from-blue-500 to-indigo-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'cxc', modulo_nombre: 'Cuentas por Cobrar', modulo_ruta: '/cxc', modulo_icono: 'DollarSign', modulo_gradiente: 'from-green-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'espirometria', modulo_nombre: 'Espirometría', modulo_ruta: '/espirometria', modulo_icono: 'Wind', modulo_gradiente: 'from-cyan-500 to-blue-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'vision', modulo_nombre: 'Estudios Visuales', modulo_ruta: '/vision', modulo_icono: 'Eye', modulo_gradiente: 'from-teal-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true }
 ];
 
 // Definición de Roles y sus módulos permitidos en modo Demo
 const DEMO_ROLE_PERMISSIONS: Record<string, string[]> = {
     'super_admin': ['*'],
     'admin_saas': ['*'],
-    'admin_empresa': ['dashboard', 'usuarios', 'configuracion', 'reportes', 'facturacion', 'rrhh', 'sedes', 'inventario', 'tienda', 'alertas', 'normatividad', 'dictamenes', 'nom011', 'nom036', 'episodios', 'recetas'],
-    'medico': ['dashboard', 'pacientes', 'agenda', 'citas', 'estudios_medicos', 'historial', 'prescripcion', 'ia', 'rayos_x', 'matriz_riesgos', 'programa_anual', 'incapacidades', 'evaluaciones', 'resultados', 'certificaciones', 'dictamenes', 'nom011', 'nom036', 'episodios', 'recetas'],
-    'enfermera': ['dashboard', 'pacientes', 'agenda', 'citas', 'historial', 'resultados', 'alertas'],
-    'recepcion': ['dashboard', 'agenda', 'citas', 'pacientes', 'tienda', 'facturacion', 'resultados'],
+    'admin_empresa': ['dashboard', 'usuarios', 'configuracion', 'reportes', 'facturacion', 'rrhh', 'sedes', 'inventario', 'tienda', 'alertas', 'normatividad', 'dictamenes', 'nom011', 'nom036', 'episodios', 'recetas', 'vigilancia_epidemiologica', 'campanias', 'cotizaciones', 'cxc'],
+    'medico': ['dashboard', 'pacientes', 'agenda', 'citas', 'estudios_medicos', 'historial', 'prescripcion', 'ia', 'rayos_x', 'matriz_riesgos', 'programa_anual', 'incapacidades', 'evaluaciones', 'resultados', 'certificaciones', 'dictamenes', 'nom011', 'nom036', 'episodios', 'recetas', 'examen_medico', 'vigilancia_epidemiologica', 'campanias', 'espirometria', 'vision'],
+    'enfermera': ['dashboard', 'pacientes', 'agenda', 'citas', 'historial', 'resultados', 'alertas', 'examen_medico', 'espirometria', 'vision'],
+    'recepcion': ['dashboard', 'agenda', 'citas', 'pacientes', 'tienda', 'facturacion', 'resultados', 'campanias', 'cotizaciones', 'cxc'],
     'asistente': ['dashboard', 'agenda', 'pacientes', 'citas'],
-    'contador_saas': ['dashboard', 'facturacion', 'reportes'],
+    'higienista': ['dashboard', 'pacientes', 'agenda', 'evaluaciones', 'certificaciones', 'nom011', 'normatividad', 'matriz_riesgos', 'programa_anual', 'reportes', 'dictamenes', 'inventario', 'rrhh', 'ia', 'resultados', 'examen_medico', 'espirometria', 'vision'],
+    'auditor_sst': ['dashboard', 'pacientes', 'agenda', 'historial', 'evaluaciones', 'certificaciones', 'nom011', 'normatividad', 'matriz_riesgos', 'programa_anual', 'reportes', 'dictamenes', 'facturacion', 'inventario', 'rrhh', 'ia', 'resultados', 'rayos_x', 'vigilancia_epidemiologica', 'cxc'],
+    'contador_saas': ['dashboard', 'facturacion', 'reportes', 'cotizaciones', 'cxc'],
     'paciente': ['dashboard']
 };
 

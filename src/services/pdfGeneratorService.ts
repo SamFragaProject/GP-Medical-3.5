@@ -6,9 +6,9 @@
  */
 
 interface PDFGeneratorOptions {
-    filename?: string
-    orientation?: 'portrait' | 'landscape'
-    size?: 'letter' | 'legal' | 'a4'
+  filename?: string
+  orientation?: 'portrait' | 'landscape'
+  size?: 'letter' | 'legal' | 'a4'
 }
 
 // Estilos CSS para impresión de documentos oficiales
@@ -279,26 +279,26 @@ const getDocumentStyles = () => `
 `
 
 export const pdfGeneratorService = {
-    /**
-     * Genera PDF del formato ST-7 (Aviso de Atención Médica)
-     */
-    generateST7(data: {
-        folio: string
-        paciente: any
-        empresa: any
-        riesgo: any
-        medico: any
-        firmas?: { trabajador?: string; patron?: string; medico?: string }
-    }): string {
-        const { folio, paciente, empresa, riesgo, medico, firmas } = data
+  /**
+   * Genera PDF del formato ST-7 (Aviso de Atención Médica)
+   */
+  generateST7(data: {
+    folio: string
+    paciente: any
+    empresa: any
+    riesgo: any
+    medico: any
+    firmas?: { trabajador?: string; patron?: string; medico?: string }
+  }): string {
+    const { folio, paciente, empresa, riesgo, medico, firmas } = data
 
-        const tipoRiesgoLabel: Record<string, string> = {
-            'accidente_trabajo': 'Accidente de Trabajo',
-            'accidente_trayecto': 'Accidente en Trayecto',
-            'enfermedad_trabajo': 'Enfermedad de Trabajo'
-        }
+    const tipoRiesgoLabel: Record<string, string> = {
+      'accidente_trabajo': 'Accidente de Trabajo',
+      'accidente_trayecto': 'Accidente en Trayecto',
+      'enfermedad_trabajo': 'Enfermedad de Trabajo'
+    }
 
-        const html = `
+    const html = `
       <!DOCTYPE html>
       <html lang="es">
       <head>
@@ -454,31 +454,31 @@ export const pdfGeneratorService = {
       </html>
     `
 
-        return html
-    },
+    return html
+  },
 
-    /**
-     * Genera PDF del formato ST-9 (Dictamen de Incapacidad)
-     */
-    generateST9(data: {
-        folio: string
-        paciente: any
-        incapacidad: any
-        riesgo?: any
-        medico: any
-        firmas?: { medico?: string }
-    }): string {
-        const { folio, paciente, incapacidad, riesgo, medico, firmas } = data
+  /**
+   * Genera PDF del formato ST-9 (Dictamen de Incapacidad)
+   */
+  generateST9(data: {
+    folio: string
+    paciente: any
+    incapacidad: any
+    riesgo?: any
+    medico: any
+    firmas?: { medico?: string }
+  }): string {
+    const { folio, paciente, incapacidad, riesgo, medico, firmas } = data
 
-        const tipoIncapacidadLabel: Record<string, { label: string; class: string }> = {
-            'temporal': { label: 'INCAPACIDAD TEMPORAL', class: '' },
-            'parcial_permanente': { label: 'INCAPACIDAD PARCIAL PERMANENTE', class: 'warning' },
-            'total_permanente': { label: 'INCAPACIDAD TOTAL PERMANENTE', class: 'danger' }
-        }
+    const tipoIncapacidadLabel: Record<string, { label: string; class: string }> = {
+      'temporal': { label: 'INCAPACIDAD TEMPORAL', class: '' },
+      'parcial_permanente': { label: 'INCAPACIDAD PARCIAL PERMANENTE', class: 'warning' },
+      'total_permanente': { label: 'INCAPACIDAD TOTAL PERMANENTE', class: 'danger' }
+    }
 
-        const tipoInfo = tipoIncapacidadLabel[incapacidad.tipo_incapacidad] || { label: 'INCAPACIDAD', class: '' }
+    const tipoInfo = tipoIncapacidadLabel[incapacidad.tipo_incapacidad] || { label: 'INCAPACIDAD', class: '' }
 
-        const html = `
+    const html = `
       <!DOCTYPE html>
       <html lang="es">
       <head>
@@ -520,8 +520,8 @@ export const pdfGeneratorService = {
               ${tipoInfo.label}
             </h3>
             ${incapacidad.tipo_incapacidad === 'parcial_permanente' ?
-                `<p style="font-size: 20pt; font-weight: 800; color: #f59e0b;">${incapacidad.porcentaje_valuacion || 0}%</p>` :
-                ''}
+        `<p style="font-size: 20pt; font-weight: 800; color: #f59e0b;">${incapacidad.porcentaje_valuacion || 0}%</p>` :
+        ''}
           </div>
           
           <!-- Datos del Trabajador -->
@@ -628,39 +628,39 @@ export const pdfGeneratorService = {
       </html>
     `
 
-        return html
-    },
+    return html
+  },
 
-    /**
-     * Abre una ventana de impresión con el HTML generado
-     */
-    printDocument(html: string, filename?: string): void {
-        const printWindow = window.open('', '_blank')
-        if (!printWindow) {
-            console.error('No se pudo abrir la ventana de impresión')
-            return
-        }
+  /**
+   * Abre una ventana de impresión con el HTML generado
+   */
+  printDocument(html: string, filename?: string): void {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) {
+      console.error('No se pudo abrir la ventana de impresión')
+      return
+    }
 
-        printWindow.document.write(html)
-        printWindow.document.close()
+    printWindow.document.write(html)
+    printWindow.document.close()
 
-        // Esperar a que cargue y luego imprimir
-        printWindow.onload = () => {
-            setTimeout(() => {
-                printWindow.print()
-            }, 250)
-        }
-    },
+    // Esperar a que cargue y luego imprimir
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print()
+      }, 250)
+    }
+  },
 
-    /**
-     * Descarga el documento como PDF usando la API de impresión
-     */
-    downloadPDF(html: string, filename: string): void {
-        const printWindow = window.open('', '_blank')
-        if (!printWindow) return
+  /**
+   * Descarga el documento como PDF usando la API de impresión
+   */
+  downloadPDF(html: string, filename: string): void {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
 
-        // Agregar CSS para forzar descarga como PDF
-        const pdfHtml = html.replace('</head>', `
+    // Agregar CSS para forzar descarga como PDF
+    const pdfHtml = html.replace('</head>', `
       <style>
         @media print {
           @page { margin: 0.5in; }
@@ -668,14 +668,392 @@ export const pdfGeneratorService = {
       </style>
     </head>`)
 
-        printWindow.document.write(pdfHtml)
-        printWindow.document.close()
-        printWindow.document.title = filename
+    printWindow.document.write(pdfHtml)
+    printWindow.document.close()
+    printWindow.document.title = filename
 
-        printWindow.onload = () => {
-            setTimeout(() => {
-                printWindow.print()
-            }, 500)
-        }
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print()
+      }, 500)
     }
+  },
+
+  /**
+   * Genera PDF del Reporte de Resultados NOM-035
+   */
+  generateNom035Report(data: {
+    empresa: any
+    campana: any
+    stats: any
+    fecha: string
+  }): string {
+    const { empresa, campana, stats, fecha } = data
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reporte NOM-035 - ${empresa.nombre}</title>
+        <style>${getDocumentStyles()}</style>
+      </head>
+      <body>
+        <div class="print-container">
+          <div class="header">
+            <div class="logo-section">
+              <div class="logo" style="background: #4f46e5;">35</div>
+              <div class="company-info">
+                <h1 style="color: #4f46e5;">NOM-035-STPS-2018</h1>
+                <p>Factores de Riesgo Psicosocial en el Trabajo</p>
+              </div>
+            </div>
+            <div class="document-type">
+              <h2>REPORTE DE RESULTADOS</h2>
+              <p class="folio">Campaña: ${campana.nombre}</p>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Datos de la Empresa</div>
+            <div class="data-grid">
+              <div class="data-item">
+                <label>Razón Social</label>
+                <div class="value">${empresa.nombre}</div>
+              </div>
+              <div class="data-item">
+                <label>Fecha de Reporte</label>
+                <div class="value">${fecha}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="highlight-box">
+            <h3>Nivel de Riesgo General</h3>
+            <p style="font-size: 24pt; font-weight: 900; color: #4f46e5;">${stats.riesgo_mas_frecuente || 'Bajo'}</p>
+            <p>Basado en ${stats.total || 0} encuestas aplicadas</p>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Distribución de Niveles de Riesgo</div>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+              <thead>
+                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                  <th style="padding: 12px; text-align: left; font-size: 8pt; color: #64748b;">NIVEL DE RIESGO</th>
+                  <th style="padding: 12px; text-align: center; font-size: 8pt; color: #64748b;">FRECUENCIA</th>
+                  <th style="padding: 12px; text-align: center; font-size: 8pt; color: #64748b;">PERCENTIL</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">Muy Alto</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">${stats.riesgo_muy_alto || 0}</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">${Math.round((stats.riesgo_muy_alto / stats.total) * 100) || 0}%</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">Alto</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">${stats.riesgo_alto || 0}</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">${Math.round((stats.riesgo_alto / stats.total) * 100) || 0}%</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">Medio</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">${stats.riesgo_medio || 0}</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">${Math.round((stats.riesgo_medio / stats.total) * 100) || 0}%</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">Bajo</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">${stats.riesgo_bajo || 0}</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">${Math.round((stats.riesgo_bajo / stats.total) * 100) || 0}%</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9;">Nulo</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">${stats.riesgo_nulo || 0}</td>
+                  <td style="padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">${Math.round((stats.riesgo_nulo / stats.total) * 100) || 0}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="footer">
+            <div>Generado por GPMedical 3.5 - Inteligencia Predictiva</div>
+            <div>Cumplimiento NOM-035-STPS-2018</div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+    return html
+  },
+
+  /**
+   * Genera PDF del Programa de Ergonomía NOM-036
+   */
+  generateNom036Report(data: {
+    empresa: any
+    reporte: any
+    matriz: any[]
+    fecha: string
+  }): string {
+    const { empresa, reporte, matriz, fecha } = data
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reporte NOM-036 - ${empresa.nombre}</title>
+        <style>${getDocumentStyles()}</style>
+      </head>
+      <body>
+        <div class="print-container">
+          <div class="header">
+            <div class="logo-section">
+              <div class="logo" style="background: #0891b2;">36</div>
+              <div class="company-info">
+                <h1 style="color: #0891b2;">NOM-036-STPS-2018</h1>
+                <p>Factores de Riesgo Ergonómico - Manejo de Cargas</p>
+              </div>
+            </div>
+            <div class="document-type">
+              <h2>PROGRAMA DE ERGONOMÍA</h2>
+              <p class="folio">Año: ${reporte.anio}</p>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Resumen del Programa</div>
+            <div class="data-grid cols-3">
+              <div class="data-item">
+                <label>Evaluaciones Realizadas</label>
+                <div class="value">${reporte.total_evaluaciones}</div>
+              </div>
+              <div class="data-item">
+                <label>Participantes Capacitados</label>
+                <div class="value">${reporte.trabajadores_capacitados}</div>
+              </div>
+              <div class="data-item">
+                <label>Avance del Programa</label>
+                <div class="value">${reporte.porcentaje_avance}%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Matriz de Riesgos por Área</div>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 8pt;">
+              <thead>
+                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                  <th style="padding: 8px; text-align: left;">ÁREA / PUESTO</th>
+                  <th style="padding: 8px; text-align: center;">RIESGO MÁX</th>
+                  <th style="padding: 8px; text-align: left;">FACTORES IDENTIFICADOS</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${matriz.map(m => `
+                  <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">
+                      <strong>${m.area}</strong><br>${m.puesto}
+                    </td>
+                    <td style="padding: 8px; border-bottom: 1px solid #f1f5f9; text-align: center;">
+                      <span style="color: ${m.riesgo_maximo === 'muy_alto' ? '#e11d48' : m.riesgo_maximo === 'alto' ? '#f59e0b' : '#10b981'}; font-weight: bold;">
+                        ${m.riesgo_maximo.toUpperCase()}
+                      </span>
+                    </td>
+                    <td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">
+                      ${m.factores_identificados.join(', ')}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="footer">
+            <div>Generado por GPMedical 3.5 - Salud Ocupacional</div>
+            <div>Cumplimiento NOM-036-1-STPS-2018</div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+    return html
+  },
+
+  /**
+   * Genera PDF del Dictamen Médico-Laboral
+   */
+  generateDictamen(data: {
+    dictamen: any
+    empresa: any
+    medico: any
+    firmas?: { medico?: string; trabajador?: string }
+  }): string {
+    const { dictamen, empresa, medico, firmas } = data
+
+    const resultadoLabels: Record<string, { label: string; class: string }> = {
+      'apto': { label: 'APTO', class: '' },
+      'apto_restricciones': { label: 'APTO CON RESTRICCIONES', class: 'warning' },
+      'no_apto_temporal': { label: 'NO APTO TEMPORAL', class: 'warning' },
+      'no_apto': { label: 'NO APTO', class: 'danger' },
+      'evaluacion_complementaria': { label: 'EVALUACIÓN COMPLEMENTARIA', class: 'warning' }
+    }
+
+    const resInfo = resultadoLabels[dictamen.resultado] || { label: 'DICTAMEN MÉDICO', class: '' }
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Dictamen - ${dictamen.folio || dictamen.id}</title>
+        <style>${getDocumentStyles()}</style>
+      </head>
+      <body>
+        <div class="print-container">
+          <!-- Header -->
+          <div class="header">
+            <div class="logo-section">
+              <div class="logo">GP</div>
+              <div class="company-info">
+                <h1>GPMedical</h1>
+                <p>Sistema de Salud Ocupacional & Medicina del Trabajo</p>
+              </div>
+            </div>
+            <div class="document-type">
+              <h2>DICTAMEN MÉDICO-LABORAL</h2>
+              <p class="folio">Folio: ${dictamen.folio || 'N/A'}</p>
+            </div>
+          </div>
+          
+          <!-- Título -->
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h2 style="font-size: 14pt; color: #1e293b; margin: 0; text-transform: uppercase;">
+              Certificado de Aptitud Laboral
+            </h2>
+            <p style="font-size: 9pt; color: #64748b; margin-top: 4px;">
+              En cumplimiento con la Ley Federal del Trabajo y Normas Oficiales Mexicanas
+            </p>
+          </div>
+          
+          <!-- Resultado Highlight -->
+          <div class="highlight-box ${resInfo.class}">
+            <h3>${resInfo.label}</h3>
+            <p>Tipo de Evaluación: ${dictamen.tipo_evaluacion?.toUpperCase() || 'N/A'}</p>
+          </div>
+          
+          <!-- Datos Personales -->
+          <div class="section">
+            <div class="section-title">Información del Trabajador</div>
+            <div class="data-grid cols-3">
+              <div class="data-item">
+                <label>Nombre</label>
+                <div class="value">${dictamen.paciente?.nombre || ''} ${dictamen.paciente?.apellido_paterno || ''}</div>
+              </div>
+              <div class="data-item">
+                <label>Puesto</label>
+                <div class="value">${dictamen.paciente?.puesto_trabajo || dictamen.puesto_trabajo || 'No especificado'}</div>
+              </div>
+              <div class="data-item">
+                <label>ID / Expediente</label>
+                <div class="value">${dictamen.paciente_id?.slice(0, 8) || 'N/A'}</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Empresa -->
+          <div class="section">
+            <div class="section-title">Datos de la Empresa</div>
+            <div class="data-grid">
+              <div class="data-item">
+                <label>Razón Social</label>
+                <div class="value">${empresa?.nombre || 'Empresa no especificada'}</div>
+              </div>
+              <div class="data-item">
+                <label>Área de Trabajo</label>
+                <div class="value">${dictamen.paciente?.area_trabajo || 'N/A'}</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Resultado y Restricciones -->
+          <div class="section">
+            <div class="section-title">Conclusiones Médicas</div>
+            <div class="text-block" style="margin-bottom: 12px;">
+              <strong>Resultado de la Evaluación:</strong><br>
+              ${dictamen.resultado_detalle || 'Se concluye aptitud tras la revisión de los estudios correspondientes.'}
+            </div>
+            
+            ${dictamen.restricciones && dictamen.restricciones.length > 0 ? `
+              <div class="text-block" style="border-color: #f59e0b; background: #fffbeb;">
+                <strong>Restricciones Médicas:</strong><br>
+                <ul style="margin: 4px 0 0 16px; padding: 0;">
+                  ${dictamen.restricciones.map((r: any) => `<li>${r.descripcion || r}</li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+          </div>
+          
+          <!-- Recomendaciones -->
+          <div class="section">
+            <div class="section-title">Recomendaciones y Seguimiento</div>
+            <div class="text-block">
+              ${dictamen.recomendaciones_medicas?.join('. ') || 'Sin recomendaciones adicionales.'}
+            </div>
+          </div>
+          
+          <!-- Vigencia -->
+          <div class="section">
+            <div class="data-grid">
+              <div class="data-item">
+                <label>Fecha de Emisión</label>
+                <div class="value">${new Date(dictamen.created_at || Date.now()).toLocaleDateString('es-MX')}</div>
+              </div>
+              <div class="data-item">
+                <label>Vigencia hasta</label>
+                <div class="value">${dictamen.vigencia_fin ? new Date(dictamen.vigencia_fin).toLocaleDateString('es-MX') : 'Indefinida'}</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Firmas -->
+          <div class="signatures-section">
+            <div class="signature-box">
+              <div class="signature-line">
+                ${firmas?.trabajador ? `<img src="${firmas.trabajador}" />` : ''}
+              </div>
+              <div class="signature-label">Firma del Trabajador</div>
+            </div>
+            <div class="signature-box">
+              <div class="signature-line"></div>
+              <div class="signature-label">Sello de la Empresa</div>
+            </div>
+            <div class="signature-box">
+              <div class="signature-line">
+                ${firmas?.medico ? `<img src="${firmas.medico}" />` : ''}
+              </div>
+              <div class="signature-label">Médico Responsable</div>
+              <div class="signature-name">Dr. ${medico?.nombre || ''} ${medico?.apellido_paterno || ''}</div>
+              <div style="font-size: 7pt; color: #64748b;">Cédula: ${medico?.cedula_profesional || 'N/A'}</div>
+            </div>
+          </div>
+          
+          <!-- Footer -->
+          <div class="footer">
+            <div>Documento emitido electrónicamente por Intelligence Bureau - GPMedical 3.5</div>
+            <div>Página 1 de 1</div>
+          </div>
+          
+          <div class="legal-text">
+            Este dictamen es una constancia de la evaluación médica realizada y no sustituye reposos médicos ni avisos de riesgo de trabajo.
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+    return html
+  }
 }
+

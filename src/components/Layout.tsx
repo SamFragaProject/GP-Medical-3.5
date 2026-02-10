@@ -1,5 +1,5 @@
 // Layout principal del ERP Médico - Con AuthContext
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -25,7 +25,9 @@ import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePermisosDinamicos } from '@/hooks/usePermisosDinamicos'
 import { useReceptionNotifications } from '@/hooks/useReceptionNotifications'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
+import { Breadcrumbs } from './ui/Breadcrumbs'
+import BuscadorGlobal from '@/components/search/BuscadorGlobal'
 
 interface LayoutProps {
   children?: React.ReactNode
@@ -69,6 +71,7 @@ export function Layout({ children }: LayoutProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [notifications] = useState(3)
+  const [buscadorAbierto, setBuscadorAbierto] = useState(false)
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -93,13 +96,22 @@ export function Layout({ children }: LayoutProps) {
     }
   }, [])
 
+  // Hotkey Cmd+K / Ctrl+K para buscador global
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setBuscadorAbierto(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   // Manejar búsqueda
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    if (searchQuery.trim()) {
-      // Implementar lógica de búsqueda global
-      toast.success('Función de búsqueda próximamente disponible')
-    }
+    setBuscadorAbierto(true)
   }
 
   // Función para nueva cita
@@ -384,6 +396,7 @@ export function Layout({ children }: LayoutProps) {
         }}
       >
         <div className="container mx-auto px-6 py-8">
+          <Breadcrumbs />
           {children || <Outlet />}
         </div>
       </main>
@@ -392,6 +405,9 @@ export function Layout({ children }: LayoutProps) {
       <div className="fixed bottom-6 right-6 z-50">
         <ChatbotSuperinteligente />
       </div>
+
+      {/* Buscador Global (Cmd+K) */}
+      <BuscadorGlobal abierto={buscadorAbierto} onCerrar={() => setBuscadorAbierto(false)} />
     </div>
   )
 }
