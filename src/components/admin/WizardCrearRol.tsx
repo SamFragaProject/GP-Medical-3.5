@@ -266,7 +266,41 @@ function PasoInformacionBasica({ state, setState }: PasoProps) {
 
 /**
  * Paso 2: Selección de Módulos
+ * Organizado por los 13 pilares del ERP (misma estructura que el sidebar)
  */
+
+// Agrupación de módulos por los pilares del ERP — coincide con el sidebar
+const WIZARD_SECTIONS: { key: string; label: string; color: string; dotColor: string; modules: string[] }[] = [
+    {
+        key: 'medicina', label: 'Medicina', color: 'emerald', dotColor: 'bg-emerald-400',
+        modules: ['dashboard', 'pacientes', 'estudios_medicos', 'prescripcion', 'incapacidades', 'dictamenes']
+    },
+    {
+        key: 'diagnostico', label: 'Diagnóstico', color: 'cyan', dotColor: 'bg-cyan-400',
+        modules: ['rayos_x', 'espirometria', 'vision', 'resultados']
+    },
+    {
+        key: 'operaciones', label: 'Operaciones', color: 'purple', dotColor: 'bg-purple-400',
+        modules: ['episodios', 'campanias', 'agenda', 'citas', 'alertas']
+    },
+    {
+        key: 'finanzas', label: 'Finanzas', color: 'blue', dotColor: 'bg-blue-400',
+        modules: ['facturacion', 'cotizaciones', 'cxc', 'inventario', 'tienda']
+    },
+    {
+        key: 'cumplimiento', label: 'Cumplimiento', color: 'amber', dotColor: 'bg-amber-400',
+        modules: ['normatividad', 'nom011', 'evaluaciones', 'matriz_riesgos', 'programa_anual', 'certificaciones']
+    },
+    {
+        key: 'analisis', label: 'Análisis e Inteligencia', color: 'violet', dotColor: 'bg-violet-400',
+        modules: ['reportes', 'ia', 'rrhh']
+    },
+    {
+        key: 'admin', label: 'Administración SaaS', color: 'slate', dotColor: 'bg-slate-400',
+        modules: ['empresas', 'usuarios', 'roles_permisos', 'sedes', 'medicos', 'configuracion', 'sistema', 'suscripcion', 'logs']
+    }
+]
+
 function PasoSeleccionModulos({ state, setState, modulos }: PasoProps) {
     const toggleModulo = (codigo: string) => {
         setState(s => ({
@@ -274,6 +308,22 @@ function PasoSeleccionModulos({ state, setState, modulos }: PasoProps) {
             permisos: s.permisos.map(p =>
                 p.modulo_codigo === codigo
                     ? { ...p, seleccionado: !p.seleccionado, puede_ver: !p.seleccionado }
+                    : p
+            )
+        }))
+    }
+
+    const toggleSeccion = (moduleCodes: string[], seleccionar: boolean) => {
+        setState(s => ({
+            ...s,
+            permisos: s.permisos.map(p =>
+                moduleCodes.includes(p.modulo_codigo)
+                    ? {
+                        ...p,
+                        seleccionado: seleccionar,
+                        puede_ver: seleccionar,
+                        ...(!seleccionar ? { puede_crear: false, puede_editar: false, puede_borrar: false, puede_exportar: false, puede_ver_todos: false } : {})
+                    }
                     : p
             )
         }))
@@ -302,22 +352,16 @@ function PasoSeleccionModulos({ state, setState, modulos }: PasoProps) {
         }))
     }
 
-    // Agrupar por categoría
-    const modulosPorCategoria = state.permisos.reduce((acc, permiso) => {
-        const modulo = modulos.find(m => m.codigo === permiso.modulo_codigo)
-        const categoria = modulo?.categoria || 'otro'
-        if (!acc[categoria]) acc[categoria] = []
-        acc[categoria].push(permiso)
-        return acc
-    }, {} as Record<string, PermisoModuloLocal[]>)
+    // Agrupar permisos para cada sección del wizard
+    const seccionesConModulos = WIZARD_SECTIONS.map(section => {
+        const permisosSeccion = section.modules
+            .map(code => state.permisos.find(p => p.modulo_codigo === code))
+            .filter(Boolean) as PermisoModuloLocal[]
+        const seleccionados = permisosSeccion.filter(p => p.seleccionado).length
+        return { ...section, permisos: permisosSeccion, seleccionados }
+    }).filter(s => s.permisos.length > 0)
 
-    const categoriasInfo: Record<string, { label: string, color: string }> = {
-        plataforma: { label: 'Infraestructura Core', color: 'blue' },
-        operativo: { label: 'Flujo Clínico', color: 'emerald' },
-        administrativo: { label: 'Gestión Empresarial', color: 'indigo' },
-        configuracion: { label: 'Parámetros Técnicos', color: 'slate' },
-        especial: { label: 'Inteligencia & Especialidad', color: 'violet' }
-    }
+    const totalSeleccionados = state.permisos.filter(p => p.seleccionado).length
 
     return (
         <div className="space-y-8">
@@ -333,64 +377,95 @@ function PasoSeleccionModulos({ state, setState, modulos }: PasoProps) {
                 </p>
             </div>
 
-            <div className="flex justify-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-100 w-fit mx-auto">
-                <button
-                    onClick={seleccionarTodos}
-                    className="px-4 py-2 text-[10px] font-bold text-emerald-700 bg-white shadow-sm border border-emerald-100 rounded-xl hover:bg-emerald-50 transition-all uppercase tracking-widest"
-                >
-                    Habilitar Todo
-                </button>
-                <button
-                    onClick={deseleccionarTodos}
-                    className="px-4 py-2 text-[10px] font-bold text-slate-400 bg-white shadow-sm border border-slate-100 rounded-xl hover:bg-slate-50 transition-all uppercase tracking-widest"
-                >
-                    Reiniciar
-                </button>
+            {/* Acciones globales + contador */}
+            <div className="flex items-center justify-between">
+                <div className="flex gap-3 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+                    <button
+                        onClick={seleccionarTodos}
+                        className="px-4 py-2 text-[10px] font-bold text-emerald-700 bg-white shadow-sm border border-emerald-100 rounded-lg hover:bg-emerald-50 transition-all uppercase tracking-widest"
+                    >
+                        Habilitar Todo
+                    </button>
+                    <button
+                        onClick={deseleccionarTodos}
+                        className="px-4 py-2 text-[10px] font-bold text-slate-400 bg-white shadow-sm border border-slate-100 rounded-lg hover:bg-slate-50 transition-all uppercase tracking-widest"
+                    >
+                        Reiniciar
+                    </button>
+                </div>
+                <div className="px-4 py-2 rounded-xl bg-blue-50 border border-blue-100">
+                    <span className="text-xs font-bold text-blue-700">{totalSeleccionados}</span>
+                    <span className="text-xs text-blue-500 ml-1">módulos activos</span>
+                </div>
             </div>
 
-            <div className="space-y-10">
-                {Object.entries(categoriasInfo).map(([catKey, catInfo]) => {
-                    const modulosCat = modulosPorCategoria[catKey]
-                    if (!modulosCat || modulosCat.length === 0) return null
+            {/* Secciones alineadas con los pilares del ERP */}
+            <div className="space-y-8">
+                {seccionesConModulos.map(section => {
+                    const todosSeleccionados = section.seleccionados === section.permisos.length
+                    const algunosSeleccionados = section.seleccionados > 0 && !todosSeleccionados
 
                     return (
-                        <div key={catKey} className="space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className={`h-1.5 w-6 rounded-full bg-blue-600 shadow-sm opacity-60`}></div>
-                                <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-[0.2em]">
-                                    {catInfo.label}
-                                </h3>
+                        <div key={section.key} className="space-y-4">
+                            {/* Header de sección con toggle */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`h-2 w-2 rounded-full ${section.dotColor}`}></div>
+                                    <h3 className="text-[11px] font-extrabold text-slate-500 uppercase tracking-[0.2em]">
+                                        {section.label}
+                                    </h3>
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${section.seleccionados > 0
+                                        ? `bg-${section.color}-100 text-${section.color}-700`
+                                        : 'bg-slate-100 text-slate-400'
+                                        }`}>
+                                        {section.seleccionados}/{section.permisos.length}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => toggleSeccion(
+                                        section.modules,
+                                        !todosSeleccionados
+                                    )}
+                                    className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all ${todosSeleccionados
+                                        ? 'text-rose-500 hover:bg-rose-50 border border-rose-100'
+                                        : 'text-emerald-600 hover:bg-emerald-50 border border-emerald-100'
+                                        }`}
+                                >
+                                    {todosSeleccionados ? 'Quitar Todos' : algunosSeleccionados ? 'Completar' : 'Activar Todos'}
+                                </button>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {modulosCat.map(permiso => {
+
+                            {/* Grid de módulos */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {section.permisos.map(permiso => {
                                     const IconoModulo = ICONO_MAP[permiso.modulo_icono] || FileText
 
                                     return (
                                         <button
                                             key={permiso.modulo_codigo}
                                             onClick={() => toggleModulo(permiso.modulo_codigo)}
-                                            className={`group relative p-5 rounded-[1.5rem] border-2 transition-all duration-300 text-left overflow-hidden
+                                            className={`group relative p-4 rounded-2xl border-2 transition-all duration-300 text-left overflow-hidden
                                                 ${permiso.seleccionado
                                                     ? 'border-blue-500 bg-blue-50/50 shadow-lg shadow-blue-500/10'
                                                     : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-md'
                                                 }`}
                                         >
-                                            <div className="relative flex items-center gap-4 z-10">
-                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-md transition-transform group-hover:scale-110
+                                            <div className="relative flex items-center gap-3 z-10">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110
                                                     bg-gradient-to-br ${permiso.modulo_gradiente}`}>
-                                                    <IconoModulo className="w-6 h-6 text-white" />
+                                                    <IconoModulo className="w-5 h-5 text-white" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className={`font-bold transition-colors ${permiso.seleccionado ? 'text-blue-700' : 'text-slate-700'}`}>
+                                                    <p className={`font-bold text-sm transition-colors ${permiso.seleccionado ? 'text-blue-700' : 'text-slate-700'}`}>
                                                         {permiso.modulo_nombre}
                                                     </p>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 opacity-60">
-                                                        {permiso.seleccionado ? 'Módulo Activo' : 'Inactivo'}
+                                                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                                                        {permiso.seleccionado ? '● Activo' : '○ Inactivo'}
                                                     </p>
                                                 </div>
                                                 <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all
                                                     ${permiso.seleccionado ? 'bg-blue-600 scale-100' : 'bg-slate-100 scale-75 opacity-0 group-hover:opacity-50'}`}>
-                                                    <Check className="w-4 h-4 text-white" />
+                                                    <Check className="w-3.5 h-3.5 text-white" />
                                                 </div>
                                             </div>
                                         </button>
@@ -407,6 +482,7 @@ function PasoSeleccionModulos({ state, setState, modulos }: PasoProps) {
 
 /**
  * Paso 3: Permisos Detallados
+ * Tabla agrupada por pilares del ERP
  */
 function PasoPermisosDetallados({ state, setState }: PasoProps) {
     const modulosSeleccionados = state.permisos.filter(p => p.seleccionado)
@@ -441,6 +517,14 @@ function PasoPermisosDetallados({ state, setState }: PasoProps) {
             })
         }))
     }
+
+    // Agrupar módulos seleccionados por sección
+    const seccionesConPermisos = WIZARD_SECTIONS.map(section => {
+        const permisos = section.modules
+            .map(code => modulosSeleccionados.find(p => p.modulo_codigo === code))
+            .filter(Boolean) as PermisoModuloLocal[]
+        return { ...section, permisos }
+    }).filter(s => s.permisos.length > 0)
 
     if (modulosSeleccionados.length === 0) {
         return (
@@ -507,37 +591,56 @@ function PasoPermisosDetallados({ state, setState }: PasoProps) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                            {modulosSeleccionados.map(permiso => {
-                                const IconoModulo = ICONO_MAP[permiso.modulo_icono] || FileText
-                                return (
-                                    <tr key={permiso.modulo_codigo} className="group hover:bg-slate-50/30 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center bg-gradient-to-br ${permiso.modulo_gradiente} shadow-sm transition-transform group-hover:scale-110`}>
-                                                    <IconoModulo className="w-4 h-4 text-white" />
-                                                </div>
-                                                <span className="font-bold text-slate-700 text-sm">
-                                                    {permiso.modulo_nombre}
+                            {seccionesConPermisos.map(section => (
+                                <React.Fragment key={section.key}>
+                                    {/* Fila de header de sección */}
+                                    <tr className="bg-slate-50/80">
+                                        <td colSpan={6} className="px-6 py-2.5">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`h-1.5 w-1.5 rounded-full ${section.dotColor}`}></div>
+                                                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-[0.2em]">
+                                                    {section.label}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-slate-400 ml-1">
+                                                    ({section.permisos.length})
                                                 </span>
                                             </div>
                                         </td>
-                                        {(['puede_ver', 'puede_crear', 'puede_editar', 'puede_borrar', 'puede_exportar'] as const).map(campo => (
-                                            <td key={campo} className="px-4 py-4 text-center">
-                                                <button
-                                                    onClick={() => togglePermiso(permiso.modulo_codigo, campo)}
-                                                    className={`w-9 h-9 rounded-xl transition-all duration-300 flex items-center justify-center mx-auto
-                                                        ${permiso[campo]
-                                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20 rotate-0'
-                                                            : 'bg-slate-50 text-slate-300 hover:text-slate-400 hover:bg-slate-100 -rotate-3'
-                                                        }`}
-                                                >
-                                                    {permiso[campo] ? <Check className="w-4 h-4" /> : <X className="w-4 h-4 opacity-30" />}
-                                                </button>
-                                            </td>
-                                        ))}
                                     </tr>
-                                )
-                            })}
+                                    {/* Filas de módulos */}
+                                    {section.permisos.map(permiso => {
+                                        const IconoModulo = ICONO_MAP[permiso.modulo_icono] || FileText
+                                        return (
+                                            <tr key={permiso.modulo_codigo} className="group hover:bg-slate-50/30 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center bg-gradient-to-br ${permiso.modulo_gradiente} shadow-sm transition-transform group-hover:scale-110`}>
+                                                            <IconoModulo className="w-4 h-4 text-white" />
+                                                        </div>
+                                                        <span className="font-bold text-slate-700 text-sm">
+                                                            {permiso.modulo_nombre}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                {(['puede_ver', 'puede_crear', 'puede_editar', 'puede_borrar', 'puede_exportar'] as const).map(campo => (
+                                                    <td key={campo} className="px-4 py-4 text-center">
+                                                        <button
+                                                            onClick={() => togglePermiso(permiso.modulo_codigo, campo)}
+                                                            className={`w-9 h-9 rounded-xl transition-all duration-300 flex items-center justify-center mx-auto
+                                                                ${permiso[campo]
+                                                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20 rotate-0'
+                                                                    : 'bg-slate-50 text-slate-300 hover:text-slate-400 hover:bg-slate-100 -rotate-3'
+                                                                }`}
+                                                        >
+                                                            {permiso[campo] ? <Check className="w-4 h-4" /> : <X className="w-4 h-4 opacity-30" />}
+                                                        </button>
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        )
+                                    })}
+                                </React.Fragment>
+                            ))}
                         </tbody>
                     </table>
                 </div>

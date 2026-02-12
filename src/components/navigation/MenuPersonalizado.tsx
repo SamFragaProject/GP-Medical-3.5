@@ -1,5 +1,6 @@
-// Menú personalizado dinámico - Rediseño Premium con colores por módulo
-import React, { useMemo } from 'react'
+// Menú personalizado dinámico - Sidebar ERP Pro con secciones colapsables
+// Organizado por los 13 pilares del ERP SaaS Médico
+import React, { useMemo, useState, useCallback, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   Home,
@@ -24,6 +25,7 @@ import {
   TestTube,
   ShoppingCart,
   ChevronRight,
+  ChevronDown,
   MapPin,
   Building2,
   AlertTriangle,
@@ -47,13 +49,87 @@ import {
   Armchair,
   ShieldAlert,
   CalendarRange,
-  FileBarChart2
+  FileBarChart2,
+  Wind,
+  DollarSign,
+  ClipboardList,
+  LucideIcon
 } from 'lucide-react'
 
 import { NavigationItem } from '@/types/saas'
 import { UserRole } from '@/types/auth'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMenuModulos } from '@/hooks/usePermisosDinamicos'
+import { PermisoModulo } from '@/services/permisosService'
+
+// ════════════════════════════════════════════════════════
+// DEFINICIÓN DE SECCIONES DEL SIDEBAR
+// Agrupación por los 13 pilares del ERP
+// ════════════════════════════════════════════════════════
+interface SidebarSection {
+  key: string
+  label: string
+  icon: LucideIcon
+  color: string // tailwind color name
+  modules: string[] // modulo_codigo values
+}
+
+const SIDEBAR_SECTIONS: SidebarSection[] = [
+  {
+    key: 'medicina',
+    label: 'Medicina',
+    icon: Stethoscope,
+    color: 'emerald',
+    modules: ['pacientes', 'estudios_medicos', 'prescripcion', 'incapacidades', 'dictamenes']
+  },
+  {
+    key: 'diagnostico',
+    label: 'Diagnóstico',
+    icon: Microscope,
+    color: 'cyan',
+    modules: ['rayos_x', 'espirometria', 'vision', 'resultados']
+  },
+  {
+    key: 'operaciones',
+    label: 'Operaciones',
+    icon: ClipboardList,
+    color: 'purple',
+    modules: ['episodios', 'campanias', 'agenda', 'citas', 'alertas']
+  },
+  {
+    key: 'finanzas',
+    label: 'Finanzas',
+    icon: Receipt,
+    color: 'blue',
+    modules: ['facturacion', 'cotizaciones', 'cxc', 'inventario', 'tienda']
+  },
+  {
+    key: 'cumplimiento',
+    label: 'Cumplimiento',
+    icon: Shield,
+    color: 'amber',
+    modules: ['normatividad', 'nom011', 'evaluaciones', 'matriz_riesgos', 'programa_anual', 'certificaciones']
+  },
+  {
+    key: 'analisis',
+    label: 'Análisis',
+    icon: BarChart3,
+    color: 'violet',
+    modules: ['reportes', 'ia', 'rrhh']
+  }
+]
+
+const ADMIN_SECTION: SidebarSection = {
+  key: 'admin',
+  label: 'Administración',
+  icon: Settings,
+  color: 'slate',
+  modules: ['empresas', 'usuarios', 'roles_permisos', 'sedes', 'medicos', 'configuracion', 'sistema']
+}
+
+// ════════════════════════════════════════════════════════
+// COMPONENTE PRINCIPAL
+// ════════════════════════════════════════════════════════
 
 interface MenuPersonalizadoProps {
   className?: string
@@ -79,9 +155,27 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
     avatar: null
   }
 
-  // Mapeo de íconos robusto (Soporta todos los módulos del sistema)
-  const getIcon = (iconName: string) => {
-    const iconMap: Record<string, any> = {
+  // ── Estado de secciones colapsadas ──
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('gpm_sidebar_collapsed')
+      return saved ? JSON.parse(saved) : {}
+    } catch {
+      return {}
+    }
+  })
+
+  const toggleSection = useCallback((key: string) => {
+    setCollapsed(prev => {
+      const next = { ...prev, [key]: !prev[key] }
+      try { localStorage.setItem('gpm_sidebar_collapsed', JSON.stringify(next)) } catch { }
+      return next
+    })
+  }, [])
+
+  // ── Mapeo de íconos ──
+  const getIcon = (iconName: string): LucideIcon => {
+    const iconMap: Record<string, LucideIcon> = {
       // Principales
       LayoutDashboard,
       Home: LayoutDashboard,
@@ -89,7 +183,6 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
       Calendar,
       Activity,
       CalendarDays: Calendar,
-
       // Médicos
       Stethoscope,
       Microscope,
@@ -110,7 +203,10 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
       FileBarChart2,
       ShieldAlert: AlertTriangle,
       FileCheck: ClipboardCheck,
-
+      Wind,
+      Eye,
+      DollarSign,
+      ClipboardList,
       // Administrativos
       Receipt,
       CreditCard,
@@ -130,7 +226,6 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
       Users2: Users,
       MapPin,
       Bell,
-
       // Otros
       Search,
       Lock,
@@ -140,49 +235,34 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
     return iconMap[iconName] || FileText
   }
 
-  // Collect all module routes for best-match comparison
+  // ── Lógica de ruta activa (best-match, previene doble selección) ──
   const allModuleRoutes = useMemo(() => {
-    return modulosDinamicos.map(m => m.modulo_ruta || `/${m.modulo_codigo}`);
-  }, [modulosDinamicos]);
+    return modulosDinamicos.map(m => m.modulo_ruta || `/${m.modulo_codigo}`)
+  }, [modulosDinamicos])
 
-  // Find the SINGLE best-matching route (longest prefix match)
   const bestMatchRoute = useMemo(() => {
-    const pathname = location.pathname;
-    let best: string | null = null;
-    let bestLen = 0;
+    const pathname = location.pathname
+    let best: string | null = null
+    let bestLen = 0
     for (const route of allModuleRoutes) {
       if (pathname === route || pathname.startsWith(route + '/')) {
         if (route.length > bestLen) {
-          best = route;
-          bestLen = route.length;
+          best = route
+          bestLen = route.length
         }
       }
     }
-    return best;
-  }, [location.pathname, allModuleRoutes]);
+    return best
+  }, [location.pathname, allModuleRoutes])
 
-  const isItemActive = (href: string) => {
-    // Only the single best-match route is active — prevents dual highlighting
-    return href === bestMatchRoute;
-  }
+  const isItemActive = (href: string) => href === bestMatchRoute
 
-  // Avatar component helper
-  const UserAvatar = () => (
-    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold border-2 border-white shadow-sm overflow-hidden">
-      {user.avatar ? (
-        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-      ) : (
-        <User className="w-6 h-6" />
-      )}
-    </div>
-  )
-
-  // Helper: extract a color family from modulo_gradiente like 'from-purple-500 to-pink-500' → 'purple'
-  const getModuleColor = (gradiente: string | undefined): { activeBg: string; activeText: string; activeBorder: string; iconGlow: string } => {
-    if (!gradiente) return { activeBg: 'bg-emerald-500/10', activeText: 'text-emerald-400', activeBorder: 'border-emerald-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]' };
-    const match = gradiente.match(/from-(\w+)-/);
-    const color = match?.[1] || 'emerald';
-    const colorMap: Record<string, { activeBg: string; activeText: string; activeBorder: string; iconGlow: string }> = {
+  // ── Color por módulo (gradiente → tailwind classes) ──
+  const getModuleColor = (gradiente: string | undefined) => {
+    if (!gradiente) return { activeBg: 'bg-emerald-500/10', activeText: 'text-emerald-400', activeBorder: 'border-emerald-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]' }
+    const match = gradiente.match(/from-(\w+)-/)
+    const color = match?.[1] || 'emerald'
+    const map: Record<string, { activeBg: string; activeText: string; activeBorder: string; iconGlow: string }> = {
       emerald: { activeBg: 'bg-emerald-500/10', activeText: 'text-emerald-400', activeBorder: 'border-emerald-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]' },
       teal: { activeBg: 'bg-teal-500/10', activeText: 'text-teal-400', activeBorder: 'border-teal-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(20,184,166,0.5)]' },
       blue: { activeBg: 'bg-blue-500/10', activeText: 'text-blue-400', activeBorder: 'border-blue-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(59,130,246,0.5)]' },
@@ -199,98 +279,200 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
       indigo: { activeBg: 'bg-indigo-500/10', activeText: 'text-indigo-400', activeBorder: 'border-indigo-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(99,102,241,0.5)]' },
       slate: { activeBg: 'bg-slate-500/10', activeText: 'text-slate-300', activeBorder: 'border-slate-400', iconGlow: 'drop-shadow-[0_0_5px_rgba(148,163,184,0.4)]' },
       gray: { activeBg: 'bg-gray-500/10', activeText: 'text-gray-300', activeBorder: 'border-gray-400', iconGlow: 'drop-shadow-[0_0_5px_rgba(156,163,175,0.4)]' },
-    };
-    return colorMap[color] || colorMap.emerald;
-  };
+    }
+    return map[color] || map.emerald
+  }
 
-  // Separar módulos en secciones
-  const adminModuleCodes = ['empresas', 'usuarios', 'roles', 'roles_permisos', 'logs', 'configuracion', 'sistema', 'suscripcion'];
+  // ── Color del indicador de sección ──
+  const getSectionColor = (color: string) => {
+    const map: Record<string, { dot: string; text: string; hoverBg: string; activeBg: string; count: string }> = {
+      emerald: { dot: 'bg-emerald-400', text: 'text-emerald-400', hoverBg: 'hover:bg-emerald-500/5', activeBg: 'bg-emerald-500/10', count: 'bg-emerald-500/20 text-emerald-400' },
+      cyan: { dot: 'bg-cyan-400', text: 'text-cyan-400', hoverBg: 'hover:bg-cyan-500/5', activeBg: 'bg-cyan-500/10', count: 'bg-cyan-500/20 text-cyan-400' },
+      purple: { dot: 'bg-purple-400', text: 'text-purple-400', hoverBg: 'hover:bg-purple-500/5', activeBg: 'bg-purple-500/10', count: 'bg-purple-500/20 text-purple-400' },
+      blue: { dot: 'bg-blue-400', text: 'text-blue-400', hoverBg: 'hover:bg-blue-500/5', activeBg: 'bg-blue-500/10', count: 'bg-blue-500/20 text-blue-400' },
+      amber: { dot: 'bg-amber-400', text: 'text-amber-400', hoverBg: 'hover:bg-amber-500/5', activeBg: 'bg-amber-500/10', count: 'bg-amber-500/20 text-amber-400' },
+      violet: { dot: 'bg-violet-400', text: 'text-violet-400', hoverBg: 'hover:bg-violet-500/5', activeBg: 'bg-violet-500/10', count: 'bg-violet-500/20 text-violet-400' },
+      slate: { dot: 'bg-slate-400', text: 'text-slate-400', hoverBg: 'hover:bg-slate-500/5', activeBg: 'bg-slate-500/10', count: 'bg-slate-500/20 text-slate-400' },
+    }
+    return map[color] || map.emerald
+  }
 
-  const dashboardModule = modulosDinamicos.find(m => m.modulo_codigo === 'dashboard');
-  const operationalModules = modulosDinamicos.filter(m => m.modulo_codigo !== 'dashboard' && !adminModuleCodes.includes(m.modulo_codigo));
-  const adminModulesList = modulosDinamicos.filter(m => adminModuleCodes.includes(m.modulo_codigo));
-  const hasAdminModules = adminModulesList.length > 0;
+  // ── Indexar módulos dinámicos por código ──
+  const modulesByCode = useMemo(() => {
+    const map: Record<string, PermisoModulo> = {}
+    for (const m of modulosDinamicos) {
+      map[m.modulo_codigo] = m
+    }
+    return map
+  }, [modulosDinamicos])
+
+  // ── Determinar si una sección tiene un hijo activo ──
+  const sectionHasActive = useCallback((section: SidebarSection) => {
+    return section.modules.some(code => {
+      const m = modulesByCode[code]
+      if (!m) return false
+      const href = m.modulo_ruta || `/${m.modulo_codigo}`
+      return isItemActive(href)
+    })
+  }, [modulesByCode, isItemActive])
+
+  // ── Auto-expandir la sección activa ──
+  useEffect(() => {
+    const allSections = [...SIDEBAR_SECTIONS, ADMIN_SECTION]
+    for (const section of allSections) {
+      if (sectionHasActive(section) && collapsed[section.key]) {
+        setCollapsed(prev => {
+          const next = { ...prev, [section.key]: false }
+          try { localStorage.setItem('gpm_sidebar_collapsed', JSON.stringify(next)) } catch { }
+          return next
+        })
+      }
+    }
+  }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Dashboard module ──
+  const dashboardModule = modulesByCode['dashboard']
+
+  // ── Filtrar secciones con módulos disponibles ──
+  const activeSections = useMemo(() => {
+    return SIDEBAR_SECTIONS.map(section => {
+      const modules = section.modules
+        .map(code => modulesByCode[code])
+        .filter(Boolean) as PermisoModulo[]
+      return { ...section, availableModules: modules }
+    }).filter(s => s.availableModules.length > 0)
+  }, [modulesByCode])
+
+  const adminSection = useMemo(() => {
+    const modules = ADMIN_SECTION.modules
+      .map(code => modulesByCode[code])
+      .filter(Boolean) as PermisoModulo[]
+    return { ...ADMIN_SECTION, availableModules: modules }
+  }, [modulesByCode])
+
+  // ── Avatar Component ──
+  const UserAvatar = () => (
+    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xs border-2 border-emerald-300/20 shadow-lg shadow-emerald-500/10 overflow-hidden">
+      {user.avatar ? (
+        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+      ) : (
+        <span>{user.name.charAt(0).toUpperCase()}</span>
+      )}
+    </div>
+  )
+
+  // ── Render de un módulo individual ──
+  const renderModuleItem = (item: PermisoModulo) => {
+    const href = item.modulo_ruta || `/${item.modulo_codigo}`
+    const isActive = isItemActive(href)
+    const Icon = getIcon(item.modulo_icono)
+    const colors = getModuleColor(item.modulo_gradiente)
+
+    return (
+      <Link to={href} key={item.modulo_codigo} className="block">
+        <div className={`group flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${isActive
+            ? `${colors.activeBg} ${colors.activeText} border-l-[3px] ${colors.activeBorder} shadow-sm`
+            : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.03] border-l-[3px] border-transparent'
+          }`}>
+          <Icon className={`w-4 h-4 flex-shrink-0 transition-colors ${isActive
+              ? `${colors.activeText} ${colors.iconGlow}`
+              : 'text-slate-500 group-hover:text-slate-300'
+            }`} />
+          <span className={`text-[13px] font-medium truncate ${isActive ? 'font-semibold' : ''}`}>
+            {item.modulo_nombre}
+          </span>
+        </div>
+      </Link>
+    )
+  }
+
+  // ── Render de una sección colapsable ──
+  const renderSection = (section: SidebarSection & { availableModules: PermisoModulo[] }, isAdminSection = false) => {
+    const isCollapsed = collapsed[section.key] ?? false
+    const hasActive = sectionHasActive(section)
+    const SectionIcon = section.icon
+    const sColors = getSectionColor(section.color)
+
+    return (
+      <div key={section.key} className={`${isAdminSection ? 'mt-4 pt-4 border-t border-white/[0.04]' : ''}`}>
+        {/* Section Header */}
+        <button
+          onClick={() => toggleSection(section.key)}
+          className={`w-full group flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-200 ${sColors.hoverBg} ${hasActive ? sColors.activeBg : ''}`}
+        >
+          <div className={`w-1.5 h-1.5 rounded-full ${hasActive ? sColors.dot : 'bg-slate-600'} transition-colors`} />
+          <SectionIcon className={`w-3.5 h-3.5 ${hasActive ? sColors.text : 'text-slate-500 group-hover:text-slate-400'} transition-colors`} />
+          <span className={`flex-1 text-left text-[11px] font-bold uppercase tracking-[0.15em] ${hasActive ? sColors.text : 'text-slate-500 group-hover:text-slate-400'
+            } transition-colors`}>
+            {section.label}
+          </span>
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${sColors.count}`}>
+            {section.availableModules.length}
+          </span>
+          <ChevronRight className={`w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-all duration-200 ${isCollapsed ? '' : 'rotate-90'
+            }`} />
+        </button>
+
+        {/* Section Items (animated collapse) */}
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-in-out ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[600px] opacity-100'
+            }`}
+        >
+          <div className="ml-3 mt-1 space-y-0.5 border-l border-white/[0.04] pl-2">
+            {section.availableModules.map(renderModuleItem)}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className={`flex flex-col h-full bg-transparent px-6 pb-6 ${className}`}>
-
+    <div className={`flex flex-col h-full bg-transparent px-4 pb-4 ${className}`}>
       {/* Main Navigation */}
-      <div className="flex-1 space-y-2 overflow-y-auto no-scrollbar pt-4">
+      <div className="flex-1 overflow-y-auto no-scrollbar pt-3 space-y-1">
 
-        {/* Dashboard Button destacado (Solo si tiene permiso) */}
+        {/* Dashboard (siempre visible y destacado) */}
         {dashboardModule && (
-          <Link to="/dashboard" className="mb-6 block">
-            <button className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 group ${isItemActive('/dashboard')
-              ? 'bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_-5px_rgba(16,185,129,0.3)] border-l-4 border-emerald-500'
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
+          <Link to="/dashboard" className="block mb-3">
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${isItemActive('/dashboard')
+                ? 'bg-emerald-500/10 text-emerald-400 border-l-[3px] border-emerald-500 shadow-[0_0_15px_-5px_rgba(16,185,129,0.25)]'
+                : 'text-slate-400 hover:text-white hover:bg-white/5 border-l-[3px] border-transparent'
               }`}>
-              <LayoutDashboard className={`w-5 h-5 ${isItemActive('/dashboard') ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]' : ''}`} />
-              <span className={`font-bold text-sm tracking-tight ${isItemActive('/dashboard') ? 'neon-text-light' : ''}`}>Dashboard</span>
-            </button>
+              <LayoutDashboard className={`w-5 h-5 ${isItemActive('/dashboard')
+                  ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]'
+                  : ''
+                }`} />
+              <span className={`text-sm font-bold tracking-tight ${isItemActive('/dashboard') ? 'neon-text-light' : ''
+                }`}>Dashboard</span>
+            </div>
           </Link>
         )}
 
-        {/* Módulos Operativos Dinámicos */}
-        <div className="space-y-2">
-          {operationalModules.map((item) => {
-            const href = item.modulo_ruta || `/${item.modulo_codigo}`;
-            const isActive = isItemActive(href)
-            const Icon = getIcon(item.modulo_icono)
-            const colors = getModuleColor(item.modulo_gradiente)
-
-            return (
-              <Link to={href} key={item.modulo_codigo} className="block">
-                <div className={`group flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 ${isActive
-                  ? `${colors.activeBg} ${colors.activeText} border-l-4 ${colors.activeBorder} shadow-lg`
-                  : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'
-                  }`}>
-                  <Icon className={`w-5 h-5 transition-colors ${isActive ? `${colors.activeText} ${colors.iconGlow}` : 'text-slate-500 group-hover:text-slate-300'
-                    }`} />
-                  <span className={`text-sm font-semibold tracking-wide ${isActive ? '' : ''}`}>{item.modulo_nombre}</span>
-                </div>
-              </Link>
-            )
-          })}
+        {/* Secciones operativas agrupadas */}
+        <div className="space-y-1.5">
+          {activeSections.map(section => renderSection(section))}
         </div>
 
-        {/* Admin Section (Dinámica) */}
-        {hasAdminModules && (
-          <div className="pt-6 mt-6 border-t border-white/5 animate-in fade-in duration-500">
-            <p className="px-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Administración</p>
-
-            {adminModulesList.map((item) => {
-              const href = item.modulo_ruta || `/${item.modulo_codigo}`;
-              const isActive = isItemActive(href)
-              const Icon = getIcon(item.modulo_icono)
-              const colors = getModuleColor(item.modulo_gradiente)
-
-              return (
-                <Link to={href} key={item.modulo_codigo} className="block mb-2">
-                  <div className={`group flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 ${isActive ? `${colors.activeBg} ${colors.activeText} border-l-4 ${colors.activeBorder} shadow-lg font-semibold` : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'}`}>
-                    <Icon className={`w-5 h-5 transition-colors ${isActive ? `${colors.activeText} ${colors.iconGlow}` : 'text-slate-500 group-hover:text-slate-300'}`} />
-                    <span className={`text-sm font-medium`}>{item.modulo_nombre}</span>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        )}
-
+        {/* Sección de Administración */}
+        {adminSection.availableModules.length > 0 && renderSection(adminSection, true)}
       </div>
 
-      {/* User Profile Footer */}
-      <div className="mt-auto pt-8 border-t border-white/5">
-        <div className="flex items-center gap-4 px-2">
+      {/* Perfil de usuario (footer) */}
+      <div className="mt-auto pt-4 border-t border-white/[0.04]">
+        <div className="flex items-center gap-3 px-2">
           <UserAvatar />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-black text-white truncate drop-shadow-sm">{user.name}</p>
-            <p className="text-[10px] text-emerald-500/80 font-bold truncate uppercase tracking-widest">{user.hierarchy.replace('_', ' ')}</p>
+            <p className="text-[13px] font-bold text-white truncate">{user.name}</p>
+            <p className="text-[10px] text-emerald-500/80 font-semibold truncate uppercase tracking-wider">
+              {user.hierarchy.replace(/_/g, ' ')}
+            </p>
           </div>
           <button
             onClick={() => logout()}
-            className="p-2.5 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+            className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+            title="Cerrar sesión"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </div>

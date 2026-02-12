@@ -99,62 +99,160 @@ const PERMISOS_COMPLETOS: PermisosPorModulo = {
 /**
  * Módulos de respaldo (Fallback) para modo Offline o Demo
  * Define qué ve el usuario si no hay conexión con Supabase.
+ * 
+ * IMPORTANTE: Cada módulo DEBE tener una ruta ÚNICA.
+ * Módulos con rutas duplicadas causan doble selección en el sidebar.
+ * 
+ * Estructura organizada según los 13 pilares del ERP:
+ * 1. Núcleo Clínico | 2. Motor de Flujos | 3. Empresas B2B
+ * 4. Dictámenes     | 5. Operación/Agenda | 6. Farmacia
+ * 7. Facturación    | 8. Reportes         | 9. Cumplimiento
+ * 10. Seguridad     | 11. Integraciones   | 12. UX
+ * 13. Administración del SaaS
  */
-// Catálogo maestro de módulos para Modo Demo/Offline
 const ALL_MODULES_CATALOG: PermisoModulo[] = [
+    // ═══════════════════════════════════════════════════
+    // DASHBOARD (visible para todos los roles)
+    // ═══════════════════════════════════════════════════
     { modulo_codigo: 'dashboard', modulo_nombre: 'Dashboard', modulo_ruta: '/dashboard', modulo_icono: 'LayoutDashboard', modulo_gradiente: 'from-blue-600 to-indigo-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+
+    // ═══════════════════════════════════════════════════
+    // 1. NÚCLEO CLÍNICO (Expediente y Acto Médico)
+    // ═══════════════════════════════════════════════════
     { modulo_codigo: 'pacientes', modulo_nombre: 'Expediente Maestro', modulo_ruta: '/medicina/expediente', modulo_icono: 'Users', modulo_gradiente: 'from-emerald-500 to-teal-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'estudios_medicos', modulo_nombre: 'Estudios Médicos', modulo_ruta: '/medicina/estudios', modulo_icono: 'Microscope', modulo_gradiente: 'from-red-500 to-orange-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'prescripcion', modulo_nombre: 'Recetas Médicas', modulo_ruta: '/medicina/recetas', modulo_icono: 'Pill', modulo_gradiente: 'from-teal-400 to-green-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'incapacidades', modulo_nombre: 'Incapacidades', modulo_ruta: '/medicina/incapacidades', modulo_icono: 'FileBarChart2', modulo_gradiente: 'from-rose-500 to-pink-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'rayos_x', modulo_nombre: 'Rayos X', modulo_ruta: '/rayos-x', modulo_icono: 'Bone', modulo_gradiente: 'from-slate-500 to-slate-700', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'espirometria', modulo_nombre: 'Espirometría', modulo_ruta: '/espirometria', modulo_icono: 'Wind', modulo_gradiente: 'from-cyan-500 to-blue-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'vision', modulo_nombre: 'Estudios Visuales', modulo_ruta: '/vision', modulo_icono: 'Eye', modulo_gradiente: 'from-teal-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'resultados', modulo_nombre: 'Resultados', modulo_ruta: '/resultados', modulo_icono: 'FileCheck', modulo_gradiente: 'from-blue-400 to-cyan-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+
+    // ═══════════════════════════════════════════════════
+    // 2. MOTOR DE FLUJOS (Episodios y Campañas)
+    // ═══════════════════════════════════════════════════
+    { modulo_codigo: 'episodios', modulo_nombre: 'Episodios', modulo_ruta: '/episodios/pipeline', modulo_icono: 'ClipboardList', modulo_gradiente: 'from-cyan-500 to-blue-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'campanias', modulo_nombre: 'Campañas Masivas', modulo_ruta: '/campanias', modulo_icono: 'ClipboardList', modulo_gradiente: 'from-orange-500 to-amber-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+
+    // ═══════════════════════════════════════════════════
+    // 4. DICTÁMENES MÉDICO-LABORALES
+    // ═══════════════════════════════════════════════════
+    { modulo_codigo: 'dictamenes', modulo_nombre: 'Dictámenes', modulo_ruta: '/medicina/dictamenes', modulo_icono: 'FileText', modulo_gradiente: 'from-emerald-500 to-teal-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'certificaciones', modulo_nombre: 'Certificaciones', modulo_ruta: '/certificaciones', modulo_icono: 'Award', modulo_gradiente: 'from-yellow-500 to-amber-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+
+    // ═══════════════════════════════════════════════════
+    // 5. OPERACIÓN Y AGENDA
+    // ═══════════════════════════════════════════════════
     { modulo_codigo: 'agenda', modulo_nombre: 'Agenda', modulo_ruta: '/agenda', modulo_icono: 'Calendar', modulo_gradiente: 'from-purple-500 to-pink-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
     { modulo_codigo: 'citas', modulo_nombre: 'Citas', modulo_ruta: '/citas', modulo_icono: 'CalendarDays', modulo_gradiente: 'from-purple-500 to-pink-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'estudios_medicos', modulo_nombre: 'Estudios Médicos', modulo_ruta: '/medicina/estudios', modulo_icono: 'Microscope', modulo_gradiente: 'from-red-500 to-orange-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'historial', modulo_nombre: 'Historial', modulo_ruta: '/medicina/expediente', modulo_icono: 'History', modulo_gradiente: 'from-slate-600 to-gray-700', puede_ver: false, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'alertas', modulo_nombre: 'Alertas', modulo_ruta: '/alertas', modulo_icono: 'Bell', modulo_gradiente: 'from-amber-500 to-orange-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+
+    // ═══════════════════════════════════════════════════
+    // 6. FARMACIA E INVENTARIOS
+    // ═══════════════════════════════════════════════════
+    { modulo_codigo: 'inventario', modulo_nombre: 'Inventario', modulo_ruta: '/inventario', modulo_icono: 'Package', modulo_gradiente: 'from-emerald-600 to-green-700', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'tienda', modulo_nombre: 'Tienda', modulo_ruta: '/tienda', modulo_icono: 'ShoppingBag', modulo_gradiente: 'from-pink-400 to-rose-400', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+
+    // ═══════════════════════════════════════════════════
+    // 7. FACTURACIÓN, COBRANZA Y COSTOS
+    // ═══════════════════════════════════════════════════
+    { modulo_codigo: 'facturacion', modulo_nombre: 'Facturación', modulo_ruta: '/facturacion', modulo_icono: 'Receipt', modulo_gradiente: 'from-blue-500 to-cyan-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'cotizaciones', modulo_nombre: 'Cotizaciones', modulo_ruta: '/cotizaciones', modulo_icono: 'FileText', modulo_gradiente: 'from-blue-500 to-indigo-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'cxc', modulo_nombre: 'Cuentas por Cobrar', modulo_ruta: '/cxc', modulo_icono: 'DollarSign', modulo_gradiente: 'from-green-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+
+    // ═══════════════════════════════════════════════════
+    // 8. REPORTES E INTELIGENCIA
+    // ═══════════════════════════════════════════════════
+    { modulo_codigo: 'reportes', modulo_nombre: 'Reportes', modulo_ruta: '/reportes', modulo_icono: 'FileBarChart', modulo_gradiente: 'from-indigo-500 to-purple-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
     { modulo_codigo: 'ia', modulo_nombre: 'Intelligence Bureau', modulo_ruta: '/ia', modulo_icono: 'Brain', modulo_gradiente: 'from-violet-500 to-fuchsia-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+
+    // ═══════════════════════════════════════════════════
+    // 9. CUMPLIMIENTO LEGAL Y STPS (NOMs)
+    // ═══════════════════════════════════════════════════
+    { modulo_codigo: 'normatividad', modulo_nombre: 'Normatividad', modulo_ruta: '/normatividad', modulo_icono: 'Scale', modulo_gradiente: 'from-blue-800 to-indigo-900', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'nom011', modulo_nombre: 'NOM-011', modulo_ruta: '/nom-011/programa', modulo_icono: 'Activity', modulo_gradiente: 'from-amber-500 to-orange-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'evaluaciones', modulo_nombre: 'Evaluaciones', modulo_ruta: '/evaluaciones', modulo_icono: 'ClipboardCheck', modulo_gradiente: 'from-green-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'matriz_riesgos', modulo_nombre: 'Matriz Riesgos', modulo_ruta: '/medicina/matriz-riesgos', modulo_icono: 'ShieldAlert', modulo_gradiente: 'from-yellow-400 to-amber-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'programa_anual', modulo_nombre: 'Programa Anual', modulo_ruta: '/medicina/programa-anual', modulo_icono: 'CalendarRange', modulo_gradiente: 'from-blue-600 to-cyan-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+
+    // ═══════════════════════════════════════════════════
+    // 10. RRHH Y TALENTO
+    // ═══════════════════════════════════════════════════
+    { modulo_codigo: 'rrhh', modulo_nombre: 'RRHH', modulo_ruta: '/rrhh', modulo_icono: 'Users2', modulo_gradiente: 'from-pink-500 to-rose-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'medicos', modulo_nombre: 'Médicos', modulo_ruta: '/medicos', modulo_icono: 'Stethoscope', modulo_gradiente: 'from-teal-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+
+    // ═══════════════════════════════════════════════════
+    // 13. ADMINISTRACIÓN SAAS (Solo Admin)
+    // ═══════════════════════════════════════════════════
     { modulo_codigo: 'empresas', modulo_nombre: 'Empresas', modulo_ruta: '/admin/empresas', modulo_icono: 'Building2', modulo_gradiente: 'from-blue-700 to-cyan-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
     { modulo_codigo: 'usuarios', modulo_nombre: 'Usuarios', modulo_ruta: '/admin/usuarios', modulo_icono: 'UserCog', modulo_gradiente: 'from-orange-500 to-amber-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
     { modulo_codigo: 'roles_permisos', modulo_nombre: 'Roles', modulo_ruta: '/admin/roles', modulo_icono: 'Shield', modulo_gradiente: 'from-slate-700 to-slate-900', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'inventario', modulo_nombre: 'Inventario', modulo_ruta: '/inventario', modulo_icono: 'Package', modulo_gradiente: 'from-emerald-600 to-green-700', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'facturacion', modulo_nombre: 'Facturación', modulo_ruta: '/facturacion', modulo_icono: 'Receipt', modulo_gradiente: 'from-blue-500 to-cyan-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'reportes', modulo_nombre: 'Reportes', modulo_ruta: '/reportes', modulo_icono: 'FileBarChart', modulo_gradiente: 'from-indigo-500 to-purple-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'configuracion', modulo_nombre: 'Configuración', modulo_ruta: '/configuracion', modulo_icono: 'Settings', modulo_gradiente: 'from-gray-500 to-slate-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'sistema', modulo_nombre: 'Sistema', modulo_ruta: '/admin/dashboard', modulo_icono: 'Server', modulo_gradiente: 'from-slate-800 to-black', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'rrhh', modulo_nombre: 'RRHH', modulo_ruta: '/rrhh', modulo_icono: 'Users2', modulo_gradiente: 'from-pink-500 to-rose-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'medicos', modulo_nombre: 'Médicos', modulo_ruta: '/medicos', modulo_icono: 'Stethoscope', modulo_gradiente: 'from-teal-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
     { modulo_codigo: 'sedes', modulo_nombre: 'Sedes', modulo_ruta: '/sedes', modulo_icono: 'MapPin', modulo_gradiente: 'from-red-500 to-rose-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'alertas', modulo_nombre: 'Alertas', modulo_ruta: '/alertas', modulo_icono: 'Bell', modulo_gradiente: 'from-amber-500 to-orange-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'rayos_x', modulo_nombre: 'Rayos X', modulo_ruta: '/rayos-x', modulo_icono: 'Bone', modulo_gradiente: 'from-slate-500 to-slate-700', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'matriz_riesgos', modulo_nombre: 'Matriz Riesgos', modulo_ruta: '/medicina/matriz-riesgos', modulo_icono: 'ShieldAlert', modulo_gradiente: 'from-yellow-400 to-amber-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'programa_anual', modulo_nombre: 'Programa Anual', modulo_ruta: '/medicina/programa-anual', modulo_icono: 'CalendarRange', modulo_gradiente: 'from-blue-600 to-cyan-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'incapacidades', modulo_nombre: 'Incapacidades', modulo_ruta: '/medicina/incapacidades', modulo_icono: 'FileBarChart2', modulo_gradiente: 'from-rose-500 to-pink-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'normatividad', modulo_nombre: 'Normatividad', modulo_ruta: '/normatividad', modulo_icono: 'Scale', modulo_gradiente: 'from-blue-800 to-indigo-900', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'certificaciones', modulo_nombre: 'Certificaciones', modulo_ruta: '/certificaciones', modulo_icono: 'Award', modulo_gradiente: 'from-yellow-500 to-amber-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'tienda', modulo_nombre: 'Tienda', modulo_ruta: '/tienda', modulo_icono: 'ShoppingBag', modulo_gradiente: 'from-pink-400 to-rose-400', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'evaluaciones', modulo_nombre: 'Evaluaciones', modulo_ruta: '/evaluaciones', modulo_icono: 'ClipboardCheck', modulo_gradiente: 'from-green-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'resultados', modulo_nombre: 'Resultados', modulo_ruta: '/resultados', modulo_icono: 'FileCheck', modulo_gradiente: 'from-blue-400 to-cyan-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'prescripcion', modulo_nombre: 'Recetas Médicas', modulo_ruta: '/medicina/recetas', modulo_icono: 'Pill', modulo_gradiente: 'from-teal-400 to-green-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    // Nuevos módulos NOM
-    { modulo_codigo: 'dictamenes', modulo_nombre: 'Dictámenes', modulo_ruta: '/medicina/dictamenes', modulo_icono: 'FileText', modulo_gradiente: 'from-emerald-500 to-teal-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'nom011', modulo_nombre: 'NOM-011', modulo_ruta: '/nom-011/programa', modulo_icono: 'Activity', modulo_gradiente: 'from-amber-500 to-orange-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'episodios', modulo_nombre: 'Episodios', modulo_ruta: '/episodios/pipeline', modulo_icono: 'ClipboardList', modulo_gradiente: 'from-cyan-500 to-blue-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'examen_medico', modulo_nombre: 'Examen Médico', modulo_ruta: '/pacientes', modulo_icono: 'Stethoscope', modulo_gradiente: 'from-emerald-600 to-emerald-800', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'vigilancia_epidemiologica', modulo_nombre: 'Vigilancia Epidemiológica', modulo_ruta: '/ia', modulo_icono: 'Brain', modulo_gradiente: 'from-emerald-500 to-blue-600', puede_ver: false, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'campanias', modulo_nombre: 'Campañas Masivas', modulo_ruta: '/campanias', modulo_icono: 'ClipboardList', modulo_gradiente: 'from-orange-500 to-amber-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'cotizaciones', modulo_nombre: 'Cotizaciones', modulo_ruta: '/cotizaciones', modulo_icono: 'FileText', modulo_gradiente: 'from-blue-500 to-indigo-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'cxc', modulo_nombre: 'Cuentas por Cobrar', modulo_ruta: '/cxc', modulo_icono: 'DollarSign', modulo_gradiente: 'from-green-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'espirometria', modulo_nombre: 'Espirometría', modulo_ruta: '/espirometria', modulo_icono: 'Wind', modulo_gradiente: 'from-cyan-500 to-blue-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'vision', modulo_nombre: 'Estudios Visuales', modulo_ruta: '/vision', modulo_icono: 'Eye', modulo_gradiente: 'from-teal-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true }
+    { modulo_codigo: 'configuracion', modulo_nombre: 'Configuración', modulo_ruta: '/configuracion', modulo_icono: 'Settings', modulo_gradiente: 'from-gray-500 to-slate-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'sistema', modulo_nombre: 'Sistema', modulo_ruta: '/admin/dashboard', modulo_icono: 'Server', modulo_gradiente: 'from-slate-800 to-black', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true }
 ];
 
+// ═══════════════════════════════════════════════════
 // Definición de Roles y sus módulos permitidos en modo Demo
+// NOTA: 'historial', 'examen_medico', 'vigilancia_epidemiologica' fueron eliminados
+//       del catálogo por compartir rutas con otros módulos.
+//       Sus funcionalidades están integradas en:
+//       - historial → Tab "Historial" dentro de Expediente Maestro (pacientes)
+//       - examen_medico → Flujo dentro de Expediente Maestro (pacientes)
+//       - vigilancia_epidemiologica → Sección dentro de Intelligence Bureau (ia)
+// ═══════════════════════════════════════════════════
 const DEMO_ROLE_PERMISSIONS: Record<string, string[]> = {
     'super_admin': ['*'],
     'admin_saas': ['*'],
-    'admin_empresa': ['dashboard', 'usuarios', 'configuracion', 'reportes', 'facturacion', 'rrhh', 'sedes', 'inventario', 'tienda', 'alertas', 'normatividad', 'dictamenes', 'nom011', 'nom036', 'episodios', 'recetas', 'vigilancia_epidemiologica', 'campanias', 'cotizaciones', 'cxc', 'espirometria', 'vision', 'legal/evidencias', 'operaciones/ordenes', 'inventario/lotes', 'admin/costeo', 'ia', 'pacientes', 'agenda', 'citas', 'historial', 'examenes', 'certificaciones', 'rayos_x', 'evaluaciones', 'resultados', 'prescripcion', 'riesgos_trabajo'],
-    'medico': ['dashboard', 'pacientes', 'agenda', 'citas', 'estudios_medicos', 'historial', 'prescripcion', 'ia', 'rayos_x', 'matriz_riesgos', 'programa_anual', 'incapacidades', 'evaluaciones', 'resultados', 'certificaciones', 'dictamenes', 'nom011', 'nom036', 'episodios', 'recetas', 'examen_medico', 'vigilancia_epidemiologica', 'campanias', 'espirometria', 'vision', 'legal/evidencias'],
-    'enfermera': ['dashboard', 'pacientes', 'agenda', 'citas', 'historial', 'resultados', 'alertas', 'examen_medico', 'espirometria', 'vision'],
-    'recepcion': ['dashboard', 'agenda', 'citas', 'pacientes', 'tienda', 'facturacion', 'resultados', 'campanias', 'cotizaciones', 'cxc'],
-    'asistente': ['dashboard', 'agenda', 'pacientes', 'citas'],
-    'higienista': ['dashboard', 'pacientes', 'agenda', 'evaluaciones', 'certificaciones', 'nom011', 'normatividad', 'matriz_riesgos', 'programa_anual', 'reportes', 'dictamenes', 'inventario', 'rrhh', 'ia', 'resultados', 'examen_medico', 'espirometria', 'vision'],
-    'auditor_sst': ['dashboard', 'pacientes', 'agenda', 'historial', 'evaluaciones', 'certificaciones', 'nom011', 'normatividad', 'matriz_riesgos', 'programa_anual', 'reportes', 'dictamenes', 'facturacion', 'inventario', 'rrhh', 'ia', 'resultados', 'rayos_x', 'vigilancia_epidemiologica', 'cxc'],
+    'admin_empresa': [
+        'dashboard', 'pacientes', 'estudios_medicos', 'prescripcion', 'incapacidades',
+        'rayos_x', 'espirometria', 'vision', 'resultados',
+        'episodios', 'campanias',
+        'dictamenes', 'certificaciones',
+        'agenda', 'citas', 'alertas',
+        'inventario', 'tienda',
+        'facturacion', 'cotizaciones', 'cxc',
+        'reportes', 'ia',
+        'normatividad', 'nom011', 'evaluaciones', 'matriz_riesgos', 'programa_anual',
+        'rrhh', 'medicos',
+        'usuarios', 'sedes', 'configuracion'
+    ],
+    'medico': [
+        'dashboard', 'pacientes', 'estudios_medicos', 'prescripcion', 'incapacidades',
+        'rayos_x', 'espirometria', 'vision', 'resultados',
+        'episodios', 'campanias',
+        'dictamenes', 'certificaciones',
+        'agenda', 'citas', 'alertas',
+        'reportes', 'ia',
+        'normatividad', 'nom011', 'evaluaciones', 'matriz_riesgos', 'programa_anual'
+    ],
+    'enfermera': [
+        'dashboard', 'pacientes', 'estudios_medicos',
+        'espirometria', 'vision', 'resultados',
+        'agenda', 'citas', 'alertas'
+    ],
+    'recepcion': [
+        'dashboard', 'pacientes',
+        'agenda', 'citas',
+        'campanias',
+        'facturacion', 'cotizaciones', 'cxc',
+        'resultados', 'tienda'
+    ],
+    'asistente': ['dashboard', 'pacientes', 'agenda', 'citas'],
+    'higienista': [
+        'dashboard', 'pacientes',
+        'evaluaciones', 'certificaciones', 'nom011', 'normatividad',
+        'matriz_riesgos', 'programa_anual',
+        'reportes', 'dictamenes', 'inventario', 'rrhh', 'ia',
+        'resultados', 'espirometria', 'vision', 'agenda'
+    ],
+    'auditor_sst': [
+        'dashboard', 'pacientes',
+        'evaluaciones', 'certificaciones', 'nom011', 'normatividad',
+        'matriz_riesgos', 'programa_anual',
+        'reportes', 'dictamenes', 'facturacion', 'inventario', 'rrhh', 'ia',
+        'resultados', 'rayos_x', 'cxc', 'agenda'
+    ],
     'contador_saas': ['dashboard', 'facturacion', 'reportes', 'cotizaciones', 'cxc'],
     'paciente': ['dashboard']
 };
