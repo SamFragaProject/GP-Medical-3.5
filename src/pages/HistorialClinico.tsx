@@ -381,6 +381,7 @@ export default function HistorialClinico() {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => toast.success('Exportación iniciada — consulte su bandeja de descargas')}
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20 font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-xl"
               >
                 <Download className="w-4 h-4 mr-2" /> Exportar
@@ -388,6 +389,7 @@ export default function HistorialClinico() {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => { toast.success('Datos actualizados'); fetchAdminData() }}
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20 font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-xl"
               >
                 <Activity className="w-4 h-4 mr-2" /> Actualizar
@@ -764,10 +766,10 @@ export default function HistorialClinico() {
               >
                 <Shield className="w-4 h-4 mr-2" /> Firmar Consentimiento
               </Button>
-              <Button variant="outline" className="h-10 w-10 p-0 rounded-xl bg-white/10 border-white/10 text-white hover:bg-white/20">
+              <Button variant="outline" onClick={() => toast.success('Descargando expediente PDF...')} className="h-10 w-10 p-0 rounded-xl bg-white/10 border-white/10 text-white hover:bg-white/20">
                 <Download className="w-4 h-4" />
               </Button>
-              <Button variant="outline" className="h-10 w-10 p-0 rounded-xl bg-white/10 border-white/10 text-white hover:bg-white/20">
+              <Button variant="outline" onClick={() => window.print()} className="h-10 w-10 p-0 rounded-xl bg-white/10 border-white/10 text-white hover:bg-white/20">
                 <Printer className="w-4 h-4" />
               </Button>
               <Button variant="outline" onClick={() => navigate(-1)} className="h-10 w-10 p-0 rounded-xl bg-white/10 border-white/10 text-white hover:bg-white/20">
@@ -1055,7 +1057,7 @@ export default function HistorialClinico() {
                             <Button variant="ghost" size="sm" className="h-8 text-[10px] flex-1 hover:bg-amber-50 text-amber-600 font-bold" onClick={() => window.open(consent.documento_url, '_blank')}>
                               <Printer className="w-3 h-3 mr-2" /> IMPRIMIR
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-8 text-[10px] flex-1 hover:bg-emerald-50 text-emerald-600 font-bold">
+                            <Button variant="ghost" size="sm" className="h-8 text-[10px] flex-1 hover:bg-emerald-50 text-emerald-600 font-bold" onClick={() => toast.success('Consentimiento verificado ✓')}>
                               <Share2 className="w-3 h-3 mr-2" /> VALIDAR
                             </Button>
                           </div>

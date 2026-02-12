@@ -23,7 +23,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  console.log('AuthProvider: rendering')
   const [user, setUser] = useState<User | null>(null)
   const [originalUser, setOriginalUser] = useState<User | null>(null) // Para impersonación
   const [loading, setLoading] = useState(true)
@@ -31,7 +30,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Cargar usuario desde localStorage o sesión de Supabase
   useEffect(() => {
-    console.log('AuthProvider: useEffect start')
     const loadUser = async () => {
       try {
         // Intentar cargar desde Supabase primero
@@ -50,7 +48,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem('GPMedical_user', JSON.stringify(userData))
           } else {
             // Si el usuario existe en Auth pero no en tabla usuarios, crearlo (JIT Provisioning)
-            console.log('Usuario nuevo detectado, creando perfil...')
             const newUserProfile: User = {
               id: session.user.id,
               email: session.user.email!,
@@ -80,12 +77,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const parsedUser = JSON.parse(savedUser) as User
               // Verificar que sea un usuario demo válido (tiene id que empieza con 'demo-' o 'mock-')
               if (parsedUser.id?.startsWith('demo-') || parsedUser.id?.startsWith('mock-') || savedUser.includes('(Demo)') || savedUser.includes('(Offline)')) {
-                console.log('🔓 Usuario OFFLINE/DEMO detectado en localStorage, cargando...')
                 setUser(parsedUser)
                 // No borrar, mantener la sesión offline
               } else {
                 // Usuario real sin sesión válida, limpiar
-                console.log('Sesión expirada, limpiando usuario...')
                 setUser(null)
                 localStorage.removeItem('GPMedical_user')
               }
@@ -249,7 +244,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const mockUser = offlineUsers[email.toLowerCase()]
       if (mockUser) {
-        console.warn('⚠️ Fallo conexión Supabase. Usando Modo Offline.')
         setUser(mockUser)
         localStorage.setItem('GPMedical_user', JSON.stringify(mockUser))
         localStorage.setItem('sb-access-token', 'mock-token') // Bypass
@@ -320,7 +314,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ])
       } catch {
         // Ignorar errores de Supabase, ya limpiamos localStorage
-        console.log('Supabase signOut skipped (no connection)')
       }
 
       toast.success('Sesión cerrada correctamente')
@@ -397,7 +390,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     canAccess: canAccessResource
   }
 
-  console.log('AuthProvider: returning provider, loading:', loading)
   return (
     <AuthContext.Provider value={value}>
       {children}

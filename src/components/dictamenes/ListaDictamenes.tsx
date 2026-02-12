@@ -27,6 +27,7 @@ import { usePermisosDinamicos } from '@/hooks/usePermisosDinamicos';
 import { dictamenService } from '@/services/dictamenService';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader';
 import type { DictamenMedico, TipoEvaluacionDictamen as TipoEvaluacion, ResultadoDictamen, EstadoDictamen } from '@/types/dictamen';
 
 interface ListaDictamenesProps {
@@ -145,22 +146,24 @@ export function ListaDictamenes({ onNuevoDictamen, onVerDictamen, onEditarDictam
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900">Dictámenes Médico-Laborales</h1>
-          <p className="text-slate-500 font-medium italic">Gestión avanzada de aptitud y vigilancia de la salud</p>
-        </div>
-        {puede('dictamenes', 'crear') && (
-          <Button
-            onClick={onNuevoDictamen}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-500/20 font-bold"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Emisión de Dictamen
-          </Button>
-        )}
-      </div>
+      {/* Header Premium */}
+      <PremiumPageHeader
+        title="Dictámenes Médico-Laborales"
+        subtitle="Gestión avanzada de aptitud y vigilancia de la salud poblacional"
+        icon={FileSignature}
+        badge="VALIDATED"
+        actions={
+          puede('dictamenes', 'crear') && (
+            <Button
+              onClick={onNuevoDictamen}
+              className="bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-black text-[10px] uppercase tracking-widest px-6 py-3 rounded-xl shadow-xl shadow-emerald-500/20 group"
+            >
+              <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform" />
+              Emisión de Dictamen
+            </Button>
+          )
+        }
+      />
 
       {/* Filtros */}
       <Card className="border-none shadow-xl bg-white rounded-3xl overflow-hidden">

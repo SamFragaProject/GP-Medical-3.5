@@ -11,13 +11,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import toast from 'react-hot-toast';
 
-export default function ExtractorMedico() {
+export default function ExtractorMedico({ hideHeader = false }: { hideHeader?: boolean }) {
     const [files, setFiles] = useState<File[]>([]);
     const [patients, setPatients] = useState<PatientData[]>([]);
     const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [progress, setProgress] = useState<string>("");
+    const { user } = useAuth();
 
     // Load data from localStorage on mount
     useEffect(() => {
@@ -206,21 +209,27 @@ export default function ExtractorMedico() {
     };
 
     const handleDeletePatient = (id: string) => {
-        if (window.confirm("¿Estás seguro de que deseas eliminar este registro?")) {
-            setPatients(prev => prev.filter(p => p.id !== id));
-        }
+        setPatients(prev => prev.filter(p => p.id !== id));
+        toast.success('Registro eliminado');
     };
 
     const handleClearAll = () => {
         if (window.confirm("¿Estás seguro de que deseas borrar TODOS los registros? Esta acción no se puede deshacer.")) {
             setPatients([]);
             localStorage.removeItem('medical_patients_data');
+            toast.success('Todos los registros eliminados');
         }
     };
 
     const handleSaveToSystem = async () => {
         if (patients.length === 0) return;
         if (!window.confirm(`¿Deseas guardar ${patients.length} pacientes en el sistema ERP?`)) return;
+
+        const empresaId = user?.empresa_id;
+        if (!empresaId) {
+            toast.error('No se pudo determinar la empresa. Inicie sesión nuevamente.');
+            return;
+        }
 
         setStatus(AppStatus.PROCESSING);
         setProgress("Guardando en el sistema...");
@@ -253,7 +262,7 @@ export default function ExtractorMedico() {
                     genero: p.genero?.toLowerCase() || 'otro',
                     fecha_nacimiento: dob,
                     estatus: 'activo',
-                    empresa_id: 'empresa-demo-1', // ID temporal mientras se integra Auth
+                    empresa_id: empresaId,
                     puesto: 'Importado',
                     departamento: 'General'
                 });
@@ -265,42 +274,44 @@ export default function ExtractorMedico() {
 
         setStatus(AppStatus.SUCCESS);
         setProgress("");
-        alert(`Se guardaron ${savedCount} pacientes correctamente en la base de datos del ERP.`);
+        toast.success(`Se guardaron ${savedCount} pacientes en la base de datos del ERP`);
         setTimeout(() => setStatus(AppStatus.IDLE), 2000);
     };
 
     return (
         <div className="min-h-screen bg-slate-50/50 text-slate-900 font-sans pb-20">
             {/* Premium Header */}
-            <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-brand-600/5 to-cyan-500/5"></div>
-                <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between relative z-10">
-                    <div className="flex items-center gap-4">
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="bg-gradient-to-br from-brand-600 to-brand-700 p-2.5 rounded-xl shadow-lg shadow-brand-500/20"
-                        >
-                            <BrainCircuit className="w-6 h-6 text-white" />
-                        </motion.div>
-                        <div>
-                            <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-brand-800 to-brand-600">
-                                Extractor Médico AI
-                            </h1>
-                            <p className="text-xs font-medium text-slate-500 mt-1">
-                                Procesamiento Inteligente de Expedientes
-                            </p>
+            {!hideHeader && (
+                <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/5 to-teal-500/5"></div>
+                    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between relative z-10">
+                        <div className="flex items-center gap-4">
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="bg-gradient-to-br from-brand-600 to-brand-700 p-2.5 rounded-xl shadow-lg shadow-brand-500/20"
+                            >
+                                <BrainCircuit className="w-6 h-6 text-white" />
+                            </motion.div>
+                            <div>
+                                <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-brand-800 to-brand-600">
+                                    Extractor Médico AI
+                                </h1>
+                                <p className="text-xs font-medium text-slate-500 mt-1">
+                                    Procesamiento Inteligente de Expedientes
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <Badge variant="outline" className="hidden md:flex gap-2 py-1.5 px-4 bg-white/50 backdrop-blur border-slate-200">
+                                <Database className="w-4 h-4 text-brand-500" />
+                                <span className="font-bold text-slate-700">{patients.length}</span>
+                                <span className="text-slate-500 font-normal">registros</span>
+                            </Badge>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <Badge variant="outline" className="hidden md:flex gap-2 py-1.5 px-4 bg-white/50 backdrop-blur border-slate-200">
-                            <Database className="w-4 h-4 text-brand-500" />
-                            <span className="font-bold text-slate-700">{patients.length}</span>
-                            <span className="text-slate-500 font-normal">registros</span>
-                        </Badge>
-                    </div>
                 </div>
-            </div>
+            )}
 
             <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 

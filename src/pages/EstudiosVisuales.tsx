@@ -105,16 +105,20 @@ function FormVision({ onCrear, onCerrar }: {
 
             {/* Agudeza Visual */}
             <div className="grid grid-cols-2 gap-6 mb-4">
-                <div className="bg-white/5 rounded-xl p-4">
-                    <h4 className="text-sm font-medium text-blue-400 mb-3">🔵 Ojo Derecho (OD)</h4>
-                    <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-6">
+                    <h4 className="text-sm font-black text-blue-600 mb-4 uppercase tracking-widest flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500" /> Ojo Derecho (OD)
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
                         <SnellenSelect value={form.od_sin_correccion} onChange={v => setForm(f => ({ ...f, od_sin_correccion: v as SnellenValue }))} label="Sin corrección *" />
                         <SnellenSelect value={form.od_con_correccion} onChange={v => setForm(f => ({ ...f, od_con_correccion: v }))} label="Con corrección" />
                     </div>
                 </div>
-                <div className="bg-white/5 rounded-xl p-4">
-                    <h4 className="text-sm font-medium text-green-400 mb-3">🟢 Ojo Izquierdo (OI)</h4>
-                    <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-6">
+                    <h4 className="text-sm font-black text-emerald-600 mb-4 uppercase tracking-widest flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" /> Ojo Izquierdo (OI)
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
                         <SnellenSelect value={form.oi_sin_correccion} onChange={v => setForm(f => ({ ...f, oi_sin_correccion: v as SnellenValue }))} label="Sin corrección *" />
                         <SnellenSelect value={form.oi_con_correccion} onChange={v => setForm(f => ({ ...f, oi_con_correccion: v }))} label="Con corrección" />
                     </div>
@@ -251,10 +255,10 @@ export default function EstudiosVisuales() {
                 <AnimatePresence>{showForm && <FormVision onCrear={handleCrear} onCerrar={() => setShowForm(false)} />}</AnimatePresence>
 
                 {/* Search */}
-                <div className="relative">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar paciente..."
-                        className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 transition-all" />
+                <div className="relative group">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-blue-500 transition-colors" />
+                    <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar paciente por nombre o apellido..."
+                        className="w-full bg-white border border-slate-200 rounded-2xl pl-12 pr-4 py-3.5 text-slate-900 text-sm font-medium shadow-sm focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" />
                 </div>
 
                 {/* List */}

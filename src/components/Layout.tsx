@@ -54,13 +54,13 @@ export function Layout({ children }: LayoutProps) {
   }
 
   const empresaInfo = {
-    nombre: 'GPMedical',
-    id: 'demo-empresa'
+    nombre: (authUser as any)?.empresa || authUser?.empresa_id || 'GPMedical',
+    id: authUser?.empresa_id || 'demo-empresa'
   }
 
   const sedeInfo = {
-    nombre: 'Sede Principal',
-    id: 'demo-sede'
+    nombre: (authUser as any)?.sede_nombre || 'Sede Principal',
+    id: authUser?.sede_id || 'demo-sede'
   }
 
   // Estado del sidebar y UI
@@ -70,7 +70,7 @@ export function Layout({ children }: LayoutProps) {
   })
   const [searchQuery, setSearchQuery] = useState('')
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [notifications] = useState(3)
+  const [notifications] = useState(0)
   const [buscadorAbierto, setBuscadorAbierto] = useState(false)
 
   const navigate = useNavigate()
@@ -138,7 +138,7 @@ export function Layout({ children }: LayoutProps) {
         initial={false}
         animate={{ width: sidebarOpen ? 320 : 80 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className={`glass-sidebar shadow-2xl fixed left-0 top-0 h-full z-30 flex flex-col ${sidebarOpen ? '' : 'min-w-[80px]'
+        className={`glass-sidebar shadow-2xl fixed left-0 top-0 h-full z-[110] flex flex-col ${sidebarOpen ? '' : 'min-w-[80px]'
           }`}
       >
         {/* Header del sidebar */}
@@ -181,7 +181,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Header principal - Glassmorphism style - Ocultar en Dashboard para evitar duplicidad */}
       {!location.pathname.includes('/dashboard') && (
         <header
-          className="bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm fixed top-0 left-0 right-0 z-40"
+          className="bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm fixed top-0 left-0 right-0 z-[100]"
           style={{ marginLeft: sidebarOpen ? '320px' : '80px' }}
         >
           <div className="px-6 py-4">
@@ -396,18 +396,22 @@ export function Layout({ children }: LayoutProps) {
       >
         <div className="container mx-auto px-6 py-8 min-h-full flex flex-col relative">
           <Breadcrumbs />
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0.1 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="flex-1 w-full"
-            >
+          <motion.div
+            key={location.pathname}
+            initial={false}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15 }}
+            className="flex-1 w-full"
+          >
+            <React.Suspense fallback={
+              <div className="flex flex-col items-center justify-center min-h-[50vh]">
+                <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+                <p className="mt-4 text-slate-500 font-medium animate-pulse">Cargando módulo...</p>
+              </div>
+            }>
               {children || <Outlet />}
-            </motion.div>
-          </AnimatePresence>
+            </React.Suspense>
+          </motion.div>
         </div>
       </main>
 

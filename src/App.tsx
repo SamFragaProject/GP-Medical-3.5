@@ -104,6 +104,9 @@ const CosteoAnalysis = React.lazy(() => import('@/components/billing/CosteoAnaly
 const OrdenesServicio = React.lazy(() => import('@/pages/OrdenesServicio'))
 const LotesInventario = React.lazy(() => import('@/components/inventario/LotesInventario'))
 const EvidenciasSTPSPage = React.lazy(() => import('@/pages/legal/EvidenciasSTPS'))
+const ExpedienteMaestro = React.lazy(() => import('@/pages/ExpedienteMaestro').then(m => ({ default: m.ExpedienteMaestro })))
+const IntelligenceBureau = React.lazy(() => import('@/pages/IntelligenceBureau').then(m => ({ default: m.IntelligenceBureau })))
+const OnboardingWizard = React.lazy(() => import('@/components/onboarding/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })))
 
 // Chatbot V2 - Cargado dinámicamente según feature flag
 const ChatbotV2 = import.meta.env.VITE_USE_CHATBOT_V2 === 'true'
@@ -236,12 +239,15 @@ function App() {
                         {/* Rutas Protegidas Ensueltas en Layout */}
                         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                           <Route path="/dashboard" element={<ProtectedRoute resource="dashboard"><Dashboard /></ProtectedRoute>} />
+                          <Route path="/onboarding" element={<OnboardingWizard />} />
 
                           {/* Redirecciones Estructurales */}
                           <Route path="/normatividad" element={<Navigate to="/normatividad/nom035" replace />} />
                           <Route path="/episodios" element={<Navigate to="/episodios/pipeline" replace />} />
 
-                          <Route path="/pacientes" element={<ProtectedRoute resource="pacientes"><Pacientes /></ProtectedRoute>} />
+                          <Route path="/pacientes" element={<Navigate to="/medicina/expediente" replace />} />
+                          <Route path="/medicina/expediente" element={<ProtectedRoute resource="pacientes"><ExpedienteMaestro /></ProtectedRoute>} />
+                          <Route path="/medicina/expediente/:id" element={<ProtectedRoute resource="pacientes"><ExpedienteMaestro /></ProtectedRoute>} />
                           <Route path="/normatividad/nom035" element={<ProtectedRoute resource="normatividad"><Nom035 /></ProtectedRoute>} />
                           <Route path="/normatividad/nom036" element={<ProtectedRoute resource="normatividad"><Nom036 /></ProtectedRoute>} />
                           <Route path="/normatividad/ley-silla" element={<ProtectedRoute resource="normatividad"><LeySilla /></ProtectedRoute>} />
@@ -256,19 +262,19 @@ function App() {
                           <Route path="/usuarios" element={<ProtectedRoute resource="usuarios"><Usuarios /></ProtectedRoute>} />
                           <Route path="/sedes" element={<ProtectedRoute resource="sedes"><Sedes /></ProtectedRoute>} />
                           <Route path="/inventario" element={<ProtectedRoute resource="inventario"><InventoryPage /></ProtectedRoute>} />
-                          <Route path="/historial" element={<ProtectedRoute resource="historial"><HistorialClinico /></ProtectedRoute>} />
-                          <Route path="/historial/:id" element={<ProtectedRoute resource="historial"><HistorialClinico /></ProtectedRoute>} />
+                          <Route path="/historial" element={<Navigate to="/medicina/expediente" replace />} />
+                          <Route path="/historial/:id" element={<Navigate to="/medicina/expediente" replace />} />
                           <Route path="/pacientes/:pacienteId/expediente" element={<ProtectedRoute resource="historial"><ExpedienteClinicoPro /></ProtectedRoute>} />
                           <Route path="/medicos" element={<ProtectedRoute resource="medicos"><Medicos /></ProtectedRoute>} />
                           <Route path="/resultados" element={<ProtectedRoute resource="resultados"><Resultados /></ProtectedRoute>} />
                           <Route path="/citas" element={<ProtectedRoute resource="citas"><MisCitas /></ProtectedRoute>} />
                           <Route path="/evaluaciones" element={<ProtectedRoute resource="evaluaciones"><EvaluacionesRiesgo /></ProtectedRoute>} />
-                          <Route path="/ia" element={<ProtectedRoute resource="ia"><IA /></ProtectedRoute>} />
+                          <Route path="/ia" element={<ProtectedRoute resource="ia"><IntelligenceBureau /></ProtectedRoute>} />
+                          <Route path="/apps/extractor" element={<Navigate to="/ia" replace />} />
                           <Route path="/medicina/estudios" element={<ProtectedRoute resource="examenes"><EstudiosMedicos /></ProtectedRoute>} />
                           <Route path="/medicina/matriz-riesgos" element={<ProtectedRoute resource="evaluaciones"><MatrizRiesgos /></ProtectedRoute>} />
                           <Route path="/medicina/recetas" element={<ProtectedRoute resource="prescripcion"><RecetaMedica /></ProtectedRoute>} />
                           <Route path="/medicina/incapacidades" element={<ProtectedRoute resource="prescripcion"><Incapacidades /></ProtectedRoute>} />
-                          <Route path="/apps/extractor" element={<ProtectedRoute resource="ia"><ExtractorMedico /></ProtectedRoute>} />
                           <Route path="/apps/reportes" element={<ProtectedRoute resource="ia"><GeneradorReportes /></ProtectedRoute>} />
                           <Route path="/certificaciones" element={<ProtectedRoute resource="certificaciones"><Certificaciones /></ProtectedRoute>} />
                           <Route path="/tienda" element={<ProtectedRoute resource="tienda"><Tienda /></ProtectedRoute>} />

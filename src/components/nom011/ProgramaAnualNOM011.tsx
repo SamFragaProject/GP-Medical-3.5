@@ -34,6 +34,7 @@ import { DataContainer } from '@/components/ui/DataContainer';
 import { nom011Service } from '@/services/nom011Service';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader';
 import type { ReporteAnualNom011, EstudioAudiometria } from '@/types/nom011';
 
 const COLORS = ['#22c55e', '#f59e0b', '#ef4444'];
@@ -96,28 +97,29 @@ export function ProgramaAnualNOM011() {
     >
       {resumen && (
         <div className="space-y-6">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-                <Ear className="w-8 h-8 text-emerald-600" />
-                Programa Anual NOM-011
-              </h1>
-              <p className="text-slate-500 font-medium">
-                Conservación de la Audición - Año {resumen.anio}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" className="rounded-xl border-slate-200" onClick={() => fetchData()}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Actualizar
-              </Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-500/20">
-                <Calendar className="w-4 h-4 mr-2" />
-                Gestionar Programa
-              </Button>
-            </div>
-          </div>
+          {/* Header Premium */}
+          <PremiumPageHeader
+            title="Programa Anual NOM-011"
+            subtitle={`Conservación de la Audición - Gestión de Salud Poblacional ${resumen.anio}`}
+            icon={Ear}
+            badge="HL COMPLIANT"
+            actions={
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="rounded-xl border-white/10 bg-white/10 text-white hover:bg-white/20 font-black text-[10px] uppercase tracking-widest px-4 py-2"
+                  onClick={() => fetchData()}
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                  Actualizar
+                </Button>
+                <Button className="bg-emerald-500 text-slate-950 hover:bg-emerald-400 rounded-xl shadow-lg shadow-emerald-500/20 font-black text-[10px] uppercase tracking-widest px-6 py-3">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Gestionar Programa
+                </Button>
+              </div>
+            }
+          />
 
           {/* KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

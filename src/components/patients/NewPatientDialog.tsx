@@ -168,7 +168,7 @@ export function NewPatientDialog({ open, onOpenChange, onSubmit, initialData, em
                     <form onSubmit={handleNext} className="space-y-6 py-4 max-h-[60vh] overflow-y-auto pr-2 px-1">
                         {/* SECCIÓN I: IDENTIFICACIÓN PERSONAL */}
                         <div className="space-y-4">
-                            <h3 className="text-sm font-bold text-cyan-600 uppercase tracking-widest border-b border-cyan-100 pb-1">Identificación Personal</h3>
+                            <h3 className="text-sm font-bold text-emerald-600 uppercase tracking-widest border-b border-emerald-100 pb-1">Identificación Personal</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="nombre">Nombre(s) *</Label>
@@ -257,7 +257,7 @@ export function NewPatientDialog({ open, onOpenChange, onSubmit, initialData, em
 
                         {/* SECCIÓN II: DATOS LABORALES */}
                         <div className="space-y-4 pt-2">
-                            <h3 className="text-sm font-bold text-cyan-600 uppercase tracking-widest border-b border-cyan-100 pb-1">Datos Laborales</h3>
+                            <h3 className="text-sm font-bold text-emerald-600 uppercase tracking-widest border-b border-emerald-100 pb-1">Datos Laborales</h3>
 
                             {isSuperAdmin && (
                                 <div className="space-y-2">
@@ -356,7 +356,7 @@ export function NewPatientDialog({ open, onOpenChange, onSubmit, initialData, em
 
                         {/* SECCIÓN III: CONTACTO DE EMERGENCIA */}
                         <div className="space-y-4 pt-2">
-                            <h3 className="text-sm font-bold text-cyan-600 uppercase tracking-widest border-b border-cyan-100 pb-1">Contacto de Emergencia</h3>
+                            <h3 className="text-sm font-bold text-emerald-600 uppercase tracking-widest border-b border-emerald-100 pb-1">Contacto de Emergencia</h3>
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="contacto_nombre">Nombre Completo</Label>
@@ -388,7 +388,7 @@ export function NewPatientDialog({ open, onOpenChange, onSubmit, initialData, em
                         </div>
 
                         <DialogFooter className="mt-8 flex flex-col gap-2">
-                            <Button type="submit" className="w-full bg-cyan-600 hover:bg-cyan-700 h-12 text-lg rounded-xl shadow-lg">
+                            <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 text-lg rounded-xl shadow-lg">
                                 {initialData ? 'Guardar Cambios' : 'Siguiente: Biometría y Legal'}
                                 <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
                             </Button>
@@ -406,7 +406,7 @@ export function NewPatientDialog({ open, onOpenChange, onSubmit, initialData, em
                             <Button variant="outline" onClick={handleBack} className="flex-1">Regresar</Button>
                             <Button
                                 onClick={handleNext}
-                                className="flex-1 bg-cyan-600 hover:bg-cyan-700"
+                                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
                                 disabled={!biometrics.foto}
                             >
                                 Siguiente: Legal
@@ -469,7 +469,7 @@ export function NewPatientDialog({ open, onOpenChange, onSubmit, initialData, em
             <DialogContent className={`${step > 1 ? 'sm:max-w-[600px]' : 'sm:max-w-[425px]'} transition-all rounded-3xl p-6`}>
                 <DialogHeader>
                     <div className="flex items-center gap-4 mb-2">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600 shadow-sm border border-cyan-100">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm border border-emerald-100">
                             {step === 0 && <UserPlus size={20} />}
                             {step === 1 && <Camera size={20} />}
                             {step === 2 && <ShieldCheck size={20} />}
@@ -492,7 +492,7 @@ export function NewPatientDialog({ open, onOpenChange, onSubmit, initialData, em
                             {[0, 1, 2, 3, 4].map((i) => (
                                 <div
                                     key={i}
-                                    className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${i <= step ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)]' : 'bg-slate-100'}`}
+                                    className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${i <= step ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-100'}`}
                                 />
                             ))}
                         </div>

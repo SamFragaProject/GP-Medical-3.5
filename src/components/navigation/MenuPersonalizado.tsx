@@ -1,4 +1,4 @@
-// Menú personalizado dinámico - Rediseño Moderno Clean Blue
+// Menú personalizado dinámico - Rediseño Premium con colores por módulo
 import React, { useMemo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
@@ -140,8 +140,30 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
     return iconMap[iconName] || FileText
   }
 
+  // Collect all module routes for best-match comparison
+  const allModuleRoutes = useMemo(() => {
+    return modulosDinamicos.map(m => m.modulo_ruta || `/${m.modulo_codigo}`);
+  }, [modulosDinamicos]);
+
+  // Find the SINGLE best-matching route (longest prefix match)
+  const bestMatchRoute = useMemo(() => {
+    const pathname = location.pathname;
+    let best: string | null = null;
+    let bestLen = 0;
+    for (const route of allModuleRoutes) {
+      if (pathname === route || pathname.startsWith(route + '/')) {
+        if (route.length > bestLen) {
+          best = route;
+          bestLen = route.length;
+        }
+      }
+    }
+    return best;
+  }, [location.pathname, allModuleRoutes]);
+
   const isItemActive = (href: string) => {
-    return location.pathname === href || location.pathname.startsWith(href + '/')
+    // Only the single best-match route is active — prevents dual highlighting
+    return href === bestMatchRoute;
   }
 
   // Avatar component helper
@@ -154,6 +176,32 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
       )}
     </div>
   )
+
+  // Helper: extract a color family from modulo_gradiente like 'from-purple-500 to-pink-500' → 'purple'
+  const getModuleColor = (gradiente: string | undefined): { activeBg: string; activeText: string; activeBorder: string; iconGlow: string } => {
+    if (!gradiente) return { activeBg: 'bg-emerald-500/10', activeText: 'text-emerald-400', activeBorder: 'border-emerald-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]' };
+    const match = gradiente.match(/from-(\w+)-/);
+    const color = match?.[1] || 'emerald';
+    const colorMap: Record<string, { activeBg: string; activeText: string; activeBorder: string; iconGlow: string }> = {
+      emerald: { activeBg: 'bg-emerald-500/10', activeText: 'text-emerald-400', activeBorder: 'border-emerald-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]' },
+      teal: { activeBg: 'bg-teal-500/10', activeText: 'text-teal-400', activeBorder: 'border-teal-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(20,184,166,0.5)]' },
+      blue: { activeBg: 'bg-blue-500/10', activeText: 'text-blue-400', activeBorder: 'border-blue-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(59,130,246,0.5)]' },
+      purple: { activeBg: 'bg-purple-500/10', activeText: 'text-purple-400', activeBorder: 'border-purple-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(168,85,247,0.5)]' },
+      violet: { activeBg: 'bg-violet-500/10', activeText: 'text-violet-400', activeBorder: 'border-violet-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(139,92,246,0.5)]' },
+      pink: { activeBg: 'bg-pink-500/10', activeText: 'text-pink-400', activeBorder: 'border-pink-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(236,72,153,0.5)]' },
+      rose: { activeBg: 'bg-rose-500/10', activeText: 'text-rose-400', activeBorder: 'border-rose-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(244,63,94,0.5)]' },
+      red: { activeBg: 'bg-red-500/10', activeText: 'text-red-400', activeBorder: 'border-red-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]' },
+      orange: { activeBg: 'bg-orange-500/10', activeText: 'text-orange-400', activeBorder: 'border-orange-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(249,115,22,0.5)]' },
+      amber: { activeBg: 'bg-amber-500/10', activeText: 'text-amber-400', activeBorder: 'border-amber-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(245,158,11,0.5)]' },
+      yellow: { activeBg: 'bg-yellow-500/10', activeText: 'text-yellow-400', activeBorder: 'border-yellow-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]' },
+      green: { activeBg: 'bg-green-500/10', activeText: 'text-green-400', activeBorder: 'border-green-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(34,197,94,0.5)]' },
+      cyan: { activeBg: 'bg-cyan-500/10', activeText: 'text-cyan-400', activeBorder: 'border-cyan-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]' },
+      indigo: { activeBg: 'bg-indigo-500/10', activeText: 'text-indigo-400', activeBorder: 'border-indigo-500', iconGlow: 'drop-shadow-[0_0_5px_rgba(99,102,241,0.5)]' },
+      slate: { activeBg: 'bg-slate-500/10', activeText: 'text-slate-300', activeBorder: 'border-slate-400', iconGlow: 'drop-shadow-[0_0_5px_rgba(148,163,184,0.4)]' },
+      gray: { activeBg: 'bg-gray-500/10', activeText: 'text-gray-300', activeBorder: 'border-gray-400', iconGlow: 'drop-shadow-[0_0_5px_rgba(156,163,175,0.4)]' },
+    };
+    return colorMap[color] || colorMap.emerald;
+  };
 
   // Separar módulos en secciones
   const adminModuleCodes = ['empresas', 'usuarios', 'roles', 'roles_permisos', 'logs', 'configuracion', 'sistema', 'suscripcion'];
@@ -188,16 +236,17 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
             const href = item.modulo_ruta || `/${item.modulo_codigo}`;
             const isActive = isItemActive(href)
             const Icon = getIcon(item.modulo_icono)
+            const colors = getModuleColor(item.modulo_gradiente)
 
             return (
               <Link to={href} key={item.modulo_codigo} className="block">
                 <div className={`group flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 ${isActive
-                  ? 'bg-emerald-500/10 text-emerald-400 border-l-4 border-emerald-500 shadow-[0_0_15px_-5px_rgba(16,185,129,0.2)]'
+                  ? `${colors.activeBg} ${colors.activeText} border-l-4 ${colors.activeBorder} shadow-lg`
                   : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'
                   }`}>
-                  <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-emerald-400 drop-shadow-[0_0_3px_rgba(16,185,129,0.4)]' : 'text-slate-500 group-hover:text-slate-300'
+                  <Icon className={`w-5 h-5 transition-colors ${isActive ? `${colors.activeText} ${colors.iconGlow}` : 'text-slate-500 group-hover:text-slate-300'
                     }`} />
-                  <span className={`text-sm font-semibold tracking-wide ${isActive ? 'neon-text-light' : ''}`}>{item.modulo_nombre}</span>
+                  <span className={`text-sm font-semibold tracking-wide ${isActive ? '' : ''}`}>{item.modulo_nombre}</span>
                 </div>
               </Link>
             )
@@ -213,12 +262,13 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
               const href = item.modulo_ruta || `/${item.modulo_codigo}`;
               const isActive = isItemActive(href)
               const Icon = getIcon(item.modulo_icono)
+              const colors = getModuleColor(item.modulo_gradiente)
 
               return (
                 <Link to={href} key={item.modulo_codigo} className="block mb-2">
-                  <div className={`group flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 ${isActive ? 'bg-emerald-500/10 text-emerald-400 border-l-4 border-emerald-500 shadow-[0_0_15px_-5px_rgba(16,185,129,0.2)] font-semibold' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'}`}>
-                    <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-emerald-400 drop-shadow-[0_0_3px_rgba(16,185,129,0.4)]' : 'text-slate-500 group-hover:text-slate-300'}`} />
-                    <span className={`text-sm font-medium ${isActive ? 'neon-text-light' : ''}`}>{item.modulo_nombre}</span>
+                  <div className={`group flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 ${isActive ? `${colors.activeBg} ${colors.activeText} border-l-4 ${colors.activeBorder} shadow-lg font-semibold` : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'}`}>
+                    <Icon className={`w-5 h-5 transition-colors ${isActive ? `${colors.activeText} ${colors.iconGlow}` : 'text-slate-500 group-hover:text-slate-300'}`} />
+                    <span className={`text-sm font-medium`}>{item.modulo_nombre}</span>
                   </div>
                 </Link>
               )
@@ -226,22 +276,6 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
           </div>
         )}
 
-        {/* Intelligence Bureau Quick Access */}
-        <div className="pt-6 mt-6 border-t border-white/5">
-          <p className="px-5 text-[10px] font-black text-violet-400/60 uppercase tracking-[0.2em] mb-3">Intelligence Bureau</p>
-          <Link to="/vigilancia-epidemiologica" className="block">
-            <div className={`group flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 ${isItemActive('/vigilancia-epidemiologica')
-                ? 'bg-violet-500/10 text-violet-400 border-l-4 border-violet-500 shadow-[0_0_15px_-5px_rgba(139,92,246,0.3)]'
-                : 'text-slate-500 hover:text-violet-300 hover:bg-violet-500/5'
-              }`}>
-              <div className="relative">
-                <Brain className={`w-5 h-5 transition-colors ${isItemActive('/vigilancia-epidemiologica') ? 'text-violet-400' : 'text-slate-500 group-hover:text-violet-400'}`} />
-                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-violet-400 rounded-full animate-pulse" />
-              </div>
-              <span className={`text-sm font-semibold ${isItemActive('/vigilancia-epidemiologica') ? 'text-violet-300' : ''}`}>Centro de IA</span>
-            </div>
-          </Link>
-        </div>
       </div>
 
       {/* User Profile Footer */}

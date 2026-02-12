@@ -182,10 +182,10 @@ export function EmpresasView() {
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {[
-                    { label: 'Total Empresas', value: empresas.length, icon: Building2, color: 'blue' },
+                    { label: 'Total Empresas', value: empresas.length, icon: Building2, color: 'emerald' },
                     { label: 'Activas', value: empresas.filter(e => e.status === 'active').length, icon: CheckCircle, color: 'emerald' },
-                    { label: 'Total Usuarios', value: empresas.reduce((sum, e) => sum + e.usuarios_count, 0), icon: Users, color: 'purple' },
-                    { label: 'Ingresos Mes', value: '$124,500', icon: CreditCard, color: 'amber' }
+                    { label: 'Total Usuarios', value: empresas.reduce((sum, e) => sum + e.usuarios_count, 0), icon: Users, color: 'emerald' },
+                    { label: 'Inactivas', value: empresas.filter(e => e.status !== 'active').length, icon: XCircle, color: 'amber' }
                 ].map((stat, idx) => (
                     <motion.div
                         key={idx}
@@ -279,13 +279,13 @@ export function EmpresasView() {
                                     <CardHeader className="pb-3">
                                         <div className="flex items-start justify-between">
                                             <div className="flex items-center gap-3">
-                                                <Avatar className="h-12 w-12 bg-gradient-to-br from-blue-500 to-indigo-600">
+                                                <Avatar className="h-12 w-12 bg-gradient-to-br from-emerald-500 to-teal-600">
                                                     <AvatarFallback className="bg-transparent text-white font-bold">
                                                         {empresa.nombre.substring(0, 2).toUpperCase()}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <CardTitle className="text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                                    <CardTitle className="text-base font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">
                                                         {empresa.nombre}
                                                     </CardTitle>
                                                     <p className="text-xs text-gray-500 mt-0.5">{empresa.rfc}</p>
@@ -335,7 +335,7 @@ export function EmpresasView() {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-7 px-2 text-xs hover:text-blue-600"
+                                                    className="h-7 px-2 text-xs hover:text-emerald-600"
                                                     onClick={() => handleEdit(empresa)}
                                                 >
                                                     <Edit className="w-3 h-3 mr-1" />

@@ -122,9 +122,9 @@ export default function Login() {
       email: 'dr.martinez@mediwork.mx',
       pass: 'medico123',
       icon: Stethoscope,
-      color: 'text-cyan-400',
-      bg: 'bg-cyan-500/10',
-      border: 'border-cyan-500/20'
+      color: 'text-teal-400',
+      bg: 'bg-teal-500/10',
+      border: 'border-teal-500/20'
     },
     {
       id: 'recepcion',
@@ -177,7 +177,7 @@ export default function Login() {
       {/* Background Architecture */}
       <div className="absolute inset-0 z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-900/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyan-900/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-teal-900/10 blur-[120px] rounded-full" />
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: 'radial-gradient(circle at 1px 1px, #10b981 1px, transparent 0)',
           backgroundSize: '40px 40px'
@@ -203,14 +203,14 @@ export default function Login() {
                 </h1>
                 <p className="text-[10px] text-emerald-500/70 font-black uppercase tracking-[0.3em] flex items-center gap-2">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                  Secure Authentication Node
+                  Nodo de Autenticación Segura
                 </p>
               </div>
             </div>
 
             <h2 className="text-5xl font-black text-white leading-tight tracking-tighter italic uppercase">
               Acceso al <br />
-              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Centro de Control</span>
+              <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">Centro de Control</span>
             </h2>
             <p className="text-slate-400 font-light text-lg max-w-md leading-relaxed">
               Inicialice su sesión para gestionar activos clínicos y protocolos de salud corporativa en tiempo real.
@@ -221,12 +221,12 @@ export default function Login() {
             <div className="p-6 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-xl">
               <Network className="w-6 h-6 text-emerald-400 mb-4" />
               <p className="text-2xl font-black text-white tracking-tighter italic">99.9%</p>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Uptime Garantizado</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Disponibilidad Garantizada</p>
             </div>
             <div className="p-6 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-xl">
-              <Fingerprint className="w-6 h-6 text-cyan-400 mb-4" />
+              <Fingerprint className="w-6 h-6 text-teal-400 mb-4" />
               <p className="text-2xl font-black text-white tracking-tighter italic">E2E</p>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Cifrado de Extremo a Extremo</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Cifrado Extremo a Extremo</p>
             </div>
           </div>
 
@@ -264,7 +264,7 @@ export default function Login() {
               <div className="text-center">
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full mb-6">
                   <Terminal className="w-3 h-3 text-emerald-400" />
-                  <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Secure_Protocol_v3.5</span>
+                  <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Protocolo_Seguro_v3.5</span>
                 </div>
                 <h3 className="text-3xl font-black text-white tracking-tighter italic uppercase">Autenticación</h3>
                 <p className="text-slate-400 text-sm font-light mt-2">Ingrese sus credenciales de acceso</p>
@@ -286,14 +286,14 @@ export default function Login() {
 
               <div className="relative flex items-center gap-4 py-2">
                 <div className="h-px flex-1 bg-white/5" />
-                <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.4em]">Credentials</span>
+                <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.4em]">Credenciales</span>
                 <div className="h-px flex-1 bg-white/5" />
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Email_Identifier</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Correo_Electrónico</label>
                     <div className="relative group">
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-400 transition-colors">
                         <Mail className="w-5 h-5" />
@@ -311,8 +311,8 @@ export default function Login() {
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-center px-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Security_Phrase</label>
-                      <button type="button" className="text-[8px] font-black text-emerald-400 uppercase tracking-widest hover:text-emerald-300 transition-colors">Recover_Access?</button>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Contraseña</label>
+                      <button type="button" className="text-[8px] font-black text-emerald-400 uppercase tracking-widest hover:text-emerald-300 transition-colors">¿Recuperar Acceso?</button>
                     </div>
                     <div className="relative group">
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-400 transition-colors">
@@ -341,7 +341,7 @@ export default function Login() {
                     <Activity className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
-                      Initialize Protocol
+                      Iniciar Sesión
                       <ChevronRight className="w-5 h-5" />
                     </>
                   )}
@@ -350,8 +350,8 @@ export default function Login() {
 
               <div className="pt-6 text-center">
                 <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest leading-relaxed">
-                  By accessing this node, you agree to the <br />
-                  <span className="text-slate-400 cursor-pointer hover:text-emerald-400 transition-colors">Corporate Security Policies</span>
+                  Al acceder, acepta las <br />
+                  <span className="text-slate-400 cursor-pointer hover:text-emerald-400 transition-colors">Políticas de Seguridad Corporativa</span>
                 </p>
               </div>
             </div>
@@ -369,7 +369,7 @@ export default function Login() {
         <div className="p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl space-y-2.5 min-w-[200px]">
           <div className="flex items-center gap-2 mb-3">
             <Server className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em]">System Status</span>
+            <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em]">Estado del Sistema</span>
           </div>
           {[
             { label: 'Supabase DB', status: sysStatus.supabase, Icon: Database },

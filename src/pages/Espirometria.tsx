@@ -106,69 +106,69 @@ function FormEspirometria({ onCrear, onCerrar }: {
 
             <div className="grid grid-cols-4 gap-4 mb-4">
                 <div>
-                    <label className="block text-sm text-white font-medium mb-1">Edad</label>
-                    <input type="number" value={form.edad} onChange={e => setForm(f => ({ ...f, edad: Number(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
+                    <label className="block text-sm text-slate-700 font-medium mb-1">Edad</label>
+                    <input type="number" value={form.edad} onChange={e => setForm(f => ({ ...f, edad: Number(e.target.value) }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-900 text-sm" />
                 </div>
                 <div>
-                    <label className="block text-sm text-white font-medium mb-1">Talla (cm)</label>
-                    <input type="number" value={form.talla_cm} onChange={e => setForm(f => ({ ...f, talla_cm: Number(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
+                    <label className="block text-sm text-slate-700 font-medium mb-1">Talla (cm)</label>
+                    <input type="number" value={form.talla_cm} onChange={e => setForm(f => ({ ...f, talla_cm: Number(e.target.value) }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-900 text-sm" />
                 </div>
                 <div>
-                    <label className="block text-sm text-white font-medium mb-1">Peso (kg)</label>
-                    <input type="number" value={form.peso_kg} onChange={e => setForm(f => ({ ...f, peso_kg: Number(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
+                    <label className="block text-sm text-slate-700 font-medium mb-1">Peso (kg)</label>
+                    <input type="number" value={form.peso_kg} onChange={e => setForm(f => ({ ...f, peso_kg: Number(e.target.value) }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-900 text-sm" />
                 </div>
                 <div>
-                    <label className="block text-sm text-white font-medium mb-1">Intentos</label>
-                    <input type="number" value={form.numero_intentos} onChange={e => setForm(f => ({ ...f, numero_intentos: Number(e.target.value) }))} min={1} max={8} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm" />
+                    <label className="block text-sm text-slate-700 font-medium mb-1">Intentos</label>
+                    <input type="number" value={form.numero_intentos} onChange={e => setForm(f => ({ ...f, numero_intentos: Number(e.target.value) }))} min={1} max={8} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-900 text-sm" />
                 </div>
             </div>
 
             {/* Valores medidos + predichos */}
             <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="space-y-3">
-                    <h4 className="text-sm font-medium text-blue-400">Valores Medidos</h4>
+                    <h4 className="text-sm font-medium text-blue-600">Valores Medidos</h4>
                     <div className="flex gap-3">
                         <div className="flex-1">
-                            <label className="block text-xs text-white/50 mb-1">FVC (L)</label>
-                            <input type="number" step="0.01" value={form.fvc} onChange={e => setForm(f => ({ ...f, fvc: Number(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
+                            <label className="block text-xs text-slate-500 mb-1">FVC (L)</label>
+                            <input type="number" step="0.01" value={form.fvc} onChange={e => setForm(f => ({ ...f, fvc: Number(e.target.value) }))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-900 text-sm" />
                         </div>
                         <div className="flex-1">
-                            <label className="block text-xs text-white/50 mb-1">FEV1 (L)</label>
-                            <input type="number" step="0.01" value={form.fev1} onChange={e => setForm(f => ({ ...f, fev1: Number(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
+                            <label className="block text-xs text-slate-500 mb-1">FEV1 (L)</label>
+                            <input type="number" step="0.01" value={form.fev1} onChange={e => setForm(f => ({ ...f, fev1: Number(e.target.value) }))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-900 text-sm" />
                         </div>
                     </div>
                     <div className="flex gap-3">
                         <div className="flex-1">
-                            <label className="block text-xs text-white/50 mb-1">PEF (L/s)</label>
-                            <input type="number" step="0.01" value={form.pef} onChange={e => setForm(f => ({ ...f, pef: Number(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
+                            <label className="block text-xs text-slate-500 mb-1">PEF (L/s)</label>
+                            <input type="number" step="0.01" value={form.pef} onChange={e => setForm(f => ({ ...f, pef: Number(e.target.value) }))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-900 text-sm" />
                         </div>
                         <div className="flex-1">
-                            <label className="block text-xs text-white/50 mb-1">FEF 25-75%</label>
-                            <input type="number" step="0.01" value={form.fef_2575 || ''} onChange={e => setForm(f => ({ ...f, fef_2575: Number(e.target.value) }))} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm" />
+                            <label className="block text-xs text-slate-500 mb-1">FEF 25-75%</label>
+                            <input type="number" step="0.01" value={form.fef_2575 || ''} onChange={e => setForm(f => ({ ...f, fef_2575: Number(e.target.value) }))} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-900 text-sm" />
                         </div>
                     </div>
                 </div>
-                <div className="space-y-3 bg-white/5 rounded-xl p-4">
-                    <h4 className="text-sm font-medium text-green-400">Valores Predichos (NHANES III)</h4>
+                <div className="space-y-3 bg-slate-50 border border-slate-100 rounded-xl p-4">
+                    <h4 className="text-sm font-medium text-emerald-600">Valores Predichos (NHANES III)</h4>
                     <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="text-white/50">FVC predicho:</div>
-                        <div className="text-white font-medium">{predichos.fvc_predicho.toFixed(2)} L</div>
-                        <div className="text-white/50">FEV1 predicho:</div>
-                        <div className="text-white font-medium">{predichos.fev1_predicho.toFixed(2)} L</div>
-                        <div className="text-white/50">FEV1/FVC:</div>
-                        <div className="text-white font-medium">{fev1_fvc}%</div>
-                        <div className="text-white/50">%FVC predicho:</div>
-                        <div className={`font-bold ${fvc_pct >= 80 ? 'text-emerald-400' : fvc_pct >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{fvc_pct}%</div>
-                        <div className="text-white/50">%FEV1 predicho:</div>
-                        <div className={`font-bold ${fev1_pct >= 80 ? 'text-emerald-400' : fev1_pct >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{fev1_pct}%</div>
+                        <div className="text-slate-500">FVC predicho:</div>
+                        <div className="text-slate-900 font-medium">{predichos.fvc_predicho.toFixed(2)} L</div>
+                        <div className="text-slate-500">FEV1 predicho:</div>
+                        <div className="text-slate-900 font-medium">{predichos.fev1_predicho.toFixed(2)} L</div>
+                        <div className="text-slate-500">FEV1/FVC:</div>
+                        <div className="text-slate-900 font-medium">{fev1_fvc}%</div>
+                        <div className="text-slate-500">%FVC predicho:</div>
+                        <div className={`font-bold ${fvc_pct >= 80 ? 'text-emerald-600' : fvc_pct >= 60 ? 'text-amber-600' : 'text-red-600'}`}>{fvc_pct}%</div>
+                        <div className="text-slate-500">%FEV1 predicho:</div>
+                        <div className={`font-bold ${fev1_pct >= 80 ? 'text-emerald-600' : fev1_pct >= 60 ? 'text-amber-600' : 'text-red-600'}`}>{fev1_pct}%</div>
                     </div>
                 </div>
             </div>
 
             <div className="flex gap-3 mt-4">
-                <button onClick={onCerrar} className="px-4 py-2 bg-white/5 rounded-xl text-sm text-white/70 hover:bg-white/10">Cancelar</button>
+                <button onClick={onCerrar} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm text-slate-600 font-bold transition-colors">Cancelar</button>
                 <button onClick={handleSubmit} disabled={loading || !form.empresa_id || !form.paciente_id || form.fvc <= 0}
-                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium disabled:opacity-40 flex items-center justify-center gap-2">
+                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 disabled:opacity-40 flex items-center justify-center gap-2 transition-all">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wind className="w-4 h-4" />} Registrar Espirometría
                 </button>
             </div>
@@ -278,13 +278,13 @@ export default function Espirometria() {
                 {/* Filters */}
                 <div className="flex items-center gap-3 flex-wrap">
                     <div className="relative flex-1 min-w-[200px]">
-                        <Search className="w-4 h-4 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar paciente..."
-                            className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm placeholder:text-white/30" />
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar por nombre de paciente..."
+                            className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-slate-900 text-sm shadow-sm focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" />
                     </div>
                     <select value={filtroClasificacion} onChange={e => setFiltroClasificacion(e.target.value)}
-                        className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm">
-                        <option value="">Todas</option>
+                        className="bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium text-sm shadow-sm outline-none focus:ring-4 focus:ring-blue-500/10 transition-all">
+                        <option value="">Todas las clasificaciones</option>
                         {Object.entries(CLASIFICACION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
                 </div>
@@ -302,26 +302,45 @@ export default function Espirometria() {
                         </button>
                     </div>
                 ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-3 mt-6">
                         {estudios.map((e, i) => (
-                            <motion.div key={e.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                                className="bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/[0.07] hover:border-white/20 transition-all cursor-pointer group">
+                            <motion.div key={e.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
+                                className="bg-white border border-slate-100 rounded-2xl p-5 hover:bg-slate-50 hover:border-blue-200 transition-all cursor-pointer group shadow-sm">
                                 <div className="flex items-center justify-between">
                                     <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <User className="w-4 h-4 text-white/40" />
-                                            <span className="text-white font-semibold">{e.paciente?.nombre} {e.paciente?.apellido_paterno}</span>
-                                            <ClasificacionBadge clasificacion={e.clasificacion} />
-                                            <span className="bg-white/10 text-white/60 px-2 py-0.5 rounded text-xs">{e.calidad_prueba}</span>
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
+                                                <User className="w-5 h-5 text-blue-500" />
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-slate-900 font-bold text-base">{e.paciente?.nombre} {e.paciente?.apellido_paterno}</span>
+                                                    <ClasificacionBadge clasificacion={e.clasificacion} />
+                                                </div>
+                                                <div className="flex items-center gap-4 text-xs text-slate-500 mt-1">
+                                                    <span className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md"><Calendar className="w-3 h-3" /> {new Date(e.fecha_estudio).toLocaleDateString('es-MX')}</span>
+                                                    <span className="bg-slate-100 px-2 py-0.5 rounded-md uppercase font-bold text-[10px] tracking-wider text-slate-600">Calidad {e.calidad_prueba}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-4 text-sm text-white/50">
-                                            <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {new Date(e.fecha_estudio).toLocaleDateString('es-MX')}</span>
-                                            <span>FVC: <b className="text-white">{e.fvc}L</b> ({e.fvc_porcentaje}%)</span>
-                                            <span>FEV1: <b className="text-white">{e.fev1}L</b> ({e.fev1_porcentaje}%)</span>
-                                            <span>FEV1/FVC: <b className="text-white">{e.fev1_fvc}%</b></span>
+                                        <div className="flex items-center gap-6 text-sm ml-13">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-slate-400 uppercase font-bold">FVC</span>
+                                                <span className="text-slate-700 font-semibold">{e.fvc}L <span className="text-slate-400 font-normal">({e.fvc_porcentaje}%)</span></span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-slate-400 uppercase font-bold">FEV1</span>
+                                                <span className="text-slate-700 font-semibold">{e.fev1}L <span className="text-slate-400 font-normal">({e.fev1_porcentaje}%)</span></span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-slate-400 uppercase font-bold">Relación</span>
+                                                <span className="text-slate-700 font-semibold">{e.fev1_fvc}%</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/50 transition-all" />
+                                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all">
+                                        <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-white transition-all" />
+                                    </div>
                                 </div>
                             </motion.div>
                         ))}

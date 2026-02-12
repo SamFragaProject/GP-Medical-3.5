@@ -209,7 +209,12 @@ const AlertaCalidad = ({ icon: Icon, title, count, severity, action }: {
 // =============================================
 // COMPONENTE PRINCIPAL
 // =============================================
-export function Pacientes() {
+interface PacientesProps {
+  onSelectPatient?: (id: string) => void;
+  hideHeader?: boolean;
+}
+
+export function Pacientes({ onSelectPatient, hideHeader = false }: PacientesProps) {
   const { user } = useAuth()
   const navigate = useNavigate()
   const isSuperAdmin = user?.rol === 'super_admin'
@@ -352,28 +357,30 @@ export function Pacientes() {
   if (isSuperAdmin && !selectedTrabajador) {
     return (
       <>
-        <PremiumPageHeader
-          title="Intelligence Bureau: Población"
-          subtitle="Monitoreo epidemiológico global y vigilancia de salud ocupacional automatizada."
-          icon={Shield}
-          badge="GOD MODE ACTIVATED"
-          actions={
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                className="h-11 px-6 rounded-xl bg-white/10 border-white/20 text-white hover:bg-white/20 font-black text-[10px] uppercase tracking-widest"
-              >
-                <Download className="w-4 h-4 mr-2" /> Exportar
-              </Button>
-              <Button
-                variant="outline"
-                className="h-11 px-6 rounded-xl bg-white/10 border-white/20 text-white hover:bg-white/20 font-black text-[10px] uppercase tracking-widest"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" /> Actualizar
-              </Button>
-            </div>
-          }
-        />
+        {!hideHeader && (
+          <PremiumPageHeader
+            title="Intelligence Bureau: Población"
+            subtitle="Monitoreo epidemiológico global y vigilancia de salud ocupacional automatizada."
+            icon={Shield}
+            badge="GOD MODE ACTIVATED"
+            actions={
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  className="h-11 px-6 rounded-xl bg-white/10 border-white/20 text-white hover:bg-white/20 font-black text-[10px] uppercase tracking-widest"
+                >
+                  <Download className="w-4 h-4 mr-2" /> Exportar
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-11 px-6 rounded-xl bg-white/10 border-white/20 text-white hover:bg-white/20 font-black text-[10px] uppercase tracking-widest"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" /> Actualizar
+                </Button>
+              </div>
+            }
+          />
+        )}
         <NewPatientDialog
           open={isDialogOpen}
           onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setEditingTrabajador(null) }}
@@ -789,21 +796,23 @@ export function Pacientes() {
   if (!selectedTrabajador) {
     return (
       <>
-        <PremiumPageHeader
-          title="Gestión de Trabajadores"
-          subtitle="Control de aptitud laboral y seguimiento preventivo de salud ocupacional"
-          icon={Users}
-          badge="Operativa Activa"
-          actions={
-            <Button
-              onClick={() => setIsDialogOpen(true)}
-              className="bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-black text-[10px] uppercase tracking-widest px-6 py-3 rounded-xl shadow-xl shadow-emerald-500/20"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              REGISTRAR TRABAJADOR
-            </Button>
-          }
-        />
+        {!hideHeader && (
+          <PremiumPageHeader
+            title="Gestión de Trabajadores"
+            subtitle="Control de aptitud laboral y seguimiento preventivo de salud ocupacional"
+            icon={Users}
+            badge="Operativa Activa"
+            actions={
+              <Button
+                onClick={() => setIsDialogOpen(true)}
+                className="bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-black text-[10px] uppercase tracking-widest px-6 py-3 rounded-xl shadow-xl shadow-emerald-500/20"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                REGISTRAR TRABAJADOR
+              </Button>
+            }
+          />
+        )}
         <NewPatientDialog
           open={isDialogOpen}
           onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setEditingTrabajador(null) }}
@@ -965,12 +974,16 @@ export function Pacientes() {
   // ============================================
   // RENDER: DETALLE DEL TRABAJADOR
   // ============================================
-  // (Redirige al historial clínico)
+  // (Redirige al historial clínico o usa el callback del hub)
   useEffect(() => {
     if (selectedTrabajador) {
-      navigate(`/historial/${selectedTrabajador.id}`, { state: { paciente: selectedTrabajador } })
+      if (onSelectPatient) {
+        onSelectPatient(selectedTrabajador.id)
+      } else {
+        navigate(`/historial/${selectedTrabajador.id}`, { state: { paciente: selectedTrabajador } })
+      }
     }
-  }, [selectedTrabajador, navigate])
+  }, [selectedTrabajador, navigate, onSelectPatient])
 
   return null
 }

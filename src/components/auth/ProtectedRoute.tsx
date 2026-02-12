@@ -27,12 +27,18 @@ export function ProtectedRoute({ children, resource, requireAction = 'read' }: P
 
   const loading = authLoading || permissionsLoading
 
-  console.log('ProtectedRoute: Rendering', { user: user?.email, authLoading, permissionsLoading, resource, isSuperAdmin });
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
-        <div className="text-slate-200 text-sm">Cargando…</div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-emerald-50/30">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xl shadow-emerald-500/20 animate-pulse">
+            <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div className="absolute -inset-4 border-2 border-emerald-200 rounded-3xl animate-ping opacity-20" />
+        </div>
+        <p className="mt-6 text-sm font-medium text-slate-500 tracking-wide">Verificando acceso…</p>
       </div>
     )
   }
@@ -60,10 +66,10 @@ export function ProtectedRoute({ children, resource, requireAction = 'read' }: P
     const accionDinamica = actionMap[requireAction] || 'ver'
 
     if (!ability.can(accionDinamica as any, resource)) {
-      console.warn(`Acceso denegado a ${resource}:${accionDinamica} para el usuario ${user.email}`)
       return <Navigate to="/dashboard" replace />
     }
   }
 
   return <>{children}</>
 }
+

@@ -24,6 +24,10 @@ export const visionService = {
         if (filtros.fecha_desde) query = query.gte('fecha_estudio', filtros.fecha_desde);
         if (filtros.fecha_hasta) query = query.lte('fecha_estudio', filtros.fecha_hasta);
 
+        if (filtros.search) {
+            query = query.or(`nombre.ilike.%${filtros.search}%,apellido_paterno.ilike.%${filtros.search}%`, { foreignTable: 'pacientes' });
+        }
+
         const { data, error } = await query;
         if (error) throw new Error(`Error listando estudios visuales: ${error.message}`);
         return data || [];

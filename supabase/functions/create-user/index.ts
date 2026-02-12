@@ -114,19 +114,19 @@ serve(async (req) => {
                     subject: 'Bienvenido a GPMedical',
                     html: `
                         <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-                            <div style="background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); padding: 40px; border-radius: 16px 16px 0 0;">
+                            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px; border-radius: 16px 16px 0 0;">
                                 <h1 style="color: #fff; margin: 0; font-size: 28px;">🏥 GPMedical</h1>
                                 <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0;">Sistema Integral de Medicina Ocupacional</p>
                             </div>
                             <div style="background: #fff; padding: 32px; border: 1px solid #e5e7eb; border-top: none;">
                                 <p style="font-size: 18px;">Hola <strong>${nombre} ${apellido_paterno}</strong>,</p>
                                 <p>Tu cuenta ha sido creada exitosamente en el sistema.</p>
-                                <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #7c3aed;">
-                                    <p style="margin: 0; font-weight: 600;">📋 Rol asignado: <span style="color: #7c3aed;">${rol}</span></p>
+                                <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin: 24px 0; border-left: 4px solid #10b981;">
+                                    <p style="margin: 0; font-weight: 600;">📋 Rol asignado: <span style="color: #059669;">${rol}</span></p>
                                     <p style="margin: 12px 0 0;">🔑 Contraseña temporal: <code style="background: #e5e7eb; padding: 2px 8px; border-radius: 4px;">${password}</code></p>
                                 </div>
                                 <p style="color: #ef4444; font-weight: 600;">⚠️ Cambia tu contraseña inmediatamente al iniciar sesión.</p>
-                                <a href="${req.headers.get('origin') || 'https://gpmedical.app'}" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: 600; margin-top: 16px;">Acceder al Sistema →</a>
+                                <a href="${req.headers.get('origin') || 'https://gpmedical.app'}" style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: 600; margin-top: 16px;">Acceder al Sistema →</a>
                             </div>
                             <div style="text-align: center; padding: 16px; color: #9ca3af; font-size: 12px;">
                                 GPMedical 3.5 • Intelligence Bureau • Medicina Ocupacional

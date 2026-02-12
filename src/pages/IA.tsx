@@ -68,7 +68,11 @@ interface RiskDistribution {
   fill: string
 }
 
-export function IA() {
+interface IAProps {
+  hideHeader?: boolean;
+}
+
+export function IA({ hideHeader = false }: IAProps) {
   const [activeTab, setActiveTab] = useState('overview')
   const [loading, setLoading] = useState(false)
   const [aiEnabled, setAiEnabled] = useState(true)
@@ -607,33 +611,35 @@ export function IA() {
 
   return (
     <div className="space-y-6">
-      <PremiumPageHeader
-        title="Sistema de IA Médica"
-        subtitle="Motor de inteligencia artificial generativa y predictiva especializado en normativas de medicina del trabajo y salud ocupacional."
-        icon={Brain}
-        badge="ACTIVE (CUDA)"
-        actions={
-          <div className="flex items-center gap-4">
-            <div className="text-right hidden md:block">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-1">Status Global</p>
-              <div className="flex items-center gap-2 justify-end">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                <span className="text-xl font-black text-white">READY</span>
+      {!hideHeader && (
+        <PremiumPageHeader
+          title="Sistema de IA Médica"
+          subtitle="Motor de inteligencia artificial generativa y predictiva especializado en normativas de medicina del trabajo y salud ocupacional."
+          icon={Brain}
+          badge="ACTIVE (CUDA)"
+          actions={
+            <div className="flex items-center gap-4">
+              <div className="text-right hidden md:block">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-1">Status Global</p>
+                <div className="flex items-center gap-2 justify-end">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  <span className="text-xl font-black text-white">READY</span>
+                </div>
               </div>
+              <div className="w-[1px] h-10 bg-white/10 hidden md:block" />
+              <motion.button
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={downloadReport}
+                className="bg-emerald-500 text-slate-950 px-6 py-2.5 rounded-xl transition-all flex items-center gap-2 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-500/20"
+              >
+                <Download className="h-4 w-4" />
+                <span>Reportes</span>
+              </motion.button>
             </div>
-            <div className="w-[1px] h-10 bg-white/10 hidden md:block" />
-            <motion.button
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={downloadReport}
-              className="bg-emerald-500 text-slate-950 px-6 py-2.5 rounded-xl transition-all flex items-center gap-2 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-500/20"
-            >
-              <Download className="h-4 w-4" />
-              <span>Reportes</span>
-            </motion.button>
-          </div>
-        }
-      />
+          }
+        />
+      )}
 
       {/* Custom Tabs with Premium Styling */}
       <div className="bg-slate-100/50 backdrop-blur-md rounded-2xl p-1.5 border border-slate-200/50 shadow-inner">
@@ -646,8 +652,8 @@ export function IA() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center space-x-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${isActive
-                    ? 'bg-white text-emerald-600 shadow-lg scale-105'
-                    : 'text-slate-500 hover:text-emerald-500 hover:bg-white/50'
+                  ? 'bg-white text-emerald-600 shadow-lg scale-105'
+                  : 'text-slate-500 hover:text-emerald-500 hover:bg-white/50'
                   }`}
               >
                 <Icon className={`h-4 w-4 ${isActive ? 'text-emerald-500' : ''}`} />
@@ -896,6 +902,6 @@ export function IA() {
 
       {/* Chatbot Especializado */}
       <ChatbotMedicinaTrabajo />
-    </div>
+    </div >
   )
 }

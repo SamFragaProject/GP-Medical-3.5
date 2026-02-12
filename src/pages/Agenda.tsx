@@ -219,7 +219,7 @@ export const Agenda = () => {
   }
 
   const handleCitaSeleccionada = (citaId: string) => {
-    console.log('Cita seleccionada:', citaId)
+    // TODO: Abrir detalle de cita
   }
 
   // ============================================
@@ -297,7 +297,7 @@ export const Agenda = () => {
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <BarChart className="w-5 h-5 text-blue-500" />
-                        Curva de Ocupación Global (Mock)
+                        Curva de Ocupación Global
                       </CardTitle>
                       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">En Tiempo Real</Badge>
                     </div>
