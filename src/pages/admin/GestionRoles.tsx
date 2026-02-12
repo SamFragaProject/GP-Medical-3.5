@@ -3,9 +3,13 @@
  * 
  * Esta página permite al Super Admin visualizar, crear, editar y eliminar roles.
  * Incluye el Wizard para crear roles de forma visual.
+ * 
+ * ✅ Filtros alineados con los pilares ERP
+ * ✅ KPIs de distribución de roles
+ * ✅ Cobertura por pilar en cada tarjeta
  */
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Shield,
@@ -23,7 +27,12 @@ import {
     MoreVertical,
     ChevronDown,
     Building2,
-    Lock
+    Lock,
+    Zap,
+    TrendingUp,
+    BarChart3,
+    RefreshCw,
+    Filter
 } from 'lucide-react'
 import {
     obtenerRoles,
@@ -35,18 +44,84 @@ import { usePermisosDinamicos } from '@/hooks/usePermisosDinamicos'
 import WizardCrearRol from '@/components/admin/WizardCrearRol'
 import { Badge } from '@/components/ui/badge'
 import toast from 'react-hot-toast'
+import { AdminLayout, AdminSearchBar, AdminLoadingState } from '@/components/admin/AdminLayout'
+import { Button } from '@/components/ui/button'
 
-// =============================================
-// COMPONENTE DE TARJETA DE ROL
-// =============================================
+// ─── Pilares ERP (misma estructura que WizardCrearRol) ───────────────────
+const ERP_PILARES: { key: string; label: string; color: string; dotColor: string; bgColor: string; textColor: string; modules: string[] }[] = [
+    {
+        key: 'medicina', label: 'Medicina', color: 'emerald', dotColor: 'bg-emerald-400', bgColor: 'bg-emerald-50', textColor: 'text-emerald-700',
+        modules: ['dashboard', 'pacientes', 'estudios_medicos', 'prescripcion', 'incapacidades', 'dictamenes']
+    },
+    {
+        key: 'diagnostico', label: 'Diagnóstico', color: 'cyan', dotColor: 'bg-cyan-400', bgColor: 'bg-cyan-50', textColor: 'text-cyan-700',
+        modules: ['rayos_x', 'espirometria', 'vision', 'resultados']
+    },
+    {
+        key: 'operaciones', label: 'Operaciones', color: 'purple', dotColor: 'bg-purple-400', bgColor: 'bg-purple-50', textColor: 'text-purple-700',
+        modules: ['episodios', 'campanias', 'agenda', 'citas', 'alertas']
+    },
+    {
+        key: 'finanzas', label: 'Finanzas', color: 'blue', dotColor: 'bg-blue-400', bgColor: 'bg-blue-50', textColor: 'text-blue-700',
+        modules: ['facturacion', 'cotizaciones', 'cxc', 'inventario', 'tienda']
+    },
+    {
+        key: 'cumplimiento', label: 'Cumplimiento', color: 'amber', dotColor: 'bg-amber-400', bgColor: 'bg-amber-50', textColor: 'text-amber-700',
+        modules: ['normatividad', 'nom011', 'evaluaciones', 'matriz_riesgos', 'programa_anual', 'certificaciones']
+    },
+    {
+        key: 'analisis', label: 'Análisis', color: 'violet', dotColor: 'bg-violet-400', bgColor: 'bg-violet-50', textColor: 'text-violet-700',
+        modules: ['reportes', 'ia', 'rrhh']
+    },
+    {
+        key: 'admin', label: 'Admin SaaS', color: 'slate', dotColor: 'bg-slate-400', bgColor: 'bg-slate-100', textColor: 'text-slate-700',
+        modules: ['empresas', 'usuarios', 'roles_permisos', 'sedes', 'medicos', 'configuracion', 'sistema', 'suscripcion', 'logs']
+    }
+]
+
+/** Calcula qué pilares cubre un rol */
+function getPilaresCubiertos(rol: RolPersonalizado): typeof ERP_PILARES {
+    return ERP_PILARES.filter(pilar =>
+        pilar.modules.some(mod =>
+            rol.permisos.some(p => p.modulo_codigo === mod && p.puede_ver)
+        )
+    )
+}
+
+// ─── Componente: KPI Card ────────────────────────────────────────────────
+const KpiCard = ({ icon: Icon, title, value, subtitle, gradient }: {
+    icon: any; title: string; value: number | string; subtitle?: string; gradient: string
+}) => (
+    <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ scale: 1.03 }}
+        className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-5 text-white shadow-lg`}
+    >
+        <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -translate-y-1/3 translate-x-1/3" />
+        <div className="relative z-10">
+            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center mb-3">
+                <Icon className="w-4.5 h-4.5" />
+            </div>
+            <h3 className="text-2xl font-black">{value}</h3>
+            <p className="text-white/80 text-xs font-bold mt-0.5">{title}</p>
+            {subtitle && <p className="text-white/50 text-[10px] mt-0.5">{subtitle}</p>}
+        </div>
+    </motion.div>
+)
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COMPONENTE: TARJETA DE ROL
+// ═══════════════════════════════════════════════════════════════════════════
 
 interface RolCardProps {
     rol: RolPersonalizado
     onEditar: () => void
     onEliminar: () => void
+    index: number
 }
 
-function RolCard({ rol, onEditar, onEliminar }: RolCardProps) {
+function RolCard({ rol, onEditar, onEliminar, index }: RolCardProps) {
     const [menuAbierto, setMenuAbierto] = useState(false)
     const [confirmandoEliminar, setConfirmandoEliminar] = useState(false)
     const [eliminando, setEliminando] = useState(false)
@@ -63,17 +138,21 @@ function RolCard({ rol, onEditar, onEliminar }: RolCardProps) {
     const puedeCrear = rol.permisos.filter(p => p.puede_crear).length
     const puedeEditar = rol.permisos.filter(p => p.puede_editar).length
 
+    // Pilares cubiertos
+    const pilaresCubiertos = getPilaresCubiertos(rol)
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileHover={{ y: -4 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
             className="group bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 relative overflow-hidden"
         >
             {/* Decoración de fondo sutil */}
-            <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-[0.03] transition-transform duration-700 group-hover:scale-150 group-hover:opacity-[0.06]`} style={{ backgroundColor: rol.color }}></div>
+            <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-[0.03] transition-transform duration-700 group-hover:scale-150 group-hover:opacity-[0.06]" style={{ backgroundColor: rol.color }}></div>
 
-            <div className="flex items-start justify-between mb-8 relative z-10">
+            <div className="flex items-start justify-between mb-6 relative z-10">
                 {/* Icono y nombre */}
                 <div className="flex items-center gap-5">
                     <div
@@ -145,6 +224,35 @@ function RolCard({ rol, onEditar, onEliminar }: RolCardProps) {
                 )}
             </div>
 
+            {/* Cobertura por Pilar ERP */}
+            {pilaresCubiertos.length > 0 && (
+                <div className="mb-6 relative z-10">
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2.5">Cobertura ERP</p>
+                    <div className="flex flex-wrap gap-1.5">
+                        {pilaresCubiertos.map(pilar => {
+                            const modulesInPilar = pilar.modules.filter(mod =>
+                                rol.permisos.some(p => p.modulo_codigo === mod && p.puede_ver)
+                            ).length
+                            return (
+                                <div
+                                    key={pilar.key}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${pilar.bgColor} border border-transparent`}
+                                    title={`${pilar.label}: ${modulesInPilar} módulos`}
+                                >
+                                    <div className={`w-1.5 h-1.5 rounded-full ${pilar.dotColor}`} />
+                                    <span className={`text-[10px] font-bold ${pilar.textColor}`}>
+                                        {pilar.label}
+                                    </span>
+                                    <span className={`text-[9px] font-extrabold ${pilar.textColor} opacity-60`}>
+                                        {modulesInPilar}
+                                    </span>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* Matrix Stats */}
             <div className="grid grid-cols-3 gap-3 mb-6 relative z-10">
                 {[
@@ -169,14 +277,14 @@ function RolCard({ rol, onEditar, onEliminar }: RolCardProps) {
                     <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${((10 - rol.nivel_jerarquia) / 10) * 100}%` }}
-                        transition={{ duration: 1, ease: "easeOut" }}
+                        transition={{ duration: 1, ease: "easeOut", delay: index * 0.1 }}
                         className="h-full rounded-full shadow-sm"
                         style={{ backgroundColor: rol.color }}
                     />
                 </div>
             </div>
 
-            {/* Modal de confirmación de eliminación con Estilo Clean Blue */}
+            {/* Modal de confirmación de eliminación */}
             <AnimatePresence>
                 {confirmandoEliminar && (
                     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
@@ -222,12 +330,9 @@ function RolCard({ rol, onEditar, onEliminar }: RolCardProps) {
     )
 }
 
-// =============================================
+// ═══════════════════════════════════════════════════════════════════════════
 // PÁGINA PRINCIPAL
-// =============================================
-
-import { AdminLayout, AdminSearchBar, AdminLoadingState } from '@/components/admin/AdminLayout'
-import { Button } from '@/components/ui/button'
+// ═══════════════════════════════════════════════════════════════════════════
 
 export default function GestionRoles() {
     const { user } = useAuth()
@@ -238,6 +343,7 @@ export default function GestionRoles() {
     const [error, setError] = useState<string | null>(null)
     const [busqueda, setBusqueda] = useState('')
     const [filtroTipo, setFiltroTipo] = useState<'todos' | 'sistema' | 'personalizados'>('todos')
+    const [filtroPilar, setFiltroPilar] = useState<string>('todos')
     const [mostrarWizard, setMostrarWizard] = useState(false)
     const [rolAEditar, setRolAEditar] = useState<RolPersonalizado | null>(null)
 
@@ -264,23 +370,74 @@ export default function GestionRoles() {
         const resultado = await eliminarRol(rolId)
         if (resultado.success) {
             setRoles(roles.filter(r => r.id !== rolId))
+            toast.success('Rol eliminado correctamente')
         } else {
             setError(resultado.error || 'Error al eliminar el rol')
         }
     }
 
-    // Filtrar roles
-    const rolesFiltrados = roles.filter(rol => {
-        // Filtro de búsqueda
-        if (busqueda && !rol.nombre.toLowerCase().includes(busqueda.toLowerCase())) {
-            return false
+    // ─── KPIs calculados ─────────────────────────────────────────────────
+    const kpis = useMemo(() => {
+        const totalPermisos = roles.reduce((acc, r) => acc + r.permisos.filter(p => p.puede_ver).length, 0)
+        const totalRolesConCrear = roles.filter(r => r.permisos.some(p => p.puede_crear)).length
+        const pilaresUnicos = new Set<string>()
+        roles.forEach(r => {
+            getPilaresCubiertos(r).forEach(p => pilaresUnicos.add(p.key))
+        })
+        return {
+            total: roles.length,
+            sistema: roles.filter(r => r.es_sistema).length,
+            custom: roles.filter(r => !r.es_sistema).length,
+            totalPermisos,
+            totalRolesConCrear,
+            pilaresCubiertos: pilaresUnicos.size
         }
-        // Filtro de tipo
-        if (filtroTipo === 'sistema' && !rol.es_sistema) return false
-        if (filtroTipo === 'personalizados' && rol.es_sistema) return false
+    }, [roles])
 
-        return true
-    })
+    // ─── Cobertura por pilar (para el filtro) ────────────────────────────
+    const coberturaPilares = useMemo(() => {
+        return ERP_PILARES.map(pilar => {
+            const rolesConPilar = roles.filter(r =>
+                pilar.modules.some(mod =>
+                    r.permisos.some(p => p.modulo_codigo === mod && p.puede_ver)
+                )
+            ).length
+            return { ...pilar, count: rolesConPilar }
+        })
+    }, [roles])
+
+    // ─── Filtrar roles ───────────────────────────────────────────────────
+    const rolesFiltrados = useMemo(() => {
+        return roles.filter(rol => {
+            // Búsqueda por texto
+            if (busqueda) {
+                const searchLower = busqueda.toLowerCase()
+                const matchNombre = rol.nombre.toLowerCase().includes(searchLower)
+                const matchDesc = rol.descripcion?.toLowerCase().includes(searchLower)
+                const matchModulo = rol.permisos.some(p =>
+                    p.modulo_nombre?.toLowerCase().includes(searchLower) && p.puede_ver
+                )
+                if (!matchNombre && !matchDesc && !matchModulo) return false
+            }
+
+            // Filtro de tipo
+            if (filtroTipo === 'sistema' && !rol.es_sistema) return false
+            if (filtroTipo === 'personalizados' && rol.es_sistema) return false
+
+            // Filtro por pilar ERP
+            if (filtroPilar !== 'todos') {
+                const pilar = ERP_PILARES.find(p => p.key === filtroPilar)
+                if (pilar) {
+                    const tienePilar = pilar.modules.some(mod =>
+                        rol.permisos.some(p => p.modulo_codigo === mod && p.puede_ver)
+                    )
+                    if (!tienePilar) return false
+                }
+            }
+
+            return true
+        })
+    }, [roles, busqueda, filtroTipo, filtroPilar])
 
     // Verificar acceso
     if (!isSuperAdmin && !puede('roles_permisos', 'ver')) {
@@ -307,45 +464,100 @@ export default function GestionRoles() {
             badges={[{ text: 'Administración Core', variant: 'info', icon: <Lock size={12} /> }]}
             actions={
                 (isSuperAdmin || puede('roles_permisos', 'crear')) && (
-                    <Button
-                        onClick={() => setMostrarWizard(true)}
-                        className="bg-slate-900 text-white hover:bg-slate-800"
-                    >
-                        <Plus className="w-5 h-5 mr-2" />
-                        Crear Nuevo Perfil
-                    </Button>
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={cargarRoles}
+                            className="bg-white/5 border-white/10 text-white hover:bg-white/10 rounded-xl"
+                        >
+                            <RefreshCw className="w-4 h-4 mr-2" /> Sincronizar
+                        </Button>
+                        <Button
+                            onClick={() => setMostrarWizard(true)}
+                            className="bg-slate-900 text-white hover:bg-slate-800"
+                        >
+                            <Plus className="w-5 h-5 mr-2" />
+                            Crear Nuevo Perfil
+                        </Button>
+                    </div>
                 )
             }
         >
-            <div className="space-y-6">
-                <div className="flex flex-col lg:flex-row gap-4 items-center">
-                    <AdminSearchBar
-                        placeholder="Filtrar por nombre de rol o capacidad..."
-                        value={busqueda}
-                        onChange={setBusqueda}
-                        className="flex-1"
-                    />
+            {/* ────── KPIs ────── */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                <KpiCard icon={Shield} title="Total Roles" value={kpis.total} gradient="from-slate-700 to-slate-900" />
+                <KpiCard icon={Lock} title="Sistema" value={kpis.sistema} subtitle="No editables" gradient="from-purple-500 to-indigo-600" />
+                <KpiCard icon={Crown} title="Personalizados" value={kpis.custom} subtitle="Editables" gradient="from-blue-500 to-cyan-600" />
+                <KpiCard icon={Eye} title="Permisos Activos" value={kpis.totalPermisos} subtitle="Módulos × Roles" gradient="from-emerald-500 to-teal-600" />
+                <KpiCard icon={Zap} title="Pilares" value={`${kpis.pilaresCubiertos}/7`} subtitle="Con cobertura" gradient="from-amber-500 to-orange-600" />
+            </div>
 
-                    {/* Selector de Segmento */}
-                    <div className="flex p-1.5 bg-slate-200/50 rounded-2xl w-full lg:w-fit border border-slate-100">
-                        {[
-                            { valor: 'todos', label: 'Todos', icon: Shield },
-                            { valor: 'sistema', label: 'Core', icon: Lock },
-                            { valor: 'personalizados', label: 'Custom', icon: Users }
-                        ].map(filtro => (
+            <div className="space-y-6">
+                {/* ────── Filtros ────── */}
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-col lg:flex-row gap-4 items-center">
+                        <AdminSearchBar
+                            placeholder="Filtrar por nombre, módulo o capacidad..."
+                            value={busqueda}
+                            onChange={setBusqueda}
+                            className="flex-1"
+                        />
+
+                        {/* Selector de Tipo */}
+                        <div className="flex p-1.5 bg-slate-200/50 rounded-2xl w-full lg:w-fit border border-slate-100">
+                            {[
+                                { valor: 'todos', label: 'Todos', icon: Shield },
+                                { valor: 'sistema', label: 'Core', icon: Lock },
+                                { valor: 'personalizados', label: 'Custom', icon: Users }
+                            ].map(filtro => (
+                                <button
+                                    key={filtro.valor}
+                                    onClick={() => setFiltroTipo(filtro.valor as any)}
+                                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+                                        ${filtroTipo === filtro.valor
+                                            ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-100'
+                                            : 'text-slate-500 hover:text-slate-900'
+                                        }`}
+                                >
+                                    <filtro.icon className="w-3.5 h-3.5" />
+                                    {filtro.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* ────── Filtro por Pilar ERP ────── */}
+                    <div className="flex items-center gap-3 overflow-x-auto pb-1">
+                        <div className="flex items-center gap-1.5 text-slate-400 flex-shrink-0">
+                            <Filter className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-extrabold uppercase tracking-widest">Pilar</span>
+                        </div>
+                        <div className="flex gap-1.5">
                             <button
-                                key={filtro.valor}
-                                onClick={() => setFiltroTipo(filtro.valor as any)}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
-                                    ${filtroTipo === filtro.valor
-                                        ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-100'
-                                        : 'text-slate-500 hover:text-slate-900'
+                                onClick={() => setFiltroPilar('todos')}
+                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${filtroPilar === 'todos'
+                                        ? 'bg-slate-900 text-white shadow-sm'
+                                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                                     }`}
                             >
-                                <filtro.icon className="w-3.5 h-3.5" />
-                                {filtro.label}
+                                Todos
                             </button>
-                        ))}
+                            {coberturaPilares.map(pilar => (
+                                <button
+                                    key={pilar.key}
+                                    onClick={() => setFiltroPilar(pilar.key)}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${filtroPilar === pilar.key
+                                            ? `${pilar.bgColor} ${pilar.textColor} ring-1 ring-${pilar.color}-200`
+                                            : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+                                        }`}
+                                >
+                                    <div className={`w-1.5 h-1.5 rounded-full ${pilar.dotColor}`} />
+                                    {pilar.label}
+                                    <span className="opacity-60">{pilar.count}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -382,18 +594,21 @@ export default function GestionRoles() {
                     <p className="text-[10px] font-black uppercase tracking-[0.3em]">Sincronizando Base de Roles...</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {rolesFiltrados.map(rol => (
-                        <RolCard
-                            key={rol.id}
-                            rol={rol}
-                            onEditar={() => {
-                                setRolAEditar(rol)
-                                setMostrarWizard(true)
-                            }}
-                            onEliminar={() => handleEliminarRol(rol.id)}
-                        />
-                    ))}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6">
+                    <AnimatePresence>
+                        {rolesFiltrados.map((rol, idx) => (
+                            <RolCard
+                                key={rol.id}
+                                rol={rol}
+                                index={idx}
+                                onEditar={() => {
+                                    setRolAEditar(rol)
+                                    setMostrarWizard(true)
+                                }}
+                                onEliminar={() => handleEliminarRol(rol.id)}
+                            />
+                        ))}
+                    </AnimatePresence>
 
                     {/* Empty States Premium */}
                     {rolesFiltrados.length === 0 && (
@@ -411,16 +626,27 @@ export default function GestionRoles() {
                             <p className="text-slate-400 font-medium max-w-sm mb-10">
                                 {busqueda
                                     ? `No hay coincidencias para "${busqueda}" en la base de datos de seguridad.`
-                                    : 'Inicie el protocolo de creación para desplegar nuevos perfiles operativos.'
+                                    : filtroPilar !== 'todos'
+                                        ? `No hay roles con cobertura en el pilar "${ERP_PILARES.find(p => p.key === filtroPilar)?.label || filtroPilar}".`
+                                        : 'Inicie el protocolo de creación para desplegar nuevos perfiles operativos.'
                                 }
                             </p>
-                            {!busqueda && (
+                            {!busqueda && filtroPilar === 'todos' && (
                                 <button
                                     onClick={() => setMostrarWizard(true)}
                                     className="px-8 py-4 bg-blue-600 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-3"
                                 >
                                     <Plus className="w-5 h-5 stroke-[3]" />
                                     Desplegar Primer Perfil
+                                </button>
+                            )}
+                            {(busqueda || filtroPilar !== 'todos') && (
+                                <button
+                                    onClick={() => { setBusqueda(''); setFiltroPilar('todos'); setFiltroTipo('todos') }}
+                                    className="px-6 py-3 text-slate-500 font-bold text-xs hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-2"
+                                >
+                                    <X className="w-4 h-4" />
+                                    Limpiar Filtros
                                 </button>
                             )}
                         </motion.div>
