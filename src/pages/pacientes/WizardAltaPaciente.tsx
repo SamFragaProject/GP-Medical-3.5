@@ -15,7 +15,8 @@ import {
     ArrowLeft, ArrowRight, X, Save, Loader2,
     Calendar, Fingerprint, MapPin, Briefcase,
     Droplets, AlertTriangle, Users, Mail, Camera,
-    Shield, FileText, Clock
+    Shield, FileText, Clock, ClipboardList,
+    LogIn, LogOut, ArrowRightLeft, RotateCcw
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,6 +33,8 @@ interface WizardProps {
 }
 
 interface PatientFormData {
+    // Tipo de examen
+    tipo_examen: string
     // Paso 1: Personales
     nombre: string
     apellido_paterno: string
@@ -68,6 +71,7 @@ interface PatientFormData {
 }
 
 const INITIAL_DATA: PatientFormData = {
+    tipo_examen: '',
     nombre: '', apellido_paterno: '', apellido_materno: '',
     curp: '', rfc: '', nss: '',
     fecha_nacimiento: '', genero: '', estado_civil: '',
@@ -93,6 +97,13 @@ const GENEROS = [
     { value: 'masculino', label: 'Masculino', emoji: '♂' },
     { value: 'femenino', label: 'Femenino', emoji: '♀' },
     { value: 'otro', label: 'Otro', emoji: '⚧' },
+]
+
+const TIPOS_EXAMEN = [
+    { value: 'periodico', label: 'Periódico', description: 'Examen médico de rutina anual/semestral', icon: RotateCcw, color: 'from-emerald-500 to-teal-600', bgActive: 'bg-emerald-50 border-emerald-500', textActive: 'text-emerald-700' },
+    { value: 'ingreso', label: 'Ingreso', description: 'Examen de nuevo ingreso laboral', icon: LogIn, color: 'from-blue-500 to-indigo-600', bgActive: 'bg-blue-50 border-blue-500', textActive: 'text-blue-700' },
+    { value: 'egreso', label: 'Egreso', description: 'Examen de salida / baja laboral', icon: LogOut, color: 'from-amber-500 to-orange-600', bgActive: 'bg-amber-50 border-amber-500', textActive: 'text-amber-700' },
+    { value: 'cambio_puesto', label: 'Cambio de Puesto', description: 'Reubicación o cambio de funciones', icon: ArrowRightLeft, color: 'from-violet-500 to-purple-600', bgActive: 'bg-violet-50 border-violet-500', textActive: 'text-violet-700' },
 ]
 
 const ESTADO_CIVIL_OPTIONS = ['Soltero(a)', 'Casado(a)', 'Divorciado(a)', 'Viudo(a)', 'Unión Libre']
@@ -152,7 +163,7 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
 
     const canAdvance = (): boolean => {
         switch (step) {
-            case 1: return !!(data.nombre && data.apellido_paterno)
+            case 1: return !!(data.tipo_examen && data.nombre && data.apellido_paterno)
             case 2: return true // Laboral data can be optional
             case 3: return true
             case 4: return true
@@ -218,12 +229,12 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                 key={s.id}
                                 onClick={() => s.id < step && setStep(s.id)}
                                 className={`flex-1 flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 ${isActive ? 'bg-white/10 backdrop-blur-md border border-white/20 shadow-lg' :
-                                        isCompleted ? 'bg-emerald-500/10 border border-emerald-500/20 cursor-pointer hover:bg-emerald-500/20' :
-                                            'bg-white/5 border border-white/5'
+                                    isCompleted ? 'bg-emerald-500/10 border border-emerald-500/20 cursor-pointer hover:bg-emerald-500/20' :
+                                        'bg-white/5 border border-white/5'
                                     }`}
                             >
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all ${isActive ? `bg-gradient-to-br ${s.color} shadow-lg` :
-                                        isCompleted ? 'bg-emerald-500/20' : 'bg-white/5'
+                                    isCompleted ? 'bg-emerald-500/20' : 'bg-white/5'
                                     }`}>
                                     {isCompleted ? (
                                         <CheckCircle className="w-5 h-5 text-emerald-400" />
@@ -265,15 +276,67 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                             {/* STEP 1: Datos Personales */}
                             {step === 1 && (
                                 <div className="space-y-6">
-                                    <div className="flex items-center gap-3 mb-8">
+                                    <div className="flex items-center gap-3 mb-6">
                                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                                             <User className="w-6 h-6 text-white" />
                                         </div>
                                         <div>
                                             <h2 className="text-xl font-black text-slate-800">Datos Personales</h2>
-                                            <p className="text-sm text-slate-500">Información básica de identidad</p>
+                                            <p className="text-sm text-slate-500">Tipo de examen e información de identidad</p>
                                         </div>
                                     </div>
+
+                                    {/* Tipo de Examen Selector */}
+                                    <div className="mb-2">
+                                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-3 block">
+                                            <ClipboardList className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
+                                            Tipo de Examen <span className="text-rose-500">*</span>
+                                        </label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                            {TIPOS_EXAMEN.map(tipo => {
+                                                const isSelected = data.tipo_examen === tipo.value
+                                                const TipoIcon = tipo.icon
+                                                return (
+                                                    <motion.button
+                                                        key={tipo.value}
+                                                        type="button"
+                                                        onClick={() => updateField('tipo_examen', tipo.value)}
+                                                        whileHover={{ scale: 1.02 }}
+                                                        whileTap={{ scale: 0.98 }}
+                                                        className={`relative p-4 rounded-2xl border-2 text-left transition-all duration-200 ${isSelected
+                                                                ? `${tipo.bgActive} shadow-lg`
+                                                                : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+                                                            }`}
+                                                    >
+                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${isSelected
+                                                                ? `bg-gradient-to-br ${tipo.color} shadow-md`
+                                                                : 'bg-slate-100'
+                                                            }`}>
+                                                            <TipoIcon className={`w-5 h-5 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
+                                                        </div>
+                                                        <p className={`font-bold text-sm ${isSelected ? tipo.textActive : 'text-slate-700'}`}>
+                                                            {tipo.label}
+                                                        </p>
+                                                        <p className={`text-[10px] mt-0.5 leading-tight ${isSelected ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                            {tipo.description}
+                                                        </p>
+                                                        {isSelected && (
+                                                            <motion.div
+                                                                initial={{ scale: 0 }}
+                                                                animate={{ scale: 1 }}
+                                                                className="absolute top-2 right-2 w-5 h-5 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center"
+                                                            >
+                                                                <CheckCircle className="w-3.5 h-3.5 text-white" />
+                                                            </motion.div>
+                                                        )}
+                                                    </motion.button>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Separator */}
+                                    <div className="border-t border-slate-100" />
 
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                                         <FormField label="Nombre(s)" required>
@@ -353,8 +416,8 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                                         key={g.value}
                                                         onClick={() => updateField('genero', g.value)}
                                                         className={`flex-1 h-11 rounded-xl border-2 font-bold text-sm transition-all ${data.genero === g.value
-                                                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                                                                : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                                                            ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                                                            : 'border-slate-200 text-slate-500 hover:border-slate-300'
                                                             }`}
                                                     >
                                                         {g.emoji} {g.label}
@@ -388,12 +451,16 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                        <FormField label="Número de Empleado">
+                                        <FormField label="Número de Empleado" hint={data.tipo_examen !== 'periodico' ? 'Solo habilitado para examen periódico' : undefined}>
                                             <Input
                                                 value={data.numero_empleado}
                                                 onChange={e => updateField('numero_empleado', e.target.value)}
-                                                placeholder="EMP-0042"
-                                                className="h-11 rounded-xl"
+                                                placeholder={data.tipo_examen === 'periodico' ? 'EMP-0042' : 'N/A — Solo examen periódico'}
+                                                disabled={data.tipo_examen !== 'periodico'}
+                                                className={`h-11 rounded-xl transition-all ${data.tipo_examen !== 'periodico'
+                                                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
+                                                        : ''
+                                                    }`}
                                             />
                                         </FormField>
 
@@ -490,8 +557,8 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                                         key={ts}
                                                         onClick={() => updateField('tipo_sangre', ts)}
                                                         className={`h-11 rounded-xl border-2 font-bold text-sm transition-all ${data.tipo_sangre === ts
-                                                                ? 'border-rose-500 bg-rose-50 text-rose-700'
-                                                                : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                                                            ? 'border-rose-500 bg-rose-50 text-rose-700'
+                                                            : 'border-slate-200 text-slate-500 hover:border-slate-300'
                                                             }`}
                                                     >
                                                         {ts}
@@ -617,6 +684,7 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                             icon={User}
                                             color="emerald"
                                             items={[
+                                                { label: 'Tipo Examen', value: TIPOS_EXAMEN.find(t => t.value === data.tipo_examen)?.label || '' },
                                                 { label: 'Nombre', value: `${data.nombre} ${data.apellido_paterno} ${data.apellido_materno}` },
                                                 { label: 'CURP', value: data.curp },
                                                 { label: 'RFC', value: data.rfc },

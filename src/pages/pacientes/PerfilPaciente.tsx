@@ -46,6 +46,7 @@ const RayosXTab = React.lazy(() => import('@/components/expediente/RayosXTab'))
 const RecetasTab = React.lazy(() => import('@/components/expediente/RecetasTab'))
 const IncapacidadesTab = React.lazy(() => import('@/components/expediente/IncapacidadesTab'))
 const DictamenesTab = React.lazy(() => import('@/components/expediente/DictamenesTab'))
+const OdontogramaTab = React.lazy(() => import('@/components/expediente/OdontogramaTab'))
 
 // =============================================
 // HELPERS
@@ -95,6 +96,7 @@ const TABS: TabConfig[] = [
     { value: 'espirometria', label: 'Espirometría', icon: Wind, group: 'diagnostico', description: 'Pruebas de función pulmonar' },
     { value: 'rayos_x', label: 'Rayos X', icon: Bone, group: 'diagnostico', description: 'Estudios radiológicos' },
     { value: 'recetas', label: 'Recetas', icon: Pill, group: 'diagnostico', description: 'Prescripciones médicas' },
+    { value: 'odontograma', label: 'Odontograma', icon: Activity, group: 'diagnostico', description: 'Diagrama dental interactivo — Sistema FDI' },
     { value: 'incapacidades', label: 'Incapacidades', icon: FileBarChart, group: 'diagnostico', description: 'Certificados de incapacidad' },
     { value: 'dictamenes', label: 'Dictámenes', icon: ScrollText, group: 'diagnostico', description: 'Dictámenes médico-laborales' },
 ]
@@ -481,6 +483,12 @@ export default function PerfilPaciente() {
                         <TabsContent value="incapacidades" className="mt-0">
                             <Suspense fallback={<TabLoader label="Cargando incapacidades..." />}>
                                 <IncapacidadesTab />
+                            </Suspense>
+                        </TabsContent>
+
+                        <TabsContent value="odontograma" className="mt-0">
+                            <Suspense fallback={<TabLoader label="Cargando odontograma..." />}>
+                                <OdontogramaTab />
                             </Suspense>
                         </TabsContent>
 
