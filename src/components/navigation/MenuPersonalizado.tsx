@@ -83,13 +83,6 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
     modules: ['pacientes', 'estudios_medicos', 'prescripcion', 'incapacidades', 'dictamenes']
   },
   {
-    key: 'diagnostico',
-    label: 'Diagnóstico',
-    icon: Microscope,
-    color: 'cyan',
-    modules: ['rayos_x', 'espirometria', 'vision', 'resultados']
-  },
-  {
     key: 'operaciones',
     label: 'Operaciones',
     icon: ClipboardList,
@@ -371,12 +364,12 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
     return (
       <Link to={href} key={item.modulo_codigo} className="block">
         <div className={`group flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${isActive
-            ? `${colors.activeBg} ${colors.activeText} border-l-[3px] ${colors.activeBorder} shadow-sm`
-            : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.03] border-l-[3px] border-transparent'
+          ? `${colors.activeBg} ${colors.activeText} border-l-[3px] ${colors.activeBorder} shadow-sm`
+          : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.03] border-l-[3px] border-transparent'
           }`}>
           <Icon className={`w-4 h-4 flex-shrink-0 transition-colors ${isActive
-              ? `${colors.activeText} ${colors.iconGlow}`
-              : 'text-slate-500 group-hover:text-slate-300'
+            ? `${colors.activeText} ${colors.iconGlow}`
+            : 'text-slate-500 group-hover:text-slate-300'
             }`} />
           <span className={`text-[13px] font-medium truncate ${isActive ? 'font-semibold' : ''}`}>
             {item.modulo_nombre}
@@ -435,12 +428,12 @@ export function MenuPersonalizado({ className = '' }: MenuPersonalizadoProps) {
         {dashboardModule && (
           <Link to="/dashboard" className="block mb-3">
             <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${isItemActive('/dashboard')
-                ? 'bg-emerald-500/10 text-emerald-400 border-l-[3px] border-emerald-500 shadow-[0_0_15px_-5px_rgba(16,185,129,0.25)]'
-                : 'text-slate-400 hover:text-white hover:bg-white/5 border-l-[3px] border-transparent'
+              ? 'bg-emerald-500/10 text-emerald-400 border-l-[3px] border-emerald-500 shadow-[0_0_15px_-5px_rgba(16,185,129,0.25)]'
+              : 'text-slate-400 hover:text-white hover:bg-white/5 border-l-[3px] border-transparent'
               }`}>
               <LayoutDashboard className={`w-5 h-5 ${isItemActive('/dashboard')
-                  ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]'
-                  : ''
+                ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]'
+                : ''
                 }`} />
               <span className={`text-sm font-bold tracking-tight ${isItemActive('/dashboard') ? 'neon-text-light' : ''
                 }`}>Dashboard</span>

@@ -57,17 +57,28 @@ export function useOnboarding(): OnboardingState {
             }
 
             try {
-                // Check if empresa has sedes
-                const { count: sedesCount } = await supabase
-                    .from('sedes')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('empresa_id', user.empresa_id)
+                // Timeout de protección para evitar que queries colgadas bloqueen la UI
+                const timeout = new Promise<never>((_, reject) =>
+                    setTimeout(() => reject(new Error('Onboarding check timeout')), 3000)
+                )
 
-                // Check if empresa has pacientes
-                const { count: pacientesCount } = await supabase
-                    .from('pacientes')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('empresa_id', user.empresa_id)
+                const checkData = async () => {
+                    // Check if empresa has sedes
+                    const { count: sedesCount } = await supabase
+                        .from('sedes')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('empresa_id', user.empresa_id!)
+
+                    // Check if empresa has pacientes
+                    const { count: pacientesCount } = await supabase
+                        .from('pacientes')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('empresa_id', user.empresa_id!)
+
+                    return { sedesCount, pacientesCount }
+                }
+
+                const { sedesCount, pacientesCount } = await Promise.race([checkData(), timeout]) as any
 
                 const hasSedes = (sedesCount || 0) > 0
                 const hasPacientes = (pacientesCount || 0) > 0
@@ -83,11 +94,11 @@ export function useOnboarding(): OnboardingState {
                     loading: false,
                     hasSedes,
                     hasPacientes,
-                    empresaId: user.empresa_id,
+                    empresaId: user.empresa_id!,
                     step
                 })
             } catch (error) {
-                console.error('Error checking onboarding status:', error)
+                console.warn('⚠️ Error/timeout checking onboarding status:', error)
                 setState(prev => ({ ...prev, loading: false, needsOnboarding: false }))
             }
         }

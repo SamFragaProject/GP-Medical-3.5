@@ -22,79 +22,137 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Mapea el perfil de la DB (que usa rol_principal) al tipo User del frontend (que usa rol)
+function mapProfileToUser(profile: any): User {
+  return {
+    id: profile.id,
+    email: profile.email,
+    nombre: profile.nombre || '',
+    apellido_paterno: profile.apellido_paterno || '',
+    apellido_materno: profile.apellido_materno,
+    rol: profile.rol_principal || profile.rol || 'paciente',
+    empresa_id: profile.empresa_id,
+    sede_id: profile.sede_id,
+    avatar_url: profile.avatar_url,
+    telefono: profile.telefono,
+    empresa: profile.empresa,
+    cedula_profesional: profile.cedula_profesional,
+    especialidad: profile.especialidad,
+    created_at: profile.created_at,
+    last_login: profile.last_login,
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  // PASO 1: Inicializar usuario desde localStorage INMEDIATAMENTE (< 1ms)
+  // Esto desbloquea la UI sin esperar a que Supabase responda
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const cached = localStorage.getItem('GPMedical_user')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (parsed && parsed.id && parsed.rol) {
+          console.log('⚡ Usuario cargado desde caché local:', parsed.nombre, parsed.rol)
+          return parsed
+        }
+      }
+    } catch (e) {
+      console.warn('Error leyendo usuario de localStorage:', e)
+    }
+    return null
+  })
   const [originalUser, setOriginalUser] = useState<User | null>(null) // Para impersonación
-  const [loading, setLoading] = useState(true)
+  // Si ya tenemos un usuario en caché, NO necesitamos loading blocker
+  const [loading, setLoading] = useState(() => {
+    try {
+      const cached = localStorage.getItem('GPMedical_user')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (parsed && parsed.id && parsed.rol) {
+          return false // ← UI se desbloquea INMEDIATAMENTE
+        }
+      }
+    } catch (e) { }
+    return true // Solo loading=true si NO hay usuario en caché
+  })
   const [error, setError] = useState<string | null>(null)
 
-  // Cargar usuario desde localStorage o sesión de Supabase
+  // PASO 2: Verificar sesión con Supabase en background (NO bloquea la UI)
   useEffect(() => {
     const loadUser = async () => {
       try {
-        // Intentar cargar desde Supabase primero
-        const { data: { session } } = await supabase.auth.getSession()
+        // Timeout de seguridad: si Supabase no responde en 5s, no importa
+        const timeoutPromise = new Promise<null>((resolve) => {
+          setTimeout(() => {
+            console.warn('⏱️ Auth timeout: Supabase no respondió en 5s, usando caché local')
+            resolve(null)
+          }, 5000)
+        })
+
+        // Race entre la llamada real y el timeout
+        const sessionResult = await Promise.race([
+          supabase.auth.getSession(),
+          timeoutPromise
+        ])
+
+        // Si ganó el timeout, sessionResult es null
+        const session = sessionResult && 'data' in sessionResult
+          ? (sessionResult as any).data.session
+          : null
 
         if (session?.user) {
-          // Obtener datos del usuario de la DB pública
-          const { data: userData, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
+          // Obtener datos del usuario via REST API directa (evitar supabase.from() que puede colgar)
+          let userData = null
+          try {
+            const profileResp = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL || 'https://kftxftikoydldcexkady.supabase.co'}/rest/v1/profiles?id=eq.${session.user.id}&select=*`,
+              {
+                headers: {
+                  'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmdHhmdGlrb3lkbGRjZXhrYWR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2OTU2OTMsImV4cCI6MjA4MjI3MTY5M30.UvxYrETiFNil2eNKzJCVcgwOd-MCDBHABlql650y1NU',
+                  'Authorization': `Bearer ${session.access_token}`,
+                  'Accept': 'application/vnd.pgrst.object+json'
+                },
+                signal: AbortSignal.timeout(5000)
+              }
+            )
+            if (profileResp.ok) {
+              userData = await profileResp.json()
+            }
+          } catch (fetchError) {
+            console.warn('⚠️ Error obteniendo perfil vía REST:', fetchError)
+          }
 
-          if (userData && !error) {
-            setUser(userData as User)
-            localStorage.setItem('GPMedical_user', JSON.stringify(userData))
-          } else {
-            // Si el usuario existe en Auth pero no en tabla usuarios, crearlo (JIT Provisioning)
-            const newUserProfile: User = {
+          if (userData) {
+            const mappedUser = mapProfileToUser(userData)
+            setUser(mappedUser)
+            localStorage.setItem('GPMedical_user', JSON.stringify(mappedUser))
+          } else if (!user) {
+            // Solo crear perfil básico si NO hay usuario en caché
+            const basicUser: User = {
               id: session.user.id,
               email: session.user.email!,
-              nombre: session.user.user_metadata.nombre || 'Nuevo Usuario',
-              apellido_paterno: session.user.user_metadata.apellido_paterno || '',
-              rol: 'paciente', // Rol por defecto seguro
+              nombre: session.user.user_metadata?.nombre || 'Nuevo Usuario',
+              apellido_paterno: session.user.user_metadata?.apellido_paterno || '',
+              rol: 'paciente',
               created_at: new Date().toISOString()
             }
-
-            const { data: newProfile, error: createError } = await supabase
-              .from('profiles')
-              .insert(newUserProfile)
-              .select()
-              .single()
-
-            if (!createError && newProfile) {
-              setUser(newProfile as User)
-              localStorage.setItem('GPMedical_user', JSON.stringify(newProfile))
-              toast.success('Perfil de usuario creado exitosamente')
-            }
+            setUser(basicUser)
+            localStorage.setItem('GPMedical_user', JSON.stringify(basicUser))
           }
-        } else {
-          // Si no hay sesión Supabase, verificar si hay usuario OFFLINE/DEMO en localStorage
-          const savedUser = localStorage.getItem('GPMedical_user')
-          if (savedUser) {
-            try {
-              const parsedUser = JSON.parse(savedUser) as User
-              // Verificar que sea un usuario demo válido (tiene id que empieza con 'demo-' o 'mock-')
-              if (parsedUser.id?.startsWith('demo-') || parsedUser.id?.startsWith('mock-') || savedUser.includes('(Demo)') || savedUser.includes('(Offline)')) {
-                setUser(parsedUser)
-                // No borrar, mantener la sesión offline
-              } else {
-                // Usuario real sin sesión válida, limpiar
-                setUser(null)
-                localStorage.removeItem('GPMedical_user')
-              }
-            } catch {
-              setUser(null)
-              localStorage.removeItem('GPMedical_user')
-            }
-          } else {
-            setUser(null)
-            // No hay usuario guardado, nada que limpiar
-          }
+        } else if (!user) {
+          // Sin sesión Supabase Y sin usuario en caché — realmente no hay sesión
+          setUser(null)
+          localStorage.removeItem('GPMedical_user')
         }
+        // NOTA: Si hay usuario en caché pero no sesión Supabase (timeout), 
+        // NO borrar el caché. El usuario ya hizo login exitoso.
       } catch (error) {
         console.error('Error cargando usuario:', error)
+        // Si hay usuario en caché, mantenerlo. Solo limpiar si no hay nada.
+        if (!user) {
+          setUser(null)
+          localStorage.removeItem('GPMedical_user')
+        }
       } finally {
         setLoading(false)
       }
@@ -105,30 +163,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Suscribirse a cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        // Reutilizar lógica de carga o forzar recarga
-        // Simplemente recargar la página para limpiar estado es una estrategia segura a veces, 
-        // pero aquí intentaremos cargar el perfil directamente
-        const { data: userData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-
-        if (userData) {
-          setUser(userData as User)
-          localStorage.setItem('GPMedical_user', JSON.stringify(userData))
-        } else {
-          // Crear perfil si no existe (manejado en loadUser también, pero bueno aquí también por si acaso es un sign in directo)
-          const newUserProfile: User = {
-            id: session.user.id,
-            email: session.user.email!,
-            nombre: session.user.user_metadata.nombre || 'Nuevo Usuario',
-            apellido_paterno: session.user.user_metadata.apellido_paterno || '',
-            rol: 'paciente',
-            created_at: new Date().toISOString()
+        // Cargar perfil via REST API directa
+        try {
+          const profileResp = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL || 'https://kftxftikoydldcexkady.supabase.co'}/rest/v1/profiles?id=eq.${session.user.id}&select=*`,
+            {
+              headers: {
+                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmdHhmdGlrb3lkbGRjZXhrYWR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2OTU2OTMsImV4cCI6MjA4MjI3MTY5M30.UvxYrETiFNil2eNKzJCVcgwOd-MCDBHABlql650y1NU',
+                'Authorization': `Bearer ${session.access_token}`,
+                'Accept': 'application/vnd.pgrst.object+json'
+              },
+              signal: AbortSignal.timeout(5000)
+            }
+          )
+          if (profileResp.ok) {
+            const userData = await profileResp.json()
+            const mappedUser = mapProfileToUser(userData)
+            setUser(mappedUser)
+            localStorage.setItem('GPMedical_user', JSON.stringify(mappedUser))
           }
-          const { data: newProfile } = await supabase.from('profiles').insert(newUserProfile).select().single()
-          if (newProfile) setUser(newProfile as User)
+        } catch (err) {
+          console.warn('⚠️ Error cargando perfil en onAuthStateChange:', err)
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
@@ -143,115 +198,168 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Login
+  // === DATABASE DE USUARIOS DEMO ===
+  // Permite login offline cuando Supabase no responde o los usuarios no están creados
+  const DEMO_USERS: Record<string, { password: string; user: User }> = {
+    'super@mediflow.mx': {
+      password: 'super123',
+      user: {
+        id: '00000000-0000-0000-0000-000000000001',
+        email: 'super@mediflow.mx',
+        nombre: 'Super Admin',
+        apellido_paterno: 'GPMedical',
+        rol: 'super_admin' as UserRole,
+        empresa_id: undefined,
+        created_at: new Date().toISOString()
+      }
+    },
+    'admin@mediflow.mx': {
+      password: 'admin123',
+      user: {
+        id: '00000000-0000-0000-0000-000000000002',
+        email: 'admin@mediflow.mx',
+        nombre: 'Carlos',
+        apellido_paterno: 'Ramírez',
+        rol: 'admin_empresa' as UserRole,
+        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        created_at: new Date().toISOString()
+      }
+    },
+    'medico@mediflow.mx': {
+      password: 'medico123',
+      user: {
+        id: '00000000-0000-0000-0000-000000000003',
+        email: 'medico@mediflow.mx',
+        nombre: 'Ana',
+        apellido_paterno: 'López',
+        rol: 'medico' as UserRole,
+        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        cedula_profesional: 'CED-12345',
+        especialidad: 'Medicina Ocupacional',
+        created_at: new Date().toISOString()
+      }
+    },
+    'enfermera@mediflow.mx': {
+      password: 'enfermera123',
+      user: {
+        id: '00000000-0000-0000-0000-000000000004',
+        email: 'enfermera@mediflow.mx',
+        nombre: 'Laura',
+        apellido_paterno: 'Ruiz',
+        rol: 'enfermera' as UserRole,
+        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        created_at: new Date().toISOString()
+      }
+    },
+    'recepcion@mediflow.mx': {
+      password: 'recepcion123',
+      user: {
+        id: '00000000-0000-0000-0000-000000000005',
+        email: 'recepcion@mediflow.mx',
+        nombre: 'María',
+        apellido_paterno: 'González',
+        rol: 'recepcion' as UserRole,
+        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        created_at: new Date().toISOString()
+      }
+    }
+  }
+
+  // Login — intenta Supabase real primero, fallback a demo si falla
   const login = async (email: string, password: string) => {
     try {
       setLoading(true)
+      setError(null)
 
-      // 1. Intentar login real con Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      // Limpiar sesión anterior antes de intentar login nuevo
+      const keysToRemove = Object.keys(localStorage).filter(k =>
+        k.includes('supabase') || k.includes('sb-')
+      )
+      keysToRemove.forEach(k => localStorage.removeItem(k))
 
-      if (error) throw error
+      // PASO 1: Intentar login real con Supabase (timeout 8s)
+      let supabaseSuccess = false
+      try {
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('SUPABASE_TIMEOUT')), 8000)
+        })
 
-      if (data.session) {
-        // Login exitoso, cargar perfil
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single()
+        const { data, error } = await Promise.race([
+          supabase.auth.signInWithPassword({ email, password }),
+          timeoutPromise
+        ])
 
-        const finalUser: User = (profile as User) || {
-          id: data.user.id,
-          email: data.user.email!,
-          nombre: data.user.user_metadata?.nombre || 'Usuario',
-          apellido_paterno: '',
-          rol: 'paciente', // Rol por defecto
-          created_at: new Date().toISOString()
+        if (error) throw error
+
+        if (data.session) {
+          // Login exitoso con Supabase - cargar perfil
+          let profile = null
+          try {
+            await new Promise(r => setTimeout(r, 200))
+            const profileResp = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL || 'https://kftxftikoydldcexkady.supabase.co'}/rest/v1/profiles?id=eq.${data.user.id}&select=*`,
+              {
+                headers: {
+                  'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmdHhmdGlrb3lkbGRjZXhrYWR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2OTU2OTMsImV4cCI6MjA4MjI3MTY5M30.UvxYrETiFNil2eNKzJCVcgwOd-MCDBHABlql650y1NU',
+                  'Authorization': `Bearer ${data.session.access_token}`,
+                  'Accept': 'application/vnd.pgrst.object+json'
+                },
+                signal: AbortSignal.timeout(5000)
+              }
+            )
+            if (profileResp.ok) {
+              profile = await profileResp.json()
+            }
+          } catch (profileError) {
+            console.warn('⚠️ Error cargando perfil vía REST, usando datos básicos:', profileError)
+          }
+
+          const finalUser: User = profile ? mapProfileToUser(profile) : {
+            id: data.user.id,
+            email: data.user.email!,
+            nombre: data.user.user_metadata?.nombre || 'Usuario',
+            apellido_paterno: '',
+            rol: 'paciente' as UserRole,
+            created_at: new Date().toISOString()
+          }
+
+          setUser(finalUser)
+          localStorage.setItem('GPMedical_user', JSON.stringify(finalUser))
+          toast.success(`Bienvenido ${finalUser.nombre}`)
+          supabaseSuccess = true
+        }
+      } catch (supabaseError: any) {
+        console.warn('⚠️ Supabase auth falló:', supabaseError.message)
+        // Continuar al fallback demo
+      }
+
+      // PASO 2: Fallback a login demo si Supabase falló
+      if (!supabaseSuccess) {
+        const demoEntry = DEMO_USERS[email.toLowerCase()]
+        if (demoEntry && demoEntry.password === password) {
+          console.log(`🔓 Login demo activado para: ${email}`)
+          const demoUser = { ...demoEntry.user }
+          setUser(demoUser)
+          localStorage.setItem('GPMedical_user', JSON.stringify(demoUser))
+          toast.success(`Bienvenido ${demoUser.nombre} (Modo Demo)`)
+          return // Login demo exitoso
         }
 
-        setUser(finalUser)
-        localStorage.setItem('GPMedical_user', JSON.stringify(finalUser))
-        toast.success(`Bienvenido ${finalUser.nombre}`)
+        // Si no es usuario demo, lanzar error
+        throw new Error('Invalid login credentials')
       }
     } catch (error: any) {
-      console.error('Error en Supabase login:', error)
+      console.error('Error en login:', error)
 
-      // FALLBACK MODO OFFLINE / DEMO (ROBUSTO)
-      // Si falla por CUALQUIER razón (error de red, usuario no encontrado, script no corrido), activamos demo.
-      const offlineUsers: Record<string, User> = {
-        // ========= NUEVOS USUARIOS DEMO (v3.5.4) =========
-        'superadmin@gpmedical.mx': {
-          id: '00000000-0000-0000-0000-000000000001',
-          email: 'superadmin@gpmedical.mx',
-          nombre: 'Super Admin',
-          apellido_paterno: 'GPMedical',
-          rol: 'super_admin',
-          empresa_id: undefined,
-          created_at: new Date().toISOString()
-        },
-        'admin@mediwork.mx': {
-          id: 'u1a1b1c1-0001-0001-0001-000000000001',
-          email: 'admin@mediwork.mx',
-          nombre: 'Carlos',
-          apellido_paterno: 'Hernández',
-          rol: 'admin_empresa',
-          empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-          empresa: 'MediWork Ocupacional',
-          created_at: new Date().toISOString()
-        },
-        'dr.martinez@mediwork.mx': {
-          id: 'u1a1b1c1-0002-0002-0002-000000000002',
-          email: 'dr.martinez@mediwork.mx',
-          nombre: 'Roberto',
-          apellido_paterno: 'Martínez',
-          rol: 'medico',
-          empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-          empresa: 'MediWork Ocupacional',
-          cedula_profesional: '12345678',
-          especialidad: 'Medicina del Trabajo',
-          created_at: new Date().toISOString()
-        },
-        'recepcion@mediwork.mx': {
-          id: 'u1a1b1c1-0005-0005-0005-000000000005',
-          email: 'recepcion@mediwork.mx',
-          nombre: 'Patricia',
-          apellido_paterno: 'Torres',
-          rol: 'recepcion',
-          empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-          empresa: 'MediWork Ocupacional',
-          created_at: new Date().toISOString()
-        },
-        'demo@gpmedical.mx': {
-          id: 'u3a3b3c3-0001-0001-0001-000000000001',
-          email: 'demo@gpmedical.mx',
-          nombre: 'Usuario',
-          apellido_paterno: 'Demo',
-          rol: 'admin_empresa',
-          empresa_id: 'c3d4e5f6-a7b8-9012-cdef-345678901234',
-          empresa: 'Clínica Demo GPMedical',
-          created_at: new Date().toISOString()
-        },
-        // ========= LEGACY USERS (mantener compatibilidad) =========
-        'super@gpmedical.mx': { id: 'mock-super', email: 'super@gpmedical.mx', nombre: 'Super Admin (Legacy)', apellido_paterno: 'Demo', rol: 'super_admin', empresa_id: undefined, created_at: new Date().toISOString() },
-        'admin@gpmedical.mx': { id: 'mock-admin', email: 'admin@gpmedical.mx', nombre: 'Admin Clínica (Legacy)', apellido_paterno: 'Demo', rol: 'admin_empresa', empresa_id: 'empresa-1', created_at: new Date().toISOString() },
-        'medico@gpmedical.mx': { id: 'mock-medico', email: 'medico@gpmedical.mx', nombre: 'Dr. Médico (Legacy)', apellido_paterno: 'Demo', rol: 'medico', empresa_id: 'empresa-1', created_at: new Date().toISOString() },
-        'sam@gpmedical.com': { id: 'mock-sam', email: 'sam@gpmedical.com', nombre: 'Sam (Legacy)', apellido_paterno: 'Fraga', rol: 'super_admin', empresa_id: undefined, created_at: new Date().toISOString() },
+      const errorMessages: Record<string, string> = {
+        'Invalid login credentials': 'Credenciales incorrectas. Verifique su correo y contraseña.',
+        'Email not confirmed': 'Correo no verificado. Revise su bandeja de entrada.',
+        'Too many requests': 'Demasiados intentos. Espere un momento antes de reintentar.',
       }
 
-      const mockUser = offlineUsers[email.toLowerCase()]
-      if (mockUser) {
-        setUser(mockUser)
-        localStorage.setItem('GPMedical_user', JSON.stringify(mockUser))
-        localStorage.setItem('sb-access-token', 'mock-token') // Bypass
-        toast.success(`⚠️ Modo Offline: Bienvenido ${mockUser.nombre}`)
-        return
-      }
-
-      toast.error(error.message || 'Error al iniciar sesión')
+      const friendlyMessage = errorMessages[error.message] || error.message || 'Error al conectar con el servidor'
+      setError(friendlyMessage)
+      toast.error(friendlyMessage)
       throw error
     } finally {
       setLoading(false)

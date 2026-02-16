@@ -6,18 +6,23 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, Search, Loader2, AlertTriangle, Eye, ChevronRight,
-    Calendar, User, CheckCircle2, XCircle, Glasses
+    Calendar, User, CheckCircle2, XCircle, Glasses, BookOpen, Info
 } from 'lucide-react';
 import { visionService } from '@/services/visionService';
 import {
     CLASIFICACION_VISUAL_LABELS,
     CLASIFICACION_VISUAL_COLORS,
     SNELLEN_OPTIONS,
+    JAEGER_OPTIONS,
+    JAEGER_SCALE,
+    JAEGER_CATEGORY_COLORS,
     type EstudioVisual,
     type CrearEstudioVisualDTO,
     type FiltrosVision,
     type ClasificacionVisual,
     type SnellenValue,
+    type JaegerValue,
+    type JaegerEntry,
 } from '@/types/vision';
 
 import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader';
@@ -31,6 +36,35 @@ const VisualBadge: React.FC<{ clasificacion: ClasificacionVisual }> = ({ clasifi
         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${bg} ${text}`}>
             {CLASIFICACION_VISUAL_LABELS[clasificacion]}
         </span>
+    );
+};
+
+// Mini card shown below the Jaeger select when a value is picked
+const JaegerMiniCard: React.FC<{ entry: JaegerEntry }> = ({ entry }) => {
+    const colors = JAEGER_CATEGORY_COLORS[entry.category];
+    return (
+        <div className={`mt-3 p-3 rounded-xl border ${colors.border} ${colors.bg} transition-all`}>
+            <div className="flex items-center justify-between mb-1">
+                <span className={`text-xs font-black ${colors.text}`}>{entry.jaeger}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${colors.bg} ${colors.text} border ${colors.border}`}>
+                    {entry.category}
+                </span>
+            </div>
+            <p className={`text-[11px] ${colors.text} mb-1.5`}>{entry.description}</p>
+            <div className="flex items-center justify-between">
+                <div className="flex gap-2 text-[10px] text-slate-500">
+                    <span>Snellen: <b>{entry.snellenNear}</b></span>
+                    <span>{entry.pointSize}pt</span>
+                    <span>LogMAR: {entry.logMAR.toFixed(2)}</span>
+                </div>
+                <span
+                    style={{ fontSize: `${Math.min(entry.pointSize * 1.1, 20)}px`, lineHeight: 1 }}
+                    className="font-serif text-slate-600"
+                >
+                    Aa
+                </span>
+            </div>
+        </div>
     );
 };
 
@@ -58,7 +92,17 @@ function FormVision({ onCrear, onCerrar }: {
         estereopsis_segundos_arco: undefined as number | undefined,
         observaciones: '',
         referencia_oftalmologo: false,
+        od_jaeger: '' as string,
+        oi_jaeger: '' as string,
     });
+
+    // Jaeger panel state
+    const [showJaegerPanel, setShowJaegerPanel] = useState(false);
+    const [jaegerHighlight, setJaegerHighlight] = useState<JaegerEntry | null>(null);
+
+    // Get current Jaeger entry for the active value
+    const odJaegerEntry = JAEGER_SCALE.find(j => j.jaeger === form.od_jaeger);
+    const oiJaegerEntry = JAEGER_SCALE.find(j => j.jaeger === form.oi_jaeger);
 
     const handleSubmit = async () => {
         if (!form.empresa_id || !form.paciente_id) return;
@@ -69,6 +113,8 @@ function FormVision({ onCrear, onCerrar }: {
                 od_con_correccion: form.od_con_correccion ? form.od_con_correccion as SnellenValue : undefined,
                 oi_con_correccion: form.oi_con_correccion ? form.oi_con_correccion as SnellenValue : undefined,
                 tipo_lentes: form.tipo_lentes ? form.tipo_lentes as 'armazon' | 'contacto' | 'ambos' : undefined,
+                od_jaeger: form.od_jaeger ? form.od_jaeger as JaegerValue : undefined,
+                oi_jaeger: form.oi_jaeger ? form.oi_jaeger as JaegerValue : undefined,
             });
         } finally { setLoading(false); }
     };
@@ -123,6 +169,188 @@ function FormVision({ onCrear, onCerrar }: {
                         <SnellenSelect value={form.oi_con_correccion} onChange={v => setForm(f => ({ ...f, oi_con_correccion: v }))} label="Con corrección" />
                     </div>
                 </div>
+            </div>
+
+            {/* ===== SECCIÓN JAEGER (Visión Cercana) ===== */}
+            <div className="mb-4">
+                <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-black text-purple-700 uppercase tracking-widest flex items-center gap-2">
+                        <BookOpen className="w-4 h-4" /> Visión Cercana — Escala de Jaeger
+                    </h4>
+                    <button
+                        type="button"
+                        onClick={() => setShowJaegerPanel(!showJaegerPanel)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${showJaegerPanel
+                            ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                            : 'bg-slate-100 text-slate-500 hover:bg-purple-50 hover:text-purple-600 border border-slate-200'
+                            }`}
+                    >
+                        <Info className="w-3.5 h-3.5" />
+                        {showJaegerPanel ? 'Ocultar Escala' : 'Ver Escala Completa'}
+                    </button>
+                </div>
+
+                {/* Jaeger selects */}
+                <div className="grid grid-cols-2 gap-6 mb-4">
+                    <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-5">
+                        <label className="block text-xs text-blue-600 font-bold mb-2">OD — Visión Cercana</label>
+                        <select
+                            value={form.od_jaeger}
+                            onChange={e => {
+                                const val = e.target.value;
+                                setForm(f => ({ ...f, od_jaeger: val }));
+                                const entry = JAEGER_SCALE.find(j => j.jaeger === val);
+                                if (entry) setJaegerHighlight(entry);
+                            }}
+                            className="w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500/20"
+                        >
+                            <option value="">— Seleccionar —</option>
+                            {JAEGER_OPTIONS.map(j => {
+                                const entry = JAEGER_SCALE.find(e => e.jaeger === j);
+                                return <option key={j} value={j}>{j} — {entry?.snellenNear || ''}</option>;
+                            })}
+                        </select>
+                        {odJaegerEntry && (
+                            <JaegerMiniCard entry={odJaegerEntry} />
+                        )}
+                    </div>
+                    <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-5">
+                        <label className="block text-xs text-emerald-600 font-bold mb-2">OI — Visión Cercana</label>
+                        <select
+                            value={form.oi_jaeger}
+                            onChange={e => {
+                                const val = e.target.value;
+                                setForm(f => ({ ...f, oi_jaeger: val }));
+                                const entry = JAEGER_SCALE.find(j => j.jaeger === val);
+                                if (entry) setJaegerHighlight(entry);
+                            }}
+                            className="w-full bg-white border border-emerald-200 rounded-xl px-4 py-2.5 text-slate-900 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20"
+                        >
+                            <option value="">— Seleccionar —</option>
+                            {JAEGER_OPTIONS.map(j => {
+                                const entry = JAEGER_SCALE.find(e => e.jaeger === j);
+                                return <option key={j} value={j}>{j} — {entry?.snellenNear || ''}</option>;
+                            })}
+                        </select>
+                        {oiJaegerEntry && (
+                            <JaegerMiniCard entry={oiJaegerEntry} />
+                        )}
+                    </div>
+                </div>
+
+                {/* ===== INTERACTIVE JAEGER SCALE PANEL ===== */}
+                <AnimatePresence>
+                    {showJaegerPanel && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="overflow-hidden"
+                        >
+                            <div className="bg-gradient-to-br from-slate-50 to-purple-50/30 border border-purple-200/60 rounded-2xl p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                                        <BookOpen className="w-4 h-4 text-purple-600" />
+                                    </div>
+                                    <div>
+                                        <h5 className="text-sm font-black text-purple-800">Escala de Jaeger — Referencia Interactiva</h5>
+                                        <p className="text-[10px] text-purple-500">Distancia de lectura estándar: 35 cm (14"). Haz clic en una fila para seleccionarla.</p>
+                                    </div>
+                                </div>
+
+                                {/* Live preview */}
+                                {jaegerHighlight && (
+                                    <div className={`mb-4 p-4 rounded-xl border-2 ${JAEGER_CATEGORY_COLORS[jaegerHighlight.category].border} ${JAEGER_CATEGORY_COLORS[jaegerHighlight.category].bg} transition-all`}>
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className={`text-lg font-black ${JAEGER_CATEGORY_COLORS[jaegerHighlight.category].text}`}>
+                                                        {jaegerHighlight.jaeger}
+                                                    </span>
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${JAEGER_CATEGORY_COLORS[jaegerHighlight.category].bg} ${JAEGER_CATEGORY_COLORS[jaegerHighlight.category].text} border ${JAEGER_CATEGORY_COLORS[jaegerHighlight.category].border}`}>
+                                                        {jaegerHighlight.category}
+                                                    </span>
+                                                </div>
+                                                <p className={`text-sm ${JAEGER_CATEGORY_COLORS[jaegerHighlight.category].text} mb-2`}>
+                                                    {jaegerHighlight.description}
+                                                </p>
+                                                <div className="flex flex-wrap gap-3 text-xs text-slate-600">
+                                                    <span>Snellen: <b>{jaegerHighlight.snellenNear}</b></span>
+                                                    <span>Pts: <b>{jaegerHighlight.pointSize}pt</b></span>
+                                                    <span>M: <b>{jaegerHighlight.mEquivalent}</b></span>
+                                                    <span>LogMAR: <b>{jaegerHighlight.logMAR.toFixed(2)}</b></span>
+                                                </div>
+                                            </div>
+                                            {/* Dynamic font preview */}
+                                            <div className="flex-shrink-0 w-48 h-20 bg-white rounded-xl border border-slate-200 flex items-center justify-center overflow-hidden px-3">
+                                                <span
+                                                    style={{ fontSize: `${Math.min(jaegerHighlight.pointSize * 1.2, 48)}px`, lineHeight: 1.1 }}
+                                                    className="text-slate-800 font-serif text-center select-none"
+                                                >
+                                                    {jaegerHighlight.pointSize <= 8 ? 'El paciente lee este texto' : jaegerHighlight.pointSize <= 16 ? 'Texto' : 'Aa'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Scale table */}
+                                <div className="overflow-x-auto rounded-xl border border-purple-200/40 max-h-[320px]">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-purple-100/60 sticky top-0 z-10">
+                                            <tr>
+                                                <th className="p-2 text-left text-[9px] font-black text-purple-600 uppercase tracking-widest">Jaeger</th>
+                                                <th className="p-2 text-left text-[9px] font-black text-purple-600 uppercase tracking-widest">Snellen</th>
+                                                <th className="p-2 text-left text-[9px] font-black text-purple-600 uppercase tracking-widest">Puntos</th>
+                                                <th className="p-2 text-left text-[9px] font-black text-purple-600 uppercase tracking-widest">Métrico</th>
+                                                <th className="p-2 text-left text-[9px] font-black text-purple-600 uppercase tracking-widest">LogMAR</th>
+                                                <th className="p-2 text-left text-[9px] font-black text-purple-600 uppercase tracking-widest">Categoría</th>
+                                                <th className="p-2 text-left text-[9px] font-black text-purple-600 uppercase tracking-widest">Vista Previa</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-purple-100/40">
+                                            {JAEGER_SCALE.map((entry) => {
+                                                const isHighlighted = jaegerHighlight?.jaeger === entry.jaeger;
+                                                const isSelected = form.od_jaeger === entry.jaeger || form.oi_jaeger === entry.jaeger;
+                                                const catColors = JAEGER_CATEGORY_COLORS[entry.category];
+                                                return (
+                                                    <tr
+                                                        key={entry.jaeger}
+                                                        onClick={() => setJaegerHighlight(entry)}
+                                                        className={`cursor-pointer transition-all ${isHighlighted ? `${catColors.bg} ${catColors.border} border-l-4` :
+                                                            isSelected ? 'bg-purple-50/60 border-l-4 border-purple-400' :
+                                                                'hover:bg-purple-50/30'
+                                                            }`}
+                                                    >
+                                                        <td className="p-2 font-black text-slate-800">{entry.jaeger}</td>
+                                                        <td className="p-2 font-mono text-slate-600">{entry.snellenNear}</td>
+                                                        <td className="p-2 text-slate-600">{entry.pointSize}pt</td>
+                                                        <td className="p-2 text-slate-600">{entry.mEquivalent}</td>
+                                                        <td className="p-2 font-mono text-slate-500">{entry.logMAR.toFixed(2)}</td>
+                                                        <td className="p-2">
+                                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${catColors.bg} ${catColors.text} border ${catColors.border}`}>
+                                                                {entry.category}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-2">
+                                                            <span
+                                                                style={{ fontSize: `${Math.min(entry.pointSize, 28)}px`, lineHeight: 1 }}
+                                                                className="font-serif text-slate-700"
+                                                            >
+                                                                Aa
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Ishihara */}

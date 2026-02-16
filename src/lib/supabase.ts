@@ -3,11 +3,25 @@ import { createClient } from '@supabase/supabase-js'
 
 // Usar variables de entorno con fallback a valores por defecto (solo para desarrollo local)
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kftxftikoydldcexkady.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmdHhmdGlrb3lkbGRjZXhrYWR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2OTU2OTMsImV4cCI6MjA4MjI3MTY5M30.UvxYrETiFNil2eNKzJCVcgwOd-MCDBHABlql650y1NU'
 
 // Validar configuración en producción
 if (import.meta.env.PROD && (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY)) {
   console.error('❌ ERROR FATAL: Variables de entorno de Supabase no configuradas en producción.')
+}
+
+// 🧹 Limpieza preventiva: force-clear sesiones Supabase del localStorage
+// Los usuarios fueron recreados; cualquier sesión anterior es inválida
+try {
+  const keysToRemove = Object.keys(localStorage).filter(k =>
+    k.startsWith('sb-') || k.includes('supabase')
+  )
+  if (keysToRemove.length > 0) {
+    console.warn(`🧹 Limpiando ${keysToRemove.length} claves de Supabase obsoletas del localStorage`)
+    keysToRemove.forEach(k => localStorage.removeItem(k))
+  }
+} catch {
+  // Ignorar errores de localStorage (SSR, etc.)
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

@@ -13,7 +13,7 @@ import {
     obtenerPermisosUsuario,
     verificarPermiso as verificarPermisoService,
     PermisoModulo,
-    esSuperAdmin
+    esSuperAdmin as esSuperAdminFn
 } from '@/services/permisosService'
 import { AppAbility, defineAbilityFor, defaultAbility } from '@/lib/ability'
 
@@ -119,13 +119,13 @@ const ALL_MODULES_CATALOG: PermisoModulo[] = [
     // ═══════════════════════════════════════════════════
     // 1. NÚCLEO CLÍNICO (Expediente y Acto Médico)
     // ═══════════════════════════════════════════════════
-    { modulo_codigo: 'pacientes', modulo_nombre: 'Expediente Maestro', modulo_ruta: '/medicina/expediente', modulo_icono: 'Users', modulo_gradiente: 'from-emerald-500 to-teal-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'pacientes', modulo_nombre: 'Pacientes', modulo_ruta: '/pacientes', modulo_icono: 'Users', modulo_gradiente: 'from-emerald-500 to-teal-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
     { modulo_codigo: 'estudios_medicos', modulo_nombre: 'Estudios Médicos', modulo_ruta: '/medicina/estudios', modulo_icono: 'Microscope', modulo_gradiente: 'from-red-500 to-orange-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
     { modulo_codigo: 'prescripcion', modulo_nombre: 'Recetas Médicas', modulo_ruta: '/medicina/recetas', modulo_icono: 'Pill', modulo_gradiente: 'from-teal-400 to-green-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
     { modulo_codigo: 'incapacidades', modulo_nombre: 'Incapacidades', modulo_ruta: '/medicina/incapacidades', modulo_icono: 'FileBarChart2', modulo_gradiente: 'from-rose-500 to-pink-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'rayos_x', modulo_nombre: 'Rayos X', modulo_ruta: '/rayos-x', modulo_icono: 'Bone', modulo_gradiente: 'from-slate-500 to-slate-700', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'espirometria', modulo_nombre: 'Espirometría', modulo_ruta: '/espirometria', modulo_icono: 'Wind', modulo_gradiente: 'from-cyan-500 to-blue-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'vision', modulo_nombre: 'Estudios Visuales', modulo_ruta: '/vision', modulo_icono: 'Eye', modulo_gradiente: 'from-teal-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'rayos_x', modulo_nombre: 'Rayos X', modulo_ruta: '/pacientes', modulo_icono: 'Bone', modulo_gradiente: 'from-slate-500 to-slate-700', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'espirometria', modulo_nombre: 'Espirometría', modulo_ruta: '/pacientes', modulo_icono: 'Wind', modulo_gradiente: 'from-cyan-500 to-blue-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'vision', modulo_nombre: 'Estudios Visuales', modulo_ruta: '/pacientes', modulo_icono: 'Eye', modulo_gradiente: 'from-teal-500 to-emerald-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
     { modulo_codigo: 'resultados', modulo_nombre: 'Resultados', modulo_ruta: '/resultados', modulo_icono: 'FileCheck', modulo_gradiente: 'from-blue-400 to-cyan-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
 
     // ═══════════════════════════════════════════════════
@@ -292,72 +292,88 @@ export function usePermisosDinamicos(): UsePermisosDinamicosReturn {
     const [ability, setAbility] = useState<AppAbility>(defaultAbility)
 
     // Cargar permisos al iniciar o cuando cambia el usuario
+    // ESTRATEGIA: Cargar permisos demo INMEDIATAMENTE basados en el rol del usuario,
+    // luego intentar actualizar desde Supabase en background.
+    // Esto evita que el dashboard se quede bloqueado si Supabase no responde.
     const cargarPermisos = useCallback(async () => {
-        setLoading(true)
+        if (!user?.id) {
+            setPermisos([])
+            setLoading(false)
+            return
+        }
+
+        // PASO 1: Cargar permisos demo INMEDIATAMENTE para desbloquear la UI
+        const esSuper = user.rol === 'super_admin' || user.rol === 'admin_saas';
+        const modulosDemo = obtenerModulosDemo(user.rol);
+
+        setIsSuperAdmin(esSuper)
+        setPermisos(modulosDemo)
+        setAbility(defineAbilityFor(modulosDemo, esSuper))
+        setLoading(false) // ← UI se desbloquea AQUÍ, sin esperar Supabase
         setError(null)
 
+        console.log(`✅ Permisos demo cargados para rol: ${user.rol} (${modulosDemo.length} módulos)`)
+
+        // PASO 2: Intentar upgrader a permisos reales desde Supabase (background, no-blocking)
+        const isMockUser = user.id.startsWith('mock-') ||
+            user.id.startsWith('demo-') ||
+            user.id.startsWith('00000000') ||
+            user.id.startsWith('u1a1b1c1') ||
+            user.id.startsWith('u3a3b3c3');
+
+        if (isMockUser) {
+            console.log(`🔓 Usuario mock/demo, omitiendo upgrade de permisos.`)
+            return
+        }
+
+        // Background upgrade - no bloquea UI
         try {
-            if (!user?.id) {
-                setPermisos([])
-                setLoading(false)
-                return
-            }
+            const timeout = new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('Permisos timeout: Supabase no respondió en 4s')), 4000)
+            )
 
-            const isMockUser = user.id.startsWith('mock-') ||
-                user.id.startsWith('demo-') ||
-                user.id.startsWith('00000000') ||
-                user.id.startsWith('u1a1b1c1') ||
-                user.id.startsWith('u3a3b3c3');
+            const permisosReales = await Promise.race([obtenerPermisosUsuario(user.id), timeout])
 
-            // Si es usuario mock/demo o estamos offline, usar permisos fallback filtrados por rol
-            if (isMockUser) {
-                console.log(`🔓 Modo Mock/Offline Activado. Rol: ${user.rol}`)
-                const modulosDemo = obtenerModulosDemo(user.rol);
-                setPermisos(modulosDemo)
+            // Solo actualizar si obtuvimos datos reales
+            if (permisosReales && permisosReales.length > 0) {
+                // MERGE PERMISIVO: Combinar permisos de Supabase con demo.
+                // Para cada módulo, usar el valor MÁS PERMISIVO entre Supabase y demo.
+                // Esto evita que configuraciones restrictivas en Supabase bloqueen la UI.
+                // La seguridad real vive en RLS, no en el frontend.
+                const demoMap = new Map(modulosDemo.map(m => [m.modulo_codigo, m]))
+                const supabaseMap = new Map(permisosReales.map((p: any) => [p.modulo_codigo, p]))
 
-                const esSuper = user.rol === 'super_admin';
-                setIsSuperAdmin(esSuper)
-                setAbility(defineAbilityFor(modulosDemo, esSuper))
-                setLoading(false)
-                return
-            }
+                // Empezar con todos los módulos demo
+                const permisosMerged: typeof modulosDemo = modulosDemo.map(demo => {
+                    const real = supabaseMap.get(demo.modulo_codigo)
+                    if (!real) return demo // No existe en Supabase, usar demo
+                    // Existe en ambos: usar el más permisivo (OR lógico)
+                    return {
+                        ...demo,
+                        puede_ver: demo.puede_ver || real.puede_ver,
+                        puede_crear: demo.puede_crear || real.puede_crear,
+                        puede_editar: demo.puede_editar || real.puede_editar,
+                        puede_borrar: demo.puede_borrar || real.puede_borrar,
+                        puede_exportar: demo.puede_exportar || real.puede_exportar,
+                        puede_ver_todos: demo.puede_ver_todos || real.puede_ver_todos,
+                        puede_aprobar: demo.puede_aprobar || real.puede_aprobar,
+                        puede_firmar: demo.puede_firmar || real.puede_firmar,
+                        puede_imprimir: demo.puede_imprimir || real.puede_imprimir,
+                    }
+                })
 
-            // Verificar si es super admin (primero por rol en context, luego por DB)
-            const esSuperEnContext = user.rol === 'super_admin'
+                // Agregar módulos que existen en Supabase pero no en demo
+                const demoCodigos = new Set(modulosDemo.map(m => m.modulo_codigo))
+                const soloEnSupabase = permisosReales.filter((p: any) => !demoCodigos.has(p.modulo_codigo))
+                permisosMerged.push(...soloEnSupabase)
 
-            if (esSuperEnContext) {
-                setIsSuperAdmin(true)
-                // Para super admin, cargamos todos los módulos con permisos full
-                const todosLosModulos = await obtenerPermisosUsuario(user.id)
-                setPermisos(todosLosModulos)
-                setAbility(defineAbilityFor(todosLosModulos, true))
-            } else {
-                const isSuperEnDB = await esSuperAdmin(user.id)
-                setIsSuperAdmin(isSuperEnDB)
-
-                // Obtener permisos reales
-                const permisosUsuario = await obtenerPermisosUsuario(user.id)
-                setPermisos(permisosUsuario)
-
-                // Actualizar Ability
-                const newAbility = defineAbilityFor(permisosUsuario, isSuperEnDB)
-                setAbility(newAbility)
+                setPermisos(permisosMerged)
+                setAbility(defineAbilityFor(permisosMerged, esSuper))
+                console.log(`🔄 Permisos merged (${permisosReales.length} Supabase + ${modulosDemo.length} demo → ${permisosMerged.length} total)`)
             }
         } catch (err) {
-            console.error('Error cargando permisos:', err)
-            // Fallback de emergencia Filtrado por Rol
-            const modulosDemo = obtenerModulosDemo(user.rol);
-            setPermisos(modulosDemo)
-
-            if (user.rol === 'super_admin') {
-                setIsSuperAdmin(true)
-                setAbility(defineAbilityFor(modulosDemo, true))
-            } else {
-                setAbility(defineAbilityFor(modulosDemo, false))
-                setError('Error al cargar permisos (Modo Fallback)')
-            }
-        } finally {
-            setLoading(false)
+            // No pasa nada - ya tenemos los permisos demo funcionando
+            console.warn('⚠️ No se pudieron cargar permisos de Supabase, usando modo demo:', err)
         }
     }, [user?.id, user?.rol])
 

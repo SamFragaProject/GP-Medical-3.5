@@ -1,0 +1,764 @@
+/**
+ * WizardAltaPaciente - Wizard estilo install para registrar pacientes
+ * 
+ * Pasos:
+ * 1. Datos Personales (nombre, CURP, fecha nacimiento, género)
+ * 2. Datos Laborales (empresa, sede, puesto, turno, etc.)
+ * 3. Datos Médicos (tipo sangre, alergias, contacto emergencia)
+ * 4. Contacto (email, teléfono, foto)
+ * 5. Revisión y Confirmación
+ */
+import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+    User, Building2, Heart, Phone, CheckCircle,
+    ArrowLeft, ArrowRight, X, Save, Loader2,
+    Calendar, Fingerprint, MapPin, Briefcase,
+    Droplets, AlertTriangle, Users, Mail, Camera,
+    Shield, FileText, Clock
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
+import toast from 'react-hot-toast'
+
+// =============================================
+// TYPES
+// =============================================
+interface WizardProps {
+    onComplete: (data: any) => Promise<void>
+    onCancel: () => void
+    empresaId?: string
+}
+
+interface PatientFormData {
+    // Paso 1: Personales
+    nombre: string
+    apellido_paterno: string
+    apellido_materno: string
+    curp: string
+    rfc: string
+    nss: string
+    fecha_nacimiento: string
+    genero: string
+    estado_civil: string
+    // Paso 2: Laborales
+    empresa_id: string
+    sede_id: string
+    numero_empleado: string
+    puesto: string
+    area: string
+    departamento: string
+    turno: string
+    fecha_ingreso: string
+    tipo_contrato: string
+    jornada_horas: string
+    supervisor_nombre: string
+    // Paso 3: Médicos
+    tipo_sangre: string
+    alergias: string
+    contacto_emergencia_nombre: string
+    contacto_emergencia_parentesco: string
+    contacto_emergencia_telefono: string
+    // Paso 4: Contacto
+    email: string
+    telefono: string
+    foto_url: string
+    estatus: string
+}
+
+const INITIAL_DATA: PatientFormData = {
+    nombre: '', apellido_paterno: '', apellido_materno: '',
+    curp: '', rfc: '', nss: '',
+    fecha_nacimiento: '', genero: '', estado_civil: '',
+    empresa_id: '', sede_id: '', numero_empleado: '',
+    puesto: '', area: '', departamento: '',
+    turno: '', fecha_ingreso: '', tipo_contrato: '',
+    jornada_horas: '', supervisor_nombre: '',
+    tipo_sangre: '', alergias: '',
+    contacto_emergencia_nombre: '', contacto_emergencia_parentesco: '',
+    contacto_emergencia_telefono: '',
+    email: '', telefono: '', foto_url: '', estatus: 'activo',
+}
+
+const STEPS = [
+    { id: 1, title: 'Datos Personales', subtitle: 'Identidad del paciente', icon: User, color: 'from-emerald-500 to-teal-600' },
+    { id: 2, title: 'Datos Laborales', subtitle: 'Información de la empresa', icon: Building2, color: 'from-blue-500 to-indigo-600' },
+    { id: 3, title: 'Datos Médicos', subtitle: 'Salud y emergencia', icon: Heart, color: 'from-rose-500 to-pink-600' },
+    { id: 4, title: 'Contacto', subtitle: 'Email, teléfono y foto', icon: Phone, color: 'from-violet-500 to-purple-600' },
+    { id: 5, title: 'Confirmar', subtitle: 'Revisión final', icon: CheckCircle, color: 'from-emerald-400 to-green-600' },
+]
+
+const GENEROS = [
+    { value: 'masculino', label: 'Masculino', emoji: '♂' },
+    { value: 'femenino', label: 'Femenino', emoji: '♀' },
+    { value: 'otro', label: 'Otro', emoji: '⚧' },
+]
+
+const ESTADO_CIVIL_OPTIONS = ['Soltero(a)', 'Casado(a)', 'Divorciado(a)', 'Viudo(a)', 'Unión Libre']
+const TURNOS = ['Matutino', 'Vespertino', 'Nocturno', 'Mixto']
+const CONTRATOS = ['Indefinido', 'Temporal', 'Por Obra', 'Honorarios', 'Outsourcing']
+const TIPOS_SANGRE = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']
+
+// =============================================
+// COMPONENTS
+// =============================================
+
+function FormField({ label, children, required, hint }: { label: string; children: React.ReactNode; required?: boolean; hint?: string }) {
+    return (
+        <div className="space-y-1.5">
+            <label className="text-[11px] font-black uppercase tracking-widest text-slate-500">
+                {label} {required && <span className="text-rose-500">*</span>}
+            </label>
+            {children}
+            {hint && <p className="text-[10px] text-slate-400">{hint}</p>}
+        </div>
+    )
+}
+
+function SelectField({ value, onChange, options, placeholder }: {
+    value: string; onChange: (v: string) => void; options: string[] | { value: string; label: string }[]; placeholder?: string
+}) {
+    return (
+        <select
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
+        >
+            <option value="">{placeholder || 'Seleccionar...'}</option>
+            {options.map(opt => {
+                const val = typeof opt === 'string' ? opt : opt.value
+                const label = typeof opt === 'string' ? opt : opt.label
+                return <option key={val} value={val}>{label}</option>
+            })}
+        </select>
+    )
+}
+
+// =============================================
+// MAIN COMPONENT
+// =============================================
+export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: WizardProps) {
+    const [step, setStep] = useState(1)
+    const [data, setData] = useState<PatientFormData>(() => ({
+        ...INITIAL_DATA,
+        empresa_id: empresaId || '',
+    }))
+    const [saving, setSaving] = useState(false)
+
+    const updateField = (field: keyof PatientFormData, value: string) => {
+        setData(prev => ({ ...prev, [field]: value }))
+    }
+
+    const canAdvance = (): boolean => {
+        switch (step) {
+            case 1: return !!(data.nombre && data.apellido_paterno)
+            case 2: return true // Laboral data can be optional
+            case 3: return true
+            case 4: return true
+            case 5: return true
+            default: return false
+        }
+    }
+
+    const handleNext = () => {
+        if (step < 5) setStep(step + 1)
+    }
+
+    const handlePrev = () => {
+        if (step > 1) setStep(step - 1)
+    }
+
+    const handleSubmit = async () => {
+        setSaving(true)
+        try {
+            const cleanData: any = {}
+            for (const [k, v] of Object.entries(data)) {
+                if (v !== '' && v !== undefined && v !== null) {
+                    cleanData[k] = v
+                }
+            }
+            if (cleanData.jornada_horas) cleanData.jornada_horas = parseInt(cleanData.jornada_horas)
+            await onComplete(cleanData)
+        } catch {
+            // parent handles error
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const progress = (step / 5) * 100
+
+    return (
+        <div className="min-h-[80vh] flex flex-col">
+            {/* ── HEADER ── */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 mb-6 border border-white/10">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(16,185,129,0.15),transparent_50%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.1),transparent_50%)]" />
+
+                <div className="relative z-10 flex items-center justify-between mb-6">
+                    <div>
+                        <h1 className="text-2xl font-black text-white mb-1">Alta de Paciente</h1>
+                        <p className="text-sm text-slate-400">Wizard de registro paso a paso</p>
+                    </div>
+                    <Button variant="ghost" onClick={onCancel} className="text-slate-400 hover:text-white hover:bg-white/10 rounded-xl">
+                        <X className="w-5 h-5" />
+                    </Button>
+                </div>
+
+                {/* Step Indicators */}
+                <div className="relative z-10 flex items-center justify-between gap-2">
+                    {STEPS.map((s, idx) => {
+                        const isActive = step === s.id
+                        const isCompleted = step > s.id
+                        const StepIcon = s.icon
+
+                        return (
+                            <button
+                                key={s.id}
+                                onClick={() => s.id < step && setStep(s.id)}
+                                className={`flex-1 flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 ${isActive ? 'bg-white/10 backdrop-blur-md border border-white/20 shadow-lg' :
+                                        isCompleted ? 'bg-emerald-500/10 border border-emerald-500/20 cursor-pointer hover:bg-emerald-500/20' :
+                                            'bg-white/5 border border-white/5'
+                                    }`}
+                            >
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all ${isActive ? `bg-gradient-to-br ${s.color} shadow-lg` :
+                                        isCompleted ? 'bg-emerald-500/20' : 'bg-white/5'
+                                    }`}>
+                                    {isCompleted ? (
+                                        <CheckCircle className="w-5 h-5 text-emerald-400" />
+                                    ) : (
+                                        <StepIcon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                                    )}
+                                </div>
+                                <div className="hidden lg:block text-left min-w-0">
+                                    <p className={`text-[10px] font-bold uppercase tracking-wider truncate ${isActive ? 'text-white' : isCompleted ? 'text-emerald-400' : 'text-slate-500'
+                                        }`}>{s.title}</p>
+                                    <p className="text-[9px] text-slate-500 truncate">{s.subtitle}</p>
+                                </div>
+                            </button>
+                        )
+                    })}
+                </div>
+
+                {/* Progress Bar */}
+                <div className="relative z-10 mt-4 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div
+                        className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full"
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 0.4, ease: 'easeOut' }}
+                    />
+                </div>
+            </div>
+
+            {/* ── CONTENT ── */}
+            <Card className="flex-1 border-0 shadow-xl bg-white rounded-3xl overflow-hidden">
+                <CardContent className="p-8">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={step}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            {/* STEP 1: Datos Personales */}
+                            {step === 1 && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3 mb-8">
+                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                                            <User className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-black text-slate-800">Datos Personales</h2>
+                                            <p className="text-sm text-slate-500">Información básica de identidad</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <FormField label="Nombre(s)" required>
+                                            <Input
+                                                value={data.nombre}
+                                                onChange={e => updateField('nombre', e.target.value)}
+                                                placeholder="Juan Carlos"
+                                                className="h-11 rounded-xl"
+                                            />
+                                        </FormField>
+
+                                        <FormField label="Apellido Paterno" required>
+                                            <Input
+                                                value={data.apellido_paterno}
+                                                onChange={e => updateField('apellido_paterno', e.target.value)}
+                                                placeholder="Hernández"
+                                                className="h-11 rounded-xl"
+                                            />
+                                        </FormField>
+
+                                        <FormField label="Apellido Materno">
+                                            <Input
+                                                value={data.apellido_materno}
+                                                onChange={e => updateField('apellido_materno', e.target.value)}
+                                                placeholder="García"
+                                                className="h-11 rounded-xl"
+                                            />
+                                        </FormField>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <FormField label="CURP" hint="18 caracteres alfanuméricos">
+                                            <Input
+                                                value={data.curp}
+                                                onChange={e => updateField('curp', e.target.value.toUpperCase())}
+                                                placeholder="HEGJ950101HDFRRN09"
+                                                maxLength={18}
+                                                className="h-11 rounded-xl font-mono"
+                                            />
+                                        </FormField>
+
+                                        <FormField label="RFC">
+                                            <Input
+                                                value={data.rfc}
+                                                onChange={e => updateField('rfc', e.target.value.toUpperCase())}
+                                                placeholder="HEGJ950101XXX"
+                                                maxLength={13}
+                                                className="h-11 rounded-xl font-mono"
+                                            />
+                                        </FormField>
+
+                                        <FormField label="NSS (IMSS)">
+                                            <Input
+                                                value={data.nss}
+                                                onChange={e => updateField('nss', e.target.value)}
+                                                placeholder="12345678901"
+                                                maxLength={11}
+                                                className="h-11 rounded-xl font-mono"
+                                            />
+                                        </FormField>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <FormField label="Fecha de Nacimiento">
+                                            <Input
+                                                type="date"
+                                                value={data.fecha_nacimiento}
+                                                onChange={e => updateField('fecha_nacimiento', e.target.value)}
+                                                className="h-11 rounded-xl"
+                                            />
+                                        </FormField>
+
+                                        <FormField label="Género">
+                                            <div className="flex gap-2">
+                                                {GENEROS.map(g => (
+                                                    <button
+                                                        key={g.value}
+                                                        onClick={() => updateField('genero', g.value)}
+                                                        className={`flex-1 h-11 rounded-xl border-2 font-bold text-sm transition-all ${data.genero === g.value
+                                                                ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                                                                : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                                                            }`}
+                                                    >
+                                                        {g.emoji} {g.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </FormField>
+
+                                        <FormField label="Estado Civil">
+                                            <SelectField
+                                                value={data.estado_civil}
+                                                onChange={v => updateField('estado_civil', v)}
+                                                options={ESTADO_CIVIL_OPTIONS}
+                                            />
+                                        </FormField>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* STEP 2: Datos Laborales */}
+                            {step === 2 && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3 mb-8">
+                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                            <Building2 className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-black text-slate-800">Datos Laborales</h2>
+                                            <p className="text-sm text-slate-500">Empresa, puesto y turno de trabajo</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <FormField label="Número de Empleado">
+                                            <Input
+                                                value={data.numero_empleado}
+                                                onChange={e => updateField('numero_empleado', e.target.value)}
+                                                placeholder="EMP-0042"
+                                                className="h-11 rounded-xl"
+                                            />
+                                        </FormField>
+
+                                        <FormField label="Puesto">
+                                            <Input
+                                                value={data.puesto}
+                                                onChange={e => updateField('puesto', e.target.value)}
+                                                placeholder="Ingeniero de Producción"
+                                                className="h-11 rounded-xl"
+                                            />
+                                        </FormField>
+
+                                        <FormField label="Área">
+                                            <Input
+                                                value={data.area}
+                                                onChange={e => updateField('area', e.target.value)}
+                                                placeholder="Producción"
+                                                className="h-11 rounded-xl"
+                                            />
+                                        </FormField>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <FormField label="Departamento">
+                                            <Input
+                                                value={data.departamento}
+                                                onChange={e => updateField('departamento', e.target.value)}
+                                                placeholder="Mantenimiento"
+                                                className="h-11 rounded-xl"
+                                            />
+                                        </FormField>
+
+                                        <FormField label="Turno">
+                                            <SelectField value={data.turno} onChange={v => updateField('turno', v)} options={TURNOS} />
+                                        </FormField>
+
+                                        <FormField label="Fecha de Ingreso">
+                                            <Input
+                                                type="date"
+                                                value={data.fecha_ingreso}
+                                                onChange={e => updateField('fecha_ingreso', e.target.value)}
+                                                className="h-11 rounded-xl"
+                                            />
+                                        </FormField>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                        <FormField label="Tipo de Contrato">
+                                            <SelectField value={data.tipo_contrato} onChange={v => updateField('tipo_contrato', v)} options={CONTRATOS} />
+                                        </FormField>
+
+                                        <FormField label="Jornada (horas)">
+                                            <Input
+                                                type="number"
+                                                value={data.jornada_horas}
+                                                onChange={e => updateField('jornada_horas', e.target.value)}
+                                                placeholder="8"
+                                                min={1}
+                                                max={24}
+                                                className="h-11 rounded-xl"
+                                            />
+                                        </FormField>
+
+                                        <FormField label="Supervisor">
+                                            <Input
+                                                value={data.supervisor_nombre}
+                                                onChange={e => updateField('supervisor_nombre', e.target.value)}
+                                                placeholder="Ing. Ramírez"
+                                                className="h-11 rounded-xl"
+                                            />
+                                        </FormField>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* STEP 3: Datos Médicos */}
+                            {step === 3 && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3 mb-8">
+                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-lg shadow-rose-500/20">
+                                            <Heart className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-black text-slate-800">Datos Médicos</h2>
+                                            <p className="text-sm text-slate-500">Información de salud y contacto de emergencia</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <FormField label="Tipo de Sangre">
+                                            <div className="grid grid-cols-4 gap-2">
+                                                {TIPOS_SANGRE.map(ts => (
+                                                    <button
+                                                        key={ts}
+                                                        onClick={() => updateField('tipo_sangre', ts)}
+                                                        className={`h-11 rounded-xl border-2 font-bold text-sm transition-all ${data.tipo_sangre === ts
+                                                                ? 'border-rose-500 bg-rose-50 text-rose-700'
+                                                                : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                                                            }`}
+                                                    >
+                                                        {ts}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </FormField>
+
+                                        <FormField label="Alergias Conocidas" hint="Separar con comas">
+                                            <textarea
+                                                value={data.alergias}
+                                                onChange={e => updateField('alergias', e.target.value)}
+                                                placeholder="Penicilina, Polvo, Mariscos..."
+                                                rows={3}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm resize-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
+                                            />
+                                        </FormField>
+                                    </div>
+
+                                    {/* Contacto de Emergencia */}
+                                    <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <AlertTriangle className="w-5 h-5 text-amber-500" />
+                                            <h3 className="font-bold text-amber-800 text-sm">Contacto de Emergencia</h3>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <FormField label="Nombre completo">
+                                                <Input
+                                                    value={data.contacto_emergencia_nombre}
+                                                    onChange={e => updateField('contacto_emergencia_nombre', e.target.value)}
+                                                    placeholder="María García López"
+                                                    className="h-11 rounded-xl bg-white"
+                                                />
+                                            </FormField>
+                                            <FormField label="Parentesco">
+                                                <SelectField
+                                                    value={data.contacto_emergencia_parentesco}
+                                                    onChange={v => updateField('contacto_emergencia_parentesco', v)}
+                                                    options={['Esposo(a)', 'Padre/Madre', 'Hermano(a)', 'Hijo(a)', 'Otro']}
+                                                />
+                                            </FormField>
+                                            <FormField label="Teléfono">
+                                                <Input
+                                                    value={data.contacto_emergencia_telefono}
+                                                    onChange={e => updateField('contacto_emergencia_telefono', e.target.value)}
+                                                    placeholder="55 1234 5678"
+                                                    className="h-11 rounded-xl bg-white"
+                                                />
+                                            </FormField>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* STEP 4: Contacto */}
+                            {step === 4 && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3 mb-8">
+                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                                            <Phone className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-black text-slate-800">Contacto</h2>
+                                            <p className="text-sm text-slate-500">Datos de contacto del paciente</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <FormField label="Correo Electrónico">
+                                            <div className="relative">
+                                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                                <Input
+                                                    type="email"
+                                                    value={data.email}
+                                                    onChange={e => updateField('email', e.target.value)}
+                                                    placeholder="paciente@email.com"
+                                                    className="h-11 rounded-xl pl-10"
+                                                />
+                                            </div>
+                                        </FormField>
+
+                                        <FormField label="Teléfono">
+                                            <div className="relative">
+                                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                                <Input
+                                                    value={data.telefono}
+                                                    onChange={e => updateField('telefono', e.target.value)}
+                                                    placeholder="55 1234 5678"
+                                                    className="h-11 rounded-xl pl-10"
+                                                />
+                                            </div>
+                                        </FormField>
+                                    </div>
+
+                                    <FormField label="URL de Foto (opcional)">
+                                        <Input
+                                            value={data.foto_url}
+                                            onChange={e => updateField('foto_url', e.target.value)}
+                                            placeholder="https://..."
+                                            className="h-11 rounded-xl"
+                                        />
+                                    </FormField>
+                                </div>
+                            )}
+
+                            {/* STEP 5: Revisión */}
+                            {step === 5 && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3 mb-8">
+                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                                            <CheckCircle className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-black text-slate-800">Revisión Final</h2>
+                                            <p className="text-sm text-slate-500">Confirma que los datos sean correctos antes de guardar</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Personal */}
+                                        <ReviewSection
+                                            title="Datos Personales"
+                                            icon={User}
+                                            color="emerald"
+                                            items={[
+                                                { label: 'Nombre', value: `${data.nombre} ${data.apellido_paterno} ${data.apellido_materno}` },
+                                                { label: 'CURP', value: data.curp },
+                                                { label: 'RFC', value: data.rfc },
+                                                { label: 'NSS', value: data.nss },
+                                                { label: 'Nacimiento', value: data.fecha_nacimiento },
+                                                { label: 'Género', value: data.genero },
+                                                { label: 'Estado Civil', value: data.estado_civil },
+                                            ]}
+                                        />
+
+                                        {/* Laboral */}
+                                        <ReviewSection
+                                            title="Datos Laborales"
+                                            icon={Building2}
+                                            color="blue"
+                                            items={[
+                                                { label: 'No. Empleado', value: data.numero_empleado },
+                                                { label: 'Puesto', value: data.puesto },
+                                                { label: 'Área', value: data.area },
+                                                { label: 'Departamento', value: data.departamento },
+                                                { label: 'Turno', value: data.turno },
+                                                { label: 'Ingreso', value: data.fecha_ingreso },
+                                                { label: 'Contrato', value: data.tipo_contrato },
+                                            ]}
+                                        />
+
+                                        {/* Médico */}
+                                        <ReviewSection
+                                            title="Datos Médicos"
+                                            icon={Heart}
+                                            color="rose"
+                                            items={[
+                                                { label: 'Tipo Sangre', value: data.tipo_sangre },
+                                                { label: 'Alergias', value: data.alergias },
+                                                { label: 'Contacto Emergencia', value: data.contacto_emergencia_nombre },
+                                                { label: 'Parentesco', value: data.contacto_emergencia_parentesco },
+                                                { label: 'Tel. Emergencia', value: data.contacto_emergencia_telefono },
+                                            ]}
+                                        />
+
+                                        {/* Contacto */}
+                                        <ReviewSection
+                                            title="Contacto"
+                                            icon={Phone}
+                                            color="violet"
+                                            items={[
+                                                { label: 'Email', value: data.email },
+                                                { label: 'Teléfono', value: data.telefono },
+                                            ]}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
+                </CardContent>
+            </Card>
+
+            {/* ── FOOTER NAVIGATION ── */}
+            <div className="flex items-center justify-between mt-6 p-4 bg-white rounded-2xl shadow-lg border border-slate-100">
+                <Button
+                    variant="outline"
+                    onClick={step === 1 ? onCancel : handlePrev}
+                    className="h-11 px-6 rounded-xl gap-2"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    {step === 1 ? 'Cancelar' : 'Anterior'}
+                </Button>
+
+                <div className="flex items-center gap-2">
+                    {STEPS.map(s => (
+                        <div
+                            key={s.id}
+                            className={`w-2 h-2 rounded-full transition-all ${step === s.id ? 'w-6 bg-emerald-500' : step > s.id ? 'bg-emerald-300' : 'bg-slate-200'
+                                }`}
+                        />
+                    ))}
+                </div>
+
+                {step < 5 ? (
+                    <Button
+                        onClick={handleNext}
+                        disabled={!canAdvance()}
+                        className="h-11 px-6 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white gap-2 font-bold"
+                    >
+                        Siguiente
+                        <ArrowRight className="w-4 h-4" />
+                    </Button>
+                ) : (
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={saving}
+                        className="h-11 px-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white gap-2 font-black shadow-lg shadow-emerald-500/30"
+                    >
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {saving ? 'Guardando...' : 'Registrar Paciente'}
+                    </Button>
+                )}
+            </div>
+        </div>
+    )
+}
+
+// =============================================
+// REVIEW SECTION COMPONENT
+// =============================================
+function ReviewSection({ title, icon: Icon, color, items }: {
+    title: string
+    icon: any
+    color: string
+    items: { label: string; value: string }[]
+}) {
+    const colorMap: Record<string, string> = {
+        emerald: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+        blue: 'bg-blue-50 border-blue-200 text-blue-800',
+        rose: 'bg-rose-50 border-rose-200 text-rose-800',
+        violet: 'bg-violet-50 border-violet-200 text-violet-800',
+    }
+    const iconColorMap: Record<string, string> = {
+        emerald: 'text-emerald-500',
+        blue: 'text-blue-500',
+        rose: 'text-rose-500',
+        violet: 'text-violet-500',
+    }
+
+    return (
+        <div className={`p-5 rounded-2xl border ${colorMap[color]}`}>
+            <div className="flex items-center gap-2 mb-4">
+                <Icon className={`w-5 h-5 ${iconColorMap[color]}`} />
+                <h3 className="font-bold text-sm">{title}</h3>
+            </div>
+            <div className="space-y-2">
+                {items.filter(i => i.value).map((item, idx) => (
+                    <div key={idx} className="flex justify-between text-sm">
+                        <span className="text-slate-500">{item.label}</span>
+                        <span className="font-semibold text-slate-700">{item.value}</span>
+                    </div>
+                ))}
+                {items.filter(i => i.value).length === 0 && (
+                    <p className="text-xs text-slate-400 italic">Sin datos ingresados</p>
+                )}
+            </div>
+        </div>
+    )
+}

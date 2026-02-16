@@ -47,149 +47,90 @@ export interface Receta {
   empresa_id: string
 }
 
-// Datos Demo Iniciales
+// Datos Demo Iniciales — Solo 2 pacientes para pruebas de visualización
+const DEMO_EMPRESA_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+
 const DEMO_PACIENTES: Paciente[] = [
   {
-    id: '1',
-    numero_empleado: 'EMP001',
+    id: 'pac-demo-001',
+    numero_empleado: 'EMP-1042',
     nombre: 'Juan Carlos',
     apellido_paterno: 'García',
     apellido_materno: 'López',
     genero: 'masculino',
     fecha_nacimiento: '1985-03-15',
-    email: 'juan.garcia@empresa.mx',
-    telefono: '555-0123',
-    fecha_ingreso: '2020-01-15',
+    email: 'juan.garcia@mediflow.mx',
+    telefono: '55 4421 8832',
+    fecha_ingreso: '2023-06-01',
     estatus: 'activo',
     puesto_trabajo: {
       nombre: 'Operario de Producción',
-      departamento: 'Producción'
+      departamento: 'Manufactura'
     },
-    proximos_examenes: 2,
-    alertas_activas: 1,
-    empresa_id: 'empresa-demo-1',
+    proximos_examenes: 1,
+    alertas_activas: 0,
+    empresa_id: DEMO_EMPRESA_ID,
     user_id: 'user-paciente-1'
   },
   {
-    id: '2',
-    numero_empleado: 'EMP002',
+    id: 'pac-demo-002',
+    numero_empleado: 'EMP-1087',
     nombre: 'María Elena',
     apellido_paterno: 'Rodríguez',
     apellido_materno: 'Martínez',
     genero: 'femenino',
-    fecha_nacimiento: '1990-07-22',
-    email: 'maria.rodriguez@empresa.mx',
-    telefono: '555-0124',
-    fecha_ingreso: '2019-03-10',
+    fecha_nacimiento: '1992-11-08',
+    email: 'maria.rodriguez@mediflow.mx',
+    telefono: '55 3310 7745',
+    fecha_ingreso: '2024-01-15',
     estatus: 'activo',
     puesto_trabajo: {
-      nombre: 'Asistente Administrativa',
-      departamento: 'Administración'
+      nombre: 'Coordinadora Administrativa',
+      departamento: 'Recursos Humanos'
     },
     proximos_examenes: 0,
     alertas_activas: 0,
-    empresa_id: 'empresa-demo-1',
+    empresa_id: DEMO_EMPRESA_ID,
     user_id: 'user-paciente-2'
-  },
-  {
-    id: '3',
-    numero_empleado: 'EMP003',
-    nombre: 'Roberto',
-    apellido_paterno: 'Hernández',
-    apellido_materno: 'Sánchez',
-    genero: 'masculino',
-    fecha_nacimiento: '1978-11-30',
-    email: 'roberto.h@constructora.com',
-    telefono: '555-9876',
-    fecha_ingreso: '2015-06-01',
-    estatus: 'activo',
-    puesto_trabajo: {
-      nombre: 'Soldador Especializado',
-      departamento: 'Mantenimiento'
-    },
-    proximos_examenes: 1,
-    alertas_activas: 2,
-    empresa_id: 'empresa-demo-1'
-  },
-  {
-    id: '4',
-    numero_empleado: 'EMP004',
-    nombre: 'Ana Sofía',
-    apellido_paterno: 'Villalobos',
-    apellido_materno: 'Castro',
-    genero: 'femenino',
-    fecha_nacimiento: '1995-05-12',
-    email: 'ana.sofia@tecnologia.io',
-    telefono: '555-4433',
-    fecha_ingreso: '2022-02-15',
-    estatus: 'activo',
-    puesto_trabajo: {
-      nombre: 'Ingeniera de Sistemas',
-      departamento: 'TI'
-    },
-    proximos_examenes: 0,
-    alertas_activas: 0,
-    empresa_id: 'empresa-demo-1'
-  },
-  {
-    id: '5',
-    numero_empleado: 'EMP005',
-    nombre: 'Ricardo',
-    apellido_paterno: 'Mendoza',
-    apellido_materno: 'Solis',
-    genero: 'masculino',
-    fecha_nacimiento: '1982-01-20',
-    email: 'rmendoza@logistica.mx',
-    telefono: '555-2211',
-    fecha_ingreso: '2018-09-10',
-    estatus: 'activo',
-    puesto_trabajo: {
-      nombre: 'Chofer de Carga Pesada',
-      departamento: 'Logística'
-    },
-    proximos_examenes: 3,
-    alertas_activas: 1,
-    empresa_id: 'empresa-demo-1'
   }
 ]
 
 const DEMO_CITAS: Cita[] = [
   {
     id: 'cita-1',
-    paciente_id: '1',
-    medico_id: 'medico-demo-1',
-    fechaHora: new Date(new Date().setHours(9, 0, 0, 0)).toISOString(), // Hoy a las 9 AM
+    paciente_id: 'pac-demo-001',
+    medico_id: '00000000-0000-0000-0000-000000000003',
+    fechaHora: new Date(new Date().setHours(9, 0, 0, 0)).toISOString(),
     duracion: 30,
     tipo: 'consulta_general',
     estado: 'programada',
     motivo: 'Revisión anual',
-    empresa_id: 'empresa-demo-1'
+    empresa_id: DEMO_EMPRESA_ID
   },
   {
     id: 'cita-2',
-    paciente_id: '2',
-    medico_id: 'medico-demo-1',
-    fechaHora: new Date(new Date().setHours(11, 0, 0, 0)).toISOString(), // Hoy a las 11 AM
+    paciente_id: 'pac-demo-002',
+    medico_id: '00000000-0000-0000-0000-000000000003',
+    fechaHora: new Date(new Date().setHours(11, 0, 0, 0)).toISOString(),
     duracion: 45,
     tipo: 'examen_medico',
     estado: 'completada',
     motivo: 'Examen de ingreso',
-    empresa_id: 'empresa-demo-1'
+    empresa_id: DEMO_EMPRESA_ID
   }
 ]
 
 // Clase de Servicio Mock
 class MockDataService {
-  private latency = 800 // ms de latencia simulada
+  private latency = 200 // ms de latencia simulada
 
   constructor() {
     this.initializeData()
   }
 
   private initializeData() {
-    if (!localStorage.getItem('mock_pacientes')) {
-      localStorage.setItem('mock_pacientes', JSON.stringify(DEMO_PACIENTES))
-    }
+    // Siempre reinicializar pacientes demo para asegurar datos frescos
+    localStorage.setItem('mock_pacientes', JSON.stringify(DEMO_PACIENTES))
     if (!localStorage.getItem('mock_citas')) {
       localStorage.setItem('mock_citas', JSON.stringify(DEMO_CITAS))
     }

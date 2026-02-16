@@ -42,6 +42,63 @@ export const SNELLEN_OPTIONS = [
 
 export type SnellenValue = typeof SNELLEN_OPTIONS[number];
 
+// Escala de Jaeger (visión cercana)
+export const JAEGER_OPTIONS = [
+    'J1', 'J1+', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7',
+    'J8', 'J9', 'J10', 'J11', 'J12', 'J13', 'J14',
+    'J15', 'J16', 'J17', 'J18', 'J19', 'J20', 'J20+'
+] as const;
+
+export type JaegerValue = typeof JAEGER_OPTIONS[number];
+
+/**
+ * Escala de Jaeger completa con equivalencias clínicas.
+ * Distancia de lectura estándar: 35 cm (14 pulgadas).
+ */
+export interface JaegerEntry {
+    jaeger: JaegerValue;
+    snellenNear: string;        // Equivalente Snellen cercano
+    snellenFar: string;         // Equivalente Snellen lejano  
+    pointSize: number;          // Tamaño en puntos tipográficos
+    mEquivalent: string;        // Equivalente métrico (M)
+    logMAR: number;             // LogMAR value
+    description: string;        // Descripción clínica
+    category: 'normal' | 'leve' | 'moderada' | 'severa' | 'profunda';
+}
+
+export const JAEGER_SCALE: JaegerEntry[] = [
+    { jaeger: 'J1', snellenNear: '20/20', snellenFar: '20/20', pointSize: 3, mEquivalent: '0.37 M', logMAR: 0.0, description: 'Visión cercana excelente. Lee texto fino sin dificultad.', category: 'normal' },
+    { jaeger: 'J1+', snellenNear: '20/25', snellenFar: '20/25', pointSize: 4, mEquivalent: '0.50 M', logMAR: 0.1, description: 'Visión cercana muy buena. Lectura cómoda de periódico.', category: 'normal' },
+    { jaeger: 'J2', snellenNear: '20/30', snellenFar: '20/30', pointSize: 5, mEquivalent: '0.62 M', logMAR: 0.18, description: 'Visión cercana buena. Lee revistas y libros sin problema.', category: 'normal' },
+    { jaeger: 'J3', snellenNear: '20/40', snellenFar: '20/40', pointSize: 6, mEquivalent: '0.75 M', logMAR: 0.30, description: 'Leve reducción. Puede requerir mejor iluminación para letra chica.', category: 'leve' },
+    { jaeger: 'J4', snellenNear: '20/40', snellenFar: '20/40', pointSize: 7, mEquivalent: '0.87 M', logMAR: 0.30, description: 'Deficiencia leve. Lectura posible pero con fatiga en periodos largos.', category: 'leve' },
+    { jaeger: 'J5', snellenNear: '20/50', snellenFar: '20/50', pointSize: 8, mEquivalent: '1.00 M', logMAR: 0.40, description: 'Necesita texto mediano. Considerar corrección óptica.', category: 'leve' },
+    { jaeger: 'J6', snellenNear: '20/50', snellenFar: '20/50', pointSize: 9, mEquivalent: '1.12 M', logMAR: 0.40, description: 'Solo lee texto mediano-grande. Se recomienda evaluación.', category: 'leve' },
+    { jaeger: 'J7', snellenNear: '20/60', snellenFar: '20/60', pointSize: 10, mEquivalent: '1.25 M', logMAR: 0.48, description: 'Deficiencia moderada. Dificultad con texto estándar.', category: 'moderada' },
+    { jaeger: 'J8', snellenNear: '20/70', snellenFar: '20/70', pointSize: 11, mEquivalent: '1.37 M', logMAR: 0.54, description: 'Requiere texto grande. Limitación en actividades de lectura.', category: 'moderada' },
+    { jaeger: 'J9', snellenNear: '20/70', snellenFar: '20/70', pointSize: 12, mEquivalent: '1.50 M', logMAR: 0.54, description: 'Solo lee letra 12pt o mayor. Referir a oftalmología.', category: 'moderada' },
+    { jaeger: 'J10', snellenNear: '20/80', snellenFar: '20/80', pointSize: 13, mEquivalent: '1.62 M', logMAR: 0.60, description: 'Deficiencia significativa. Dificultad laboral con lectura.', category: 'moderada' },
+    { jaeger: 'J11', snellenNear: '20/100', snellenFar: '20/100', pointSize: 14, mEquivalent: '1.75 M', logMAR: 0.70, description: 'Solo lee texto grande. Precisa corrección urgente.', category: 'severa' },
+    { jaeger: 'J12', snellenNear: '20/100', snellenFar: '20/100', pointSize: 16, mEquivalent: '2.00 M', logMAR: 0.70, description: 'Severa limitación. Texto menor a 16pt es ilegible.', category: 'severa' },
+    { jaeger: 'J13', snellenNear: '20/130', snellenFar: '20/130', pointSize: 18, mEquivalent: '2.25 M', logMAR: 0.82, description: 'Limitación severa de lectura. Requiere ayudas ópticas.', category: 'severa' },
+    { jaeger: 'J14', snellenNear: '20/160', snellenFar: '20/160', pointSize: 21, mEquivalent: '2.62 M', logMAR: 0.90, description: 'Casi no lee. Solo titulares grandes.', category: 'severa' },
+    { jaeger: 'J15', snellenNear: '20/200', snellenFar: '20/200', pointSize: 24, mEquivalent: '3.00 M', logMAR: 1.00, description: 'Ceguera legal cercana. No lee texto estándar.', category: 'profunda' },
+    { jaeger: 'J16', snellenNear: '20/250', snellenFar: '20/250', pointSize: 28, mEquivalent: '3.50 M', logMAR: 1.10, description: 'Deficiencia profunda. Solo identifica texto muy grande.', category: 'profunda' },
+    { jaeger: 'J17', snellenNear: '20/300', snellenFar: '20/300', pointSize: 32, mEquivalent: '4.00 M', logMAR: 1.18, description: 'Incapaz de lectura funcional. Derivar urgente.', category: 'profunda' },
+    { jaeger: 'J18', snellenNear: '20/350', snellenFar: '20/350', pointSize: 36, mEquivalent: '4.50 M', logMAR: 1.24, description: 'Solo percibe letras gigantes.', category: 'profunda' },
+    { jaeger: 'J19', snellenNear: '20/400', snellenFar: '20/400', pointSize: 40, mEquivalent: '5.00 M', logMAR: 1.30, description: 'Percepción mínima de texto.', category: 'profunda' },
+    { jaeger: 'J20', snellenNear: '20/500', snellenFar: '20/500', pointSize: 48, mEquivalent: '6.00 M', logMAR: 1.40, description: 'No lee. Solo detecta formas grandes.', category: 'profunda' },
+    { jaeger: 'J20+', snellenNear: '20/800', snellenFar: '20/800', pointSize: 60, mEquivalent: '8.00 M', logMAR: 1.60, description: 'Sin capacidad funcional de lectura.', category: 'profunda' },
+];
+
+export const JAEGER_CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+    normal: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+    leve: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+    moderada: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
+    severa: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+    profunda: { bg: 'bg-red-100', text: 'text-red-900', border: 'border-red-300' },
+};
+
 // =====================================================
 // TIPOS PRINCIPALES
 // =====================================================
@@ -61,6 +118,10 @@ export interface EstudioVisual {
     // Agudeza Visual - Ambos
     ao_sin_correccion?: SnellenValue;
     ao_con_correccion?: SnellenValue;
+    // Visión Cercana (Jaeger)
+    od_jaeger?: JaegerValue;
+    oi_jaeger?: JaegerValue;
+    ao_jaeger?: JaegerValue;
     // Ishihara (test de colores)
     ishihara_placas_total: number;       // típico: 14 o 38
     ishihara_placas_correctas: number;
@@ -136,6 +197,8 @@ export interface CrearEstudioVisualDTO {
     od_con_correccion?: SnellenValue;
     oi_sin_correccion: SnellenValue;
     oi_con_correccion?: SnellenValue;
+    od_jaeger?: JaegerValue;
+    oi_jaeger?: JaegerValue;
     ishihara_placas_total: number;
     ishihara_placas_correctas: number;
     usa_lentes: boolean;

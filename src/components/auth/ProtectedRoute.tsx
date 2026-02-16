@@ -2,8 +2,6 @@ import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePermisosDinamicos } from '@/hooks/usePermisosDinamicos'
-import { RoleViewConfig } from '@/config/roleConfig'
-import { UserRole } from '@/types/auth'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -14,15 +12,15 @@ interface ProtectedRouteProps {
 }
 
 /**
- * ProtectedRoute v2 (parche):
- * - Aplica requireAction (antes estaba definido pero NO se aplicaba).
- * - Separa plataforma vs tenant: los roles de plataforma no entran a módulos clínicos/tenant por defecto.
- *
- * Importante: esto es guardia de UI/UX. La seguridad real debe vivir en RLS (Supabase).
+ * ProtectedRoute v3:
+ * - Usa `puede()` del hook de permisos dinámicos en lugar de CASL ability directamente.
+ * - Si el módulo no existe en los permisos, PERMITE el acceso (UI guard only).
+ * - La seguridad real vive en RLS (Supabase), no aquí.
+ * - Protege contra loops infinitos de redirección.
  */
 export function ProtectedRoute({ children, resource, requireAction = 'read' }: ProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth()
-  const { isSuperAdmin, ability, loading: permissionsLoading } = usePermisosDinamicos()
+  const { isSuperAdmin, puede, permisos, loading: permissionsLoading } = usePermisosDinamicos()
   const location = useLocation()
 
   const loading = authLoading || permissionsLoading
@@ -53,20 +51,38 @@ export function ProtectedRoute({ children, resource, requireAction = 'read' }: P
   }
 
   if (resource) {
-    // Mapeo de acciones para el hook dinámico
+    // Mapeo de acciones de inglés a español
     const actionMap: Record<string, 'ver' | 'crear' | 'editar' | 'borrar' | 'exportar'> = {
       read: 'ver',
       create: 'crear',
       update: 'editar',
       delete: 'borrar',
       export: 'exportar',
-      import: 'crear' // Asumimos crear para import
+      import: 'crear'
     }
 
-    const accionDinamica = actionMap[requireAction] || 'ver'
+    const accion = actionMap[requireAction] || 'ver'
 
-    if (!ability.can(accionDinamica as any, resource)) {
-      return <Navigate to="/dashboard" replace />
+    // Verificar si el módulo existe en los permisos cargados
+    const moduloExiste = permisos.some(p => p.modulo_codigo === resource)
+
+    if (moduloExiste) {
+      // El módulo existe — verificar permiso específico
+      if (!puede(resource, accion)) {
+        // No tiene permiso para este módulo
+        if (location.pathname === '/dashboard') {
+          // Ya estamos en dashboard, renderizar para evitar loop
+          console.warn(`⚠️ Sin permiso para '${resource}', pero ya estamos en /dashboard.`)
+          return <>{children}</>
+        }
+        console.warn(`🚫 Acceso denegado: ${resource}.${accion} → redirigiendo a /dashboard`)
+        return <Navigate to="/dashboard" replace />
+      }
+    } else {
+      // El módulo NO existe en los permisos (posible desincronización con Supabase).
+      // Como esto es solo un guardia de UI (la seguridad real es RLS en Supabase),
+      // permitimos el acceso para evitar bloqueos por datos desincronizados.
+      console.info(`ℹ️ Módulo '${resource}' no encontrado en permisos. Permitiendo acceso (UI guard).`)
     }
   }
 

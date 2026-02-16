@@ -20,15 +20,9 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     sourcemap: mode !== 'production',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-tabs'],
-          'charts': ['recharts'],
-        },
-      },
-    },
+    // Note: manualChunks removed because it caused ReferenceError
+    // "Cannot access 'X' before initialization" in production builds.
+    // Vite's automatic code splitting handles this correctly.
   },
   esbuild: {
     logOverride: { 'this-is-undefined-in-esm': 'silent' }

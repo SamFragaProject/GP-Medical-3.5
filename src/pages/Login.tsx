@@ -96,19 +96,19 @@ export default function Login() {
     {
       id: 'super',
       label: 'SUPER_ADMIN',
-      subtitle: 'GPMedical Platform',
-      email: 'superadmin@gpmedical.mx',
-      pass: 'admin123',
+      subtitle: 'Super Admin',
+      email: 'super@mediflow.mx',
+      pass: 'super123',
       icon: Zap,
       color: 'text-emerald-400',
       bg: 'bg-emerald-500/10',
       border: 'border-emerald-500/20'
     },
     {
-      id: 'admin_mediwork',
+      id: 'admin',
       label: 'ADMIN_EMPRESA',
-      subtitle: 'MediWork Ocupacional',
-      email: 'admin@mediwork.mx',
+      subtitle: 'Carlos Ramírez',
+      email: 'admin@mediflow.mx',
       pass: 'admin123',
       icon: Building2,
       color: 'text-violet-400',
@@ -118,8 +118,8 @@ export default function Login() {
     {
       id: 'medico',
       label: 'MÉDICO',
-      subtitle: 'Dr. Roberto Martínez',
-      email: 'dr.martinez@mediwork.mx',
+      subtitle: 'Dra. Ana López',
+      email: 'medico@mediflow.mx',
       pass: 'medico123',
       icon: Stethoscope,
       color: 'text-teal-400',
@@ -127,26 +127,26 @@ export default function Login() {
       border: 'border-teal-500/20'
     },
     {
+      id: 'enfermera',
+      label: 'ENFERMERA',
+      subtitle: 'Laura Ruiz',
+      email: 'enfermera@mediflow.mx',
+      pass: 'enfermera123',
+      icon: HeartPulse,
+      color: 'text-pink-400',
+      bg: 'bg-pink-500/10',
+      border: 'border-pink-500/20'
+    },
+    {
       id: 'recepcion',
       label: 'RECEPCIÓN',
-      subtitle: 'Patricia Torres',
-      email: 'recepcion@mediwork.mx',
+      subtitle: 'María González',
+      email: 'recepcion@mediflow.mx',
       pass: 'recepcion123',
       icon: UserCheck,
       color: 'text-blue-400',
       bg: 'bg-blue-500/10',
       border: 'border-blue-500/20'
-    },
-    {
-      id: 'demo',
-      label: 'DEMO_USER',
-      subtitle: 'Clínica Demo',
-      email: 'demo@gpmedical.mx',
-      pass: 'demo123',
-      icon: HeartPulse,
-      color: 'text-rose-400',
-      bg: 'bg-rose-500/10',
-      border: 'border-rose-500/20'
     },
   ]
 
