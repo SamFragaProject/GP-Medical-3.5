@@ -238,6 +238,17 @@ export function useCampanias(options: UseCampaniasOptions = {}): UseCampaniasRet
         }
     }, [filtrosPadron, campaniaActiva?.id]);
 
+    // Auto-refresh métricas cada 30s cuando hay campaña activa en proceso
+    useEffect(() => {
+        if (!campaniaActiva || campaniaActiva.estado !== 'en_proceso') return;
+
+        const interval = setInterval(() => {
+            cargarMetricas(campaniaActiva.id);
+        }, 30_000);
+
+        return () => clearInterval(interval);
+    }, [campaniaActiva?.id, campaniaActiva?.estado, cargarMetricas]);
+
     return {
         campanias,
         campaniaActiva,

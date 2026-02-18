@@ -171,9 +171,8 @@ export function EpisodioCard({ episodio, onClick, compact = false }: EpisodioCar
       <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
         <div className="flex items-center gap-3">
           {/* Tiempo en estado */}
-          <div className={`flex items-center gap-1 text-xs ${
-            tiempoEnEstadoAlerta ? 'text-amber-600' : 'text-muted-foreground'
-          }`}>
+          <div className={`flex items-center gap-1 text-xs ${tiempoEnEstadoAlerta ? 'text-amber-600' : 'text-muted-foreground'
+            }`}>
             <Clock className="w-3 h-3" />
             <span>{tiempoEnEstado} min</span>
           </div>
@@ -205,16 +204,31 @@ export function EpisodioCard({ episodio, onClick, compact = false }: EpisodioCar
       </div>
 
       {/* Next Best Action (si existe) */}
-      {episodio.siguiente_accion && (
-        <div className="mt-2 pt-2 border-t border-gray-100">
-          <div className="flex items-center gap-1.5 text-xs">
-            <Activity className="w-3 h-3 text-primary" />
-            <span className="text-muted-foreground truncate">
-              {episodio.siguiente_accion.descripcion}
-            </span>
+      {episodio.siguiente_accion && (() => {
+        const esRiesgoIA = episodio.siguiente_accion.accion?.startsWith('solicitar_') ||
+          episodio.siguiente_accion.accion?.startsWith('evaluacion_psico');
+        const esAlta = episodio.siguiente_accion.prioridad === 'alta';
+
+        return (
+          <div className={`mt-2 pt-2 border-t ${esRiesgoIA
+              ? 'border-amber-200 bg-amber-50/50 -mx-3 -mb-3 px-3 pb-3 rounded-b-xl'
+              : 'border-gray-100'
+            }`}>
+            <div className="flex items-center gap-1.5 text-xs">
+              {esAlta && (
+                <span className="relative flex h-2 w-2 flex-shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                </span>
+              )}
+              <Activity className={`w-3 h-3 flex-shrink-0 ${esRiesgoIA ? 'text-amber-600' : 'text-primary'}`} />
+              <span className={`truncate ${esRiesgoIA ? 'text-amber-800 font-semibold' : 'text-muted-foreground'}`}>
+                {episodio.siguiente_accion.descripcion}
+              </span>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </Card>
   );
 }

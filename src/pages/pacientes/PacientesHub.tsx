@@ -399,6 +399,7 @@ export default function PacientesHub() {
                                             { field: 'nombre' as SortField, label: 'Paciente', width: '' },
                                             { field: 'empresa' as SortField, label: 'Empresa / Sede', width: '' },
                                             { field: 'puesto' as SortField, label: 'Puesto', width: '' },
+                                            { field: 'puesto' as any, label: 'Riesgos', width: 'hidden md:table-cell' },
                                             { field: 'fecha' as SortField, label: 'Registro', width: 'hidden lg:table-cell' },
                                         ].map(col => (
                                             <th
@@ -479,6 +480,23 @@ export default function PacientesHub() {
                                                     <div className="flex items-center gap-2">
                                                         <Briefcase className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                                                         <span className="text-sm text-slate-600">{paciente.puesto || '—'}</span>
+                                                    </div>
+                                                </td>
+
+                                                {/* Riesgos */}
+                                                <td className="p-4 hidden md:table-cell">
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {(paciente as any).riesgos_ocupacionales?.slice(0, 2).map((r: string, i: number) => (
+                                                            <Badge key={i} variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[9px] uppercase tracking-tighter px-1">
+                                                                {r}
+                                                            </Badge>
+                                                        ))}
+                                                        {(paciente as any).riesgos_ocupacionales?.length > 2 && (
+                                                            <span className="text-[9px] text-slate-400">+{(paciente as any).riesgos_ocupacionales.length - 2}</span>
+                                                        )}
+                                                        {(!(paciente as any).riesgos_ocupacionales || (paciente as any).riesgos_ocupacionales.length === 0) && (
+                                                            <span className="text-xs text-slate-300">—</span>
+                                                        )}
                                                     </div>
                                                 </td>
 

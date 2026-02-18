@@ -36,7 +36,8 @@ import {
     BarChart3,
     ArrowUpRight,
     Sparkles,
-    Clock
+    Clock,
+    LayoutDashboard
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -46,6 +47,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { NewCompanyDialog } from './NewCompanyDialog'
 import { empresasService } from '@/services/dataService'
 import toast from 'react-hot-toast'
+import { Company360View } from './company-360/Company360View'
 
 interface Empresa {
     id: string
@@ -97,6 +99,8 @@ export function EmpresasView() {
     const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive' | 'suspended'>('all')
     const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null)
     const [isNewCompanyDialogOpen, setIsNewCompanyDialogOpen] = useState(false)
+    const [viewMode, setViewMode] = useState<'list' | '360'>('list')
+    const [activeEmpresaId, setActiveEmpresaId] = useState<string | null>(null)
 
     const fetchEmpresas = async () => {
         setLoading(true)
@@ -180,6 +184,18 @@ export function EmpresasView() {
         } catch {
             return dateStr
         }
+    }
+
+    if (viewMode === '360' && activeEmpresaId) {
+        return (
+            <Company360View
+                empresaId={activeEmpresaId}
+                onBack={() => {
+                    setViewMode('list')
+                    setActiveEmpresaId(null)
+                }}
+            />
+        )
     }
 
     return (
@@ -401,16 +417,18 @@ export function EmpresasView() {
 
                                         {/* Footer: Users count + Fecha + Acciones */}
                                         <div className="pt-5 border-t border-slate-100/50 flex items-center justify-between relative z-10">
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                                                    <Users className="w-3.5 h-3.5 text-blue-500" />
-                                                    <span className="font-bold text-slate-700">{empresa.usuarios_count}</span>
-                                                    <span className="text-slate-400">usuarios</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                                                    <Clock className="w-3 h-3" />
-                                                    {formatDate(empresa.created_at)}
-                                                </div>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    onClick={() => {
+                                                        setActiveEmpresaId(empresa.id)
+                                                        setViewMode('360')
+                                                    }}
+                                                    size="sm"
+                                                    className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl font-bold text-[10px] uppercase tracking-wider px-3"
+                                                >
+                                                    <LayoutDashboard className="w-3.5 h-3.5 mr-2" />
+                                                    Vista 360
+                                                </Button>
                                             </div>
                                             <div className="flex gap-1.5">
                                                 <button

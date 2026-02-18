@@ -9,6 +9,7 @@ import { inventoryService } from '@/services/inventoryService'
 import { InventoryStats } from '@/types/inventory'
 import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SmartPatientRegistrationDialog } from '@/components/patients/SmartPatientRegistrationDialog';
 
 // Datos simulados para gráficos (Mantener simulados por ahora para visualización)
 const revenueData = [
@@ -34,6 +35,7 @@ export function AdminView() {
     const { user } = useAuth();
     const [stats, setStats] = useState<InventoryStats | null>(null);
     const [alerts, setAlerts] = useState<{ title: string, desc: string, type: 'warning' | 'error' | 'info' | 'success' }[]>([]);
+    const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false);
 
     useEffect(() => {
         if (!user?.empresa_id) {
@@ -107,6 +109,12 @@ export function AdminView() {
 
     return (
         <div className="space-y-8 pb-12">
+            <SmartPatientRegistrationDialog
+                open={isRegisterDialogOpen}
+                onOpenChange={setIsRegisterDialogOpen}
+                onSuccess={() => window.location.reload()} // O un refresh de stats
+                empresaId={user?.empresa_id}
+            />
             {/* Header Dashboard Empresa */}
             <PremiumPageHeader
                 title="Panel Administrativo"
@@ -114,9 +122,17 @@ export function AdminView() {
                 badge="ADMIN EMPRESA"
                 icon={TrendingUp}
                 actions={
-                    <Button className="bg-white/10 hover:bg-white/20 border-white/20 text-white rounded-xl shadow-2xl backdrop-blur-md px-6 py-2.5 font-bold text-xs uppercase tracking-wider">
-                        Descargar Reporte Mensual
-                    </Button>
+                    <div className="flex gap-3">
+                        <Button
+                            className="bg-emerald-500 hover:bg-emerald-600 text-slate-900 rounded-xl px-6 py-2.5 font-bold text-xs uppercase tracking-wider"
+                            onClick={() => setIsRegisterDialogOpen(true)}
+                        >
+                            Nuevo Paciente
+                        </Button>
+                        <Button className="bg-white/10 hover:bg-white/20 border-white/20 text-white rounded-xl shadow-2xl backdrop-blur-md px-6 py-2.5 font-bold text-xs uppercase tracking-wider">
+                            Descargar Reporte
+                        </Button>
+                    </div>
                 }
             />
             {/* KPI Cards */}

@@ -65,6 +65,8 @@ export interface Paciente {
     contacto_emergencia_nombre?: string
     contacto_emergencia_parentesco?: string
     contacto_emergencia_telefono?: string
+    riesgos_ocupacionales?: any
+    analisis_puesto_ai?: any
     created_at: string
     empresa_nombre?: string
     sede_nombre?: string
@@ -566,6 +568,10 @@ export interface Empresa {
     plan: 'basico' | 'profesional' | 'enterprise'
     activo: boolean
     created_at: string
+    headcount_contratado?: number
+    contrato_vigencia_fin?: string
+    estatus_contrato?: 'activo' | 'por_vencer' | 'vencido' | 'demo'
+    servicios_activos?: string[]
 }
 
 export const empresasService = {
@@ -617,6 +623,64 @@ export const empresasService = {
 
         if (error) throw error
         return true
+    }
+}
+
+// SERVICIOS B2B (Contactos, Documentos, SLA)
+export const b2bService = {
+    async getContactos(empresaId: string) {
+        const { data, error } = await supabase
+            .from('empresa_contactos')
+            .select('*')
+            .eq('empresa_id', empresaId)
+            .order('es_principal', { ascending: false })
+        if (error) throw error
+        return data
+    },
+    async upsertContacto(contacto: any) {
+        const { data, error } = await supabase
+            .from('empresa_contactos')
+            .upsert(contacto)
+            .select()
+            .single()
+        if (error) throw error
+        return data
+    },
+    async getDocumentos(empresaId: string) {
+        const { data, error } = await supabase
+            .from('empresa_documentos')
+            .select('*')
+            .eq('empresa_id', empresaId)
+            .order('created_at', { ascending: false })
+        if (error) throw error
+        return data
+    },
+    async upsertDocumento(documento: any) {
+        const { data, error } = await supabase
+            .from('empresa_documentos')
+            .upsert(documento)
+            .select()
+            .single()
+        if (error) throw error
+        return data
+    },
+    async getServicios(empresaId: string) {
+        const { data, error } = await supabase
+            .from('empresa_servicios')
+            .select('*')
+            .eq('empresa_id', empresaId)
+            .order('nombre_servicio', { ascending: true })
+        if (error) throw error
+        return data
+    },
+    async upsertServicio(servicio: any) {
+        const { data, error } = await supabase
+            .from('empresa_servicios')
+            .upsert(servicio)
+            .select()
+            .single()
+        if (error) throw error
+        return data
     }
 }
 

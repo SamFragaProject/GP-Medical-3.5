@@ -9,7 +9,10 @@ import { useEpisodios } from '@/hooks/useEpisodios';
 import { EpisodioCard } from './EpisodioCard';
 import { TimelineEpisodio } from './TimelineEpisodio';
 import type { EpisodioAtencion, EstadoEpisodio, TipoEvaluacion } from '@/types/episodio';
+import { TRANSICIONES_PERMITIDAS } from '@/types/episodio';
 import {
+  Plus,
+  Search,
   Filter,
   RefreshCw,
   LayoutGrid,
@@ -17,9 +20,13 @@ import {
   AlertTriangle,
   Users,
   ChevronDown,
-  Search,
   X,
   Trash2,
+  ArrowRight,
+  Lock,
+  Activity,
+  ShieldAlert,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -153,12 +160,21 @@ export function PipelineEpisodios({ sedeId, empresaId, className }: PipelineEpis
   const [episodioACancelar, setEpisodioACancelar] = useState<EpisodioAtencion | null>(null);
 
   // Hook de datos
-  const { episodios, isLoading, refetch, isError } = useEpisodios({
+  const { episodios, isLoading, refetch, isError, transicionar, isTransicionando } = useEpisodios({
     sedeId,
     empresaId,
     refetchInterval: 30000,
     enableRealtime: true,
   });
+
+  const handleAvanzar = async (episodio: EpisodioAtencion, nuevoEstado: EstadoEpisodio) => {
+    try {
+      await transicionar(episodio.id, nuevoEstado);
+      setEpisodioSeleccionado(null);
+    } catch (error) {
+      console.error('Error al transicionar:', error);
+    }
+  };
 
   const handleCancelarEpisodio = async () => {
     if (!episodioACancelar) return;
@@ -546,6 +562,93 @@ export function PipelineEpisodios({ sedeId, empresaId, className }: PipelineEpis
                   </p>
                 </div>
               </div>
+
+              {/* Next Best Action */}
+              {episodioSeleccionado.siguiente_accion && (
+                <div className={`p-4 rounded-xl border-2 ${episodioSeleccionado.siguiente_accion.prioridad === 'alta'
+                  ? 'border-amber-300 bg-amber-50'
+                  : 'border-blue-200 bg-blue-50'
+                  }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Activity className="w-5 h-5 text-amber-600" />
+                    <h4 className="font-bold text-sm text-amber-800">Siguiente Acción Recomendada (IA)</h4>
+                    <Badge className={`ml-auto text-[10px] ${episodioSeleccionado.siguiente_accion.prioridad === 'alta'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-blue-100 text-blue-700'
+                      }`}>
+                      {episodioSeleccionado.siguiente_accion.prioridad?.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <p className="text-sm font-medium text-amber-900">
+                    {episodioSeleccionado.siguiente_accion.descripcion}
+                  </p>
+                  {episodioSeleccionado.siguiente_accion.tiempo_estimado_minutos && (
+                    <p className="text-xs text-amber-700 mt-1 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      Tiempo estimado: {episodioSeleccionado.siguiente_accion.tiempo_estimado_minutos} min
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Bloqueos Activos */}
+              {(episodioSeleccionado.bloqueos || []).filter(b => !b.resuelto).length > 0 && (
+                <div className="p-4 rounded-xl border-2 border-red-300 bg-red-50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ShieldAlert className="w-5 h-5 text-red-600" />
+                    <h4 className="font-bold text-sm text-red-800">
+                      Bloqueos Activos — No se puede avanzar a Dictamen
+                    </h4>
+                  </div>
+                  <div className="space-y-2">
+                    {(episodioSeleccionado.bloqueos || []).filter(b => !b.resuelto).map((b, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-sm text-red-700">
+                        <Lock className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>{b.descripcion || b.tipo || 'Estudio pendiente'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Botón Siguiente Fase */}
+              {episodioSeleccionado.estado_actual !== 'cerrado' && (() => {
+                const siguientes = TRANSICIONES_PERMITIDAS[episodioSeleccionado.estado_actual] || [];
+                const bloqueosActivos = (episodioSeleccionado.bloqueos || []).filter(b => !b.resuelto);
+                const estaBloqueado = bloqueosActivos.length > 0 && episodioSeleccionado.estado_actual === 'dictamen';
+
+                return (
+                  <div className="flex items-center gap-3 pt-2 border-t">
+                    {siguientes.map(sig => (
+                      <Button
+                        key={sig}
+                        disabled={estaBloqueado}
+                        className={`flex-1 gap-2 font-bold ${estaBloqueado
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
+                          }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAvanzar(episodioSeleccionado, sig);
+                        }}
+                      >
+                        {isTransicionando ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <ArrowRight className="w-4 h-4" />
+                        )}
+                        Avanzar a {sig.charAt(0).toUpperCase() + sig.slice(1)}
+                      </Button>
+                    ))}
+                    {estaBloqueado && (
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <Lock className="w-3 h-3" />
+                        Resuelve los bloqueos para avanzar
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Timeline */}
               <div>

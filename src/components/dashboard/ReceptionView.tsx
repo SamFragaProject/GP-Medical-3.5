@@ -16,7 +16,9 @@ import { Card, Title, Text, Metric, Grid, Flex, Badge, Button } from '@tremor/re
 import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader';
 import { useAgenda } from '@/hooks/useAgenda';
 import { useFacturacion } from '@/hooks/useFacturacion';
+import { useAuth } from '@/contexts/AuthContext';
 import { DataContainer } from '@/components/ui/DataContainer';
+import { SmartPatientRegistrationDialog } from '@/components/patients/SmartPatientRegistrationDialog';
 
 export function ReceptionView() {
     const { citas, loading: loadingAgenda, obtenerCitas } = useAgenda();
@@ -34,8 +36,17 @@ export function ReceptionView() {
         { title: 'Pagos Pendientes', value: 3, icon: CreditCard, color: 'rose' }, // Mock para esta iteración
     ];
 
+    const [isRegisterDialogOpen, setIsRegisterDialogOpen] = React.useState(false);
+    const { user } = useAuth();
+
     return (
         <div className="space-y-8 pb-12">
+            <SmartPatientRegistrationDialog
+                open={isRegisterDialogOpen}
+                onOpenChange={setIsRegisterDialogOpen}
+                onSuccess={() => obtenerCitas()}
+                empresaId={user?.empresa_id}
+            />
             <PremiumPageHeader
                 title="Panel de Recepción"
                 subtitle="Gestión de flujo de pacientes, cobros y check-in en tiempo real."
@@ -43,7 +54,11 @@ export function ReceptionView() {
                 badge="OPERATIVA FRONT-DESK"
                 actions={
                     <div className="flex gap-3">
-                        <Button variant="secondary" className="bg-white/10 text-white border-white/20 hover:bg-white/20 rounded-xl">
+                        <Button
+                            variant="secondary"
+                            className="bg-white/10 text-white border-white/20 hover:bg-white/20 rounded-xl"
+                            onClick={() => setIsRegisterDialogOpen(true)}
+                        >
                             <UserPlus className="w-4 h-4 mr-2" /> Nuevo Paciente
                         </Button>
                         <Button variant="primary" className="bg-emerald-500 hover:bg-emerald-600 text-slate-900 font-bold rounded-xl border-0">

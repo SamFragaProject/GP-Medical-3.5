@@ -84,9 +84,64 @@ function obtenerSLA(tipo: string): number {
 }
 
 /**
- * Determina el Next Best Action basado en el estado actual
+ * Determina el Next Best Action basado en el estado actual y riesgos ocupacionales
  */
-function calcularNextAction(estado: EstadoEpisodio, tipo: string): NextBestAction {
+function calcularNextAction(estado: EstadoEpisodio, tipo: string, riesgos?: any): NextBestAction {
+  // Lógica inteligente basada en riesgos ocupacionales para la fase de evaluaciones
+  if (estado === 'evaluaciones' && riesgos && typeof riesgos === 'object') {
+    const tieneRuido = riesgos.fisicos?.ruido || riesgos.fisicos?.vibraciones;
+    const tieneQuimicos = riesgos.quimicos?.polvos || riesgos.quimicos?.humos || riesgos.quimicos?.gases;
+    const tieneVisual = riesgos.fisicos?.iluminacion_deficiente || riesgos.ergonomicos?.uso_pantalla;
+    const tieneAltura = riesgos.fisicos?.trabajos_altura;
+    const tienePsico = riesgos.psicosociales?.estres_laboral || riesgos.psicosociales?.carga_mental;
+
+    if (tieneRuido) {
+      return {
+        accion: 'solicitar_audiometria',
+        descripcion: '⚠️ Riesgo Auditivo detectado — Solicitar Audiometría tonal',
+        rol_responsable: 'medico',
+        prioridad: 'alta',
+        tiempo_estimado_minutos: 15
+      };
+    }
+    if (tieneQuimicos) {
+      return {
+        accion: 'solicitar_espirometria',
+        descripcion: '⚠️ Riesgo Químico detectado — Solicitar Espirometría y Rx Tórax',
+        rol_responsable: 'medico',
+        prioridad: 'alta',
+        tiempo_estimado_minutos: 20
+      };
+    }
+    if (tieneAltura) {
+      return {
+        accion: 'solicitar_perfil_altura',
+        descripcion: '⚠️ Trabajo en Altura — Solicitar Perfil Altura (Glucosa, EKG, Agudeza Visual)',
+        rol_responsable: 'medico',
+        prioridad: 'alta',
+        tiempo_estimado_minutos: 30
+      };
+    }
+    if (tieneVisual) {
+      return {
+        accion: 'solicitar_tamizaje_visual',
+        descripcion: 'Exigencia Visual del puesto — Solicitar Tamizaje Visual',
+        rol_responsable: 'medico',
+        prioridad: 'media',
+        tiempo_estimado_minutos: 10
+      };
+    }
+    if (tienePsico) {
+      return {
+        accion: 'evaluacion_psicosocial',
+        descripcion: 'Riesgo Psicosocial identificado — Aplicar cuestionario NOM-035',
+        rol_responsable: 'psicologo',
+        prioridad: 'media',
+        tiempo_estimado_minutos: 20
+      };
+    }
+  }
+
   const accionesPorEstado: Record<EstadoEpisodio, NextBestAction> = {
     'registro': {
       accion: 'iniciar_triage',
@@ -104,7 +159,7 @@ function calcularNextAction(estado: EstadoEpisodio, tipo: string): NextBestActio
     },
     'evaluaciones': {
       accion: 'solicitar_estudios',
-      descripcion: 'Determinar estudios necesarios',
+      descripcion: 'Determinar estudios necesarios según perfil del puesto',
       rol_responsable: 'medico',
       prioridad: 'media',
       tiempo_estimado_minutos: 5
@@ -236,7 +291,7 @@ export const episodioService = {
       .from('episodios_atencion')
       .select(`
         *,
-        paciente:pacientes(id, nombre, apellido_paterno, apellido_materno, foto_url, curp, nss),
+        paciente:pacientes(id, nombre, apellido_paterno, apellido_materno, foto_url, curp, nss, riesgos_ocupacionales),
         empresa:empresas(id, nombre, logo_url),
         sede:sedes(id, nombre, direccion)
       `)
@@ -895,7 +950,22 @@ export const episodioService = {
       throw new Error('Episodio no encontrado');
     }
 
-    const nextAction = calcularNextAction(episodio.estado_actual, episodio.tipo);
+    // Obtener riesgos ocupacionales del paciente para NBA inteligente
+    let riesgos: any = null;
+    if (episodio.paciente_id) {
+      try {
+        const { data: pacienteData } = await supabase
+          .from('pacientes')
+          .select('riesgos_ocupacionales')
+          .eq('id', episodio.paciente_id)
+          .single();
+        riesgos = pacienteData?.riesgos_ocupacionales || null;
+      } catch {
+        // Si falla, continuar sin riesgos
+      }
+    }
+
+    const nextAction = calcularNextAction(episodio.estado_actual, episodio.tipo, riesgos);
 
     await supabase
       .from('episodios_atencion')

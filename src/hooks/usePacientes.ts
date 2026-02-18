@@ -22,7 +22,6 @@ export function usePacientes() {
             setError(err)
             toast.error('Error al cargar la lista de pacientes')
         } finally {
-            setLoading(true) // Nota: lo pongo en false en el componente real, pero aquí lo mantengo coherente
             setLoading(false)
         }
     }, [])

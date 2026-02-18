@@ -16,12 +16,17 @@ import {
     Calendar, Fingerprint, MapPin, Briefcase,
     Droplets, AlertTriangle, Users, Mail, Camera,
     Shield, FileText, Clock, ClipboardList,
-    LogIn, LogOut, ArrowRightLeft, RotateCcw
+    LogIn, LogOut, ArrowRightLeft, RotateCcw,
+    Brain, ShieldAlert, Sparkles, HardHat
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import toast from 'react-hot-toast'
+import {
+    analyzeJobPosition, EMPTY_RISKS, RISK_CATEGORIES,
+    type OccupationalRisks, type AIJobAnalysis
+} from '@/services/aiService'
 
 // =============================================
 // TYPES
@@ -157,9 +162,49 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
     }))
     const [saving, setSaving] = useState(false)
 
+    // Riesgos Laborales - AI powered
+    const [riesgos, setRiesgos] = useState<OccupationalRisks>({ ...EMPTY_RISKS })
+    const [aiAnalysis, setAiAnalysis] = useState<AIJobAnalysis | null>(null)
+    const [isAnalyzingAI, setIsAnalyzingAI] = useState(false)
+    const [showRiesgos, setShowRiesgos] = useState(false)
+
     const updateField = (field: keyof PatientFormData, value: string) => {
         setData(prev => ({ ...prev, [field]: value }))
     }
+
+    const handleAnalyzeWithAI = async () => {
+        if (!data.puesto.trim()) {
+            toast.error('Primero ingresa un puesto de trabajo')
+            return
+        }
+        setIsAnalyzingAI(true)
+        setShowRiesgos(true)
+        try {
+            const result = await analyzeJobPosition(data.puesto)
+            setRiesgos(result.riesgos)
+            setAiAnalysis(result)
+            toast.success(`Riesgos analizados para "${data.puesto}"`)
+        } catch (error: any) {
+            console.error('AI analysis error:', error)
+            toast.error(error.message || 'Error al analizar el puesto')
+        } finally {
+            setIsAnalyzingAI(false)
+        }
+    }
+
+    const toggleRisk = (category: string, risk: string) => {
+        setRiesgos(prev => ({
+            ...prev,
+            [category]: {
+                ...prev[category as keyof OccupationalRisks],
+                [risk]: !((prev as any)[category]?.[risk] ?? false)
+            }
+        }))
+    }
+
+    const totalRisksCount = Object.values(riesgos).reduce((total, cat) =>
+        total + Object.values(cat).filter(Boolean).length, 0
+    )
 
     const canAdvance = (): boolean => {
         switch (step) {
@@ -190,6 +235,11 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                 }
             }
             if (cleanData.jornada_horas) cleanData.jornada_horas = parseInt(cleanData.jornada_horas)
+
+            // Incluir riesgos identificados y análisis IA
+            cleanData.riesgos_ocupacionales = riesgos
+            cleanData.analisis_puesto_ai = aiAnalysis
+
             await onComplete(cleanData)
         } catch {
             // parent handles error
@@ -304,13 +354,13 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                                         whileHover={{ scale: 1.02 }}
                                                         whileTap={{ scale: 0.98 }}
                                                         className={`relative p-4 rounded-2xl border-2 text-left transition-all duration-200 ${isSelected
-                                                                ? `${tipo.bgActive} shadow-lg`
-                                                                : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+                                                            ? `${tipo.bgActive} shadow-lg`
+                                                            : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
                                                             }`}
                                                     >
                                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${isSelected
-                                                                ? `bg-gradient-to-br ${tipo.color} shadow-md`
-                                                                : 'bg-slate-100'
+                                                            ? `bg-gradient-to-br ${tipo.color} shadow-md`
+                                                            : 'bg-slate-100'
                                                             }`}>
                                                             <TipoIcon className={`w-5 h-5 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
                                                         </div>
@@ -458,8 +508,8 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                                 placeholder={data.tipo_examen === 'periodico' ? 'EMP-0042' : 'N/A — Solo examen periódico'}
                                                 disabled={data.tipo_examen !== 'periodico'}
                                                 className={`h-11 rounded-xl transition-all ${data.tipo_examen !== 'periodico'
-                                                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
-                                                        : ''
+                                                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'
+                                                    : ''
                                                     }`}
                                             />
                                         </FormField>
@@ -532,6 +582,120 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                                 className="h-11 rounded-xl"
                                             />
                                         </FormField>
+                                    </div>
+
+                                    {/* ── RIESGOS LABORALES ── */}
+                                    <div className="mt-8 pt-6 border-t-2 border-dashed border-slate-200">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-md">
+                                                    <ShieldAlert className="w-5 h-5 text-white" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-800">Riesgos Laborales</h3>
+                                                    <p className="text-xs text-slate-500">Análisis automático con IA basado en el puesto</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={handleAnalyzeWithAI}
+                                                disabled={isAnalyzingAI || !data.puesto.trim()}
+                                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 hover:shadow-lg hover:shadow-violet-500/30"
+                                            >
+                                                {isAnalyzingAI ? (
+                                                    <>
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                        Analizando...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Brain className="w-4 h-4" />
+                                                        <Sparkles className="w-3 h-3" />
+                                                        Analizar con IA
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+
+                                        {!showRiesgos && !isAnalyzingAI && (
+                                            <div className="text-center py-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                                                <Brain className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                                                <p className="text-sm text-slate-500 font-medium">Ingresa un puesto y presiona "Analizar con IA"</p>
+                                                <p className="text-xs text-slate-400 mt-1">La IA identificará automáticamente los riesgos del puesto</p>
+                                            </div>
+                                        )}
+
+                                        {isAnalyzingAI && (
+                                            <div className="text-center py-10 bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl border border-violet-200">
+                                                <div className="relative inline-flex">
+                                                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30 animate-pulse">
+                                                        <Brain className="w-8 h-8 text-white" />
+                                                    </div>
+                                                </div>
+                                                <p className="text-sm text-violet-700 font-bold mt-4">Analizando puesto: "{data.puesto}"</p>
+                                                <p className="text-xs text-violet-500 mt-1">OpenAI está identificando los riesgos laborales...</p>
+                                            </div>
+                                        )}
+
+                                        {showRiesgos && !isAnalyzingAI && (
+                                            <div className="space-y-4">
+                                                {/* AI Results banner */}
+                                                {aiAnalysis && (
+                                                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <Sparkles className="w-4 h-4 text-emerald-600" />
+                                                            <span className="text-sm font-bold text-emerald-800">Análisis completado — {totalRisksCount} riesgos identificados</span>
+                                                        </div>
+                                                        {aiAnalysis.detalles.descripcionFunciones && (
+                                                            <p className="text-xs text-emerald-700 mt-1">
+                                                                <strong>Funciones:</strong> {aiAnalysis.detalles.descripcionFunciones.substring(0, 200)}...
+                                                            </p>
+                                                        )}
+                                                        {aiAnalysis.detalles.eppRecomendado.length > 0 && (
+                                                            <div className="flex flex-wrap gap-1.5 mt-2">
+                                                                <HardHat className="w-3.5 h-3.5 text-emerald-600 mt-0.5" />
+                                                                {aiAnalysis.detalles.eppRecomendado.map((epp, i) => (
+                                                                    <span key={i} className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">{epp}</span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Risk categories grid */}
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                    {Object.entries(RISK_CATEGORIES).map(([catKey, cat]) => {
+                                                        const catRisks = (riesgos as any)[catKey] || {}
+                                                        const activeCount = Object.values(catRisks).filter(Boolean).length
+                                                        return (
+                                                            <div key={catKey} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                                                                <div className={`px-3 py-2 flex items-center justify-between ${activeCount > 0 ? 'bg-amber-50 border-b border-amber-200' : 'bg-slate-50 border-b border-slate-200'}`}>
+                                                                    <span className="text-xs font-bold text-slate-700">{cat.emoji} {cat.label}</span>
+                                                                    {activeCount > 0 && (
+                                                                        <span className="px-1.5 py-0.5 bg-amber-500 text-white rounded-full text-[10px] font-bold">{activeCount}</span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="p-2 space-y-1">
+                                                                    {Object.entries(cat.items).map(([riskKey, riskLabel]) => (
+                                                                        <label key={riskKey} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded px-1 py-0.5 transition-colors">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={catRisks[riskKey] || false}
+                                                                                onChange={() => toggleRisk(catKey, riskKey)}
+                                                                                className="w-3.5 h-3.5 rounded border-slate-300 text-amber-500 focus:ring-amber-500/30"
+                                                                            />
+                                                                            <span className={`text-xs ${catRisks[riskKey] ? 'text-slate-800 font-semibold' : 'text-slate-500'}`}>
+                                                                                {riskLabel}
+                                                                            </span>
+                                                                        </label>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -708,6 +872,7 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                                 { label: 'Turno', value: data.turno },
                                                 { label: 'Ingreso', value: data.fecha_ingreso },
                                                 { label: 'Contrato', value: data.tipo_contrato },
+                                                { label: 'Riesgos Identificados', value: totalRisksCount > 0 ? `${totalRisksCount} riesgos laborales` : '' },
                                             ]}
                                         />
 
