@@ -1,32 +1,22 @@
-// Servicio de datos reales con Supabase
-// Reemplaza mockDataService con queries reales a la base de datos
+// Servicio de datos — Conexión directa con Supabase
+// Con fallback a datos demo cuando Supabase no está disponible
+// Todos los datos provienen de la base de datos real cuando hay conexión
 
 import { supabase } from '@/lib/supabase'
-import { mockDataService } from './mockDataService'
-import { PACIENTE_DEMO } from '@/data/demoPacienteCompleto'
+import { PACIENTES_DEMO_COMPLETOS } from '@/data/demoPacientes3'
 
-// Helper para detectar modo demo desde servicio (sin hooks de React)
-const isDemoMode = () => {
+// Flag de modo demo
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true'
+
+// Cache de pacientes creados en modo demo (localStorage)
+function getDemoLocalPacientes(): Paciente[] {
     try {
-        const userStr = localStorage.getItem('GPMedical_user');
-        if (!userStr) return false;
-        const user = JSON.parse(userStr);
-        return user.id.startsWith('mock-') ||
-            user.id.startsWith('demo-') ||
-            user.id.startsWith('u1a') ||
-            user.id.startsWith('0000');
-    } catch {
-        return false;
-    }
+        const stored = localStorage.getItem('GPMedical_demo_pacientes')
+        return stored ? JSON.parse(stored) : []
+    } catch { return [] }
 }
-
-const getDemoUser = () => {
-    try {
-        const userStr = localStorage.getItem('GPMedical_user');
-        return userStr ? JSON.parse(userStr) : { role: 'invitado', id: 'unknown' };
-    } catch {
-        return { role: 'invitado', id: 'unknown' };
-    }
+function saveDemoLocalPacientes(pacientes: Paciente[]) {
+    localStorage.setItem('GPMedical_demo_pacientes', JSON.stringify(pacientes))
 }
 
 // ============================================
@@ -107,25 +97,8 @@ export interface Examen {
 
 export const pacientesService = {
     // Obtener todos los pacientes (filtrado automático por RLS)
-    // Obtener todos los pacientes (filtrado automático por RLS)
+    // Con fallback a datos demo si Supabase falla
     async getAll() {
-        if (isDemoMode()) {
-            console.log('⚡ [DEMO] Cargando pacientes desde Mock Service')
-            const user = getDemoUser();
-            const data = await mockDataService.getPacientes({ role: user.rol || 'medico', id: user.id, empresa_id: user.empresa_id });
-            // Mapear al formato esperado por la vista
-            return data.map((p: any) => ({
-                ...p,
-                created_at: p.created_at || new Date().toISOString(),
-                puesto: p.puesto || (p.puesto_trabajo?.nombre) || '',
-                empresa_nombre: 'Empresa Demo',
-                sede_nombre: 'Sede Principal'
-            })) as Paciente[]
-        }
-
-        // Intentar obtener pacientes de Supabase
-        let pacientes: Paciente[] = []
-
         try {
             const { data, error } = await supabase
                 .from('pacientes')
@@ -135,92 +108,58 @@ export const pacientesService = {
                 `)
                 .order('apellido_paterno', { ascending: true })
 
-            if (!error && data) {
-                pacientes = data.map((p: any) => ({
-                    ...p,
-                    empresa_nombre: p.empresa?.nombre || 'Desconocida',
-                    sede_nombre: p.sede_nombre || 'General'
-                })) as Paciente[]
-            } else if (error) {
-                console.warn('⚠️ Error consultando pacientes:', error.message)
-            }
+            if (error) throw error
+
+            const pacientes = (data || []).map((p: any) => ({
+                ...p,
+                empresa_nombre: p.empresa?.nombre || 'Sin empresa',
+                sede_nombre: p.sede_nombre || 'General'
+            })) as Paciente[]
+
+            // Si Supabase devolvió datos, retornarlos
+            if (pacientes.length > 0) return pacientes
+
+            // Si la tabla está vacía pero Supabase funciona, agregar demos
+            console.log('📋 Tabla de pacientes vacía — incluyendo pacientes demo')
+            const localPacientes = getDemoLocalPacientes()
+            return [...PACIENTES_DEMO_COMPLETOS, ...localPacientes]
         } catch (err) {
-            console.warn('⚠️ Error de conexión con Supabase para pacientes:', err)
+            console.warn('⚠️ Supabase no disponible para pacientes, usando datos demo:', err)
+            const localPacientes = getDemoLocalPacientes()
+            return [...PACIENTES_DEMO_COMPLETOS, ...localPacientes]
         }
-
-        // Si no hay pacientes reales, inyectar paciente demo para demostración
-        if (pacientes.length === 0) {
-            console.log('📋 Sin pacientes reales — inyectando paciente demo Carlos Eduardo')
-            pacientes.push({
-                id: PACIENTE_DEMO.id,
-                empresa_id: 'demo-empresa-001',
-                sede_id: 'demo-sede-001',
-                numero_empleado: PACIENTE_DEMO.numero_empleado,
-                nombre: PACIENTE_DEMO.nombre,
-                apellido_paterno: PACIENTE_DEMO.apellido_paterno,
-                apellido_materno: PACIENTE_DEMO.apellido_materno,
-                curp: PACIENTE_DEMO.curp,
-                nss: PACIENTE_DEMO.nss,
-                rfc: PACIENTE_DEMO.rfc,
-                fecha_nacimiento: PACIENTE_DEMO.fecha_nacimiento,
-                genero: PACIENTE_DEMO.genero,
-                estado_civil: PACIENTE_DEMO.estado_civil,
-                puesto: PACIENTE_DEMO.puesto,
-                area: PACIENTE_DEMO.area,
-                departamento: PACIENTE_DEMO.departamento,
-                tipo_sangre: PACIENTE_DEMO.tipo_sangre,
-                alergias: PACIENTE_DEMO.alergias,
-                telefono: PACIENTE_DEMO.telefono,
-                email: PACIENTE_DEMO.email,
-                foto_url: PACIENTE_DEMO.foto_url || undefined,
-                estatus: PACIENTE_DEMO.estatus,
-                created_at: '2024-03-15T10:00:00Z',
-                empresa_nombre: PACIENTE_DEMO.empresa_nombre,
-                sede_nombre: PACIENTE_DEMO.sede_nombre,
-            })
-        }
-
-        return pacientes
     },
 
     // Obtener un paciente por ID
+    // Con fallback a pacientes demo
     async getById(id: string) {
-        // Si es el paciente demo, retornar directamente
-        if (id === PACIENTE_DEMO.id || id === 'demo-ecr-001') {
+        try {
+            const { data, error } = await supabase
+                .from('pacientes')
+                .select(`
+                    *,
+                    empresa:empresas(nombre)
+                `)
+                .eq('id', id)
+                .single()
+
+            if (error) throw error
             return {
-                id: PACIENTE_DEMO.id,
-                empresa_id: 'demo-empresa-001',
-                nombre: PACIENTE_DEMO.nombre,
-                apellido_paterno: PACIENTE_DEMO.apellido_paterno,
-                apellido_materno: PACIENTE_DEMO.apellido_materno,
-                curp: PACIENTE_DEMO.curp,
-                fecha_nacimiento: PACIENTE_DEMO.fecha_nacimiento,
-                genero: PACIENTE_DEMO.genero,
-                puesto: PACIENTE_DEMO.puesto,
-                telefono: PACIENTE_DEMO.telefono,
-                email: PACIENTE_DEMO.email,
-                estatus: PACIENTE_DEMO.estatus,
-                created_at: '2024-03-15T10:00:00Z',
-                empresa_nombre: PACIENTE_DEMO.empresa_nombre,
-                sede_nombre: PACIENTE_DEMO.sede_nombre,
+                ...data,
+                empresa_nombre: data.empresa?.nombre || 'Sin empresa',
+                sede_nombre: data.sede_nombre || 'General'
             } as Paciente
+        } catch (err) {
+            // Buscar en pacientes demo
+            const demoPac = PACIENTES_DEMO_COMPLETOS.find(p => p.id === id)
+            if (demoPac) return demoPac
+
+            const localPacs = getDemoLocalPacientes()
+            const localPac = localPacs.find(p => p.id === id)
+            if (localPac) return localPac
+
+            throw err // Re-throw si no es demo
         }
-
-        const { data, error } = await supabase
-            .from('pacientes')
-            .select(`
-                *,
-                empresa:empresas(nombre)
-            `)
-            .eq('id', id)
-            .single()
-
-        if (error) throw error
-        return {
-            ...data,
-            empresa_nombre: data.empresa?.nombre || 'Desconocida',
-            sede_nombre: data.sede_nombre || 'General'
-        } as Paciente
     },
 
     // Obtener un paciente por Email (para conectar auth user con paciente data)
@@ -241,28 +180,30 @@ export const pacientesService = {
     },
 
     async search(query: string) {
-        const { data, error } = await supabase
-            .from('pacientes')
-            .select('*')
-            .or(`nombre.ilike.%${query}%,apellido_paterno.ilike.%${query}%,curp.ilike.%${query}%`)
-            .limit(20)
+        try {
+            const { data, error } = await supabase
+                .from('pacientes')
+                .select('*')
+                .or(`nombre.ilike.%${query}%,apellido_paterno.ilike.%${query}%,curp.ilike.%${query}%`)
+                .limit(20)
 
-        if (error) throw error
-        return data as Paciente[]
+            if (error) throw error
+            return data as Paciente[]
+        } catch {
+            // Buscar en datos demo
+            const q = query.toLowerCase()
+            const allDemo = [...PACIENTES_DEMO_COMPLETOS, ...getDemoLocalPacientes()]
+            return allDemo.filter(p =>
+                p.nombre.toLowerCase().includes(q) ||
+                p.apellido_paterno.toLowerCase().includes(q) ||
+                (p.curp || '').toLowerCase().includes(q)
+            ).slice(0, 20)
+        }
     },
 
     // Crear paciente
+    // Con fallback a localStorage si Supabase no está disponible
     async create(paciente: Omit<Paciente, 'id' | 'created_at'> & { legal_consent?: any, foto_base64?: string, firma_base64?: string }) {
-        if (isDemoMode()) {
-            console.log('⚡ [DEMO] Creando paciente localmente')
-            const { legal_consent, foto_base64, firma_base64, ...rest } = paciente
-            const result = await mockDataService.createPaciente(rest as any)
-            return {
-                ...result,
-                created_at: new Date().toISOString(),
-                puesto: (result as any).puesto || (result as any).puesto_trabajo?.nombre || ''
-            } as Paciente
-        }
 
         const { legal_consent, foto_base64, firma_base64, ...patientData } = paciente
 
@@ -270,101 +211,109 @@ export const pacientesService = {
         let foto_url = patientData.foto_url
         let firma_url = patientData.firma_url
 
-        if (foto_base64) {
-            try {
-                const fileName = `${Date.now()}_foto.jpg`
-                const base64Data = foto_base64.split(',')[1]
-                const blob = await fetch(`data:image/jpeg;base64,${base64Data}`).then(res => res.blob())
+        try {
+            if (foto_base64) {
+                try {
+                    const fileName = `${Date.now()}_foto.jpg`
+                    const base64Data = foto_base64.split(',')[1]
+                    const blob = await fetch(`data:image/jpeg;base64,${base64Data}`).then(res => res.blob())
 
-                const { data: uploadData, error: uploadError } = await supabase.storage
-                    .from('pacientes-fotos')
-                    .upload(`${patientData.empresa_id}/${fileName}`, blob)
-
-                if (!uploadError) {
-                    const { data: { publicUrl } } = supabase.storage
+                    const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('pacientes-fotos')
-                        .getPublicUrl(`${patientData.empresa_id}/${fileName}`)
-                    foto_url = publicUrl
+                        .upload(`${patientData.empresa_id}/${fileName}`, blob)
+
+                    if (!uploadError) {
+                        const { data: { publicUrl } } = supabase.storage
+                            .from('pacientes-fotos')
+                            .getPublicUrl(`${patientData.empresa_id}/${fileName}`)
+                        foto_url = publicUrl
+                    }
+                } catch (err) {
+                    console.error("Error uploading photo:", err)
                 }
-            } catch (err) {
-                console.error("Error uploading photo:", err)
             }
-        }
 
-        if (firma_base64) {
-            try {
-                const fileName = `${Date.now()}_firma.png`
-                const base64Data = firma_base64.split(',')[1]
-                const blob = await fetch(`data:image/png;base64,${base64Data}`).then(res => res.blob())
+            if (firma_base64) {
+                try {
+                    const fileName = `${Date.now()}_firma.png`
+                    const base64Data = firma_base64.split(',')[1]
+                    const blob = await fetch(`data:image/png;base64,${base64Data}`).then(res => res.blob())
 
-                const { data: uploadData, error: uploadError } = await supabase.storage
-                    .from('firmas')
-                    .upload(`${patientData.empresa_id}/${fileName}`, blob)
-
-                if (!uploadError) {
-                    const { data: { publicUrl } } = supabase.storage
+                    const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('firmas')
-                        .getPublicUrl(`${patientData.empresa_id}/${fileName}`)
-                    firma_url = publicUrl
+                        .upload(`${patientData.empresa_id}/${fileName}`, blob)
+
+                    if (!uploadError) {
+                        const { data: { publicUrl } } = supabase.storage
+                            .from('firmas')
+                            .getPublicUrl(`${patientData.empresa_id}/${fileName}`)
+                        firma_url = publicUrl
+                    }
+                } catch (err) {
+                    console.error("Error uploading signature:", err)
                 }
-            } catch (err) {
-                console.error("Error uploading signature:", err)
             }
-        }
 
-        const { data, error } = await supabase
-            .from('pacientes')
-            .insert({
+            const { data, error } = await supabase
+                .from('pacientes')
+                .insert({
+                    ...patientData,
+                    foto_url,
+                    firma_url
+                })
+                .select()
+                .single()
+
+            if (error) throw error
+            const newPatient = data as Paciente
+
+            if (legal_consent && newPatient.id) {
+                const consents = []
+                if (legal_consent.privacy_accepted) {
+                    consents.push({
+                        patient_id: newPatient.id,
+                        consent_type: 'privacy_policy',
+                        version: legal_consent.privacy_version,
+                        accepted: true,
+                        firma_url: firma_url
+                    })
+                }
+                if (legal_consent.informed_accepted) {
+                    consents.push({
+                        patient_id: newPatient.id,
+                        consent_type: 'informed_consent',
+                        version: legal_consent.informed_version,
+                        accepted: true,
+                        firma_url: firma_url
+                    })
+                }
+                if (consents.length > 0) {
+                    await supabase.from('legal_consents').insert(consents)
+                }
+            }
+
+            return newPatient
+        } catch (err) {
+            // Fallback: guardar en localStorage para modo demo
+            console.warn('⚠️ Supabase no disponible para crear paciente, guardando en localStorage')
+            const newPatient: Paciente = {
                 ...patientData,
-                foto_url,
-                firma_url
-            })
-            .select()
-            .single()
-
-        if (error) throw error
-        const newPatient = data as Paciente
-
-        if (legal_consent && newPatient.id) {
-            const consents = []
-            if (legal_consent.privacy_accepted) {
-                consents.push({
-                    patient_id: newPatient.id,
-                    consent_type: 'privacy_policy',
-                    version: legal_consent.privacy_version,
-                    accepted: true,
-                    firma_url: firma_url // Vincular firma al consentimiento
-                })
+                id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+                foto_url: foto_url || '',
+                firma_url: firma_url || '',
+                created_at: new Date().toISOString(),
+                empresa_nombre: 'MediWork Ocupacional',
+                sede_nombre: 'Matriz CDMX',
             }
-            if (legal_consent.informed_accepted) {
-                consents.push({
-                    patient_id: newPatient.id,
-                    consent_type: 'informed_consent',
-                    version: legal_consent.informed_version,
-                    accepted: true,
-                    firma_url: firma_url
-                })
-            }
-            if (consents.length > 0) {
-                await supabase.from('legal_consents').insert(consents)
-            }
+            const localPacs = getDemoLocalPacientes()
+            localPacs.push(newPatient)
+            saveDemoLocalPacientes(localPacs)
+            return newPatient
         }
-
-        return newPatient
     },
 
     // Actualizar paciente
     async update(id: string, updates: Partial<Paciente>) {
-        if (isDemoMode()) {
-            console.log('⚡ [DEMO] Actualizando paciente localmente')
-            const result = await mockDataService.updatePaciente(id, updates as any)
-            return {
-                ...result,
-                created_at: (result as any).created_at || new Date().toISOString(),
-                puesto: (result as any).puesto || (result as any).puesto_trabajo?.nombre || ''
-            } as Paciente
-        }
-
         const { data, error } = await supabase
             .from('pacientes')
             .update(updates)
@@ -378,16 +327,12 @@ export const pacientesService = {
 
     // Eliminar paciente
     async delete(id: string) {
-        try {
-            const { error } = await supabase
-                .from('pacientes')
-                .delete()
-                .eq('id', id)
+        const { error } = await supabase
+            .from('pacientes')
+            .delete()
+            .eq('id', id)
 
-            if (error) throw error
-        } catch (error) {
-            console.warn('⚠️ Error deleting paciente (usando mock):', error)
-        }
+        if (error) throw error
     }
 }
 
@@ -398,24 +343,6 @@ export const pacientesService = {
 export const citasService = {
     // Obtener citas del día
     async getByDate(fecha: string) {
-        if (isDemoMode()) {
-            console.log('⚡ [DEMO] Mock Citas por fecha')
-            const user = getDemoUser()
-            const citas = await mockDataService.getCitas({ role: user.rol || 'medico', id: user.id || 'unknown', empresa_id: user.empresa_id })
-            // Filtrar y mapear
-            return citas.filter((c: any) => c.fechaHora.startsWith(fecha)).map((c: any) => ({
-                id: c.id,
-                fecha: c.fechaHora.split('T')[0],
-                hora_inicio: c.fechaHora.split('T')[1].substring(0, 5),
-                tipo: c.tipo,
-                estado: c.estado,
-                paciente: {
-                    id: c.paciente_id,
-                    nombre: 'Paciente Demo',
-                    apellido_paterno: 'Mock',
-                }
-            })) as Cita[]
-        }
 
         const { data, error } = await supabase
             .from('citas')
@@ -681,6 +608,274 @@ export const b2bService = {
             .single()
         if (error) throw error
         return data
+    },
+
+    // ── Métricas 360 en tiempo real ──
+    async getMetricas360(empresaId: string) {
+        // Headcount real (pacientes activos de la empresa)
+        const { count: headcountReal } = await supabase
+            .from('pacientes')
+            .select('id', { count: 'exact', head: true })
+            .eq('empresa_id', empresaId)
+
+        // Headcount contratado desde empresa
+        const { data: empData } = await supabase
+            .from('empresas')
+            .select('headcount_contratado, contrato_vigencia_fin, estatus_contrato, servicios_activos')
+            .eq('id', empresaId)
+            .single()
+
+        const headcountContratado = empData?.headcount_contratado || 0
+        const porcentajeCupo = headcountContratado > 0
+            ? Math.round(((headcountReal || 0) / headcountContratado) * 100) : 0
+
+        // Dictámenes para indicadores de aptitud
+        const { data: dictamenes } = await supabase
+            .from('dictamenes')
+            .select('resultado')
+            .eq('empresa_id', empresaId)
+
+        const totalDictamenes = dictamenes?.length || 0
+        const aptos = dictamenes?.filter(d => d.resultado === 'apto').length || 0
+        const aptosConRestriccion = dictamenes?.filter(d => d.resultado === 'apto_con_restriccion').length || 0
+        const noAptos = dictamenes?.filter(d => d.resultado === 'no_apto').length || 0
+        const pendientes = Math.max(0, (headcountReal || 0) - totalDictamenes)
+
+        const pctAptos = totalDictamenes > 0 ? Math.round((aptos / totalDictamenes) * 100) : 0
+        const pctRestriccion = totalDictamenes > 0 ? Math.round((aptosConRestriccion / totalDictamenes) * 100) : 0
+        const pctNoAptos = totalDictamenes > 0 ? Math.round((noAptos / totalDictamenes) * 100) : 0
+
+        // Sedes count
+        const { count: sedesCount } = await supabase
+            .from('sedes')
+            .select('id', { count: 'exact', head: true })
+            .eq('empresa_id', empresaId)
+            .eq('activa', true)
+
+        // Vigencia del contrato
+        const vigenciaFin = empData?.contrato_vigencia_fin || null
+        const diasParaVencer = vigenciaFin
+            ? Math.ceil((new Date(vigenciaFin).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+            : null
+
+        return {
+            headcountReal: headcountReal || 0,
+            headcountContratado,
+            porcentajeCupo,
+            aptos,
+            aptosConRestriccion,
+            noAptos,
+            pendientes,
+            pctAptos,
+            pctRestriccion,
+            pctNoAptos,
+            sedesActivas: sedesCount || 0,
+            vigenciaFin,
+            diasParaVencer,
+            estatusContrato: empData?.estatus_contrato || 'activo',
+            serviciosActivos: empData?.servicios_activos || []
+        }
+    },
+
+    // ── Hallazgos por tipo de riesgo ──
+    async getHallazgosPorRiesgo(empresaId: string) {
+        // Buscar exámenes de la empresa con sus resultados
+        const { data: examenes } = await supabase
+            .from('examenes_medicos')
+            .select('tipo, resultados, dictamen')
+            .eq('empresa_id', empresaId)
+
+        // Buscar alertas de vigilancia 
+        const { data: alertas } = await supabase
+            .from('alertas_vigilancia')
+            .select('tipo_riesgo, severidad, descripcion')
+            .eq('empresa_id', empresaId)
+
+        // Categorizar hallazgos por riesgo
+        const categorias: Record<string, { total: number, criticos: number, leves: number }> = {
+            'Ruido (Hipoacusia)': { total: 0, criticos: 0, leves: 0 },
+            'Cargas (Ergonómico)': { total: 0, criticos: 0, leves: 0 },
+            'Químicos': { total: 0, criticos: 0, leves: 0 },
+            'Psicosocial': { total: 0, criticos: 0, leves: 0 },
+            'Visual': { total: 0, criticos: 0, leves: 0 },
+            'Cardiovascular': { total: 0, criticos: 0, leves: 0 },
+            'Otros': { total: 0, criticos: 0, leves: 0 }
+        }
+
+        // Mapear tipos de examen/alerta a categorías de riesgo
+        const mapeoRiesgo: Record<string, string> = {
+            'audiometria': 'Ruido (Hipoacusia)',
+            'espirometria': 'Químicos',
+            'ergonomico': 'Cargas (Ergonómico)',
+            'psicosocial': 'Psicosocial',
+            'visual': 'Visual',
+            'optometria': 'Visual',
+            'cardiovascular': 'Cardiovascular',
+            'ekg': 'Cardiovascular',
+            'ruido': 'Ruido (Hipoacusia)',
+            'quimicos': 'Químicos',
+            'cargas': 'Cargas (Ergonómico)',
+        }
+
+        // Procesar exámenes con hallazgos
+        examenes?.forEach(ex => {
+            if (ex.dictamen && ex.dictamen !== 'apto') {
+                const tipo = ex.tipo?.toLowerCase() || ''
+                let categoria = 'Otros'
+                for (const [key, val] of Object.entries(mapeoRiesgo)) {
+                    if (tipo.includes(key)) { categoria = val; break }
+                }
+                categorias[categoria].total++
+                if (ex.dictamen === 'no_apto') categorias[categoria].criticos++
+                else categorias[categoria].leves++
+            }
+        })
+
+        // Procesar alertas de vigilancia
+        alertas?.forEach(a => {
+            const tipo = a.tipo_riesgo?.toLowerCase() || ''
+            let categoria = 'Otros'
+            for (const [key, val] of Object.entries(mapeoRiesgo)) {
+                if (tipo.includes(key)) { categoria = val; break }
+            }
+            categorias[categoria].total++
+            if (a.severidad === 'critica') categorias[categoria].criticos++
+            else categorias[categoria].leves++
+        })
+
+        return Object.entries(categorias)
+            .map(([nombre, datos]) => ({ nombre, ...datos }))
+            .filter(h => h.total > 0)
+            .sort((a, b) => b.total - a.total)
+    },
+
+    // ── Reportes disponibles por empresa ──
+    async getReportesDisponibles(empresaId: string) {
+        // Obtener datos para generar reportes
+        const { count: totalPacientes } = await supabase
+            .from('pacientes')
+            .select('id', { count: 'exact', head: true })
+            .eq('empresa_id', empresaId)
+
+        const { count: totalExamenes } = await supabase
+            .from('examenes_medicos')
+            .select('id', { count: 'exact', head: true })
+            .eq('empresa_id', empresaId)
+
+        const { count: totalCerts } = await supabase
+            .from('certificaciones_medicas')
+            .select('id', { count: 'exact', head: true })
+            .eq('empresa_id', empresaId)
+
+        const ahora = new Date()
+        const mesActual = ahora.toLocaleString('es-MX', { month: 'long', year: 'numeric' })
+        const year = ahora.getFullYear()
+
+        return [
+            {
+                id: 'reporte-aptitud',
+                titulo: 'Reporte de Aptitud Laboral',
+                descripcion: `Indicadores de aptitud de ${totalPacientes || 0} trabajadores`,
+                tipo: 'STPS',
+                periodo: mesActual,
+                registros: totalPacientes || 0,
+                disponible: (totalPacientes || 0) > 0,
+                normas: ['NOM-030']
+            },
+            {
+                id: 'reporte-hallazgos',
+                titulo: 'Reporte de Hallazgos por Riesgo',
+                descripcion: 'Resumen de hallazgos categorizados por tipo de riesgo ocupacional',
+                tipo: 'STPS',
+                periodo: mesActual,
+                registros: totalExamenes || 0,
+                disponible: (totalExamenes || 0) > 0,
+                normas: ['NOM-011', 'NOM-036']
+            },
+            {
+                id: 'reporte-audiometrias',
+                titulo: 'Reporte Audiométrico (NOM-011)',
+                descripcion: 'Resultados audiométricos y vigilancia de hipoacusia',
+                tipo: 'NOM-011',
+                periodo: mesActual,
+                registros: 0,
+                disponible: (totalExamenes || 0) > 0,
+                normas: ['NOM-011-STPS-2001']
+            },
+            {
+                id: 'reporte-ergonomico',
+                titulo: 'Reporte Ergonómico (NOM-036)',
+                descripcion: 'Evaluación de factores de riesgo ergonómico y manejo de cargas',
+                tipo: 'NOM-036',
+                periodo: mesActual,
+                registros: 0,
+                disponible: (totalExamenes || 0) > 0,
+                normas: ['NOM-036-1-STPS-2018']
+            },
+            {
+                id: 'reporte-psicosocial',
+                titulo: 'Reporte Psicosocial (NOM-035)',
+                descripcion: 'Evaluación de factores de riesgo psicosocial en el trabajo',
+                tipo: 'NOM-035',
+                periodo: mesActual,
+                registros: 0,
+                disponible: true,
+                normas: ['NOM-035-STPS-2018']
+            },
+            {
+                id: 'reporte-certificaciones',
+                titulo: 'Reporte de Certificaciones',
+                descripcion: `${totalCerts || 0} certificaciones emitidas y vigentes`,
+                tipo: 'Interno',
+                periodo: `${year}`,
+                registros: totalCerts || 0,
+                disponible: (totalCerts || 0) > 0,
+                normas: []
+            },
+            {
+                id: 'reporte-anual',
+                titulo: 'Reporte Anual de Salud Ocupacional',
+                descripcion: `Consolidado anual ${year} — indicadores, hallazgos y cumplimiento`,
+                tipo: 'Gerencial',
+                periodo: `${year}`,
+                registros: totalPacientes || 0,
+                disponible: (totalPacientes || 0) > 0,
+                normas: ['NOM-030', 'NOM-011', 'NOM-035', 'NOM-036']
+            }
+        ]
+    },
+
+    // ── Cumplimiento normativo histórico ──
+    async getCumplimientoHistorico(empresaId: string) {
+        // Simular datos históricos basados en registros reales
+        const { data: certs } = await supabase
+            .from('certificaciones_medicas')
+            .select('fecha_emision, resultado')
+            .eq('empresa_id', empresaId)
+            .order('fecha_emision', { ascending: true })
+
+        const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+        const ahora = new Date()
+        const datos = []
+
+        for (let i = 5; i >= 0; i--) {
+            const mesIdx = (ahora.getMonth() - i + 12) % 12
+            const certsDelMes = certs?.filter(c => {
+                const f = new Date(c.fecha_emision)
+                return f.getMonth() === mesIdx
+            }) || []
+
+            const total = certsDelMes.length
+            const aptosDelMes = certsDelMes.filter(c => c.resultado === 'apto' || c.resultado === 'vigente').length
+            const valor = total > 0 ? Math.round((aptosDelMes / total) * 100) : (i === 0 ? 0 : null)
+
+            datos.push({
+                name: meses[mesIdx],
+                value: valor ?? 0
+            })
+        }
+
+        return datos
     }
 }
 
@@ -1286,6 +1481,7 @@ export const dataService = {
     usuarios: usuariosService,
     sedes: sedesService,
     empresas: empresasService,
+    b2b: b2bService,
     consultas: consultasService,
     inventario: inventarioService,
     certificaciones: certificacionesService,

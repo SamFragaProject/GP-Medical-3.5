@@ -48,6 +48,45 @@ const GENERO_COLORS: Record<string, string> = {
     otro: 'from-purple-500 to-violet-600',
 }
 
+// Normaliza riesgos_ocupacionales a un array de strings
+// Soporta ambos formatos: array de strings O objeto anidado con categorías
+const normalizeRiesgos = (riesgos: any): string[] => {
+    if (!riesgos) return []
+    if (Array.isArray(riesgos)) return riesgos
+    // Si es un objeto con subcategorías (formato demo), extraer las etiquetas activas
+    const labels: string[] = []
+    const categoryLabels: Record<string, string> = {
+        fisicos: 'Físicos', quimicos: 'Químicos', ergonomicos: 'Ergonómicos',
+        biologicos: 'Biológicos', psicosociales: 'Psicosociales',
+        electricos: 'Eléctricos', mecanicos: 'Mecánicos', locativos: 'Locativos',
+    }
+    for (const [cat, items] of Object.entries(riesgos)) {
+        if (typeof items === 'object' && items !== null) {
+            const hasActive = Object.values(items as Record<string, boolean>).some(v => v === true)
+            if (hasActive) labels.push(categoryLabels[cat] || cat)
+        }
+    }
+    return labels
+}
+
+// Semáforo clínico: evalúa nivel de riesgo del paciente
+const getSemaforClinico = (paciente: any): { nivel: string; color: string; bgColor: string; borderColor: string; label: string; icon: string } => {
+    const riesgos = normalizeRiesgos(paciente.riesgos_ocupacionales).length;
+    const estatus = paciente.estatus;
+    const edad = paciente.fecha_nacimiento ? calcularEdad(paciente.fecha_nacimiento) : 0;
+    const sinDictamen = !(paciente as any).ultimo_dictamen;
+
+    // Crítico: baja, múltiples riesgos, sin dictamen y mayor a 50
+    if (estatus === 'baja' || riesgos >= 3 || (sinDictamen && edad > 50 && riesgos > 0)) {
+        return { nivel: 'critico', color: 'text-red-600', bgColor: 'bg-red-50', borderColor: 'border-red-200', label: 'Crítico', icon: '🔴' };
+    }
+    // Alerta: riesgos moderados, inactivo, sin dictamen
+    if (riesgos >= 1 || estatus === 'inactivo' || (sinDictamen && edad > 40)) {
+        return { nivel: 'alerta', color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', label: 'Alerta', icon: '🟡' };
+    }
+    // Normal
+    return { nivel: 'normal', color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', label: 'Normal', icon: '🟢' };
+};
 
 // =============================================
 // COMPONENTE PRINCIPAL
@@ -397,6 +436,7 @@ export default function PacientesHub() {
                                     <tr>
                                         {[
                                             { field: 'nombre' as SortField, label: 'Paciente', width: '' },
+                                            { field: 'nombre' as any, label: 'Semáforo', width: '' },
                                             { field: 'empresa' as SortField, label: 'Empresa / Sede', width: '' },
                                             { field: 'puesto' as SortField, label: 'Puesto', width: '' },
                                             { field: 'puesto' as any, label: 'Riesgos', width: 'hidden md:table-cell' },
@@ -462,6 +502,21 @@ export default function PacientesHub() {
                                                     </div>
                                                 </td>
 
+                                                {/* Semáforo Clínico */}
+                                                <td className="p-4">
+                                                    {(() => {
+                                                        const semaforo = getSemaforClinico(paciente);
+                                                        return (
+                                                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${semaforo.bgColor} ${semaforo.borderColor}`}>
+                                                                <span className="text-xs leading-none">{semaforo.icon}</span>
+                                                                <span className={`text-[10px] font-bold uppercase tracking-wider ${semaforo.color}`}>
+                                                                    {semaforo.label}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </td>
+
                                                 {/* Empresa */}
                                                 <td className="p-4">
                                                     <div className="flex items-center gap-2">
@@ -485,19 +540,24 @@ export default function PacientesHub() {
 
                                                 {/* Riesgos */}
                                                 <td className="p-4 hidden md:table-cell">
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {(paciente as any).riesgos_ocupacionales?.slice(0, 2).map((r: string, i: number) => (
-                                                            <Badge key={i} variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[9px] uppercase tracking-tighter px-1">
-                                                                {r}
-                                                            </Badge>
-                                                        ))}
-                                                        {(paciente as any).riesgos_ocupacionales?.length > 2 && (
-                                                            <span className="text-[9px] text-slate-400">+{(paciente as any).riesgos_ocupacionales.length - 2}</span>
-                                                        )}
-                                                        {(!(paciente as any).riesgos_ocupacionales || (paciente as any).riesgos_ocupacionales.length === 0) && (
-                                                            <span className="text-xs text-slate-300">—</span>
-                                                        )}
-                                                    </div>
+                                                    {(() => {
+                                                        const riesgosArr = normalizeRiesgos(paciente.riesgos_ocupacionales)
+                                                        return (
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {riesgosArr.slice(0, 2).map((r: string, i: number) => (
+                                                                    <Badge key={i} variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[9px] uppercase tracking-tighter px-1">
+                                                                        {r}
+                                                                    </Badge>
+                                                                ))}
+                                                                {riesgosArr.length > 2 && (
+                                                                    <span className="text-[9px] text-slate-400">+{riesgosArr.length - 2}</span>
+                                                                )}
+                                                                {riesgosArr.length === 0 && (
+                                                                    <span className="text-xs text-slate-300">—</span>
+                                                                )}
+                                                            </div>
+                                                        )
+                                                    })()}
                                                 </td>
 
                                                 {/* Registro */}
