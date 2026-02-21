@@ -107,7 +107,7 @@ export default function Login() {
     {
       id: 'admin',
       label: 'ADMIN_EMPRESA',
-      subtitle: 'Carlos Ramírez',
+      subtitle: 'Admin Empresa',
       email: 'admin@mediflow.mx',
       pass: 'admin123',
       icon: Building2,
@@ -118,7 +118,7 @@ export default function Login() {
     {
       id: 'medico',
       label: 'MÉDICO',
-      subtitle: 'Dra. Ana López',
+      subtitle: 'Médico Especialista',
       email: 'medico@mediflow.mx',
       pass: 'medico123',
       icon: Stethoscope,
@@ -129,7 +129,7 @@ export default function Login() {
     {
       id: 'enfermera',
       label: 'ENFERMERA',
-      subtitle: 'Laura Ruiz',
+      subtitle: 'Personal de Enfermería',
       email: 'enfermera@mediflow.mx',
       pass: 'enfermera123',
       icon: HeartPulse,
@@ -140,7 +140,7 @@ export default function Login() {
     {
       id: 'recepcion',
       label: 'RECEPCIÓN',
-      subtitle: 'María González',
+      subtitle: 'Recepcionista',
       email: 'recepcion@mediflow.mx',
       pass: 'recepcion123',
       icon: UserCheck,

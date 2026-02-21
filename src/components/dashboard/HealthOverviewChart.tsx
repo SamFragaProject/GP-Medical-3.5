@@ -1,32 +1,21 @@
+/**
+ * HealthOverviewChart — Gráfica de resumen de salud
+ * Muestra estado vacío cuando no hay datos poblacionales.
+ * Listo para conectarse a la data de signos vitales real.
+ */
 import React from 'react'
-import { AreaChart, Title, Text } from '@tremor/react'
-
-const data = [
-    { name: 'Lun', "Ritmo Cardíaco": 72, "Presión": 120, "Glucosa": 95 },
-    { name: 'Mar', "Ritmo Cardíaco": 75, "Presión": 118, "Glucosa": 98 },
-    { name: 'Mie', "Ritmo Cardíaco": 70, "Presión": 122, "Glucosa": 92 },
-    { name: 'Jue', "Ritmo Cardíaco": 78, "Presión": 125, "Glucosa": 96 },
-    { name: 'Vie', "Ritmo Cardíaco": 74, "Presión": 119, "Glucosa": 94 },
-    { name: 'Sab', "Ritmo Cardíaco": 71, "Presión": 117, "Glucosa": 90 },
-    { name: 'Dom', "Ritmo Cardíaco": 69, "Presión": 115, "Glucosa": 88 },
-]
+import { BarChart3 } from 'lucide-react'
 
 export function HealthOverviewChart() {
     return (
-        <div className="h-72 w-full">
-            <AreaChart
-                className="h-full mt-4"
-                data={data}
-                index="name"
-                categories={["Ritmo Cardíaco", "Presión", "Glucosa"]}
-                colors={["emerald-500", "blue-500", "amber-500"]}
-                yAxisWidth={40}
-                showAnimation={true}
-                showGradient={true}
-                curveType="monotone"
-                showLegend={true}
-                showGridLines={false}
-            />
+        <div className="h-72 w-full flex flex-col items-center justify-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-emerald-50 to-blue-50 rounded-2xl flex items-center justify-center mb-4 border border-emerald-100">
+                <BarChart3 className="w-8 h-8 text-emerald-300" />
+            </div>
+            <h4 className="text-sm font-bold text-slate-500 mb-1">Sin datos poblacionales</h4>
+            <p className="text-xs text-slate-400 text-center max-w-[280px]">
+                Las tendencias de salud de los trabajadores (ritmo cardíaco, presión, glucosa) se mostrarán aquí cuando haya registros suficientes.
+            </p>
         </div>
     )
 }

@@ -28,17 +28,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 
 // Mock Data
-const CITAS_PROXIMAS = [
-  {
-    id: '1',
-    fecha: '2025-11-05',
-    hora: '10:00 AM',
-    medico: 'Dra. Luna Rivera',
-    especialidad: 'Medicina del Trabajo',
-    motivo: 'Revisión periódica anual',
-    status: 'confirmada'
-  }
-];
+const CITAS_PROXIMAS: any[] = [];
 
 const RECOMENDACIONES = [
   {
@@ -59,24 +49,7 @@ const RECOMENDACIONES = [
   }
 ];
 
-const EXAMENES = [
-  {
-    id: '1',
-    fecha: '01 Oct 2025',
-    tipo: 'Examen General',
-    resultado: 'Normal',
-    medico: 'Dr. Roberto Silva',
-    status: 'completado'
-  },
-  {
-    id: '2',
-    fecha: '15 Sep 2025',
-    tipo: 'Análisis de Sangre',
-    resultado: 'En revisión',
-    medico: 'Dr. Miguel Ángel Torres',
-    status: 'pendiente'
-  }
-];
+const EXAMENES: any[] = [];
 
 export default function DashboardPaciente() {
   const { user } = useAuth();

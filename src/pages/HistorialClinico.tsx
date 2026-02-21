@@ -295,13 +295,7 @@ export default function HistorialClinico() {
       }).filter((d: any) => d.cantidad > 0).sort((a: any, b: any) => b.cantidad - a.cantidad)
       setDistribucionEmpresas(dist.slice(0, 5))
 
-      setLogsAuditoria([
-        { id: 1, usuario: 'Dr. García', accion: 'Visualizó expediente', paciente: 'Juan Pérez', hora: '10:35 AM', tipo: 'view' },
-        { id: 2, usuario: 'Enf. Luna', accion: 'Editó historial', paciente: 'María López', hora: '10:28 AM', tipo: 'edit' },
-        { id: 3, usuario: 'Dr. Mendoza', accion: 'Agregó diagnóstico', paciente: 'Pedro Ruiz', hora: '10:15 AM', tipo: 'create' },
-        { id: 4, usuario: 'Admin Norte', accion: 'Exportó expediente', paciente: 'Ana Torres', hora: '09:45 AM', tipo: 'export' },
-        { id: 5, usuario: 'Dra. Sánchez', accion: 'Visualizó expediente', paciente: 'Carlos Díaz', hora: '09:30 AM', tipo: 'view' },
-      ])
+      setLogsAuditoria([])
 
       setAlertasCalidad([
         { id: 1, tipo: 'warning', titulo: 'Expedientes sin actualizar', descripcion: `${Math.floor(Math.random() * 20) + 5} expedientes sin modificar hace +90 días`, accion: 'Revisar expedientes' },
@@ -982,7 +976,7 @@ export default function HistorialClinico() {
                   {selectedEncuentro ? (
                     <OccupationalCertificate
                       paciente={displayedPaciente}
-                      empresa={{ nombre: 'GPMedical Demo' }}
+                      empresa={{ nombre: '' }}
                       encuentro={selectedEncuentro}
                       medico={user}
                       onClose={() => setSelectedEncuentro(null)}

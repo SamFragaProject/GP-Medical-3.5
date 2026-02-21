@@ -755,13 +755,8 @@ export function Pacientes({ onSelectPatient, hideHeader = false }: PacientesProp
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {[
-                      { usuario: 'Dr. García', accion: 'Visualizó historial', paciente: 'Juan Pérez', hora: '10:35 AM', tipo: 'view' },
-                      { usuario: 'Enf. Luna', accion: 'Editó datos', paciente: 'María López', hora: '10:32 AM', tipo: 'edit' },
-                      { usuario: 'Dr. Mendoza', accion: 'Generó receta', paciente: 'Pedro Ruiz', hora: '10:28 AM', tipo: 'create' },
-                      { usuario: 'Admin Norte', accion: 'Registró paciente', paciente: 'Ana Torres', hora: '10:15 AM', tipo: 'create' },
-                      { usuario: 'Dr. García', accion: 'Visualizó historial', paciente: 'Carlos Díaz', hora: '10:05 AM', tipo: 'view' },
-                    ].map((log, idx) => (
+                    {/* Los logs de auditoría se cargarán dinámicamente desde Supabase */}
+                    {[].map((log: any, idx: number) => (
                       <div key={idx} className="flex items-center justify-between p-4 rounded-xl bg-gray-50 border border-gray-100">
                         <div className="flex items-center gap-4">
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${log.tipo === 'view' ? 'bg-blue-100 text-blue-600' :

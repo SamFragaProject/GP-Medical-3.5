@@ -90,7 +90,7 @@ export function IA({ hideHeader = false }: IAProps) {
     email: 'demo@GPMedical.com',
     name: 'Usuario Demo',
     hierarchy: 'super_admin' as const,
-    empresa: { nombre: 'GPMedical Demo Corp' },
+    empresa: { nombre: '' },
     sede: { nombre: 'Sede Principal' }
   }
 
@@ -564,11 +564,11 @@ export function IA({ hideHeader = false }: IAProps) {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {[
-                { nombre: 'Ana García', puesto: 'Operaria', riesgo: 'Ergonómico', prob: 78, urgencia: 'alta' },
-                { nombre: 'Carlos López', puesto: 'Supervisor', riesgo: 'Estrés', prob: 65, urgencia: 'media' },
-                { nombre: 'María Rodríguez', puesto: 'Analista', riesgo: 'Postural', prob: 52, urgencia: 'baja' },
-                { nombre: 'Luis Martín', puesto: 'Técnico', riesgo: 'Químico', prob: 43, urgencia: 'media' },
-                { nombre: 'Elena Sánchez', puesto: 'Coordinadora', riesgo: 'Visual', prob: 38, urgencia: 'baja' }
+                { nombre: 'Empleado 1', puesto: 'Operario', riesgo: 'Ergonómico', prob: 78, urgencia: 'alta' },
+                { nombre: 'Empleado 2', puesto: 'Supervisor', riesgo: 'Estrés', prob: 65, urgencia: 'media' },
+                { nombre: 'Empleado 3', puesto: 'Analista', riesgo: 'Postural', prob: 52, urgencia: 'baja' },
+                { nombre: 'Empleado 4', puesto: 'Técnico', riesgo: 'Químico', prob: 43, urgencia: 'media' },
+                { nombre: 'Empleado 5', puesto: 'Coordinador', riesgo: 'Visual', prob: 38, urgencia: 'baja' }
               ].map((empleado, index) => (
                 <tr key={index} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">

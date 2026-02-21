@@ -23,7 +23,7 @@ export interface Producto {
   activo: boolean
   createdAt: Date
   updatedAt: Date
-  
+
   // Relaciones
   proveedor?: Proveedor
   stock?: Stock
@@ -47,7 +47,7 @@ export interface Stock {
   alertasStockBajo: boolean
   createdAt: Date
   updatedAt: Date
-  
+
   // Relaciones
   producto?: Producto
   movimientos?: MovimientoStock[]
@@ -68,7 +68,7 @@ export interface Proveedor {
   condicionesPago: string
   createdAt: Date
   updatedAt: Date
-  
+
   // Relaciones
   productos?: Producto[]
   ordenesCompra?: OrdenCompra[]
@@ -90,7 +90,7 @@ export interface OrdenCompra {
   recibidaPor?: string
   createdAt: Date
   updatedAt: Date
-  
+
   // Relaciones
   proveedor?: Proveedor
   items?: ItemOrdenCompra[]
@@ -105,7 +105,7 @@ export interface ItemOrdenCompra {
   cantidadRecibida: number
   createdAt: Date
   updatedAt: Date
-  
+
   // Relaciones
   ordenCompra?: OrdenCompra
   producto?: Producto
@@ -124,7 +124,7 @@ export interface Cotizacion {
   estado: 'enviada' | 'aceptada' | 'rechazada' | 'vencida'
   createdAt: Date
   updatedAt: Date
-  
+
   // Relaciones
   proveedor?: Proveedor
   items?: ItemCotizacion[]
@@ -138,7 +138,7 @@ export interface ItemCotizacion {
   precioUnitario: number
   createdAt: Date
   updatedAt: Date
-  
+
   // Relaciones
   cotizacion?: Cotizacion
   producto?: Producto
@@ -160,7 +160,7 @@ export interface EquipoMedico {
   activo: boolean
   createdAt: Date
   updatedAt: Date
-  
+
   // Relaciones
   mantenimientos?: MantenimientoEquipo[]
   calibraciones?: CalibracionEquipo[]
@@ -180,7 +180,7 @@ export interface MantenimientoEquipo {
   proximoMantenimiento?: Date
   createdAt: Date
   updatedAt: Date
-  
+
   // Relaciones
   equipo?: EquipoMedico
 }
@@ -196,7 +196,7 @@ export interface CalibracionEquipo {
   observaciones?: string
   createdAt: Date
   updatedAt: Date
-  
+
   // Relaciones
   equipo?: EquipoMedico
 }
@@ -211,7 +211,7 @@ export interface MovimientoStock {
   usuario: string
   fecha: Date
   createdAt: Date
-  
+
   // Relaciones
   stock?: Stock
 }
@@ -248,7 +248,7 @@ export interface ReporteConsumo {
   departamento?: string
   usuarioId: string
   createdAt: Date
-  
+
   // Relaciones
   producto?: Producto
 }
@@ -262,7 +262,7 @@ export interface AuditoriaInventario {
   ajustesRealizados: boolean
   createdAt: Date
   updatedAt: Date
-  
+
   // Relaciones
   items?: ItemAuditoria[]
 }
@@ -277,7 +277,7 @@ export interface ItemAuditoria {
   motivoDiferencia?: string
   ajusteAplicado: boolean
   createdAt: Date
-  
+
   // Relaciones
   auditoria?: AuditoriaInventario
   producto?: Producto
@@ -410,3 +410,110 @@ export const TIPOS_PRODUCTO: { value: TipoProducto; label: string }[] = [
   { value: 'suministro', label: 'Suministro' },
   { value: 'reactivo', label: 'Reactivo' },
 ]
+
+// ═══════════════════════════════════════════════════
+// DISPENSACIÓN (ligada a receta médica)
+// ═══════════════════════════════════════════════════
+
+export type EstadoDispensacion = 'pendiente' | 'parcial' | 'completa' | 'cancelada'
+
+export interface Dispensacion {
+  id: string
+  receta_id: string
+  paciente_id: string
+  paciente_nombre?: string
+  medico_nombre?: string
+  fecha_dispensacion: string
+  estado: EstadoDispensacion
+  dispensado_por: string
+  dispensado_por_nombre?: string
+  notas?: string
+  items: ItemDispensacion[]
+  created_at: string
+  updated_at: string
+}
+
+export interface ItemDispensacion {
+  id: string
+  dispensacion_id: string
+  producto_id: string
+  producto_nombre: string
+  lote_id?: string
+  numero_lote?: string
+  cantidad_recetada: number
+  cantidad_dispensada: number
+  unidad: string
+  precio_unitario: number
+  subtotal: number
+  observaciones?: string
+}
+
+// ═══════════════════════════════════════════════════
+// BOTIQUINES POR EMPRESA
+// ═══════════════════════════════════════════════════
+
+export type EstadoBotiquin = 'activo' | 'por_reabastecer' | 'vencido' | 'suspendido'
+
+export interface Botiquin {
+  id: string
+  empresa_id: string
+  empresa_nombre?: string
+  sede_id?: string
+  sede_nombre?: string
+  nombre: string
+  ubicacion: string
+  responsable: string
+  responsable_telefono?: string
+  estado: EstadoBotiquin
+  fecha_ultimo_reabasto?: string
+  fecha_proximo_reabasto?: string
+  created_at: string
+  updated_at: string
+  items: ItemBotiquin[]
+  consumo_mensual?: BotiquinConsumoMensual[]
+}
+
+export interface ItemBotiquin {
+  id: string
+  botiquin_id: string
+  producto_id: string
+  producto_nombre: string
+  cantidad_actual: number
+  cantidad_minima: number
+  cantidad_maxima: number
+  lote?: string
+  fecha_vencimiento?: string
+  ultima_reposicion?: string
+}
+
+export interface BotiquinConsumoMensual {
+  mes: string         // YYYY-MM
+  total_items: number
+  costo_total: number
+  items_mas_consumidos: { nombre: string; cantidad: number }[]
+}
+
+// ═══════════════════════════════════════════════════
+// ALERTAS DE REABASTO
+// ═══════════════════════════════════════════════════
+
+export type TipoAlertaReabasto = 'stock_minimo' | 'caducidad_proxima' | 'sin_stock' | 'botiquin_vencido' | 'consumo_alto'
+
+export interface AlertaReabasto {
+  id: string
+  tipo: TipoAlertaReabasto
+  producto_id?: string
+  producto_nombre?: string
+  producto_codigo?: string
+  botiquin_id?: string
+  botiquin_nombre?: string
+  nivel: 'info' | 'warning' | 'critical'
+  mensaje: string
+  cantidad_actual?: number
+  cantidad_minima?: number
+  dias_para_caducidad?: number
+  resuelta: boolean
+  resuelta_por?: string
+  resuelta_en?: string
+  created_at: string
+}

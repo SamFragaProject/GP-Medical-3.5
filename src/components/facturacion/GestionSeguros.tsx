@@ -1,10 +1,10 @@
 // Gestión de Seguros - Integración IMSS/ISSSTE y procesamiento automático
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Shield, 
-  Plus, 
-  Search, 
+import {
+  Shield,
+  Plus,
+  Search,
   Filter,
   CheckCircle,
   Clock,
@@ -41,7 +41,7 @@ interface GestionSegurosProps {
 
 export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: GestionSegurosProps) {
   const { seguros, procesarConSeguro } = useFacturacion()
-  
+
   const [seguroSeleccionado, setSeguroSeleccionado] = useState<string>('')
   const [serviciosParaSeguro, setServiciosParaSeguro] = useState<string[]>([])
   const [mostrarPreautorizacion, setMostrarPreautorizacion] = useState(false)
@@ -114,12 +114,12 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
     try {
       setMostrarResumen(true)
       const resultado = await procesarConSeguro(seguroSeleccionado, serviciosParaSeguro, datosPaciente)
-      
+
       // Simular proceso de autorización
       if (seguros.find(s => s.id === seguroSeleccionado)?.configuracion.requierePreautorizacion) {
         setMostrarPreautorizacion(true)
       }
-      
+
     } catch (error) {
       toast.error('Error al procesar con seguro')
     }
@@ -327,7 +327,7 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-4 gap-4 mb-4">
                     <div className="text-center">
                       <p className="text-2xl font-bold text-gray-900">{estado.totalPacientes}</p>
@@ -346,14 +346,14 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
                       <p className="text-sm text-gray-600">Rechazados</p>
                     </div>
                   </div>
-                  
+
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-green-500 h-2 rounded-full" 
+                    <div
+                      className="bg-green-500 h-2 rounded-full"
                       style={{ width: `${(estado.autorizados / estado.totalPacientes) * 100}%` }}
                     ></div>
                   </div>
-                  
+
                   <div className="flex space-x-2 mt-4">
                     <Button size="sm" variant="outline">
                       <Eye className="h-3 w-3 mr-1" />
@@ -376,14 +376,14 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
             {/* Formulario de Procesamiento */}
             <Card className="p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Procesar con Seguro</h3>
-              
+
               {cliente ? (
                 <div className="space-y-4">
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h4 className="font-medium text-gray-900">Cliente: {cliente.razonSocial}</h4>
                     <p className="text-sm text-gray-600">RFC: {cliente.rfc}</p>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Institución de Seguro
@@ -401,7 +401,7 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
                       ))}
                     </select>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Servicios a Procesar
@@ -429,7 +429,7 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -452,7 +452,7 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
                       />
                     </div>
                   </div>
-                  
+
                   <Button
                     onClick={procesarConSeguros}
                     disabled={!seguroSeleccionado || serviciosParaSeguro.length === 0}
@@ -473,12 +473,12 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
             {/* Información del Seguro */}
             <Card className="p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Información del Seguro</h3>
-              
+
               {seguroSeleccionado && (
                 (() => {
                   const seguro = seguros.find(s => s.id === seguroSeleccionado)
                   if (!seguro) return null
-                  
+
                   return (
                     <div className="space-y-4">
                       <div className="bg-gray-50 rounded-lg p-4">
@@ -507,7 +507,7 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
                           </div>
                         </div>
                       </div>
-                      
+
                       {seguro.configuracion.requierePreautorizacion && (
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                           <div className="flex items-center space-x-2 mb-2">
@@ -523,7 +523,7 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
                   )
                 })()
               )}
-              
+
               {!seguroSeleccionado && (
                 <div className="text-center py-8">
                   <Shield className="h-12 w-12 text-gray-400 mx-auto mb-3" />
@@ -544,47 +544,19 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
                 Filtrar
               </Button>
             </div>
-            
+
             <div className="space-y-4">
-              {[
-                {
-                  id: '1',
-                  paciente: 'Juan Pérez García',
-                  seguro: 'IMSS',
-                  servicio: 'Examen Médico Anual',
-                  fecha: '2024-11-01',
-                  estado: 'pendiente',
-                  numero: 'AUT-2024-001'
-                },
-                {
-                  id: '2',
-                  paciente: 'María López Hernández',
-                  seguro: 'ISSSTE',
-                  servicio: 'Consulta Médica',
-                  fecha: '2024-10-31',
-                  estado: 'autorizado',
-                  numero: 'AUT-2024-002'
-                },
-                {
-                  id: '3',
-                  paciente: 'Carlos Rodríguez',
-                  seguro: 'ISSSTE',
-                  servicio: 'Audiometría',
-                  fecha: '2024-10-30',
-                  estado: 'rechazado',
-                  numero: 'AUT-2024-003'
-                }
-              ].map((solicitud) => (
+              {/* Las solicitudes de autorización se cargarán dinámicamente desde Supabase */}
+              {([] as any[]).map((solicitud) => (
                 <div key={solicitud.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="flex items-center space-x-3 mb-2">
                         <h4 className="font-medium text-gray-900">{solicitud.paciente}</h4>
-                        <Badge className={`${
-                          solicitud.estado === 'autorizado' ? 'bg-green-100 text-green-800' :
-                          solicitud.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
+                        <Badge className={`${solicitud.estado === 'autorizado' ? 'bg-green-100 text-green-800' :
+                            solicitud.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                          }`}>
                           {solicitud.estado}
                         </Badge>
                       </div>
@@ -672,7 +644,7 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
               <span>Solicitud de Preautorización</span>
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div className="flex items-center space-x-2 mb-2">
@@ -703,7 +675,7 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
             </div>
 
             <div className="flex space-x-3">
-              <Button 
+              <Button
                 onClick={generarPreautorizacion}
                 className="flex-1 bg-primary hover:bg-primary/90"
               >
@@ -711,8 +683,8 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
                 Enviar Solicitud
               </Button>
               <DialogClose asChild>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1"
                 >
                   Cancelar
@@ -732,7 +704,7 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
               <span>Procesamiento Completado</span>
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <h4 className="font-semibold text-green-800 mb-2">Solicitud Procesada</h4>
@@ -761,7 +733,7 @@ export function GestionSeguros({ cliente, servicios, onProcesarConSeguro }: Gest
             </div>
 
             <DialogClose asChild>
-              <Button 
+              <Button
                 onClick={() => setMostrarResumen(false)}
                 className="w-full bg-primary hover:bg-primary/90"
               >

@@ -25,10 +25,10 @@ export const useCurrentUser = () => ({
     name: 'Usuario Demo',
     email: 'demo@GPMedical.com',
     hierarchy: 'super_admin',
-    empresa: { nombre: 'GPMedical Demo Corp' },
+    empresa: { nombre: '' },
     sede: { nombre: 'Sede Principal' }
   },
-  empresaInfo: { nombre: 'GPMedical Demo Corp' },
+  empresaInfo: { nombre: '' },
   sedeInfo: { nombre: 'Sede Principal' },
   loading: false,
   isSessionActive: () => true

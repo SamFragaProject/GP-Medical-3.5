@@ -8,11 +8,10 @@
  * Uses window.open() + window.print() just like the reference app.
  */
 
-import { PACIENTE_DEMO, LABORATORIO_DEMO, AUDIOMETRIA_DEMO, EXPLORACION_FISICA_DEMO, NOTAS_MEDICAS_DEMO } from '@/data/demoPacienteCompleto'
-
 const LOGO_GP = 'https://i.postimg.cc/TwwCKGYR/gp-medical.png'
 
 function calcEdad(fechaNac: string): number {
+    if (!fechaNac) return 0
     const b = new Date(fechaNac)
     const t = new Date()
     let a = t.getFullYear() - b.getFullYear()
@@ -81,26 +80,34 @@ ${html}
 // =================================================================
 // 1. CERTIFICADO DE APTITUD LABORAL
 // =================================================================
-export function printCertificadoAptitud(pacienteData?: any) {
-    const p = pacienteData || PACIENTE_DEMO
-    const edad = p.fecha_nacimiento ? calcEdad(p.fecha_nacimiento) : '—'
-    const nota = NOTAS_MEDICAS_DEMO.filter(n => n.estado === 'vigente').pop()
-    const ef = EXPLORACION_FISICA_DEMO[0]
+export function printCertificadoAptitud(paciente: any, notaVigente?: any, exploracionFisica?: any) {
+    if (!paciente) return
+    const edad = paciente.fecha_nacimiento ? calcEdad(paciente.fecha_nacimiento) : '—'
+    const nota = notaVigente || {}
+    const ef = exploracionFisica || {}
     const fechaHoy = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
 
     // Determine aptitude
-    let aptString = 'APTO'
-    let aptClass = 'aptitude-apto'
-    let aptColor = '#10b981'
-    if (nota?.diagnostico_texto?.toLowerCase().includes('restricción') || nota?.diagnostico_texto?.toLowerCase().includes('reserva')) {
-        aptString = 'APTO CON RESTRICCIÓN'
-        aptClass = 'aptitude-reservas'
-        aptColor = '#f59e0b'
-    }
-    if (nota?.diagnostico_texto?.toLowerCase().includes('no apto')) {
-        aptString = 'NO APTO'
-        aptClass = 'aptitude-no-apto'
-        aptColor = '#ef4444'
+    let aptString = 'POR DICTAMINAR'
+    let aptClass = 'aptitude-reservas'
+    let aptColor = '#64748b'
+
+    const conclusion = (nota.diagnostico_texto || '').toLowerCase()
+
+    if (conclusion) {
+        if (conclusion.includes('no apto')) {
+            aptString = 'NO APTO'
+            aptClass = 'aptitude-no-apto'
+            aptColor = '#ef4444'
+        } else if (conclusion.includes('restricción') || conclusion.includes('reserva')) {
+            aptString = 'APTO CON RESTRICCIÓN'
+            aptClass = 'aptitude-reservas'
+            aptColor = '#f59e0b'
+        } else if (conclusion.includes('apto')) {
+            aptString = 'APTO'
+            aptClass = 'aptitude-apto'
+            aptColor = '#10b981'
+        }
     }
 
     const html = `
@@ -116,25 +123,25 @@ export function printCertificadoAptitud(pacienteData?: any) {
             </div>
 
             <div class="cert-title">Certificado de Aptitud</div>
-            <div class="cert-subtitle">Dictamen Médico-Laboral — ${p.empresa_nombre || 'Empresa'}</div>
+            <div class="cert-subtitle">Dictamen Médico-Laboral — ${paciente.empresa_nombre || 'Empresa'}</div>
 
             <!-- Patient data -->
             <div style="margin:16px 0;">
-                <div class="cert-data-row"><span class="cert-data-label">Nombre Completo</span><span class="cert-data-value">${p.nombre} ${p.apellido_paterno} ${p.apellido_materno || ''}</span></div>
+                <div class="cert-data-row"><span class="cert-data-label">Nombre Completo</span><span class="cert-data-value">${paciente.nombre} ${paciente.apellido_paterno} ${paciente.apellido_materno || ''}</span></div>
                 <div class="cert-data-row"><span class="cert-data-label">Edad</span><span class="cert-data-value">${edad} años</span></div>
-                <div class="cert-data-row"><span class="cert-data-label">Género</span><span class="cert-data-value">${p.genero || '—'}</span></div>
-                <div class="cert-data-row"><span class="cert-data-label">CURP</span><span class="cert-data-value" style="font-family:monospace;">${p.curp || '—'}</span></div>
-                <div class="cert-data-row"><span class="cert-data-label">NSS (IMSS)</span><span class="cert-data-value" style="font-family:monospace;">${p.nss || '—'}</span></div>
-                <div class="cert-data-row"><span class="cert-data-label">Empresa</span><span class="cert-data-value">${p.empresa_nombre || '—'}</span></div>
-                <div class="cert-data-row"><span class="cert-data-label">Puesto de Trabajo</span><span class="cert-data-value">${p.puesto || '—'}</span></div>
-                <div class="cert-data-row"><span class="cert-data-label">No. Empleado</span><span class="cert-data-value">${p.numero_empleado || '—'}</span></div>
+                <div class="cert-data-row"><span class="cert-data-label">Género</span><span class="cert-data-value">${paciente.genero || '—'}</span></div>
+                <div class="cert-data-row"><span class="cert-data-label">CURP</span><span class="cert-data-value" style="font-family:monospace;">${paciente.curp || '—'}</span></div>
+                <div class="cert-data-row"><span class="cert-data-label">NSS (IMSS)</span><span class="cert-data-value" style="font-family:monospace;">${paciente.nss || '—'}</span></div>
+                <div class="cert-data-row"><span class="cert-data-label">Empresa</span><span class="cert-data-value">${paciente.empresa_nombre || '—'}</span></div>
+                <div class="cert-data-row"><span class="cert-data-label">Puesto de Trabajo</span><span class="cert-data-value">${paciente.puesto || '—'}</span></div>
+                <div class="cert-data-row"><span class="cert-data-label">No. Empleado</span><span class="cert-data-value">${paciente.numero_empleado || '—'}</span></div>
             </div>
 
             <!-- Aptitude verdict -->
             <div class="aptitude-box ${aptClass}">
                 <div style="font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.15em; margin-bottom:8px;">Dictamen de Aptitud Laboral</div>
                 <div style="font-size:28px; font-weight:900; color:${aptColor}; letter-spacing:0.05em;">${aptString}</div>
-                ${nota?.diagnostico_texto ? `<div style="font-size:11px; color:#64748b; margin-top:8px; font-weight:500;">${nota.diagnostico_texto}</div>` : ''}
+                ${nota.diagnostico_texto ? `<div style="font-size:11px; color:#64748b; margin-top:8px; font-weight:500;">${nota.diagnostico_texto}</div>` : ''}
             </div>
 
             <!-- Vital signs summary -->
@@ -149,7 +156,7 @@ export function printCertificadoAptitud(pacienteData?: any) {
                 </div>
             </div>
 
-            ${nota?.plan_tratamiento ? `
+            ${nota.plan_tratamiento ? `
             <div style="margin-top:16px;">
                 <div class="section-title">Plan y Recomendaciones</div>
                 <div style="padding:10px 8px; font-size:11px; color:#334155; line-height:1.6;">${nota.plan_tratamiento}</div>
@@ -161,48 +168,48 @@ export function printCertificadoAptitud(pacienteData?: any) {
             <div class="signature-area">
                 <div class="signature-box">
                     <div class="signature-line">Médico Examinador</div>
-                    <div style="font-size:9px; color:#64748b; margin-top:4px;">${nota?.medico || 'Médico Responsable'}</div>
-                    <div style="font-size:8px; color:#94a3b8;">${nota?.cedula || 'Cédula Profesional'}</div>
+                    <div style="font-size:9px; color:#64748b; margin-top:4px;">${nota.medico || 'Médico Responsable'}</div>
+                    <div style="font-size:8px; color:#94a3b8;">${nota.cedula || 'Cédula Profesional'}</div>
                 </div>
                 <div class="signature-box">
                     <div class="signature-line">Trabajador</div>
-                    <div style="font-size:9px; color:#64748b; margin-top:4px;">${p.nombre} ${p.apellido_paterno}</div>
+                    <div style="font-size:9px; color:#64748b; margin-top:4px;">${paciente.nombre} ${paciente.apellido_paterno}</div>
                 </div>
             </div>
 
             <div class="footer-bar">
-                <div><span style="color:#10b981;">Confidencial</span> — Uso Médico ${p.empresa_nombre || ''}</div>
+                <div><span style="color:#10b981;">Confidencial</span> — Uso Médico ${paciente.empresa_nombre || ''}</div>
                 <div>GPMedical ERP • ${fechaHoy}</div>
             </div>
         </div>
     </div>`
 
-    openPrintWindow(`Certificado - ${p.nombre} ${p.apellido_paterno}`, html)
+    openPrintWindow(`Certificado - ${paciente.nombre} ${paciente.apellido_paterno}`, html)
 }
 
 // =================================================================
 // 2. EXPEDIENTE CLÍNICO COMPLETO (dense 2-column layout)
 // =================================================================
-export function printExpedienteCompleto(pacienteData?: any) {
-    const p = pacienteData || PACIENTE_DEMO
-    const edad = p.fecha_nacimiento ? calcEdad(p.fecha_nacimiento) : '—'
-    const lab = LABORATORIO_DEMO
-    const audio = AUDIOMETRIA_DEMO
-    const ef = EXPLORACION_FISICA_DEMO[0]
-    const notas = NOTAS_MEDICAS_DEMO.filter(n => n.estado === 'vigente')
+export function printExpedienteCompleto(paciente: any, data?: any) {
+    if (!paciente) return
+    const edad = paciente.fecha_nacimiento ? calcEdad(paciente.fecha_nacimiento) : '—'
+    const lab = data?.laboratorio || { grupos: [] }
+    const audio = data?.audiometria || { diagnostico: 'No realizado', promedio_tonal_od: 0, promedio_tonal_oi: 0, semaforo_general: '—' }
+    const ef = data?.exploracionFisica || {}
+    const notas = data?.notasMedicas || []
     const fechaHoy = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
 
     // Build lab sections
-    function buildLabSection(grupo: typeof lab.grupos[0]) {
+    function buildLabSection(grupo: any) {
         return `
         <div>
             <div class="section-title">${grupo.grupo}</div>
-            ${grupo.resultados.map(r => `
+            ${grupo.resultados ? grupo.resultados.map((r: any) => `
                 <div class="dense-row">
                     <span class="dense-label">${r.parametro}</span>
-                    <span class="dense-value ${r.bandera}">${r.resultado} ${r.unidad}${r.bandera !== 'normal' ? ` ⚠` : ''}</span>
+                    <span class="dense-value ${r.bandera}">${r.resultado} ${r.unidad}${r.bandera && r.bandera !== 'normal' ? ` ⚠` : ''}</span>
                 </div>
-            `).join('')}
+            `).join('') : ''}
         </div>`
     }
 
@@ -251,7 +258,7 @@ export function printExpedienteCompleto(pacienteData?: any) {
         <div class="patient-bar">
             <div class="patient-cell" style="flex:2;">
                 <div class="patient-cell-label">Trabajador</div>
-                <div class="patient-cell-value">${p.nombre} ${p.apellido_paterno} ${p.apellido_materno || ''}</div>
+                <div class="patient-cell-value">${paciente.nombre} ${paciente.apellido_paterno} ${paciente.apellido_materno || ''}</div>
             </div>
             <div class="patient-cell">
                 <div class="patient-cell-label">Edad</div>
@@ -259,19 +266,19 @@ export function printExpedienteCompleto(pacienteData?: any) {
             </div>
             <div class="patient-cell">
                 <div class="patient-cell-label">Género</div>
-                <div class="patient-cell-value">${p.genero || '—'}</div>
+                <div class="patient-cell-value">${paciente.genero || '—'}</div>
             </div>
             <div class="patient-cell">
                 <div class="patient-cell-label">Tipo de Sangre</div>
-                <div class="patient-cell-value">${p.tipo_sangre || '—'}</div>
+                <div class="patient-cell-value">${paciente.tipo_sangre || '—'}</div>
             </div>
             <div class="patient-cell">
                 <div class="patient-cell-label">Empresa</div>
-                <div class="patient-cell-value">${p.empresa_nombre || '—'}</div>
+                <div class="patient-cell-value">${paciente.empresa_nombre || '—'}</div>
             </div>
             <div class="patient-cell">
                 <div class="patient-cell-label">Puesto</div>
-                <div class="patient-cell-value">${p.puesto || '—'}</div>
+                <div class="patient-cell-value">${paciente.puesto || '—'}</div>
             </div>
         </div>
 
@@ -279,19 +286,19 @@ export function printExpedienteCompleto(pacienteData?: any) {
         <div class="patient-bar" style="margin-top:0;">
             <div class="patient-cell">
                 <div class="patient-cell-label">CURP</div>
-                <div class="patient-cell-value" style="font-family:monospace; font-size:10px;">${p.curp || '—'}</div>
+                <div class="patient-cell-value" style="font-family:monospace; font-size:10px;">${paciente.curp || '—'}</div>
             </div>
             <div class="patient-cell">
                 <div class="patient-cell-label">NSS</div>
-                <div class="patient-cell-value" style="font-family:monospace; font-size:10px;">${p.nss || '—'}</div>
+                <div class="patient-cell-value" style="font-family:monospace; font-size:10px;">${paciente.nss || '—'}</div>
             </div>
             <div class="patient-cell">
                 <div class="patient-cell-label">No. Empleado</div>
-                <div class="patient-cell-value">${p.numero_empleado || '—'}</div>
+                <div class="patient-cell-value">${paciente.numero_empleado || '—'}</div>
             </div>
             <div class="patient-cell">
                 <div class="patient-cell-label">Alergias</div>
-                <div class="patient-cell-value" style="color:#dc2626; font-size:9px;">${p.alergias || 'NKDA'}</div>
+                <div class="patient-cell-value" style="color:#dc2626; font-size:9px;">${paciente.alergias || 'NKDA'}</div>
             </div>
         </div>
 
@@ -299,7 +306,7 @@ export function printExpedienteCompleto(pacienteData?: any) {
         <div class="dense-grid" style="gap:16px; margin-top:8px;">
             <!-- LEFT COLUMN: Lab Results -->
             <div>
-                ${lab.grupos.map(g => buildLabSection(g)).join('')}
+                ${lab.grupos && lab.grupos.length > 0 ? lab.grupos.map((g: any) => buildLabSection(g)).join('') : '<div style="font-size:10px; color:#64748b; padding:10px;">Sin laboratorios registrados.</div>'}
             </div>
 
             <!-- RIGHT COLUMN: Clinical + Audio -->
@@ -307,12 +314,12 @@ export function printExpedienteCompleto(pacienteData?: any) {
                 <!-- Vital Signs -->
                 <div>
                     <div class="section-title">Signos Vitales y Somatometría</div>
-                    ${efFields.map(f => `
+                    ${efFields.length > 0 ? efFields.map(f => `
                         <div class="dense-row">
                             <span class="dense-label">${f.l}</span>
                             <span class="dense-value">${f.v}</span>
                         </div>
-                    `).join('')}
+                    `).join('') : '<div style="font-size:10px; color:#64748b; padding:8px;">Sin datos registrados.</div>'}
                 </div>
 
                 <!-- Audiometry summary -->
@@ -336,10 +343,6 @@ export function printExpedienteCompleto(pacienteData?: any) {
                             ● ${audio.semaforo_general?.toUpperCase()}
                         </span>
                     </div>
-                    <div class="dense-row">
-                        <span class="dense-label">Reevaluación</span>
-                        <span class="dense-value">${audio.requiere_reevaluacion ? `Sí — ${audio.tiempo_reevaluacion_meses} meses` : 'No requerida'}</span>
-                    </div>
                 </div>
 
                 <!-- Hallazgos relevantes -->
@@ -352,47 +355,25 @@ export function printExpedienteCompleto(pacienteData?: any) {
             </div>
         </div>
 
-        <!-- Exploración por aparatos y sistemas (full width) -->
-        <div style="margin-top:8px;">
-            <div class="section-title">Exploración Física por Aparatos y Sistemas</div>
-            <div class="dense-grid" style="gap:0;">
-                ${efSystems.map(f => `
-                    <div class="dense-row">
-                        <span class="dense-label">${f.l}</span>
-                        <span class="dense-value" style="text-align:left; font-weight:500; color:#475569; font-size:9px;">${f.v}</span>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-
-        <!-- NOM-011 Interpretation -->
-        <div style="margin-top:8px;">
-            <div class="section-title">Interpretación Audiológica (NOM-011-STPS)</div>
-            <div style="padding:8px; font-size:10px; color:#334155; line-height:1.5; background:#f8fafc; border:1px solid #e2e8f0;">
-                ${audio.interpretacion_nom011}
-            </div>
-        </div>
-
         <!-- Latest clinical note -->
         ${notas.length > 0 ? `
         <div style="margin-top:8px;">
             <div class="section-title">Última Nota Médica</div>
             <div style="padding:8px; font-size:10px;">
-                <div style="margin-bottom:6px;"><strong>Fecha:</strong> ${new Date(notas[notas.length - 1].fecha).toLocaleDateString('es-MX')}</div>
-                <div style="margin-bottom:6px;"><strong>Médico:</strong> ${notas[notas.length - 1].medico} (${notas[notas.length - 1].cedula})</div>
-                <div style="margin-bottom:6px;"><strong>Dx CIE-10:</strong> ${notas[notas.length - 1].diagnostico_cie10}</div>
-                <div style="margin-bottom:6px;"><strong>Diagnóstico:</strong> ${notas[notas.length - 1].diagnostico_texto}</div>
-                <div style="margin-bottom:6px;"><strong>Plan:</strong> ${notas[notas.length - 1].plan_tratamiento}</div>
-                <div><strong>Pronóstico:</strong> ${notas[notas.length - 1].pronostico}</div>
+                <div style="margin-bottom:6px;"><strong>Fecha:</strong> ${new Date(notas[0].fecha || notas[0].created_at).toLocaleDateString('es-MX')}</div>
+                <div style="margin-bottom:6px;"><strong>Médico:</strong> ${notas[0].medico} (${notas[0].cedula})</div>
+                <div style="margin-bottom:6px;"><strong>Dx CIE-10:</strong> ${notas[0].diagnostico_cie10 || '—'}</div>
+                <div style="margin-bottom:6px;"><strong>Diagnóstico:</strong> ${notas[0].diagnostico_texto}</div>
+                <div style="margin-bottom:6px;"><strong>Plan:</strong> ${notas[0].plan_tratamiento}</div>
             </div>
         </div>` : ''}
 
         <!-- Footer -->
         <div class="footer-bar">
-            <div><span style="color:#10b981;">Confidencial</span> — Uso Médico ${p.empresa_nombre || ''}</div>
+            <div><span style="color:#10b981;">Confidencial</span> — Uso Médico ${paciente.empresa_nombre || ''}</div>
             <div>GPMedical ERP v3.5 • Expediente generado el ${fechaHoy}</div>
         </div>
     </div>`
 
-    openPrintWindow(`Expediente - ${p.nombre} ${p.apellido_paterno}`, html)
+    openPrintWindow(`Expediente - ${paciente.nombre} ${paciente.apellido_paterno}`, html)
 }

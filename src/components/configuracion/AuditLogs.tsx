@@ -1,12 +1,12 @@
 // Audit Logs del Sistema
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Shield, 
-  Search, 
-  Filter, 
-  Download, 
-  Eye, 
+import {
+  Shield,
+  Search,
+  Filter,
+  Download,
+  Eye,
   Calendar,
   User,
   Activity,
@@ -29,17 +29,17 @@ import { Dialog } from '@/components/ui/dialog'
 const generateSampleLogs = (): AuditLog[] => {
   const actions = ['CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'EXPORT', 'IMPORT', 'BACKUP', 'RESTORE']
   const resources = ['Usuario', 'Empresa', 'Protocolo', 'Configuración', 'Sistema', 'Facturación', 'Backup']
-  const users = ['Dr. Carlos Mendoza', 'Dra. María González', 'Ing. Roberto Silva', 'Sistema']
+  const users = ['Administrador', 'Médico', 'Técnico', 'Sistema']
   const ipAddresses = ['192.168.1.100', '10.0.0.50', '192.168.1.101', '192.168.1.102']
-  
+
   const logs: AuditLog[] = []
-  
+
   for (let i = 0; i < 50; i++) {
     const date = new Date()
     date.setDate(date.getDate() - Math.floor(Math.random() * 30))
     date.setHours(Math.floor(Math.random() * 24))
     date.setMinutes(Math.floor(Math.random() * 60))
-    
+
     logs.push({
       id: `log-${i}`,
       userId: `user-${Math.floor(Math.random() * 3) + 1}`,
@@ -57,7 +57,7 @@ const generateSampleLogs = (): AuditLog[] => {
       timestamp: date
     })
   }
-  
+
   return logs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
 }
 
@@ -282,7 +282,7 @@ export function AuditLogs() {
     if (dateFilter) {
       const today = new Date()
       const filterDate = new Date()
-      
+
       switch (dateFilter) {
         case 'today':
           filterDate.setHours(0, 0, 0, 0)

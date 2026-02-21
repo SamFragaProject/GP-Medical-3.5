@@ -9,8 +9,9 @@ import {
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { INCAPACIDADES_DEMO } from '@/data/demoPacienteCompleto'
 import toast from 'react-hot-toast'
+import { supabase } from '@/lib/supabase'
+import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 
 const TIPO_STYLES: Record<string, { bg: string; text: string; border: string; dot: string }> = {
     'Enfermedad General': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
@@ -18,7 +19,7 @@ const TIPO_STYLES: Record<string, { bg: string; text: string; border: string; do
     'Maternidad': { bg: 'bg-pink-50', text: 'text-pink-700', border: 'border-pink-200', dot: 'bg-pink-500' },
 }
 
-function generateIncapacidadPDF(incap: typeof INCAPACIDADES_DEMO[0]) {
+function generateIncapacidadPDF(incap: any) {
     // Generate a simple text-based PDF export
     const content = `
 ═══════════════════════════════════════════════
@@ -60,12 +61,66 @@ Generado el ${new Date().toLocaleString('es-MX')}
     toast.success(`Certificado ${incap.folio} exportado`)
 }
 
-export default function IncapacidadesTab() {
-    const incapacidades = INCAPACIDADES_DEMO
+interface IncapacidadesTabProps {
+    pacienteId?: string
+}
+
+export default function IncapacidadesTab({ pacienteId }: IncapacidadesTabProps) {
+    const [incapacidades, setIncapacidades] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
     const [expandedId, setExpandedId] = useState<string | null>(null)
+
+    React.useEffect(() => {
+        if (!pacienteId) return
+        async function fetchIncapacidades() {
+            try {
+                setLoading(true)
+                const { data, error } = await supabase
+                    .from('examenes_incapacidades') // Verificar nombre de tabla
+                    .select('*')
+                    .eq('paciente_id', pacienteId)
+                    .order('fecha_inicio', { ascending: false })
+
+                if (data && data.length > 0) {
+                    setIncapacidades(data)
+                } else if (pacienteId?.startsWith('demo')) {
+                    const demoData = getExpedienteDemoCompleto()
+                    setIncapacidades(demoData.incapacidades)
+                }
+            } catch (e) {
+                console.error(e)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchIncapacidades()
+    }, [pacienteId])
 
     const totalDias = incapacidades.reduce((sum, i) => sum + i.dias, 0)
     const riesgoTrabajo = incapacidades.filter(i => i.tipo === 'Riesgo de Trabajo').length
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100">
+                <Clock className="w-10 h-10 animate-spin text-rose-500 mb-4" />
+                <p className="text-sm font-semibold text-slate-500">Cargando incapacidades...</p>
+            </div>
+        )
+    }
+
+    if (incapacidades.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-dashed border-slate-200">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                    <FileBarChart className="w-8 h-8 text-slate-300" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-700">Sin incapacidades registradas</h3>
+                <p className="text-sm text-slate-400 max-w-xs text-center mt-2">
+                    Este trabajador no cuenta con registros de incapacidad en el sistema.
+                </p>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6">

@@ -290,10 +290,10 @@ function EnterpriseInfo({ enterprise }: { enterprise: SaaSEnterprise }) {
 
 function UserActivity() {
   const [activity] = useState([
-    { id: 1, user: 'Dr. Carlos Mendoza', action: 'Actualizó configuración de empresa', time: 'Hace 5 min', type: 'config' },
-    { id: 2, user: 'Dra. María González', action: 'Completó examen médico', time: 'Hace 12 min', type: 'medical' },
-    { id: 3, user: 'Enf. Ana López', action: 'Programó cita nueva', time: 'Hace 18 min', type: 'appointment' },
-    { id: 4, user: 'Téc. Luis Martín', action: 'Realizó audiometría', time: 'Hace 25 min', type: 'examination' },
+    { id: 1, user: 'Administrador', action: 'Actualizó configuración de empresa', time: 'Hace 5 min', type: 'config' },
+    { id: 2, user: 'Médico', action: 'Completó examen médico', time: 'Hace 12 min', type: 'medical' },
+    { id: 3, user: 'Enfermería', action: 'Programó cita nueva', time: 'Hace 18 min', type: 'appointment' },
+    { id: 4, user: 'Técnico', action: 'Realizó audiometría', time: 'Hace 25 min', type: 'examination' },
     { id: 5, user: 'Sistema', action: 'Backup automático completado', time: 'Hace 1 hora', type: 'system' }
   ])
 
@@ -341,11 +341,11 @@ function UserActivity() {
 
 export function SaaSAdminPanel() {
   const user = {
-    id: 'demo-user',
-    email: 'demo@GPMedical.com',
-    name: 'Usuario Demo',
+    id: 'current-user',
+    email: 'admin@empresa.com',
+    name: 'Administrador',
     hierarchy: 'super_admin' as const,
-    empresa: { nombre: 'GPMedical Demo Corp' },
+    empresa: { nombre: '' },
     sede: { nombre: 'Sede Principal' }
   }
   const hasPermission = (resource?: string, action?: string) => true

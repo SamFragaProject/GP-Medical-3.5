@@ -313,10 +313,10 @@ export function WizardCrearEmpresa({ open, onOpenChange, onSuccess }: WizardCrea
                                 <div className="flex flex-col items-center gap-2">
                                     <div
                                         className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${paso > p.id
-                                                ? 'bg-emerald-500 text-white'
-                                                : paso === p.id
-                                                    ? 'bg-white text-slate-900 shadow-lg'
-                                                    : 'bg-white/10 text-slate-500'
+                                            ? 'bg-emerald-500 text-white'
+                                            : paso === p.id
+                                                ? 'bg-white text-slate-900 shadow-lg'
+                                                : 'bg-white/10 text-slate-500'
                                             }`}
                                     >
                                         {paso > p.id ? (
@@ -465,8 +465,8 @@ export function WizardCrearEmpresa({ open, onOpenChange, onSuccess }: WizardCrea
                                             key={plan.id}
                                             onClick={() => setFormData(prev => ({ ...prev, plan: plan.id as any }))}
                                             className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left ${formData.plan === plan.id
-                                                    ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-500/10'
-                                                    : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
+                                                ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-500/10'
+                                                : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
                                                 }`}
                                         >
                                             {plan.popular && (
@@ -551,14 +551,14 @@ export function WizardCrearEmpresa({ open, onOpenChange, onSuccess }: WizardCrea
                                                 key={rol.id}
                                                 onClick={() => toggleRol(rol.id)}
                                                 className={`p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${isSelected
-                                                        ? `border-${rol.color}-300 bg-${rol.color}-50`
-                                                        : 'border-slate-100 hover:border-slate-200'
+                                                    ? `border-${rol.color}-300 bg-${rol.color}-50`
+                                                    : 'border-slate-100 hover:border-slate-200'
                                                     }`}
                                             >
                                                 <div className="flex items-start gap-4">
                                                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${isSelected
-                                                            ? `bg-${rol.color}-500 text-white`
-                                                            : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
+                                                        ? `bg-${rol.color}-500 text-white`
+                                                        : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
                                                         }`}>
                                                         <IconComponent className="w-6 h-6" />
                                                     </div>
@@ -574,8 +574,8 @@ export function WizardCrearEmpresa({ open, onOpenChange, onSuccess }: WizardCrea
                                                         <p className="text-sm text-slate-500 mt-1">{rol.descripcion}</p>
                                                     </div>
                                                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected
-                                                            ? `border-${rol.color}-500 bg-${rol.color}-500`
-                                                            : 'border-slate-200'
+                                                        ? `border-${rol.color}-500 bg-${rol.color}-500`
+                                                        : 'border-slate-200'
                                                         }`}>
                                                         {isSelected && <Check className="w-4 h-4 text-white stroke-[3]" />}
                                                     </div>
@@ -617,7 +617,7 @@ export function WizardCrearEmpresa({ open, onOpenChange, onSuccess }: WizardCrea
                                             <Input
                                                 value={formData.admin_nombre}
                                                 onChange={e => setFormData(prev => ({ ...prev, admin_nombre: e.target.value }))}
-                                                placeholder="Dr. Juan Pérez López"
+                                                placeholder="Nombre completo del responsable"
                                                 className={`h-14 rounded-xl border-2 text-lg font-medium pl-12 ${errores.admin_nombre ? 'border-rose-300 bg-rose-50' : 'border-slate-100'
                                                     }`}
                                             />

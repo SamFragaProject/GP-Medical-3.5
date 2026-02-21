@@ -5,7 +5,7 @@ import { Quote, Star } from 'lucide-react';
 const TESTIMONIALS = [
   {
     quote: "Redujimos el tiempo de elaboración de reportes STPS de 3 días a 2 horas. La inversión se recuperó en el primer trimestre.",
-    author: "Dra. María González",
+    author: "Directora Médica",
     role: "Directora Médica",
     company: "Grupo Industrial del Norte",
     metric: "85% menos tiempo",
@@ -13,7 +13,7 @@ const TESTIMONIALS = [
   },
   {
     quote: "El módulo predictivo nos alertó sobre un patrón ergonómico antes de que se convirtiera en una incapacidad colectiva.",
-    author: "Ing. Carlos Mendoza",
+    author: "Gerente de Recursos Humanos",
     role: "Gerente de RH",
     company: "Logística MX",
     metric: "40% menos ausentismo",
@@ -21,7 +21,7 @@ const TESTIMONIALS = [
   },
   {
     quote: "Finalmente tenemos visibilidad real del estado de salud de nuestra fuerza laboral. Los dashboards son increíblemente útiles.",
-    author: "Lic. Ana Martínez",
+    author: "Directora de Operaciones",
     role: "Directora de Operaciones",
     company: "Manufacturas del Centro",
     metric: "ROI 300% primer año",
@@ -48,7 +48,7 @@ export function Testimonials() {
             <span className="text-emerald-400"> clientes</span>
           </h2>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-            Empresas líderes en México confían en GPMedical para transformar 
+            Empresas líderes en México confían en GPMedical para transformar
             su gestión de salud ocupacional.
           </p>
         </motion.div>

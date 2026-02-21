@@ -24,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 // Mapea el perfil de la DB (que usa rol_principal) al tipo User del frontend (que usa rol)
 function mapProfileToUser(profile: any): User {
+  const empresaObj = Array.isArray(profile.empresa) ? profile.empresa[0] : profile.empresa;
   return {
     id: profile.id,
     email: profile.email,
@@ -35,7 +36,7 @@ function mapProfileToUser(profile: any): User {
     sede_id: profile.sede_id,
     avatar_url: profile.avatar_url,
     telefono: profile.telefono,
-    empresa: profile.empresa,
+    empresa: empresaObj,
     cedula_profesional: profile.cedula_profesional,
     especialidad: profile.especialidad,
     created_at: profile.created_at,
@@ -105,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           let userData = null
           try {
             const profileResp = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL || 'https://kftxftikoydldcexkady.supabase.co'}/rest/v1/profiles?id=eq.${session.user.id}&select=*`,
+              `${import.meta.env.VITE_SUPABASE_URL || 'https://kftxftikoydldcexkady.supabase.co'}/rest/v1/profiles?id=eq.${session.user.id}&select=*,empresa:empresas(*)`,
               {
                 headers: {
                   'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmdHhmdGlrb3lkbGRjZXhrYWR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2OTU2OTMsImV4cCI6MjA4MjI3MTY5M30.UvxYrETiFNil2eNKzJCVcgwOd-MCDBHABlql650y1NU',
@@ -166,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Cargar perfil via REST API directa
         try {
           const profileResp = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL || 'https://kftxftikoydldcexkady.supabase.co'}/rest/v1/profiles?id=eq.${session.user.id}&select=*`,
+            `${import.meta.env.VITE_SUPABASE_URL || 'https://kftxftikoydldcexkady.supabase.co'}/rest/v1/profiles?id=eq.${session.user.id}&select=*,empresa:empresas(*)`,
             {
               headers: {
                 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmdHhmdGlrb3lkbGRjZXhrYWR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2OTU2OTMsImV4cCI6MjA4MjI3MTY5M30.UvxYrETiFNil2eNKzJCVcgwOd-MCDBHABlql650y1NU',
@@ -297,7 +298,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             await new Promise(r => setTimeout(r, 200))
             const profileResp = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL || 'https://kftxftikoydldcexkady.supabase.co'}/rest/v1/profiles?id=eq.${data.user.id}&select=*`,
+              `${import.meta.env.VITE_SUPABASE_URL || 'https://kftxftikoydldcexkady.supabase.co'}/rest/v1/profiles?id=eq.${data.user.id}&select=*,empresa:empresas(*)`,
               {
                 headers: {
                   'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmdHhmdGlrb3lkbGRjZXhrYWR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2OTU2OTMsImV4cCI6MjA4MjI3MTY5M30.UvxYrETiFNil2eNKzJCVcgwOd-MCDBHABlql650y1NU',

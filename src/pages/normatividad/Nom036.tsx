@@ -111,7 +111,7 @@ export default function Nom036() {
     const loadData = async () => {
         try {
             // Simulamos carga si no hay empresa real o backend listo
-            const { data } = await nom036Service.listarEvaluaciones({ empresa_id: 'emp-1' })
+            const { data } = await nom036Service.listarEvaluaciones({ empresa_id: user?.empresa_id || '' })
             setEvaluaciones(data as any || [])
         } catch (error) {
             console.error(error)
@@ -127,7 +127,7 @@ export default function Nom036() {
         try {
             await nom036Service.crearEvaluacion({
                 ...formData as any,
-                empresa_id: 'emp-1', // Demo ID
+                empresa_id: user?.empresa_id || '',
                 metodo_evaluacion: 'REBA', // Por defecto en esta vista simple
                 fecha_evaluacion: new Date().toISOString(),
                 datos_raw: {

@@ -50,11 +50,11 @@ interface SistemaFirmaDigitalProps {
   medicoFirmante?: Medico
 }
 
-export function SistemaFirmaDigital({ 
-  onFirmaEnviar, 
-  medicoActual, 
+export function SistemaFirmaDigital({
+  onFirmaEnviar,
+  medicoActual,
   certificadosPendientes,
-  medicoFirmante 
+  medicoFirmante
 }: SistemaFirmaDigitalProps) {
   const [certificadoSeleccionado, setCertificadoSeleccionado] = useState('')
   const [ubicacion, setUbicacion] = useState('')
@@ -206,7 +206,7 @@ export function SistemaFirmaDigital({
         {/* Panel de Firma */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Nuevo Certificado</h3>
-          
+
           {/* Selección de Certificado */}
           <div className="space-y-4">
             <div>
@@ -254,17 +254,15 @@ export function SistemaFirmaDigital({
               {metodosFirma.map((metodo) => (
                 <div
                   key={metodo.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                    metodoFirma === metodo.id
+                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${metodoFirma === metodo.id
                       ? 'border-primary bg-primary/5'
                       : 'border-gray-300 hover:border-gray-400'
-                  }`}
+                    }`}
                   onClick={() => setMetodoFirma(metodo.id as any)}
                 >
                   <div className="flex items-center space-x-3">
-                    <metodo.icono className={`h-5 w-5 ${
-                      metodoFirma === metodo.id ? 'text-primary' : 'text-gray-400'
-                    }`} />
+                    <metodo.icono className={`h-5 w-5 ${metodoFirma === metodo.id ? 'text-primary' : 'text-gray-400'
+                      }`} />
                     <div>
                       <p className="font-medium text-gray-900">{metodo.nombre}</p>
                       <p className="text-sm text-gray-600">{metodo.descripcion}</p>
@@ -365,7 +363,7 @@ export function SistemaFirmaDigital({
         {/* Panel de Validación */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Validación Blockchain</h3>
-          
+
           {firmaCompletada ? (
             <div className="space-y-6">
               {/* Estado de Firma */}
@@ -498,22 +496,8 @@ export function SistemaFirmaDigital({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {[
-                {
-                  certificado: 'CERT-20241101-0001',
-                  paciente: 'Juan García',
-                  metodo: 'Huella Dactilar',
-                  fecha: '2024-11-01 10:30',
-                  estado: 'Validada'
-                },
-                {
-                  certificado: 'CERT-20241101-0002',
-                  paciente: 'María López',
-                  metodo: 'PIN Seguro',
-                  fecha: '2024-11-01 09:15',
-                  estado: 'Validada'
-                }
-              ].map((firma, index) => (
+              {/* Las firmas recientes se cargarán dinámicamente desde Supabase */}
+              {([] as any[]).map((firma, index) => (
                 <tr key={index} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {firma.certificado}

@@ -268,7 +268,7 @@ export default function CargaMasivaPacientes({ onComplete, onCancel, empresaId }
                 departamento: 'Turno A', turno: 'Matutino', fecha_ingreso: '2023-01-15',
                 tipo_contrato: 'Indefinido', tipo_sangre: 'O+', alergias: 'Ninguna',
                 email: 'juan@empresa.com', telefono: '5512345678',
-                contacto_emergencia_nombre: 'María López', contacto_emergencia_parentesco: 'Esposa',
+                contacto_emergencia_nombre: 'Contacto de Emergencia', contacto_emergencia_parentesco: 'Familiar',
                 contacto_emergencia_telefono: '5587654321',
             }
             return examples[f.key] || ''
@@ -318,11 +318,11 @@ export default function CargaMasivaPacientes({ onComplete, onCancel, empresaId }
                     ].map((s, idx) => (
                         <React.Fragment key={s.id}>
                             <div className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${step === s.id ? 'bg-white/10 border border-white/20 text-white' :
-                                    step > s.id ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' :
-                                        'bg-white/5 border border-white/5 text-slate-500'
+                                step > s.id ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' :
+                                    'bg-white/5 border border-white/5 text-slate-500'
                                 }`}>
                                 <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black ${step > s.id ? 'bg-emerald-500 text-white' :
-                                        step === s.id ? 'bg-indigo-500 text-white' : 'bg-white/10 text-slate-500'
+                                    step === s.id ? 'bg-indigo-500 text-white' : 'bg-white/10 text-slate-500'
                                     }`}>
                                     {step > s.id ? <CheckCircle className="w-4 h-4" /> : s.id}
                                 </div>

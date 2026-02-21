@@ -82,7 +82,7 @@ export function RoleBasedNavigation({ navigationItems, sidebarOpen = true }: Rol
     email: 'demo@GPMedical.com',
     name: 'Usuario Demo',
     hierarchy: 'super_admin' as UserRole,
-    empresa: { nombre: 'GPMedical Demo Corp' },
+    empresa: { nombre: '' },
     sede: { nombre: 'Sede Principal' },
     permissions: ['*']
   }
@@ -363,7 +363,7 @@ export function useModulePermission(modulePath: string) {
     email: 'demo@GPMedical.com',
     name: 'Usuario Demo',
     hierarchy: 'super_admin' as UserRole,
-    empresa: { nombre: 'GPMedical Demo Corp' },
+    empresa: { nombre: '' },
     sede: { nombre: 'Sede Principal' },
     permissions: ['*']
   }

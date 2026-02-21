@@ -113,67 +113,8 @@ export function AnalisisErgonomicoIA() {
   }
 
   const cargarDatosErgo = () => {
-    // Datos base de pacientes para evaluar
-    const evaluacionesSimuladas: EvaluacionErgonomica[] = [
-      {
-        id: 'ERG001',
-        empleado_id: 'EMP001',
-        nombre_empleado: 'Ana García López',
-        puesto: 'Operaria de Línea de Ensamblaje',
-        fecha_evaluacion: '2025-11-01',
-        puntuacion_total: 72,
-        riesgo_ergonomico: 'alto',
-        zonas_riesgo: ['Columna lumbar', 'Hombros', 'Muñecas'],
-        recomendaciones: [
-          'Ajustar altura de estación de trabajo',
-          'Implementar pausas activas cada 30 min'
-        ],
-        tiempo_exposicion: 480,
-        frecuencia_movimientos: 180,
-        fuerza_requerida: 65,
-        postura_trabajo: 'de pie inclinada',
-        iluminacion: 75,
-        ruido: 68,
-        temperatura: 22,
-        factore_diseno: {
-          altura_mesa: 85,
-          silla_ajustable: false,
-          monitor_distancia: 60,
-          teclado_posicion: 72,
-          raton_accesible: true
-        },
-        estado: 'completada'
-      },
-      {
-        id: 'ERG002',
-        empleado_id: 'EMP002',
-        nombre_empleado: 'Carlos Mendoza',
-        puesto: 'Supervisor de Turno',
-        fecha_evaluacion: '2025-11-01',
-        puntuacion_total: 45,
-        riesgo_ergonomico: 'medio',
-        zonas_riesgo: ['Cuello', 'Codos'],
-        recomendaciones: [
-          'Verificar altura de monitor',
-          'Ejercicios de estiramiento'
-        ],
-        tiempo_exposicion: 240,
-        frecuencia_movimientos: 45,
-        fuerza_requerida: 25,
-        postura_trabajo: 'sentado',
-        iluminacion: 85,
-        ruido: 55,
-        temperatura: 24,
-        factore_diseno: {
-          altura_mesa: 75,
-          silla_ajustable: true,
-          monitor_distancia: 45,
-          teclado_posicion: 78,
-          raton_accesible: true
-        },
-        estado: 'completada'
-      }
-    ]
+    // Las evaluaciones se cargarán dinámicamente desde Supabase
+    const evaluacionesSimuladas: EvaluacionErgonomica[] = []
 
     setEvaluaciones(evaluacionesSimuladas)
   }
@@ -432,8 +373,8 @@ export function AnalisisErgonomicoIA() {
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${evaluacion.puntuacion_total >= 70 ? 'bg-red-500' :
-                            evaluacion.puntuacion_total >= 50 ? 'bg-orange-500' :
-                              evaluacion.puntuacion_total >= 30 ? 'bg-yellow-500' : 'bg-green-500'
+                          evaluacion.puntuacion_total >= 50 ? 'bg-orange-500' :
+                            evaluacion.puntuacion_total >= 30 ? 'bg-yellow-500' : 'bg-green-500'
                           }`}
                         style={{ width: `${evaluacion.puntuacion_total}%` }}
                       />

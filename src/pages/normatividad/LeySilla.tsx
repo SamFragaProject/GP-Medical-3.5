@@ -21,9 +21,11 @@ import { Label } from '@/components/ui/label'
 import { PremiumMetricCard } from '@/components/ui/PremiumMetricCard'
 import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader'
 import { leySillaService, AreaLeySilla } from '@/services/leySillaService'
+import { useAuth } from '@/contexts/AuthContext'
 import toast from 'react-hot-toast'
 
 export default function LeySilla() {
+    const { user } = useAuth()
     const [areas, setAreas] = useState<AreaLeySilla[]>([])
     const [loading, setLoading] = useState(true)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -47,41 +49,8 @@ export default function LeySilla() {
     const loadData = async () => {
         try {
             // Demo data si falla la carga real
-            const data = await leySillaService.getAll('emp-1')
-            if (data && data.length > 0) {
-                setAreas(data)
-            } else {
-                setAreas([
-                    {
-                        id: '1',
-                        empresa_id: 'emp-1',
-                        nombre_area: 'Línea de Ensamble A',
-                        ubicacion_fisica: 'Nave 1',
-                        total_trabajadores: 20,
-                        trabajadores_de_pie: 20,
-                        asientos_disponibles: 5,
-                        cumple_ratio: true,
-                        tipo_asiento: 'banco',
-                        estado_mobiliario: 'regular',
-                        protocolo_descanso: 'Rotación cada hora',
-                        updated_at: new Date().toISOString()
-                    },
-                    {
-                        id: '2',
-                        empresa_id: 'emp-1',
-                        nombre_area: 'Recepción',
-                        ubicacion_fisica: 'Entrada Principal',
-                        total_trabajadores: 2,
-                        trabajadores_de_pie: 2,
-                        asientos_disponibles: 0,
-                        cumple_ratio: false,
-                        tipo_asiento: 'ninguno',
-                        estado_mobiliario: 'malo',
-                        protocolo_descanso: 'Sin definir',
-                        updated_at: new Date().toISOString()
-                    }
-                ])
-            }
+            const data = await leySillaService.getAll(user?.empresa_id || '')
+            setAreas(data || [])
         } catch (error) {
             console.error(error)
         } finally {
@@ -93,7 +62,7 @@ export default function LeySilla() {
         try {
             await leySillaService.create({
                 ...formData as any,
-                empresa_id: 'emp-1'
+                empresa_id: user?.empresa_id || ''
             })
             toast.success('Área registrada correctamente')
             setIsDialogOpen(false)

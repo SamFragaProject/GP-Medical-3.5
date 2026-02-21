@@ -105,7 +105,7 @@ const user = {
   email: 'demo@GPMedical.com',
   name: 'Usuario Demo',
   hierarchy: 'super_admin' as const,
-  empresa: { nombre: 'GPMedical Demo Corp' },
+  empresa: { nombre: '' },
   sede: { nombre: 'Sede Principal' }
 }
 
@@ -120,62 +120,8 @@ export function ExamenesOcupacionales() {
   const [showNuevoProtocolo, setShowNuevoProtocolo] = useState(false)
   const navigate = useNavigate()
 
-  // Estados para datos simulados
-  const [examenes, setExamenes] = useState<Examen[]>([
-    {
-      id: 'EX001',
-      empleado: 'Juan Pérez García',
-      empresa: 'Constructora SA',
-      puesto: 'Soldador',
-      tipoExamen: 'Periódico',
-      fechaProgramacion: '2025-11-15',
-      estado: 'programado',
-      resultado: 'pendiente',
-      proximoVencimiento: '2026-11-15',
-      prioridad: 'media'
-    },
-    {
-      id: 'EX002',
-      empleado: 'María López Hernández',
-      empresa: 'Oficinas Corporativas',
-      puesto: 'Analista',
-      tipoExamen: 'Ingreso',
-      fechaProgramacion: '2025-10-28',
-      fechaRealizacion: '2025-10-28',
-      estado: 'completado',
-      resultado: 'apto',
-      laboratorios: ['Hemograma completo', 'Audiometría'],
-      proximoVencimiento: '2026-10-28',
-      prioridad: 'baja'
-    },
-    {
-      id: 'EX003',
-      empleado: 'Carlos Rodríguez Silva',
-      empresa: 'Fábrica Industrial',
-      puesto: 'Operador de maquinaria',
-      tipoExamen: 'Post-incidente',
-      fechaProgramacion: '2025-10-25',
-      fechaRealizacion: '2025-10-25',
-      estado: 'completado',
-      resultado: 'apto_con_restricciones',
-      laboratorios: ['Rayos X de tórax', 'Espirometría'],
-      observaciones: 'Requiere control en 3 meses',
-      proximoVencimiento: '2026-01-25',
-      prioridad: 'alta'
-    },
-    {
-      id: 'EX004',
-      empleado: 'Ana Martínez Flores',
-      empresa: 'Laboratorio Farmacéutico',
-      puesto: 'Químico',
-      tipoExamen: 'Específico por exposición',
-      fechaProgramacion: '2025-10-20',
-      estado: 'vencido',
-      laboratorios: ['Biomarcadores químicos', 'Función hepática'],
-      proximoVencimiento: '2025-10-20',
-      prioridad: 'alta'
-    }
-  ])
+  // Los exámenes se cargan dinámicamente desde Supabase
+  const [examenes, setExamenes] = useState<Examen[]>([])
 
   const [protocolos, setProtocolos] = useState<Protocolo[]>([
     {

@@ -22,7 +22,8 @@ import {
     Droplets, AlertTriangle, CheckCircle, ChevronRight,
     Users, Clipboard, Eye, Stethoscope, Loader2,
     Wind, Bone, Pill, FileBarChart, ScrollText,
-    Plus, FlaskConical, BarChart3, Ear, Printer, FileCheck
+    Plus, FlaskConical, BarChart3, Ear, Printer, FileCheck,
+    FolderOpen
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -34,19 +35,16 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Paciente, pacientesService } from '@/services/dataService'
 import toast from 'react-hot-toast'
 import FotoPaciente from '@/components/expediente/FotoPaciente'
+import { supabase } from '@/lib/supabase'
 import { printCertificadoAptitud, printExpedienteCompleto } from '@/components/expediente/ExportarPDFPaciente'
 
 // Lazy-load clinical sub-modules for performance
 const HistorialClinicoCompleto = React.lazy(() => import('@/components/expediente/HistorialClinicoCompleto'))
-const LaboratorioTab = React.lazy(() => import('@/components/expediente/LaboratorioTab'))
-const AudiometriaTab = React.lazy(() => import('@/components/expediente/AudiometriaTab'))
-const EstudiosVisualesTab = React.lazy(() => import('@/components/expediente/EstudiosVisualesTab'))
-const EspirometriaTab = React.lazy(() => import('@/components/expediente/EspirometriaTab'))
-const RayosXTab = React.lazy(() => import('@/components/expediente/RayosXTab'))
 const RecetasTab = React.lazy(() => import('@/components/expediente/RecetasTab'))
 const IncapacidadesTab = React.lazy(() => import('@/components/expediente/IncapacidadesTab'))
 const DictamenesTab = React.lazy(() => import('@/components/expediente/DictamenesTab'))
 const OdontogramaTab = React.lazy(() => import('@/components/expediente/OdontogramaTab'))
+const DocumentosExpedienteTab = React.lazy(() => import('@/components/expediente/DocumentosExpedienteTab'))
 
 // =============================================
 // HELPERS
@@ -83,29 +81,26 @@ interface TabConfig {
 }
 
 const TABS: TabConfig[] = [
-    // Info Group
+    // ── Información del Paciente ──
     { value: 'general', label: 'General', icon: User, group: 'info' },
     { value: 'laboral', label: 'Laboral', icon: Building2, group: 'info' },
     { value: 'contacto', label: 'Contacto', icon: Phone, group: 'info' },
-    // Clinical Group  
-    { value: 'expediente', label: 'Expediente', icon: Stethoscope, group: 'clinico', description: 'Historial clínico completo' },
-    // Diagnostic Group
-    { value: 'laboratorio', label: 'Laboratorio', icon: FlaskConical, group: 'diagnostico', description: 'Resultados de laboratorio clínico' },
-    { value: 'audiometria', label: 'Audiometría', icon: Ear, group: 'diagnostico', description: 'Audiograma y semáforo NOM-011' },
-    { value: 'vision', label: 'Estudios Visuales', icon: Eye, group: 'diagnostico', description: 'Agudeza visual y Escala Jaeger' },
-    { value: 'espirometria', label: 'Espirometría', icon: Wind, group: 'diagnostico', description: 'Pruebas de función pulmonar' },
-    { value: 'rayos_x', label: 'Rayos X', icon: Bone, group: 'diagnostico', description: 'Estudios radiológicos' },
+    // ── Expediente Clínico (hub principal) ──
+    { value: 'expediente', label: 'Expediente', icon: Stethoscope, group: 'clinico', description: 'Historial clínico completo — Laboratorio, Audiometría, Espirometría, Rayos X, Visión y más' },
+    // ── Documentos ──
+    { value: 'documentos', label: 'Documentos', icon: FolderOpen, group: 'clinico', description: 'Documentos cifrados del expediente — AES-256-GCM' },
+    // ── Tratamiento y Reportes ──
     { value: 'recetas', label: 'Recetas', icon: Pill, group: 'diagnostico', description: 'Prescripciones médicas' },
-    { value: 'odontograma', label: 'Odontograma', icon: Activity, group: 'diagnostico', description: 'Diagrama dental interactivo — Sistema FDI' },
-    { value: 'incapacidades', label: 'Incapacidades', icon: FileBarChart, group: 'diagnostico', description: 'Certificados de incapacidad' },
     { value: 'dictamenes', label: 'Dictámenes', icon: ScrollText, group: 'diagnostico', description: 'Dictámenes médico-laborales' },
+    { value: 'incapacidades', label: 'Incapacidades', icon: FileBarChart, group: 'diagnostico', description: 'Certificados de incapacidad' },
+    { value: 'odontograma', label: 'Odontograma', icon: Activity, group: 'diagnostico', description: 'Diagrama dental interactivo — Sistema FDI' },
 ]
 
 // Group colors for visual differentiation
 const GROUP_COLORS = {
     info: { bg: 'bg-slate-100', text: 'text-slate-500', label: 'Información' },
-    clinico: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Clínico' },
-    diagnostico: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Diagnóstico' },
+    clinico: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Expediente' },
+    diagnostico: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Tratamiento' },
 }
 
 // =============================================
@@ -169,6 +164,63 @@ export default function PerfilPaciente() {
         toast.success('Expediente exportado correctamente')
     }
 
+    const [printing, setPrinting] = useState(false)
+
+    const handlePrintCertificate = async () => {
+        if (!paciente || !id) return
+        try {
+            setPrinting(true)
+            // Fetch latest note and latest physical exploration
+            const [
+                { data: note },
+                { data: ef }
+            ] = await Promise.all([
+                supabase.from('notas_medicas').select('*').eq('paciente_id', id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+                supabase.from('exploraciones_fisicas').select('*').eq('paciente_id', id).order('fecha_exploracion', { ascending: false }).limit(1).maybeSingle()
+            ])
+            printCertificadoAptitud(paciente, note, ef)
+        } catch (error) {
+            console.error('Error fetching print data:', error)
+            toast.error('Error al generar el certificado')
+        } finally {
+            setPrinting(false)
+        }
+    }
+
+    const handlePrintFullExpediente = async () => {
+        if (!paciente || !id) return
+        try {
+            setPrinting(true)
+            // Fetch a snapshot of clinical data for the print view
+            const [
+                { data: ef },
+                { data: notas },
+                { data: labs },
+                { data: audio }
+            ] = await Promise.all([
+                supabase.from('exploraciones_fisicas').select('*').eq('paciente_id', id).order('fecha_exploracion', { ascending: false }).limit(1).maybeSingle(),
+                supabase.from('notas_medicas').select('*').eq('paciente_id', id).order('created_at', { ascending: false }).limit(5),
+                supabase.from('examenes_laboratorio').select('*').eq('paciente_id', id).order('fecha', { ascending: false }).limit(1).maybeSingle(),
+                supabase.from('audio_evaluaciones').select('*').eq('paciente_id', id).order('fecha', { ascending: false }).limit(1).maybeSingle()
+            ])
+
+            // Map the fetched data to the structure the print function expects
+            const printData = {
+                exploracionFisica: ef,
+                notasMedicas: notas,
+                laboratorio: labs,
+                audiometria: audio
+            }
+
+            printExpedienteCompleto(paciente, printData)
+        } catch (error) {
+            console.error('Error fetching full print data:', error)
+            toast.error('Error al generar el expediente PDF')
+        } finally {
+            setPrinting(false)
+        }
+    }
+
     if (loading) {
         return (
             <div className="flex items-center justify-center py-40">
@@ -210,17 +262,21 @@ export default function PerfilPaciente() {
                         <div className="flex gap-2">
                             <Button
                                 variant="ghost"
-                                onClick={() => printCertificadoAptitud(paciente)}
+                                onClick={handlePrintCertificate}
+                                disabled={printing}
                                 className="text-slate-400 hover:text-white hover:bg-emerald-500/20 rounded-xl gap-2"
                             >
-                                <FileCheck className="w-4 h-4" /> Certificado
+                                {printing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileCheck className="w-4 h-4" />}
+                                Certificado
                             </Button>
                             <Button
                                 variant="ghost"
-                                onClick={() => printExpedienteCompleto(paciente)}
+                                onClick={handlePrintFullExpediente}
+                                disabled={printing}
                                 className="text-slate-400 hover:text-white hover:bg-blue-500/20 rounded-xl gap-2"
                             >
-                                <Printer className="w-4 h-4" /> Expediente PDF
+                                {printing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+                                Expediente PDF
                             </Button>
                             <Button variant="ghost" onClick={handleExport} className="text-slate-400 hover:text-white hover:bg-white/10 rounded-xl gap-2">
                                 <Download className="w-4 h-4" /> JSON
@@ -304,9 +360,9 @@ export default function PerfilPaciente() {
                     <div className="flex flex-wrap items-center gap-1 mb-1 px-1">
                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mr-1">📋 Información</span>
                         <span className="text-slate-200 mx-1">|</span>
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500 mr-1">🩺 Clínico</span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500 mr-1">🩺 Expediente</span>
                         <span className="text-slate-200 mx-1">|</span>
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-500">🔬 Diagnóstico</span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-500">💊 Tratamiento</span>
                     </div>
                     <TabsList className="bg-transparent w-full h-auto flex-wrap gap-1 p-0">
                         {TABS.map(tab => {
@@ -439,50 +495,21 @@ export default function PerfilPaciente() {
                         {/* ═══ CLINICAL TAB ═══ */}
                         <TabsContent value="expediente" className="mt-0">
                             <Suspense fallback={<TabLoader label="Cargando expediente clínico..." />}>
-                                <HistorialClinicoCompleto pacienteId={id} />
+                                <HistorialClinicoCompleto pacienteId={id!} />
                             </Suspense>
                         </TabsContent>
 
-                        {/* ═══ DIAGNOSTIC TABS ═══ */}
-                        <TabsContent value="laboratorio" className="mt-0">
-                            <Suspense fallback={<TabLoader label="Cargando laboratorio..." />}>
-                                <LaboratorioTab />
-                            </Suspense>
-                        </TabsContent>
-
-                        <TabsContent value="audiometria" className="mt-0">
-                            <Suspense fallback={<TabLoader label="Cargando audiometría..." />}>
-                                <AudiometriaTab />
-                            </Suspense>
-                        </TabsContent>
-
-                        <TabsContent value="vision" className="mt-0">
-                            <Suspense fallback={<TabLoader label="Cargando estudios visuales..." />}>
-                                <EstudiosVisualesTab />
-                            </Suspense>
-                        </TabsContent>
-
-                        <TabsContent value="espirometria" className="mt-0">
-                            <Suspense fallback={<TabLoader label="Cargando espirometría..." />}>
-                                <EspirometriaTab />
-                            </Suspense>
-                        </TabsContent>
-
-                        <TabsContent value="rayos_x" className="mt-0">
-                            <Suspense fallback={<TabLoader label="Cargando rayos X..." />}>
-                                <RayosXTab />
-                            </Suspense>
-                        </TabsContent>
+                        {/* ═══ TREATMENT TABS ═══ */}
 
                         <TabsContent value="recetas" className="mt-0">
                             <Suspense fallback={<TabLoader label="Cargando recetas..." />}>
-                                <RecetasTab />
+                                <RecetasTab pacienteId={id!} />
                             </Suspense>
                         </TabsContent>
 
                         <TabsContent value="incapacidades" className="mt-0">
                             <Suspense fallback={<TabLoader label="Cargando incapacidades..." />}>
-                                <IncapacidadesTab />
+                                <IncapacidadesTab pacienteId={id!} />
                             </Suspense>
                         </TabsContent>
 
@@ -494,7 +521,17 @@ export default function PerfilPaciente() {
 
                         <TabsContent value="dictamenes" className="mt-0">
                             <Suspense fallback={<TabLoader label="Cargando dictámenes..." />}>
-                                <DictamenesTab />
+                                <DictamenesTab pacienteId={id!} />
+                            </Suspense>
+                        </TabsContent>
+
+                        <TabsContent value="documentos" className="mt-0">
+                            <Suspense fallback={<TabLoader label="Cargando documentos cifrados..." />}>
+                                <DocumentosExpedienteTab
+                                    pacienteId={id!}
+                                    empresaId={user?.empresa_id || ''}
+                                    pacienteNombre={`${paciente.nombre} ${paciente.apellido_paterno}`}
+                                />
                             </Suspense>
                         </TabsContent>
                     </motion.div>

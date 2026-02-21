@@ -70,7 +70,7 @@ export function AIWorkbench() {
 
     const loadExample = (type: 'receta' | 'laboratorio') => {
         if (type === 'receta') {
-            setInputText(`Paciente: Juan Pérez. Presenta cuadro de faringoamigdalitis severa. 
+            setInputText(`Paciente: Paciente Ejemplo. Presenta cuadro de faringoamigdalitis severa. 
 Tratamiento:
 1. Amoxicilina con ácido clavulánico 875/125mg cada 12 horas por 7 días.
 2. Paracetamol 500mg cada 8 horas por 3 días si hay fiebre.

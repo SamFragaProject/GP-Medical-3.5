@@ -1,15 +1,15 @@
 // Gestión de Empresa y Sedes
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Building, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Globe, 
+import {
+  Building,
+  Plus,
+  Edit,
+  Trash2,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
   Save,
   Upload,
   Star,
@@ -42,9 +42,9 @@ interface SedeFormData {
   isMain: boolean
 }
 
-function EmpresaForm({ empresa, onSave }: { 
+function EmpresaForm({ empresa, onSave }: {
   empresa?: Empresa
-  onSave: (data: any) => void 
+  onSave: (data: any) => void
 }) {
   const [formData, setFormData] = useState({
     name: empresa?.name || '',
@@ -87,7 +87,7 @@ function EmpresaForm({ empresa, onSave }: {
             required
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Razón social *
@@ -99,7 +99,7 @@ function EmpresaForm({ empresa, onSave }: {
             required
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             RFC *
@@ -112,7 +112,7 @@ function EmpresaForm({ empresa, onSave }: {
             required
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Teléfono
@@ -123,7 +123,7 @@ function EmpresaForm({ empresa, onSave }: {
             placeholder="+52 55 1234 5678"
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Email
@@ -135,7 +135,7 @@ function EmpresaForm({ empresa, onSave }: {
             placeholder="contacto@GPMedical.com"
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Sitio web
@@ -150,7 +150,7 @@ function EmpresaForm({ empresa, onSave }: {
 
       <div className="border-t pt-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Dirección fiscal</h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -158,78 +158,78 @@ function EmpresaForm({ empresa, onSave }: {
             </label>
             <Input
               value={formData.address.street}
-              onChange={(e) => setFormData({ 
-                ...formData, 
+              onChange={(e) => setFormData({
+                ...formData,
                 address: { ...formData.address, street: e.target.value }
               })}
               placeholder="Av. Insurgentes Sur"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Número
             </label>
             <Input
               value={formData.address.number}
-              onChange={(e) => setFormData({ 
-                ...formData, 
+              onChange={(e) => setFormData({
+                ...formData,
                 address: { ...formData.address, number: e.target.value }
               })}
               placeholder="1234"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Colonia
             </label>
             <Input
               value={formData.address.colony}
-              onChange={(e) => setFormData({ 
-                ...formData, 
+              onChange={(e) => setFormData({
+                ...formData,
                 address: { ...formData.address, colony: e.target.value }
               })}
               placeholder="Del Valle"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Ciudad
             </label>
             <Input
               value={formData.address.city}
-              onChange={(e) => setFormData({ 
-                ...formData, 
+              onChange={(e) => setFormData({
+                ...formData,
                 address: { ...formData.address, city: e.target.value }
               })}
               placeholder="Ciudad de México"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Estado
             </label>
             <Input
               value={formData.address.state}
-              onChange={(e) => setFormData({ 
-                ...formData, 
+              onChange={(e) => setFormData({
+                ...formData,
                 address: { ...formData.address, state: e.target.value }
               })}
               placeholder="CDMX"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Código postal
             </label>
             <Input
               value={formData.address.zipCode}
-              onChange={(e) => setFormData({ 
-                ...formData, 
+              onChange={(e) => setFormData({
+                ...formData,
                 address: { ...formData.address, zipCode: e.target.value }
               })}
               placeholder="03100"
@@ -248,10 +248,10 @@ function EmpresaForm({ empresa, onSave }: {
   )
 }
 
-function SedeForm({ sede, onSave, onCancel }: { 
+function SedeForm({ sede, onSave, onCancel }: {
   sede?: Sede
   onSave: (data: SedeFormData) => void
-  onCancel: () => void 
+  onCancel: () => void
 }) {
   const [formData, setFormData] = useState<SedeFormData>({
     name: sede?.name || '',
@@ -292,7 +292,7 @@ function SedeForm({ sede, onSave, onCancel }: {
             required
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Responsable *
@@ -300,11 +300,11 @@ function SedeForm({ sede, onSave, onCancel }: {
           <Input
             value={formData.manager}
             onChange={(e) => setFormData({ ...formData, manager: e.target.value })}
-            placeholder="Dr. Carlos Mendoza"
+            placeholder="Nombre del responsable"
             required
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Teléfono *
@@ -316,7 +316,7 @@ function SedeForm({ sede, onSave, onCancel }: {
             required
           />
         </div>
-        
+
         <div className="flex items-center">
           <input
             type="checkbox"
@@ -333,7 +333,7 @@ function SedeForm({ sede, onSave, onCancel }: {
 
       <div className="border-t pt-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Dirección de la sede</h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -341,78 +341,78 @@ function SedeForm({ sede, onSave, onCancel }: {
             </label>
             <Input
               value={formData.address.street}
-              onChange={(e) => setFormData({ 
-                ...formData, 
+              onChange={(e) => setFormData({
+                ...formData,
                 address: { ...formData.address, street: e.target.value }
               })}
               placeholder="Av. Insurgentes Sur"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Número
             </label>
             <Input
               value={formData.address.number}
-              onChange={(e) => setFormData({ 
-                ...formData, 
+              onChange={(e) => setFormData({
+                ...formData,
                 address: { ...formData.address, number: e.target.value }
               })}
               placeholder="1234"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Colonia
             </label>
             <Input
               value={formData.address.colony}
-              onChange={(e) => setFormData({ 
-                ...formData, 
+              onChange={(e) => setFormData({
+                ...formData,
                 address: { ...formData.address, colony: e.target.value }
               })}
               placeholder="Del Valle"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Ciudad
             </label>
             <Input
               value={formData.address.city}
-              onChange={(e) => setFormData({ 
-                ...formData, 
+              onChange={(e) => setFormData({
+                ...formData,
                 address: { ...formData.address, city: e.target.value }
               })}
               placeholder="Ciudad de México"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Estado
             </label>
             <Input
               value={formData.address.state}
-              onChange={(e) => setFormData({ 
-                ...formData, 
+              onChange={(e) => setFormData({
+                ...formData,
                 address: { ...formData.address, state: e.target.value }
               })}
               placeholder="CDMX"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Código postal
             </label>
             <Input
               value={formData.address.zipCode}
-              onChange={(e) => setFormData({ 
-                ...formData, 
+              onChange={(e) => setFormData({
+                ...formData,
                 address: { ...formData.address, zipCode: e.target.value }
               })}
               placeholder="03100"
@@ -472,8 +472,8 @@ export function GestionEmpresa() {
         <div className="max-w-4xl mx-auto">
           <Card className="p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
-              {modalType === 'edit-empresa' ? 'Editar Información de Empresa' : 
-               modalType === 'create-sede' ? 'Crear Nueva Sede' : 'Editar Sede'}
+              {modalType === 'edit-empresa' ? 'Editar Información de Empresa' :
+                modalType === 'create-sede' ? 'Crear Nueva Sede' : 'Editar Sede'}
             </h2>
             {modalType === 'edit-empresa' ? (
               <EmpresaForm
@@ -513,21 +513,19 @@ export function GestionEmpresa() {
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setVistaActiva('empresa')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              vistaActiva === 'empresa'
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${vistaActiva === 'empresa'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+              }`}
           >
             Información de Empresa
           </button>
           <button
             onClick={() => setVistaActiva('sedes')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              vistaActiva === 'sedes'
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${vistaActiva === 'sedes'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+              }`}
           >
             Sedes ({settings.sedes.length})
           </button>
@@ -588,8 +586,8 @@ export function GestionEmpresa() {
                         <div className="flex items-center space-x-2">
                           <Globe className="h-4 w-4 text-gray-400" />
                           <span className="text-gray-600">Sitio web:</span>
-                          <a 
-                            href={settings.empresa.website} 
+                          <a
+                            href={settings.empresa.website}
                             className="font-medium text-primary hover:underline"
                             target="_blank"
                             rel="noopener noreferrer"
@@ -656,9 +654,8 @@ export function GestionEmpresa() {
                   <Card key={sede.id} className="p-6 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-3">
-                        <div className={`p-2 rounded-lg ${
-                          sede.isMain ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
-                        }`}>
+                        <div className={`p-2 rounded-lg ${sede.isMain ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
+                          }`}>
                           {sede.isMain ? <Crown size={20} /> : <Building size={20} />}
                         </div>
                         <div>

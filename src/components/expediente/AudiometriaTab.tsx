@@ -9,9 +9,9 @@ import {
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { AUDIOMETRIA_DEMO, AUDIOMETRIA_PREVIA_DEMO } from '@/data/demoPacienteCompleto'
-
-type AudioData = typeof AUDIOMETRIA_DEMO
+import { supabase } from '@/lib/supabase'
+import { Loader2, Inbox } from 'lucide-react'
+import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 
 const FREQUENCIES = ['250', '500', '1000', '2000', '3000', '4000', '6000', '8000']
 const FREQ_LABELS = ['250', '500', '1K', '2K', '3K', '4K', '6K', '8K']
@@ -134,10 +134,63 @@ function SemaforoIndicator({ label, semaforo, ptaDb }: { label: string; semaforo
     )
 }
 
-export default function AudiometriaTab() {
-    const audio = AUDIOMETRIA_DEMO
-    const prev = AUDIOMETRIA_PREVIA_DEMO
+export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
+    const [loading, setLoading] = React.useState(true)
+    const [audio, setAudio] = React.useState<any>(null)
+    const [prev, setPrev] = React.useState<any>(null)
     const [showPrev, setShowPrev] = useState(false)
+
+    React.useEffect(() => {
+        if (pacienteId) loadData()
+    }, [pacienteId])
+
+    const loadData = async () => {
+        try {
+            setLoading(true)
+            const { data, error } = await supabase
+                .from('examenes_audiometria')
+                .select('*')
+                .eq('paciente_id', pacienteId)
+                .order('fecha', { ascending: false })
+                .limit(2)
+
+            if (data && data.length > 0) {
+                setAudio(data[0])
+                if (data.length > 1) setPrev(data[1])
+            } else if (pacienteId?.startsWith('demo')) {
+                const demoData = getExpedienteDemoCompleto()
+                setAudio(demoData.audiometria)
+                setPrev(demoData.audiometriaPrevio)
+            }
+        } catch (err) {
+            console.error('Error loading audiometry:', err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+                <p className="text-slate-500 text-xs font-medium">Cargando estudios auditivos...</p>
+            </div>
+        )
+    }
+
+    if (!audio) {
+        return (
+            <Card className="border-0 shadow-sm p-12 text-center">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Inbox className="w-8 h-8 text-slate-300" />
+                </div>
+                <h3 className="text-slate-800 font-bold">Sin registros de audiometría</h3>
+                <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2">
+                    Este paciente aún no cuenta con estudios de audiometría tonal realizados.
+                </p>
+            </Card>
+        )
+    }
 
     const semStyle = SEMAFORO_STYLES[audio.semaforo_general as keyof typeof SEMAFORO_STYLES] || SEMAFORO_STYLES.verde
 
@@ -269,20 +322,21 @@ export default function AudiometriaTab() {
                 </CardContent>
             </Card>
 
-            {/* Previous comparison */}
-            <button
-                onClick={() => setShowPrev(!showPrev)}
-                className="w-full flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-colors"
-            >
-                <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-slate-400" />
-                    <span className="text-xs font-bold text-slate-500">
-                        Comparar con estudio previo ({new Date(prev.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })})
-                    </span>
-                </div>
-                {showPrev ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-            </button>
-            {showPrev && (
+            {prev && (
+                <button
+                    onClick={() => setShowPrev(!showPrev)}
+                    className="w-full flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-colors"
+                >
+                    <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-slate-400" />
+                        <span className="text-xs font-bold text-slate-500">
+                            Comparar con estudio previo ({new Date(prev.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })})
+                        </span>
+                    </div>
+                    {showPrev ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                </button>
+            )}
+            {showPrev && prev && (
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}

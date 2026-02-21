@@ -43,7 +43,10 @@ import {
   Command,
   Moon,
   Sun,
-  Brain
+  Brain,
+  Gauge,
+  Landmark,
+  DollarSign
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermisosDinamicos } from '@/hooks/usePermisosDinamicos';
@@ -67,11 +70,13 @@ export function SpectacularSidebar() {
   // Items principales definidos manualmente pero protegidos por permisos
   const potentialMainItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', color: 'emerald', permission: 'dashboard' },
+    { path: '/operaciones', icon: Gauge, label: 'Centro Ops', color: 'amber', badge: 'LIVE', permission: 'agenda' },
+    { path: '/farmacia', icon: Pill, label: 'Farmacia', color: 'teal', permission: 'inventario' },
     { path: '/rayosx', icon: Zap, label: 'Rayos X & IA', color: 'violet', badge: 'IA', permission: 'rayos_x' },
     { path: '/riesgos-trabajo', icon: AlertCircle, label: 'Riesgos de Trabajo', color: 'amber', badge: 'ST-7', permission: 'riesgos_trabajo' },
     { path: '/rrhh', icon: Users, label: 'RRHH', color: 'blue', permission: 'rrhh' },
     { path: '/recepcion/sala-espera', icon: Clock, label: 'Sala de Espera', color: 'blue', permission: 'agenda' },
-    { path: '/facturacion', icon: CreditCard, label: 'Facturación', color: 'teal', permission: 'facturacion' },
+    { path: '/finanzas', icon: Landmark, label: 'Finanzas & Admin', color: 'teal', permission: 'facturacion' },
     { path: '/reportes/vigilancia', icon: Brain, label: 'Vigilancia Epidemiológica', color: 'emerald', badge: 'IA', permission: 'reportes' },
   ] as const;
 
@@ -170,7 +175,7 @@ export function SpectacularSidebar() {
             </p>
             <div className="space-y-1">
               {mainNavItems.map((item) => (
-                <NavItem key={item.path} {...item} isActive={location.pathname === item.path} color={item.color as any} />
+                <NavItem key={item.path} {...item} isActive={location.pathname === item.path || location.pathname.startsWith(item.path + '/')} color={item.color as any} />
               ))}
             </div>
           </div>

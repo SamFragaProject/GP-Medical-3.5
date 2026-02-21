@@ -98,23 +98,23 @@ const PanelAdminFarmacia: React.FC = () => {
     email: 'demo@GPMedical.com',
     name: 'Usuario Demo',
     hierarchy: 'super_admin' as const,
-    empresa: { nombre: 'GPMedical Demo Corp' },
+    empresa: { nombre: '' },
     sede: { nombre: 'Sede Principal' }
   }
   const hasHierarchyRole = () => true
-  
+
   // Estados principales
   const [productos, setProductos] = useState<ProductoExtendido[]>([])
   const [proveedores, setProveedores] = useState<Proveedor[]>([])
   const [categorias, setCategorias] = useState<CategoriaInventario[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('productos')
-  
+
   // Estados para modales
   const [modalAbierto, setModalAbierto] = useState(false)
   const [productoEditando, setProductoEditando] = useState<ProductoExtendido | null>(null)
   const [esNuevoProducto, setEsNuevoProducto] = useState(true)
-  
+
   // Estados para paginación y filtros
   const [paginaActual, setPaginaActual] = useState(1)
   const [productosPorPagina] = useState(10)
@@ -122,7 +122,7 @@ const PanelAdminFarmacia: React.FC = () => {
   const [busqueda, setBusqueda] = useState('')
   const [ordenamiento, setOrdenamiento] = useState<'nombre' | 'precio' | 'stock'>('nombre')
   const [direccionOrden, setDireccionOrden] = useState<'asc' | 'desc'>('asc')
-  
+
   // Estados para formulario
   const [formulario, setFormulario] = useState<FormularioProductoData>({
     codigo: '',
@@ -140,14 +140,14 @@ const PanelAdminFarmacia: React.FC = () => {
     ubicacion: '',
     recomendado: false
   })
-  
+
   // Verificación de permisos eliminada - acceso directo
-  
+
   // Cargar datos iniciales
   useEffect(() => {
     cargarDatos()
   }, [])
-  
+
   const cargarDatos = async () => {
     setLoading(true)
     try {
@@ -162,24 +162,24 @@ const PanelAdminFarmacia: React.FC = () => {
       setLoading(false)
     }
   }
-  
+
   // Filtrar y ordenar productos
   const productosFiltrados = productos
     .filter(producto => {
       const coincideBusqueda = producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-                             producto.codigo.toLowerCase().includes(busqueda.toLowerCase())
-      
-      const coincideFiltros = 
+        producto.codigo.toLowerCase().includes(busqueda.toLowerCase())
+
+      const coincideFiltros =
         (!filtros.tipo || producto.tipo === filtros.tipo) &&
         (!filtros.categoria || producto.categoria === filtros.categoria) &&
         (!filtros.proveedorId || producto.proveedorId === filtros.proveedorId) &&
         coincideBusqueda
-      
+
       return coincideFiltros
     })
     .sort((a, b) => {
       let valorA: any, valorB: any
-      
+
       switch (ordenamiento) {
         case 'precio':
           valorA = a.precioUnitario
@@ -193,19 +193,19 @@ const PanelAdminFarmacia: React.FC = () => {
           valorA = a.nombre
           valorB = b.nombre
       }
-      
+
       if (direccionOrden === 'asc') {
         return valorA > valorB ? 1 : -1
       } else {
         return valorA < valorB ? 1 : -1
       }
     })
-  
+
   // Paginación
   const totalPaginas = Math.ceil(productosFiltrados.length / productosPorPagina)
   const indiceInicio = (paginaActual - 1) * productosPorPagina
   const productosPaginados = productosFiltrados.slice(indiceInicio, indiceInicio + productosPorPagina)
-  
+
   // Manejar formulario
   const abrirModalNuevo = () => {
     setEsNuevoProducto(true)
@@ -228,7 +228,7 @@ const PanelAdminFarmacia: React.FC = () => {
     })
     setModalAbierto(true)
   }
-  
+
   const abrirModalEditar = (producto: ProductoExtendido) => {
     setEsNuevoProducto(false)
     setProductoEditando(producto)
@@ -252,7 +252,7 @@ const PanelAdminFarmacia: React.FC = () => {
     })
     setModalAbierto(true)
   }
-  
+
   const guardarProducto = async () => {
     try {
       // Validaciones
@@ -260,7 +260,7 @@ const PanelAdminFarmacia: React.FC = () => {
         toast.error('Por favor complete todos los campos requeridos')
         return
       }
-      
+
       if (esNuevoProducto) {
         // Crear nuevo producto
         const nuevoProducto: ProductoExtendido = {
@@ -297,50 +297,50 @@ const PanelAdminFarmacia: React.FC = () => {
             updatedAt: new Date()
           }
         }
-        
+
         setProductos([...productos, nuevoProducto])
         toast.success('Producto creado exitosamente')
       } else {
         // Actualizar producto existente
-        const productosActualizados = productos.map(p => 
-          p.id === productoEditando?.id 
+        const productosActualizados = productos.map(p =>
+          p.id === productoEditando?.id
             ? {
-                ...p,
-                codigo: formulario.codigo,
-                nombre: formulario.nombre,
-                descripcion: formulario.descripcion,
-                tipo: formulario.tipo,
-                categoria: formulario.categoria,
-                unidadMedida: formulario.unidadMedida,
-                precioUnitario: formulario.precioUnitario,
-                proveedorId: formulario.proveedorId,
-                requiereReceta: formulario.requiereReceta,
-                requiereFrio: formulario.requiereFrio,
-                temperaturaMin: formulario.temperaturaMin,
-                temperaturaMax: formulario.temperaturaMax,
-                recomendado: formulario.recomendado,
-                stock: p.stock ? {
-                  ...p.stock,
-                  cantidadMinima: formulario.cantidadMinima,
-                  cantidadMaxima: formulario.cantidadMaxima,
-                  ubicacion: formulario.ubicacion,
-                  updatedAt: new Date()
-                } : undefined,
+              ...p,
+              codigo: formulario.codigo,
+              nombre: formulario.nombre,
+              descripcion: formulario.descripcion,
+              tipo: formulario.tipo,
+              categoria: formulario.categoria,
+              unidadMedida: formulario.unidadMedida,
+              precioUnitario: formulario.precioUnitario,
+              proveedorId: formulario.proveedorId,
+              requiereReceta: formulario.requiereReceta,
+              requiereFrio: formulario.requiereFrio,
+              temperaturaMin: formulario.temperaturaMin,
+              temperaturaMax: formulario.temperaturaMax,
+              recomendado: formulario.recomendado,
+              stock: p.stock ? {
+                ...p.stock,
+                cantidadMinima: formulario.cantidadMinima,
+                cantidadMaxima: formulario.cantidadMaxima,
+                ubicacion: formulario.ubicacion,
                 updatedAt: new Date()
-              }
+              } : undefined,
+              updatedAt: new Date()
+            }
             : p
         )
-        
+
         setProductos(productosActualizados)
         toast.success('Producto actualizado exitosamente')
       }
-      
+
       setModalAbierto(false)
     } catch (error) {
       toast.error('Error al guardar el producto')
     }
   }
-  
+
   const eliminarProducto = async (id: string) => {
     if (confirm('¿Está seguro de que desea eliminar este producto?')) {
       try {
@@ -351,7 +351,7 @@ const PanelAdminFarmacia: React.FC = () => {
       }
     }
   }
-  
+
   const toggleRecomendado = async (id: string) => {
     try {
       const productosActualizados = productos.map(p =>
@@ -363,7 +363,7 @@ const PanelAdminFarmacia: React.FC = () => {
       toast.error('Error al actualizar el producto')
     }
   }
-  
+
   const obtenerCategoriasPorTipo = (tipo: TipoProducto) => {
     switch (tipo) {
       case 'medicamento':
@@ -376,7 +376,7 @@ const PanelAdminFarmacia: React.FC = () => {
         return []
     }
   }
-  
+
   const obtenerColorEstadoStock = (estado: EstadoStock) => {
     switch (estado) {
       case 'disponible':
@@ -391,7 +391,7 @@ const PanelAdminFarmacia: React.FC = () => {
         return 'bg-gray-100 text-gray-800'
     }
   }
-  
+
   const obtenerIconoEstadoStock = (estado: EstadoStock) => {
     switch (estado) {
       case 'disponible':
@@ -406,7 +406,7 @@ const PanelAdminFarmacia: React.FC = () => {
         return '?'
     }
   }
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -414,7 +414,7 @@ const PanelAdminFarmacia: React.FC = () => {
       </div>
     )
   }
-  
+
   return (
     <div className="p-6 space-y-6">
       {/* Encabezado */}
@@ -439,7 +439,7 @@ const PanelAdminFarmacia: React.FC = () => {
           </Button>
         </div>
       </div>
-      
+
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
@@ -451,7 +451,7 @@ const PanelAdminFarmacia: React.FC = () => {
             <div className="text-2xl font-bold">{productos.length}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Stock Bajo</CardTitle>
@@ -463,7 +463,7 @@ const PanelAdminFarmacia: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Valor Inventario</CardTitle>
@@ -475,7 +475,7 @@ const PanelAdminFarmacia: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Recomendados</CardTitle>
@@ -488,7 +488,7 @@ const PanelAdminFarmacia: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-      
+
       {/* Pestañas */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
@@ -497,7 +497,7 @@ const PanelAdminFarmacia: React.FC = () => {
           <TabsTrigger value="categorias">Categorías</TabsTrigger>
           <TabsTrigger value="reportes">Reportes</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="productos" className="space-y-4">
           {/* Filtros y búsqueda */}
           <Card>
@@ -515,10 +515,10 @@ const PanelAdminFarmacia: React.FC = () => {
                     className="pl-10"
                   />
                 </div>
-                
+
                 <Select
                   value={filtros.tipo || ''}
-                  onValueChange={(value) => setFiltros({...filtros, tipo: value as TipoProducto || undefined})}
+                  onValueChange={(value) => setFiltros({ ...filtros, tipo: value as TipoProducto || undefined })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Tipo de producto" />
@@ -532,10 +532,10 @@ const PanelAdminFarmacia: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                
+
                 <Select
                   value={filtros.categoria || ''}
-                  onValueChange={(value) => setFiltros({...filtros, categoria: value as CategoriaProducto || undefined})}
+                  onValueChange={(value) => setFiltros({ ...filtros, categoria: value as CategoriaProducto || undefined })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Categoría" />
@@ -549,7 +549,7 @@ const PanelAdminFarmacia: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                
+
                 <Select
                   value={ordenamiento}
                   onValueChange={(value: 'nombre' | 'precio' | 'stock') => setOrdenamiento(value)}
@@ -563,7 +563,7 @@ const PanelAdminFarmacia: React.FC = () => {
                     <SelectItem value="stock">Stock</SelectItem>
                   </SelectContent>
                 </Select>
-                
+
                 <Button
                   variant="outline"
                   onClick={() => setDireccionOrden(direccionOrden === 'asc' ? 'desc' : 'asc')}
@@ -573,7 +573,7 @@ const PanelAdminFarmacia: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           {/* Tabla de productos */}
           <Card>
             <CardHeader>
@@ -643,8 +643,8 @@ const PanelAdminFarmacia: React.FC = () => {
                             size="sm"
                             onClick={() => toggleRecomendado(producto.id)}
                           >
-                            <Star 
-                              className={`h-4 w-4 ${producto.recomendado ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}`} 
+                            <Star
+                              className={`h-4 w-4 ${producto.recomendado ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}`}
                             />
                           </Button>
                         </TableCell>
@@ -671,7 +671,7 @@ const PanelAdminFarmacia: React.FC = () => {
                   </TableBody>
                 </Table>
               </div>
-              
+
               {/* Paginación */}
               <div className="flex items-center justify-between mt-4">
                 <div className="text-sm text-gray-500">
@@ -702,7 +702,7 @@ const PanelAdminFarmacia: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="inventario">
           <Card>
             <CardHeader>
@@ -719,7 +719,7 @@ const PanelAdminFarmacia: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="categorias">
           <Card>
             <CardHeader>
@@ -736,7 +736,7 @@ const PanelAdminFarmacia: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="reportes">
           <Card>
             <CardHeader>
@@ -754,7 +754,7 @@ const PanelAdminFarmacia: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
-      
+
       {/* Modal para crear/editar producto */}
       <Dialog open={modalAbierto} onOpenChange={setModalAbierto}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -763,40 +763,40 @@ const PanelAdminFarmacia: React.FC = () => {
               {esNuevoProducto ? 'Nuevo Producto' : 'Editar Producto'}
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Información básica */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Información Básica</h3>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Código del Producto *</label>
                 <Input
                   value={formulario.codigo}
-                  onChange={(e) => setFormulario({...formulario, codigo: e.target.value})}
+                  onChange={(e) => setFormulario({ ...formulario, codigo: e.target.value })}
                   placeholder="Ej: MED001"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Nombre del Producto *</label>
                 <Input
                   value={formulario.nombre}
-                  onChange={(e) => setFormulario({...formulario, nombre: e.target.value})}
+                  onChange={(e) => setFormulario({ ...formulario, nombre: e.target.value })}
                   placeholder="Ej: Paracetamol 500mg"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Descripción</label>
                 <Textarea
                   value={formulario.descripcion}
-                  onChange={(e) => setFormulario({...formulario, descripcion: e.target.value})}
+                  onChange={(e) => setFormulario({ ...formulario, descripcion: e.target.value })}
                   placeholder="Descripción detallada del producto"
                   rows={3}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Tipo de Producto *</label>
                 <Select
@@ -822,12 +822,12 @@ const PanelAdminFarmacia: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Categoría *</label>
                 <Select
                   value={formulario.categoria}
-                  onValueChange={(value) => setFormulario({...formulario, categoria: value as CategoriaProducto})}
+                  onValueChange={(value) => setFormulario({ ...formulario, categoria: value as CategoriaProducto })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -841,37 +841,37 @@ const PanelAdminFarmacia: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Unidad de Medida *</label>
                 <Input
                   value={formulario.unidadMedida}
-                  onChange={(e) => setFormulario({...formulario, unidadMedida: e.target.value})}
+                  onChange={(e) => setFormulario({ ...formulario, unidadMedida: e.target.value })}
                   placeholder="Ej: Tabletas, ml, unidades"
                 />
               </div>
             </div>
-            
+
             {/* Información comercial */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Información Comercial</h3>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Precio Unitario *</label>
                 <Input
                   type="number"
                   value={formulario.precioUnitario}
-                  onChange={(e) => setFormulario({...formulario, precioUnitario: parseFloat(e.target.value) || 0})}
+                  onChange={(e) => setFormulario({ ...formulario, precioUnitario: parseFloat(e.target.value) || 0 })}
                   placeholder="0.00"
                   step="0.01"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Proveedor *</label>
                 <Select
                   value={formulario.proveedorId}
-                  onValueChange={(value) => setFormulario({...formulario, proveedorId: value})}
+                  onValueChange={(value) => setFormulario({ ...formulario, proveedorId: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar proveedor" />
@@ -885,7 +885,7 @@ const PanelAdminFarmacia: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-4">
                 <label className="text-sm font-medium">Configuraciones Especiales</label>
                 <div className="space-y-2">
@@ -893,31 +893,31 @@ const PanelAdminFarmacia: React.FC = () => {
                     <Checkbox
                       id="requiereReceta"
                       checked={formulario.requiereReceta}
-                      onCheckedChange={(checked) => setFormulario({...formulario, requiereReceta: !!checked})}
+                      onCheckedChange={(checked) => setFormulario({ ...formulario, requiereReceta: !!checked })}
                     />
                     <label htmlFor="requiereReceta" className="text-sm">Requiere receta médica</label>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="requiereFrio"
                       checked={formulario.requiereFrio}
-                      onCheckedChange={(checked) => setFormulario({...formulario, requiereFrio: !!checked})}
+                      onCheckedChange={(checked) => setFormulario({ ...formulario, requiereFrio: !!checked })}
                     />
                     <label htmlFor="requiereFrio" className="text-sm">Requiere almacenamiento refrigerado</label>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="recomendado"
                       checked={formulario.recomendado}
-                      onCheckedChange={(checked) => setFormulario({...formulario, recomendado: !!checked})}
+                      onCheckedChange={(checked) => setFormulario({ ...formulario, recomendado: !!checked })}
                     />
                     <label htmlFor="recomendado" className="text-sm">Producto recomendado</label>
                   </div>
                 </div>
               </div>
-              
+
               {formulario.requiereFrio && (
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-2">
@@ -925,7 +925,7 @@ const PanelAdminFarmacia: React.FC = () => {
                     <Input
                       type="number"
                       value={formulario.temperaturaMin || ''}
-                      onChange={(e) => setFormulario({...formulario, temperaturaMin: parseFloat(e.target.value) || undefined})}
+                      onChange={(e) => setFormulario({ ...formulario, temperaturaMin: parseFloat(e.target.value) || undefined })}
                       placeholder="2"
                       step="0.1"
                     />
@@ -935,7 +935,7 @@ const PanelAdminFarmacia: React.FC = () => {
                     <Input
                       type="number"
                       value={formulario.temperaturaMax || ''}
-                      onChange={(e) => setFormulario({...formulario, temperaturaMax: parseFloat(e.target.value) || undefined})}
+                      onChange={(e) => setFormulario({ ...formulario, temperaturaMax: parseFloat(e.target.value) || undefined })}
                       placeholder="8"
                       step="0.1"
                     />
@@ -944,47 +944,47 @@ const PanelAdminFarmacia: React.FC = () => {
               )}
             </div>
           </div>
-          
+
           {/* Gestión de inventario */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Gestión de Inventario</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Stock Mínimo *</label>
                 <Input
                   type="number"
                   value={formulario.cantidadMinima}
-                  onChange={(e) => setFormulario({...formulario, cantidadMinima: parseInt(e.target.value) || 0})}
+                  onChange={(e) => setFormulario({ ...formulario, cantidadMinima: parseInt(e.target.value) || 0 })}
                   placeholder="10"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Stock Máximo *</label>
                 <Input
                   type="number"
                   value={formulario.cantidadMaxima}
-                  onChange={(e) => setFormulario({...formulario, cantidadMaxima: parseInt(e.target.value) || 0})}
+                  onChange={(e) => setFormulario({ ...formulario, cantidadMaxima: parseInt(e.target.value) || 0 })}
                   placeholder="100"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Ubicación *</label>
                 <Input
                   value={formulario.ubicacion}
-                  onChange={(e) => setFormulario({...formulario, ubicacion: e.target.value})}
+                  onChange={(e) => setFormulario({ ...formulario, ubicacion: e.target.value })}
                   placeholder="Ej: Estantería A1"
                 />
               </div>
             </div>
           </div>
-          
+
           {/* Gestión de imágenes */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Imágenes del Producto</h3>
-            
+
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               <Camera className="h-12 w-12 mx-auto text-gray-400 mb-4" />
               <p className="text-gray-500 mb-4">Arrastre una imagen aquí o haga clic para seleccionar</p>
@@ -994,7 +994,7 @@ const PanelAdminFarmacia: React.FC = () => {
               </Button>
             </div>
           </div>
-          
+
           <div className="flex justify-end gap-2 pt-6">
             <Button variant="outline" onClick={() => setModalAbierto(false)}>
               Cancelar
@@ -1113,7 +1113,7 @@ const proveedoresEjemplo: Proveedor[] = [
   {
     id: 'prov_1',
     nombre: 'Farmacéutica Nacional S.A.',
-    contacto: 'Dr. Juan Pérez',
+    contacto: 'Contacto de Ventas',
     telefono: '+34 91 123 4567',
     email: 'ventas@farmanacional.com',
     direccion: 'Calle Principal 123, Madrid',
@@ -1128,7 +1128,7 @@ const proveedoresEjemplo: Proveedor[] = [
   {
     id: 'prov_2',
     nombre: 'Suministros Médicos S.L.',
-    contacto: 'María García',
+    contacto: 'Contacto de Pedidos',
     telefono: '+34 93 987 6543',
     email: 'pedidos@suministrosmedicos.com',
     direccion: 'Av. Diagonal 456, Barcelona',

@@ -53,7 +53,7 @@ export function InventarioPersonalizado() {
     id: 'demo-user',
     email: 'demo@GPMedical.com',
     hierarchy: 'super_admin' as const,
-    empresa: { nombre: 'GPMedical Demo Corp' },
+    empresa: { nombre: '' },
     sede: { nombre: 'Sede Principal' }
   }
 
@@ -124,7 +124,7 @@ export function InventarioPersonalizado() {
       id: '2',
       productoId: '4',
       productoNombre: 'Mascarillas N95',
-      medico: 'Dr. Roberto Silva',
+      medico: 'Médico Solicitante',
       cantidad: 100,
       fechaSolicitud: '2025-11-02',
       estado: 'pendiente',

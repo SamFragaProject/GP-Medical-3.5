@@ -42,7 +42,7 @@ export default function Incapacidades() {
 
     const loadData = async () => {
         try {
-            const data = await prescripcionService.getIncapacidades('emp-1')
+            const data = await prescripcionService.getIncapacidades(user?.empresa_id || '')
             setIncapacidades(data || [])
         } catch (error) {
             console.error(error)
@@ -54,8 +54,8 @@ export default function Incapacidades() {
     const handleSave = async () => {
         try {
             await prescripcionService.createIncapacidad({
-                paciente_id: selectedPacienteId || 'p-demo',
-                empresa_id: 'emp-1',
+                paciente_id: selectedPacienteId || '',
+                empresa_id: user?.empresa_id || '',
                 medico_id: user?.id,
                 tipo_incapacidad: tipo as any,
                 dias_autorizados: dias,
@@ -126,8 +126,7 @@ export default function Incapacidades() {
                                     <Select onValueChange={setSelectedPacienteId}>
                                         <SelectTrigger><SelectValue placeholder="Buscar paciente..." /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="p-demo">Juan Pérez (Demo)</SelectItem>
-                                            <SelectItem value="p-demo-2">María González (Demo)</SelectItem>
+                                            {/* Los pacientes se cargarán dinámicamente desde Supabase */}
                                         </SelectContent>
                                     </Select>
                                 </div>

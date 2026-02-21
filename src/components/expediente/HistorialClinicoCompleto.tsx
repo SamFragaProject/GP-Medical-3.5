@@ -5,7 +5,7 @@
  * Consentimientos, Notas Médicas Versionadas, Línea de Tiempo,
  * y Exportación con filtros.
  */
-import React, { useState, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Activity, Heart, Shield, Briefcase, Stethoscope, FileText,
@@ -13,58 +13,144 @@ import {
     User, Cigarette, Wine, Dumbbell, Coffee, Moon, Apple,
     Pill, GitBranch, ChevronDown, ChevronUp, Building2,
     Zap, Brain, Bone, Eye as EyeIcon, Ear, MapPin,
-    Thermometer, Droplets, Scale, Ruler, Gauge, Pen
+    Thermometer, Droplets, Scale, Ruler, Gauge, Pen, Loader2,
+    Wind, FlaskConical
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import {
-    PACIENTE_DEMO, APNP_DEMO, AHF_DEMO, HISTORIA_OCUPACIONAL_DEMO,
-    EXPLORACION_FISICA_DEMO, CONSENTIMIENTOS_DEMO, NOTAS_MEDICAS_DEMO,
-    EVENTOS_CLINICOS_DEMO, getExpedienteDemoCompleto
-} from '@/data/demoPacienteCompleto'
 import { NotasMedicasVersionadas } from '@/components/expediente/NotasMedicasVersionadas'
 import { ExportarHistorialDialog } from '@/components/expediente/ExportarHistorialDialog'
+import AudiometriaTab from '@/components/expediente/AudiometriaTab'
+import EspirometriaTab from '@/components/expediente/EspirometriaTab'
+import EstudiosVisualesTab from '@/components/expediente/EstudiosVisualesTab'
+import LaboratorioTab from '@/components/expediente/LaboratorioTab'
+import RayosXTab from '@/components/expediente/RayosXTab'
+import { supabase } from '@/lib/supabase'
+import { pacientesService } from '@/services/dataService'
+import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
+import toast from 'react-hot-toast'
 
 // =====================================================
 // MAIN COMPONENT
 // =====================================================
-export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId?: string }) {
+export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId: string }) {
     const [activeTab, setActiveTab] = useState('resumen')
     const [exportOpen, setExportOpen] = useState(false)
+    const [loading, setLoading] = React.useState(true)
+    const [expediente, setExpediente] = React.useState<any>(null)
 
-    // For demo, use mock data. In production, fetch from Supabase
-    const isDemoPatient = !pacienteId || pacienteId === 'demo-ecr-001'
-    const data = useMemo(() => getExpedienteDemoCompleto(), [])
+    React.useEffect(() => {
+        if (pacienteId) {
+            loadExpedienteCompleto()
+        }
+    }, [pacienteId])
+
+    const loadExpedienteCompleto = async () => {
+        try {
+            setLoading(true)
+
+            // Cargar datos en paralelo para mayor velocidad
+            const [
+                { data: paciente },
+                { data: apnp },
+                { data: ahf },
+                { data: historiaOcupacional },
+                { data: exploracionesFisicas },
+                { data: consentimientos },
+                { data: notasMedicas },
+                { data: eventosClinicos }
+            ] = await Promise.all([
+                supabase.from('pacientes').select('*').eq('id', pacienteId).single(),
+                supabase.from('antecedentes_np').select('*').eq('paciente_id', pacienteId).maybeSingle(),
+                supabase.from('antecedentes_hf').select('*').eq('paciente_id', pacienteId).maybeSingle(),
+                supabase.from('historia_ocupacional').select('*').eq('paciente_id', pacienteId).order('fecha_inicio', { ascending: false }),
+                supabase.from('exploraciones_fisicas').select('*').eq('paciente_id', pacienteId).order('fecha_exploracion', { ascending: false }),
+                supabase.from('consentimientos_firmados').select('*').eq('paciente_id', pacienteId).order('fecha_firma', { ascending: false }),
+                supabase.from('notas_medicas').select('*').eq('paciente_id', pacienteId).order('created_at', { ascending: false }),
+                supabase.from('eventos_clinicos').select('*').eq('paciente_id', pacienteId).order('fecha_evento', { ascending: false })
+            ])
+
+            if ((!paciente && pacienteId !== 'demo-pac-1' && !pacienteId?.startsWith('demo')) || (!paciente && !pacienteId)) {
+                toast.error('No se encontró el paciente')
+                return
+            }
+
+            if (!paciente && pacienteId?.startsWith('demo')) {
+                // Return full demo patient
+                const demoData = getExpedienteDemoCompleto()
+                setExpediente(demoData)
+                return
+            }
+
+            setExpediente({
+                paciente,
+                apnp: apnp || {},
+                ahf: ahf || {},
+                historiaOcupacional: historiaOcupacional || [],
+                exploracionesFisicas: exploracionesFisicas || [],
+                consentimientos: consentimientos || [],
+                notasMedicas: notasMedicas || [],
+                eventosClinicos: eventosClinicos || []
+            })
+
+        } catch (error) {
+            console.error('Error cargando expediente:', error)
+            toast.error('Error al cargar la historia clínica')
+        } finally {
+            setLoading(false)
+        }
+    }
 
     const handleExport = (filters: any) => {
+        if (!expediente) return
+
         const exportData: any = {
             meta: {
                 exportado_por: 'GPMedical ERP Pro',
                 fecha_exportacion: new Date().toISOString(),
-                paciente: `${data.paciente.nombre} ${data.paciente.apellido_paterno}`,
+                paciente: `${expediente.paciente.nombre} ${expediente.paciente.apellido_paterno}`,
                 filtros_aplicados: filters,
             },
-            datos_personales: data.paciente,
+            datos_personales: expediente.paciente,
         }
-        if (filters.includeAPNP) exportData.apnp = data.apnp
-        if (filters.includeAHF) exportData.ahf = data.ahf
-        if (filters.includeHistoriaOcupacional) exportData.historia_ocupacional = data.historiaOcupacional
-        if (filters.includeExploracionFisica) exportData.exploraciones_fisicas = data.exploracionesFisicas
-        if (filters.includeConsentimientos) exportData.consentimientos = data.consentimientos
-        if (filters.includeNotasMedicas) exportData.notas_medicas = data.notasMedicas
-        if (filters.includeEventosClinicos) exportData.eventos_clinicos = data.eventosClinicos
+        if (filters.includeAPNP) exportData.apnp = expediente.apnp
+        if (filters.includeAHF) exportData.ahf = expediente.ahf
+        if (filters.includeHistoriaOcupacional) exportData.historia_ocupacional = expediente.historiaOcupacional
+        if (filters.includeExploracionFisica) exportData.exploraciones_fisicas = expediente.exploracionesFisicas
+        if (filters.includeConsentimientos) exportData.consentimientos = expediente.consentimientos
+        if (filters.includeNotasMedicas) exportData.notas_medicas = expediente.notasMedicas
+        if (filters.includeEventosClinicos) exportData.eventos_clinicos = expediente.eventosClinicos
 
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `ECE_${data.paciente.apellido_paterno}_${data.paciente.nombre}_${new Date().toISOString().split('T')[0]}.json`
+        a.download = `ECE_${expediente.paciente.apellido_paterno}_${expediente.paciente.nombre}_${new Date().toISOString().split('T')[0]}.json`
         a.click()
         URL.revokeObjectURL(url)
     }
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+                <p className="text-slate-500 font-medium">Cargando expediente clínico...</p>
+            </div>
+        )
+    }
+
+    if (!expediente) {
+        return (
+            <Card className="border-0 shadow-lg text-center p-12">
+                <p className="text-slate-500">No se pudo cargar la información del paciente.</p>
+            </Card>
+        )
+    }
+
+    const data = expediente
 
     const TABS = [
         { value: 'resumen', label: 'Resumen', icon: Activity },
@@ -72,6 +158,11 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId?: 
         { value: 'ahf', label: 'AHF', icon: Shield },
         { value: 'ocupacional', label: 'Ocupacional', icon: Briefcase },
         { value: 'exploracion', label: 'Exploración Física', icon: Stethoscope },
+        { value: 'audiometria', label: 'Audiometría', icon: Ear },
+        { value: 'espirometria', label: 'Espiometría', icon: Wind },
+        { value: 'vision', label: 'Visión', icon: EyeIcon },
+        { value: 'laboratorio', label: 'Laboratorio', icon: FlaskConical },
+        { value: 'rayosx', label: 'Rayos X', icon: Bone },
         { value: 'consentimientos', label: 'Consentimientos', icon: Pen },
         { value: 'notas', label: 'Notas Médicas', icon: GitBranch },
         { value: 'timeline', label: 'Línea de Tiempo', icon: Clock },
@@ -92,7 +183,7 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId?: 
                         <TabsTrigger key={tab.value} value={tab.value}
                             className="rounded-xl px-3 py-2 text-xs font-bold data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm gap-1.5">
                             <tab.icon className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">{tab.label}</span>
+                            <span className="hidden lg:inline">{tab.label}</span>
                         </TabsTrigger>
                     ))}
                 </TabsList>
@@ -123,6 +214,31 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId?: 
                         {/* ═══ EXPLORACIÓN FÍSICA ═══ */}
                         <TabsContent value="exploracion" className="mt-0">
                             <ExploracionTab exploraciones={data.exploracionesFisicas} />
+                        </TabsContent>
+
+                        {/* ═══ AUDIOMETRÍA ═══ */}
+                        <TabsContent value="audiometria" className="mt-0">
+                            <AudiometriaTab pacienteId={pacienteId} />
+                        </TabsContent>
+
+                        {/* ═══ ESPIROMETRÍA ═══ */}
+                        <TabsContent value="espirometria" className="mt-0">
+                            <EspirometriaTab pacienteId={pacienteId} />
+                        </TabsContent>
+
+                        {/* ═══ VISIÓN ═══ */}
+                        <TabsContent value="vision" className="mt-0">
+                            <EstudiosVisualesTab pacienteId={pacienteId} />
+                        </TabsContent>
+
+                        {/* ═══ LABORATORIO ═══ */}
+                        <TabsContent value="laboratorio" className="mt-0">
+                            <LaboratorioTab pacienteId={pacienteId} />
+                        </TabsContent>
+
+                        {/* ═══ RAYOS X ═══ */}
+                        <TabsContent value="rayosx" className="mt-0">
+                            <RayosXTab pacienteId={pacienteId} />
                         </TabsContent>
 
                         {/* ═══ CONSENTIMIENTOS ═══ */}
@@ -156,8 +272,10 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId?: 
 // =====================================================
 // RESUMEN TAB
 // =====================================================
-function ResumenTab({ data }: { data: ReturnType<typeof getExpedienteDemoCompleto> }) {
-    const latestEF = data.exploracionesFisicas[0]
+function ResumenTab({ data }: { data: any }) {
+    const latestEF = data.exploracionesFisicas?.[0] || {
+        ta_sistolica: '—', ta_diastolica: '—', fc: '—', temperatura: '—', spo2: '—', imc: '—', glucosa: '—'
+    }
     const p = data.paciente
     return (
         <div className="space-y-4">
@@ -232,7 +350,7 @@ function ResumenTab({ data }: { data: ReturnType<typeof getExpedienteDemoComplet
 // =====================================================
 // APNP TAB
 // =====================================================
-function APNPTab({ apnp }: { apnp: typeof APNP_DEMO }) {
+function APNPTab({ apnp }: { apnp: any }) {
     const habits = [
         { icon: Cigarette, label: 'Tabaco', active: apnp.tabaco, detail: apnp.tabaco ? `${apnp.tabaco_cantidad} — ${apnp.tabaco_frecuencia}. ${apnp.tabaco_tiempo}` : 'Negado', color: apnp.tabaco ? 'amber' : 'emerald' },
         { icon: Wine, label: 'Alcohol', active: apnp.alcohol, detail: apnp.alcohol ? `${apnp.alcohol_frecuencia}. ${apnp.alcohol_cantidad}` : 'Negado', color: apnp.alcohol ? 'amber' : 'emerald' },
@@ -281,7 +399,7 @@ function APNPTab({ apnp }: { apnp: typeof APNP_DEMO }) {
 // =====================================================
 // AHF TAB
 // =====================================================
-function AHFTab({ ahf }: { ahf: typeof AHF_DEMO }) {
+function AHFTab({ ahf }: { ahf: any }) {
     const items = [
         { label: 'Diabetes', present: ahf.diabetes, who: ahf.diabetes_quien, color: 'amber' },
         { label: 'Hipertensión', present: ahf.hipertension, who: ahf.hipertension_quien, color: 'rose' },
@@ -327,7 +445,7 @@ function AHFTab({ ahf }: { ahf: typeof AHF_DEMO }) {
 // =====================================================
 // OCUPACIONAL TAB
 // =====================================================
-function OcupacionalTab({ historias }: { historias: typeof HISTORIA_OCUPACIONAL_DEMO }) {
+function OcupacionalTab({ historias }: { historias: any[] }) {
     const [expanded, setExpanded] = useState<string | null>(historias[historias.length - 1]?.id || null)
     return (
         <div className="space-y-3">
@@ -401,7 +519,7 @@ function RiskField({ label, value, color }: { label: string; value?: string; col
 // =====================================================
 // EXPLORACIÓN FÍSICA TAB
 // =====================================================
-function ExploracionTab({ exploraciones }: { exploraciones: typeof EXPLORACION_FISICA_DEMO }) {
+function ExploracionTab({ exploraciones }: { exploraciones: any[] }) {
     const [selectedIdx, setSelectedIdx] = useState(0)
     const ef = exploraciones[selectedIdx]
     if (!ef) return null
@@ -497,7 +615,7 @@ function ExploracionTab({ exploraciones }: { exploraciones: typeof EXPLORACION_F
 // =====================================================
 // CONSENTIMIENTOS TAB
 // =====================================================
-function ConsentimientosTab({ consentimientos }: { consentimientos: typeof CONSENTIMIENTOS_DEMO }) {
+function ConsentimientosTab({ consentimientos }: { consentimientos: any[] }) {
     return (
         <div className="space-y-3">
             <SectionHeader icon={Pen} title="Consentimientos Informados" subtitle="Firma digital con trazabilidad legal" color="cyan" />
@@ -539,7 +657,7 @@ function ConsentimientosTab({ consentimientos }: { consentimientos: typeof CONSE
 // =====================================================
 // TIMELINE TAB
 // =====================================================
-function TimelineTab({ eventos }: { eventos: typeof EVENTOS_CLINICOS_DEMO }) {
+function TimelineTab({ eventos }: { eventos: any[] }) {
     const sorted = [...eventos].sort((a, b) => new Date(b.fecha_evento).getTime() - new Date(a.fecha_evento).getTime())
     const typeConfig: Record<string, { color: string; icon: any }> = {
         consulta: { color: 'emerald', icon: Stethoscope },

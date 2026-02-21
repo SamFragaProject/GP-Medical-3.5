@@ -11,6 +11,7 @@ import { Sparkles, Rocket, ArrowRight } from 'lucide-react'
 import { useMeta } from '@/hooks/useMeta'
 import { useOnboarding } from '@/hooks/useOnboarding'
 import { Button } from '@/components/ui/button'
+import { ComunicadosFeed } from '@/components/dashboard/ComunicadosFeed'
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -95,6 +96,8 @@ export function Dashboard() {
           </div>
         </motion.div>
       )}
+
+      {/* Comunicados movido al interior de cada Vista para mantener el Header arriba */}
 
       {/* Main Content Area */}
       <motion.div

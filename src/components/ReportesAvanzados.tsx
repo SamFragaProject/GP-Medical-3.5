@@ -1,7 +1,7 @@
 // Componente de Reportes Avanzados para Exámenes Ocupacionales
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
+import {
   Download,
   FileText,
   Calendar,
@@ -81,48 +81,18 @@ export function ReportesAvanzados() {
     }
   ]
 
-  const reportesSimulados: ReporteData[] = [
-    {
-      id: 'REP001',
-      titulo: 'Reporte Individual - Juan Pérez García',
-      tipo: 'individual',
-      fechaGeneracion: '2025-11-01',
-      generadoPor: 'Sistema Automático',
-      datos: {
-        empleado: 'Juan Pérez García',
-        empresa: 'Constructora SA',
-        examenesTotales: 5,
-        ultimoExamen: '2025-10-28',
-        aptoParaTrabajar: true,
-        proximoVencimiento: '2026-10-28'
-      }
-    },
-    {
-      id: 'REP002',
-      titulo: 'Reporte Empresarial - Constructora SA',
-      tipo: 'empresarial',
-      fechaGeneracion: '2025-11-01',
-      generadoPor: 'Sistema Automático',
-      datos: {
-        empresa: 'Constructora SA',
-        empleadosTotales: 45,
-        examenesRealizados: 38,
-        tasaAptitud: 92,
-        examenesPendientes: 7,
-        cumplimientoNormativo: 89
-      }
-    }
-  ]
+  // Los reportes se cargarán dinámicamente desde Supabase
+  const reportesSimulados: ReporteData[] = []
 
   const handleGenerarReporte = () => {
     if (tipoReporte === 'individual' && !empresaSeleccionada) {
       toast.error('Seleccione un empleado para el reporte individual')
       return
     }
-    
+
     toast.success(`Generando reporte ${tipoReporte}...`)
     setMostrandoReporte(true)
-    
+
     setTimeout(() => {
       toast.success('Reporte generado exitosamente')
       setMostrandoReporte(false)
@@ -146,7 +116,7 @@ export function ReportesAvanzados() {
   const renderFormularioReporte = () => (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Generar Nuevo Reporte</h3>
-      
+
       <div className="space-y-6">
         {/* Selección de tipo de reporte */}
         <div>
@@ -160,11 +130,10 @@ export function ReportesAvanzados() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setTipoReporte(tipo.id as any)}
-                className={`p-4 rounded-lg border-2 text-left transition-all ${
-                  tipoReporte === tipo.id
+                className={`p-4 rounded-lg border-2 text-left transition-all ${tipoReporte === tipo.id
                     ? 'border-primary bg-primary/5'
                     : 'border-gray-200 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 <div className="flex items-center space-x-3 mb-2">
                   <div className={`p-2 rounded-lg ${tipo.bgColor}`}>
@@ -267,7 +236,7 @@ export function ReportesAvanzados() {
   const renderReportesGuardados = () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900">Reportes Recientes</h3>
-      
+
       <div className="grid grid-cols-1 gap-4">
         <AnimatePresence>
           {reportesSimulados.map((reporte) => (
@@ -295,7 +264,7 @@ export function ReportesAvanzados() {
                     </div>
                   </div>
                 </div>
-                
+
                 <button
                   onClick={() => handleDescargarReporte(reporte)}
                   className="flex items-center space-x-2 text-primary hover:text-primary/80 font-medium text-sm"
@@ -327,7 +296,7 @@ export function ReportesAvanzados() {
                     </div>
                   </div>
                 )}
-                
+
                 {reporte.tipo === 'empresarial' && (
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
@@ -355,7 +324,7 @@ export function ReportesAvanzados() {
   const renderAnalyticsPredictivos = () => (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-gray-900">Analytics Predictivos</h3>
-      
+
       {/* Métricas predictivas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow-md p-6">

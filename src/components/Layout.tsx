@@ -54,14 +54,34 @@ export function Layout({ children }: LayoutProps) {
   }
 
   const empresaInfo = {
-    nombre: (authUser as any)?.empresa || authUser?.empresa_id || 'GPMedical',
-    id: authUser?.empresa_id || 'demo-empresa'
+    nombre: authUser?.empresa?.nombre || (authUser as any)?.empresa || authUser?.empresa_id || 'GPMedical',
+    id: authUser?.empresa?.id || authUser?.empresa_id || 'demo-empresa',
+    logo: authUser?.empresa?.logo_url || null,
+    configuracion: authUser?.empresa?.configuracion || {}
   }
 
   const sedeInfo = {
     nombre: (authUser as any)?.sede_nombre || 'Sede Principal',
     id: authUser?.sede_id || 'demo-sede'
   }
+
+  // Effect to apply custom theme
+  useEffect(() => {
+    if (empresaInfo.configuracion?.theme) {
+      const root = document.documentElement;
+      const theme = empresaInfo.configuracion.theme;
+
+      // Ensure we import hexToHSL dynamically or use it here.
+      // Easiest is to supply hex or HSL variables directly.
+      if (theme.primary) {
+        root.style.setProperty('--primary', theme.primary_hsl || theme.primary); // Usually requires HSL for Tailwind
+        root.style.setProperty('--emerald-accent', theme.primary);
+      }
+      if (theme.secondary) {
+        root.style.setProperty('--secondary', theme.secondary_hsl || theme.secondary);
+      }
+    }
+  }, [empresaInfo.configuracion]);
 
   // Estado del sidebar y UI
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -143,11 +163,7 @@ export function Layout({ children }: LayoutProps) {
       >
         {/* Header del sidebar */}
         <div className="p-8 pb-4">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="bg-emerald-500 rounded-2xl p-3 shadow-lg shadow-emerald-500/40 relative group overflow-hidden">
-              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-              <Plus className="h-6 w-6 text-white stroke-[3px] relative z-10" />
-            </div>
+          <div className="flex items-center justify-center mb-8">
 
             <AnimatePresence>
               {sidebarOpen && (
@@ -157,9 +173,15 @@ export function Layout({ children }: LayoutProps) {
                   exit={{ opacity: 0, x: -10 }}
                   className="flex-1"
                 >
-                  <h1 className="text-2xl font-black text-white tracking-tighter">
-                    GPMedical <span className="text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">3.5</span>
-                  </h1>
+                  {empresaInfo.logo ? (
+                    <img src={empresaInfo.logo} alt={empresaInfo.nombre} className="max-h-8 object-contain" />
+                  ) : empresaInfo.nombre === 'GPMedical' || empresaInfo.nombre === 'demo-empresa' || /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}/.test(empresaInfo.nombre) ? (
+                    <img src="/logo-gp.png" alt="GPMedical" className="max-h-10 object-contain brightness-0 invert" />
+                  ) : (
+                    <h1 className="text-2xl font-black text-white tracking-tighter truncate max-w-[180px]">
+                      {empresaInfo.nombre}
+                    </h1>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

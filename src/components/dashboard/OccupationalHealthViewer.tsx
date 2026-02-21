@@ -16,61 +16,7 @@ interface OccupationalZone {
 }
 
 const occupationalZones: OccupationalZone[] = [
-    {
-        id: 'cervical',
-        name: 'Cervical / Cuello',
-        commonInjuries: ['Tensión cervical', 'Latigazo cervical', 'Tortícolis'],
-        riskLevel: 'medium',
-        affectedWorkers: 12,
-        avgRecoveryDays: 7,
-        costPerIncident: 3500,
-        x: 50,
-        y: 12
-    },
-    {
-        id: 'hombros',
-        name: 'Hombros',
-        commonInjuries: ['Tendinitis', 'Bursitis', 'Síndrome del manguito rotador'],
-        riskLevel: 'high',
-        affectedWorkers: 18,
-        avgRecoveryDays: 21,
-        costPerIncident: 8500,
-        x: 30,
-        y: 22
-    },
-    {
-        id: 'espalda',
-        name: 'Espalda Baja (Lumbar)',
-        commonInjuries: ['Lumbalgia', 'Hernia discal', 'Contractura muscular'],
-        riskLevel: 'high',
-        affectedWorkers: 25,
-        avgRecoveryDays: 14,
-        costPerIncident: 12000,
-        x: 50,
-        y: 42
-    },
-    {
-        id: 'munecas',
-        name: 'Muñecas / Manos',
-        commonInjuries: ['Síndrome del túnel carpiano', 'Tendinitis', 'Epicondilitis'],
-        riskLevel: 'high',
-        affectedWorkers: 22,
-        avgRecoveryDays: 30,
-        costPerIncident: 15000,
-        x: 20,
-        y: 50
-    },
-    {
-        id: 'rodillas',
-        name: 'Rodillas',
-        commonInjuries: ['Bursitis', 'Tendinitis rotuliana', 'Desgaste de cartílago'],
-        riskLevel: 'medium',
-        affectedWorkers: 10,
-        avgRecoveryDays: 21,
-        costPerIncident: 9500,
-        x: 45,
-        y: 75
-    }
+    // Se cargarán dinámicamente en el futuro desde eventos_clinicos
 ]
 
 interface OccupationalHealthViewerProps {
@@ -83,9 +29,9 @@ export function OccupationalHealthViewer({ companyId }: OccupationalHealthViewer
     // Calcular métricas totales
     const totalAffected = occupationalZones.reduce((sum, zone) => sum + zone.affectedWorkers, 0)
     const totalCost = occupationalZones.reduce((sum, zone) => sum + (zone.affectedWorkers * zone.costPerIncident), 0)
-    const avgRecovery = Math.round(
+    const avgRecovery = occupationalZones.length > 0 ? Math.round(
         occupationalZones.reduce((sum, zone) => sum + zone.avgRecoveryDays, 0) / occupationalZones.length
-    )
+    ) : 0
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -120,7 +66,7 @@ export function OccupationalHealthViewer({ companyId }: OccupationalHealthViewer
                             <span className="text-xs font-medium text-red-600">Trabajadores Afectados</span>
                         </div>
                         <p className="text-2xl font-bold text-red-700">{totalAffected}</p>
-                        <p className="text-xs text-red-600">+15% vs mes anterior</p>
+                        <p className="text-xs text-red-600">Últimos 6 meses</p>
                     </div>
                     <div className="bg-amber-50 rounded-xl p-3 border border-amber-100">
                         <div className="flex items-center gap-2 mb-1">
@@ -128,7 +74,7 @@ export function OccupationalHealthViewer({ companyId }: OccupationalHealthViewer
                             <span className="text-xs font-medium text-amber-600">Días Promedio Incapacidad</span>
                         </div>
                         <p className="text-2xl font-bold text-amber-700">{avgRecovery}</p>
-                        <p className="text-xs text-amber-600">-2 días vs mes anterior</p>
+                        <p className="text-xs text-amber-600">Promedio actual</p>
                     </div>
                     <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
                         <div className="flex items-center gap-2 mb-1">
@@ -167,21 +113,21 @@ export function OccupationalHealthViewer({ companyId }: OccupationalHealthViewer
                     >
                         {/* Pulse Animation */}
                         <span className={`absolute inline-flex h-full w-full rounded-full opacity-30 animate-ping ${zone.riskLevel === 'high' ? 'bg-red-500' :
-                                zone.riskLevel === 'medium' ? 'bg-amber-500' : 'bg-emerald-500'
+                            zone.riskLevel === 'medium' ? 'bg-amber-500' : 'bg-emerald-500'
                             }`}></span>
 
                         {/* Botón Principal */}
                         <div className={`relative inline-flex rounded-full h-12 w-12 items-center justify-center backdrop-blur-md border-2 shadow-xl ${selectedZone === zone.id
-                                ? 'bg-white border-white ring-4 ring-white/30 scale-110'
-                                : zone.riskLevel === 'high'
-                                    ? 'bg-red-500/90 border-red-400 hover:bg-red-500'
-                                    : zone.riskLevel === 'medium'
-                                        ? 'bg-amber-500/90 border-amber-400 hover:bg-amber-500'
-                                        : 'bg-emerald-500/90 border-emerald-400 hover:bg-emerald-500'
+                            ? 'bg-white border-white ring-4 ring-white/30 scale-110'
+                            : zone.riskLevel === 'high'
+                                ? 'bg-red-500/90 border-red-400 hover:bg-red-500'
+                                : zone.riskLevel === 'medium'
+                                    ? 'bg-amber-500/90 border-amber-400 hover:bg-amber-500'
+                                    : 'bg-emerald-500/90 border-emerald-400 hover:bg-emerald-500'
                             }`}>
                             <AlertTriangle className={`w-5 h-5 ${selectedZone === zone.id
-                                    ? zone.riskLevel === 'high' ? 'text-red-600' : zone.riskLevel === 'medium' ? 'text-amber-600' : 'text-emerald-600'
-                                    : 'text-white'
+                                ? zone.riskLevel === 'high' ? 'text-red-600' : zone.riskLevel === 'medium' ? 'text-amber-600' : 'text-emerald-600'
+                                : 'text-white'
                                 }`} />
                         </div>
 
@@ -210,8 +156,8 @@ export function OccupationalHealthViewer({ companyId }: OccupationalHealthViewer
                                     <p className="text-sm text-gray-600">Zona de alto riesgo ocupacional</p>
                                 </div>
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${zone.riskLevel === 'high' ? 'bg-red-100 text-red-700' :
-                                        zone.riskLevel === 'medium' ? 'bg-amber-100 text-amber-700' :
-                                            'bg-emerald-100 text-emerald-700'
+                                    zone.riskLevel === 'medium' ? 'bg-amber-100 text-amber-700' :
+                                        'bg-emerald-100 text-emerald-700'
                                     }`}>
                                     Riesgo {zone.riskLevel === 'high' ? 'Alto' : zone.riskLevel === 'medium' ? 'Medio' : 'Bajo'}
                                 </span>

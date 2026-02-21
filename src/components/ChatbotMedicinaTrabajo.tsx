@@ -41,13 +41,13 @@ export function ChatbotMedicinaTrabajo() {
   const [enviando, setEnviando] = useState(false)
   const [categoriaActiva, setCategoriaActiva] = useState<string>('general')
   const [typing, setTyping] = useState(false)
-  
+
   const user = {
     id: 'demo-user',
     email: 'demo@GPMedical.com',
     name: 'Usuario Demo',
     hierarchy: 'super_admin' as const,
-    empresa: { nombre: 'GPMedical Demo Corp' },
+    empresa: { nombre: '' },
     sede: { nombre: 'Sede Principal' }
   }
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -104,7 +104,7 @@ export function ChatbotMedicinaTrabajo() {
   // Base de conocimiento especializado
   const generarRespuestaEspecializada = (consulta: string, categoria: string): RespuestaEspecializada => {
     const consultaLower = consulta.toLowerCase()
-    
+
     // Análisis de ergonómico
     if (consultaLower.includes('ergonóm') || consultaLower.includes('postura') || consultaLower.includes('movimiento') || categoria === 'ergonomia') {
       return {
@@ -148,7 +148,7 @@ Basado en mi análisis de ergonomía ocupacional:
         }
       }
     }
-    
+
     // Análisis psicosocial
     if (consultaLower.includes('estrés') || consultaLower.includes('psicosocial') || consultaLower.includes('burnout') || categoria === 'psicosocial') {
       return {
@@ -194,7 +194,7 @@ Basado en mi análisis de ergonomía ocupacional:
         }
       }
     }
-    
+
     // Normativas mexicanas
     if (consultaLower.includes('nom-') || consultaLower.includes('stps') || consultaLower.includes('normativ') || consultaLower.includes('ley') || categoria === 'normativo') {
       return {
@@ -241,7 +241,7 @@ Basado en mi análisis de ergonomía ocupacional:
         }
       }
     }
-    
+
     // Seguridad ocupacional
     if (consultaLower.includes('seguridad') || consultaLower.includes('accidente') || consultaLower.includes('riesgo') || categoria === 'seguridad') {
       return {
@@ -287,7 +287,7 @@ Basado en mi análisis de ergonomía ocupacional:
         }
       }
     }
-    
+
     // Consulta general/médica
     return {
       respuesta: `🏥 **Consulta Médica Ocupacional**
@@ -352,7 +352,7 @@ Para una evaluación más precisa, ¿podrías especificar:
       // Simular procesamiento de IA
       setTimeout(() => {
         const respuesta = generarRespuestaEspecializada(mensaje.trim(), categoriaActiva)
-        
+
         const mensajeBot: MensajeEspecializado = {
           id: Date.now().toString() + '_bot',
           texto: respuesta.respuesta,
@@ -375,7 +375,7 @@ Para una evaluación más precisa, ¿podrías especificar:
       console.error('Error en chatbot:', error)
       setEnviando(false)
       setTyping(false)
-      
+
       const mensajeError: MensajeEspecializado = {
         id: Date.now().toString() + '_error',
         texto: 'Disculpa, he tenido un problema técnico. Por favor intenta nuevamente.',
@@ -388,7 +388,7 @@ Para una evaluación más precisa, ¿podrías especificar:
         timestamp: new Date(),
         categoria: 'general'
       }
-      
+
       setMensajes(prev => [...prev, mensajeError])
     }
   }
@@ -480,11 +480,10 @@ Para una evaluación más precisa, ¿podrías especificar:
                     <button
                       key={categoria.id}
                       onClick={() => setCategoriaActiva(categoria.id)}
-                      className={`flex items-center space-x-1 px-2 py-1 rounded-lg text-xs transition-colors ${
-                        categoriaActiva === categoria.id
+                      className={`flex items-center space-x-1 px-2 py-1 rounded-lg text-xs transition-colors ${categoriaActiva === categoria.id
                           ? 'bg-primary text-white'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
+                        }`}
                     >
                       <Icon className="h-3 w-3" />
                       <span>{categoria.name}</span>
@@ -502,11 +501,10 @@ Para una evaluación más precisa, ¿podrías especificar:
                   className={`flex ${mensaje.es_usuario ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-lg p-3 ${
-                      mensaje.es_usuario
+                    className={`max-w-[80%] rounded-lg p-3 ${mensaje.es_usuario
                         ? 'bg-primary text-white'
                         : 'bg-gray-100 text-gray-900'
-                    }`}
+                      }`}
                   >
                     {!mensaje.es_usuario && (
                       <div className="flex items-center space-x-2 mb-2">
@@ -519,7 +517,7 @@ Para una evaluación más precisa, ¿podrías especificar:
                         </span>
                       </div>
                     )}
-                    
+
                     <div className={`text-sm ${mensaje.es_usuario ? 'text-white' : 'text-gray-900'}`}>
                       {mensaje.texto.split('\n').map((line, index) => (
                         <div key={index} className={line.startsWith('•') || line.startsWith('🔹') || line.startsWith('🔥') || line.startsWith('⚠️') ? 'ml-2 mt-1' : line.startsWith('**') ? 'font-semibold mt-2' : ''}>
@@ -527,7 +525,7 @@ Para una evaluación más precisa, ¿podrías especificar:
                         </div>
                       ))}
                     </div>
-                    
+
                     {!mensaje.es_usuario && mensaje.sugerencias_seguimiento.length > 0 && (
                       <div className="mt-3 pt-2 border-t border-gray-200">
                         <p className="text-xs text-gray-600 mb-2">Sugerencias:</p>
@@ -542,14 +540,14 @@ Para una evaluación más precisa, ¿podrías especificar:
                         ))}
                       </div>
                     )}
-                    
+
                     <div className="text-xs text-gray-500 mt-2">
                       {mensaje.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 </div>
               ))}
-              
+
               {typing && (
                 <div className="flex justify-start">
                   <div className="bg-gray-100 rounded-lg p-3">
@@ -561,7 +559,7 @@ Para una evaluación más precisa, ¿podrías especificar:
                   </div>
                 </div>
               )}
-              
+
               <div ref={messagesEndRef} />
             </div>
 

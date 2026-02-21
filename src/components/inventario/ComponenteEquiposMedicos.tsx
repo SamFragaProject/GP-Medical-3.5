@@ -44,7 +44,7 @@ export function ComponenteEquiposMedicos({ equipos }: ComponenteEquiposMedicosPr
       fechaEjecutada: undefined,
       descripcion: 'Mantenimiento preventivo mensual - limpieza y calibración básica',
       costo: 2500,
-      tecnico: 'Técnico Juan Pérez',
+      tecnico: 'Técnico de Servicio',
       estado: 'programado',
       observaciones: 'Incluye revisión de sensores y software',
       proximoMantenimiento: new Date('2024-12-15'),
@@ -59,7 +59,7 @@ export function ComponenteEquiposMedicos({ equipos }: ComponenteEquiposMedicosPr
       fechaEjecutada: new Date('2024-10-20'),
       descripcion: 'Reparación de error en sensor de temperatura',
       costo: 4500,
-      tecnico: 'Ingeniero María González',
+      tecnico: 'Ingeniero de Servicio',
       estado: 'completado',
       observaciones: 'Sensor reemplazado exitosamente',
       proximoMantenimiento: new Date('2024-12-15'),
@@ -76,7 +76,7 @@ export function ComponenteEquiposMedicos({ equipos }: ComponenteEquiposMedicosPr
       fechaProximaCalibracion: new Date('2025-01-01'),
       resultado: 'aprobado',
       certificado: 'CAL-2024-001',
-      tecnico: 'Técnico Certificado Juan Pérez',
+      tecnico: 'Técnico Certificado',
       observaciones: 'Calibración exitosa - todos los parámetros dentro de especificaciones',
       createdAt: new Date(),
       updatedAt: new Date()
@@ -153,11 +153,10 @@ export function ComponenteEquiposMedicos({ equipos }: ComponenteEquiposMedicosPr
             <div className="bg-gray-50 rounded-md p-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-500">Próxima Calibración:</span>
-                <span className={`text-xs font-medium ${
-                  new Date(proximaCalibracion.fechaProximaCalibracion) < new Date() ? 'text-danger' :
-                  Math.ceil((new Date(proximaCalibracion.fechaProximaCalibracion).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 30 ? 'text-warning' :
-                  'text-success'
-                }`}>
+                <span className={`text-xs font-medium ${new Date(proximaCalibracion.fechaProximaCalibracion) < new Date() ? 'text-danger' :
+                    Math.ceil((new Date(proximaCalibracion.fechaProximaCalibracion).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 30 ? 'text-warning' :
+                      'text-success'
+                  }`}>
                   {new Date(proximaCalibracion.fechaProximaCalibracion).toLocaleDateString()}
                 </span>
               </div>
@@ -183,9 +182,8 @@ export function ComponenteEquiposMedicos({ equipos }: ComponenteEquiposMedicosPr
             </button>
           </div>
           <div className="flex items-center space-x-1">
-            <Activity className={`h-4 w-4 ${
-              equipo.estado === 'activo' ? 'text-success' : 'text-gray-400'
-            }`} />
+            <Activity className={`h-4 w-4 ${equipo.estado === 'activo' ? 'text-success' : 'text-gray-400'
+              }`} />
             <span className="text-xs text-gray-500">
               {equipo.estado === 'activo' ? 'Operativo' : 'Inactivo'}
             </span>
@@ -296,7 +294,7 @@ export function ComponenteEquiposMedicos({ equipos }: ComponenteEquiposMedicosPr
             {equipoSeleccionado?.nombre} - {equipoSeleccionado?.codigo}
           </p>
         </div>
-        
+
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -401,11 +399,10 @@ export function ComponenteEquiposMedicos({ equipos }: ComponenteEquiposMedicosPr
           <button
             key={vista.id}
             onClick={() => setVistaActual(vista.id as any)}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
-              vistaActual === vista.id
+            className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${vistaActual === vista.id
                 ? 'bg-white text-primary shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
-            }`}
+              }`}
           >
             <vista.icon size={16} />
             <span>{vista.label}</span>
@@ -451,8 +448,8 @@ export function ComponenteEquiposMedicos({ equipos }: ComponenteEquiposMedicosPr
             <div>
               <p className="text-sm text-gray-600">Próximos</p>
               <p className="text-2xl font-bold text-secondary">
-                {mantenimientosSimulados.filter(m => 
-                  m.estado === 'programado' && 
+                {mantenimientosSimulados.filter(m =>
+                  m.estado === 'programado' &&
                   new Date(m.fechaProgramada) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
                 ).length}
               </p>
@@ -510,9 +507,8 @@ export function ComponenteEquiposMedicos({ equipos }: ComponenteEquiposMedicosPr
                       <h4 className="font-medium text-gray-900">{equipo?.nombre}</h4>
                       <p className="text-sm text-gray-600">{equipo?.codigo}</p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      calibracion.resultado === 'aprobado' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${calibracion.resultado === 'aprobado' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
+                      }`}>
                       {calibracion.resultado === 'aprobado' ? 'Aprobado' : 'Rechazado'}
                     </span>
                   </div>

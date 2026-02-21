@@ -8,17 +8,17 @@ import { Badge } from '../ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import { Avatar, AvatarFallback } from '../ui/avatar'
 import { Separator } from '../ui/separator'
-import { 
-  User, 
-  Users, 
-  Store, 
-  Calendar, 
-  FileText, 
-  Package, 
-  BarChart3, 
-  Settings, 
-  Shield, 
-  Eye, 
+import {
+  User,
+  Users,
+  Store,
+  Calendar,
+  FileText,
+  Package,
+  BarChart3,
+  Settings,
+  Shield,
+  Eye,
   EyeOff,
   Save,
   RotateCcw,
@@ -164,12 +164,12 @@ export function PanelMenuConfig({ onSave, users = [] }: PanelMenuConfigProps) {
   const [autoSave, setAutoSave] = useState(false)
   const [pendingChanges, setPendingChanges] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
-  
+
   // Hook para notificaciones toast
   const { showSuccess, showError, showWarning } = useToast()
 
   // Filtrar usuarios por búsqueda
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchUser.toLowerCase()) ||
     user.email.toLowerCase().includes(searchUser.toLowerCase()) ||
     user.hierarchy.toLowerCase().includes(searchUser.toLowerCase())
@@ -182,10 +182,10 @@ export function PanelMenuConfig({ onSave, users = [] }: PanelMenuConfigProps) {
       const mockUsers: SaaSUser[] = [
         {
           id: '1',
-          name: 'Dr. Juan Pérez',
-          email: 'juan.perez@empresa.com',
+          name: 'Médico Ejemplo',
+          email: 'medico@empresa.com',
           hierarchy: 'medico_especialista',
-          enterpriseId: 'emp-1',
+          enterpriseId: '',
           permissions: [],
           preferences: {
             theme: 'light',
@@ -213,10 +213,10 @@ export function PanelMenuConfig({ onSave, users = [] }: PanelMenuConfigProps) {
         },
         {
           id: '2',
-          name: 'Enfermera María González',
-          email: 'maria.gonzalez@empresa.com',
+          name: 'Enfermera Ejemplo',
+          email: 'enfermera@empresa.com',
           hierarchy: 'enfermera',
-          enterpriseId: 'emp-1',
+          enterpriseId: '',
           permissions: [],
           preferences: {
             theme: 'light',
@@ -338,18 +338,18 @@ export function PanelMenuConfig({ onSave, users = [] }: PanelMenuConfigProps) {
       setSaveStatus('success')
       setLastSaved(new Date())
       setPendingChanges(false)
-      
+
       // Mostrar notificación de éxito
       showSuccess(
         'Permisos guardados',
         `Los permisos de ${selectedUser.name} se han actualizado correctamente`
       )
-      
+
       setTimeout(() => setSaveStatus('idle'), 3000)
     } catch (error) {
       console.error('Error al guardar permisos:', error)
       setSaveStatus('error')
-      
+
       // Mostrar notificación de error
       showError(
         'Error al guardar',
@@ -366,7 +366,7 @@ export function PanelMenuConfig({ onSave, users = [] }: PanelMenuConfigProps) {
 
   const getInheritedPermissions = (): GranularPermission[] => {
     if (!selectedUser) return []
-    
+
     // Simular herencia de permisos basado en rol
     const hierarchyPermissions: GranularPermission[] = [
       {
@@ -376,7 +376,7 @@ export function PanelMenuConfig({ onSave, users = [] }: PanelMenuConfigProps) {
         level: 'department'
       }
     ]
-    
+
     return hierarchyPermissions
   }
 
@@ -390,8 +390,8 @@ export function PanelMenuConfig({ onSave, users = [] }: PanelMenuConfigProps) {
     if (!showPreview || !selectedUser) return null
 
     const visibleSections = MENU_SECTIONS.filter(section => {
-      return section.resources.some(resource => 
-        userPermissions.some(permission => 
+      return section.resources.some(resource =>
+        userPermissions.some(permission =>
           permission.resource === resource && permission.action.read
         )
       )
@@ -471,11 +471,10 @@ export function PanelMenuConfig({ onSave, users = [] }: PanelMenuConfigProps) {
                 {(filteredUsers.length > 0 ? filteredUsers : users).map(user => (
                   <div
                     key={user.id}
-                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                      selectedUser?.id === user.id 
-                        ? 'border-blue-500 bg-blue-50' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedUser?.id === user.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                      }`}
                     onClick={() => handleUserSelect(user)}
                   >
                     <div className="flex items-center gap-3">
@@ -563,14 +562,14 @@ export function PanelMenuConfig({ onSave, users = [] }: PanelMenuConfigProps) {
                     Tienes cambios sin guardar
                   </div>
                 )}
-                
+
                 {lastSaved && (
                   <div className="flex items-center gap-2 text-gray-500 text-xs">
                     <Clock className="h-3 w-3" />
                     Último guardado: {lastSaved.toLocaleTimeString()}
                   </div>
                 )}
-                
+
                 {pendingChanges && (
                   <div className="flex items-center gap-2 text-blue-600 text-xs">
                     <Activity className="h-3 w-3" />
@@ -615,10 +614,10 @@ export function PanelMenuConfig({ onSave, users = [] }: PanelMenuConfigProps) {
                                 <p className="text-xs text-gray-500">{action.description}</p>
                               </div>
                               <Checkbox
-                                checked={section.resources.some(resource => 
+                                checked={section.resources.some(resource =>
                                   getPermissionStatus(resource, action.key)
                                 )}
-                                onCheckedChange={(checked) => 
+                                onCheckedChange={(checked) =>
                                   handleSectionPermissionChange(section, action.key, checked as boolean)
                                 }
                               />
@@ -642,8 +641,8 @@ export function PanelMenuConfig({ onSave, users = [] }: PanelMenuConfigProps) {
                   <CardContent>
                     <div className="space-y-4">
                       {MENU_SECTIONS.map(section => {
-                        const inheritedActions = PERMISSION_ACTIONS.filter(action => 
-                          section.resources.some(resource => 
+                        const inheritedActions = PERMISSION_ACTIONS.filter(action =>
+                          section.resources.some(resource =>
                             getInheritedPermissionStatus(resource, action.key)
                           )
                         )

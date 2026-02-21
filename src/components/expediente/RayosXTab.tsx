@@ -9,7 +9,9 @@ import {
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { RAYOS_X_DEMO } from '@/data/demoPacienteCompleto'
+import { supabase } from '@/lib/supabase'
+import { Loader2, Inbox } from 'lucide-react'
+import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 
 const RESULTADO_STYLES: Record<string, { bg: string; text: string; border: string; label: string; dot: string }> = {
     normal: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Normal', dot: 'bg-emerald-500' },
@@ -17,9 +19,61 @@ const RESULTADO_STYLES: Record<string, { bg: string; text: string; border: strin
     critico: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Crítico', dot: 'bg-red-500' },
 }
 
-export default function RayosXTab() {
-    const estudios = RAYOS_X_DEMO
-    const [expandedId, setExpandedId] = useState<string | null>(estudios[0]?.id || null)
+export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
+    const [loading, setLoading] = React.useState(true)
+    const [estudios, setEstudios] = React.useState<any[]>([])
+    const [expandedId, setExpandedId] = React.useState<string | null>(null)
+
+    React.useEffect(() => {
+        if (pacienteId) loadData()
+    }, [pacienteId])
+
+    const loadData = async () => {
+        try {
+            setLoading(true)
+            const { data: records, error } = await supabase
+                .from('examenes_rayos_x')
+                .select('*')
+                .eq('paciente_id', pacienteId)
+                .order('fecha', { ascending: false })
+
+            if (records && records.length > 0) {
+                setEstudios(records)
+                setExpandedId(records[0].id)
+            } else if (pacienteId?.startsWith('demo')) {
+                const demoData = getExpedienteDemoCompleto()
+                setEstudios(demoData.rayosX)
+                if (demoData.rayosX.length > 0) setExpandedId(demoData.rayosX[0].id)
+            }
+        } catch (err) {
+            console.error('Error loading radiology:', err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 className="w-8 h-8 text-slate-500 animate-spin" />
+                <p className="text-slate-500 text-xs font-medium">Cargando estudios radiológicos...</p>
+            </div>
+        )
+    }
+
+    if (estudios.length === 0) {
+        return (
+            <Card className="border-0 shadow-sm p-12 text-center">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Inbox className="w-8 h-8 text-slate-300" />
+                </div>
+                <h3 className="text-slate-800 font-bold">Sin estudios radiológicos</h3>
+                <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2">
+                    Este paciente aún no cuenta con estudios de Rayos X registrados.
+                </p>
+            </Card>
+        )
+    }
 
     return (
         <div className="space-y-6">

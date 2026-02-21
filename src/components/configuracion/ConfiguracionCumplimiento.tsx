@@ -1,9 +1,9 @@
 // Configuración de Cumplimiento
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  CheckSquare, 
-  FileText, 
+import {
+  CheckSquare,
+  FileText,
   Calendar,
   AlertTriangle,
   Clock,
@@ -54,7 +54,7 @@ export function ConfiguracionCumplimiento() {
             <p className="text-green-700">Última auditoría completada exitosamente</p>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">
@@ -68,7 +68,7 @@ export function ConfiguracionCumplimiento() {
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-orange-600">
-              {settings.cumplimiento.nextAudit ? 
+              {settings.cumplimiento.nextAudit ?
                 Math.ceil((settings.cumplimiento.nextAudit.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 'N/A'
               }d
             </div>
@@ -166,7 +166,7 @@ export function ConfiguracionCumplimiento() {
               <Input
                 value={formData.responsiblePerson}
                 onChange={(e) => setFormData({ ...formData, responsiblePerson: e.target.value })}
-                placeholder="Dr. Carlos Mendoza"
+                placeholder="Nombre del responsable"
               />
             </div>
           </div>
@@ -179,9 +179,9 @@ export function ConfiguracionCumplimiento() {
               <Input
                 type="date"
                 value={formData.lastAudit?.toISOString().split('T')[0] || ''}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  lastAudit: e.target.value ? new Date(e.target.value) : undefined 
+                onChange={(e) => setFormData({
+                  ...formData,
+                  lastAudit: e.target.value ? new Date(e.target.value) : undefined
                 })}
               />
             </div>
@@ -192,9 +192,9 @@ export function ConfiguracionCumplimiento() {
               <Input
                 type="date"
                 value={formData.nextAudit?.toISOString().split('T')[0] || ''}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  nextAudit: e.target.value ? new Date(e.target.value) : undefined 
+                onChange={(e) => setFormData({
+                  ...formData,
+                  nextAudit: e.target.value ? new Date(e.target.value) : undefined
                 })}
               />
             </div>
@@ -231,9 +231,8 @@ export function ConfiguracionCumplimiento() {
               key={index}
               className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg"
             >
-              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                item.completed ? 'bg-green-500 border-green-500' : 'border-gray-300'
-              }`}>
+              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${item.completed ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                }`}>
                 {item.completed && <CheckSquare className="h-3 w-3 text-white" />}
               </div>
               <span className={`text-sm ${item.completed ? 'text-gray-900' : 'text-gray-600'}`}>

@@ -122,7 +122,7 @@ export function EvaluacionesRiesgo() {
     email: 'demo@GPMedical.com',
     name: 'Usuario Demo',
     hierarchy: 'super_admin' as const,
-    empresa: { nombre: 'GPMedical Demo Corp' },
+    empresa: { nombre: '' },
     sede: { nombre: 'Sede Principal' }
   }
 
@@ -138,65 +138,7 @@ export function EvaluacionesRiesgo() {
       setLoading(true)
 
       // Datos simulados para demostración
-      const evaluacionesSimuladas: EvaluacionRiesgo[] = [
-        {
-          id: '1',
-          empresa_id: '1',
-          empresa_nombre: 'Corporativo Industrial SA',
-          sede_id: '1',
-          sede_nombre: 'Planta Norte',
-          puesto_trabajo: 'Operador de Máquinas',
-          empleado_id: '1',
-          empleado_nombre: 'Juan Pérez García',
-          tipo_evaluacion: 'ergonomica_completa',
-          fecha_evaluacion: '2024-10-15',
-          fecha_proxima_evaluacion: '2025-01-15',
-          estado: 'completada',
-          nivel_riesgo: 'alto',
-          score_riesgo: 78,
-          hallazgos_principales: [
-            'Postura forzada en columna vertebral',
-            'Movimientos repetitivos en muñeca',
-            'Iluminación insuficiente'
-          ],
-          recomendaciones_ia: [
-            'Adquirir silla ergonómica con soporte lumbar',
-            'Implementar pausas activas cada 45 minutos',
-            'Mejorar iluminación a 500 lux',
-            'Capacitación en ergonomía'
-          ],
-          cumplimiento_normativo: ['NOM-006-STPS', 'OSHA-29CFR1910.95'],
-          created_at: '2024-10-15T10:00:00Z',
-          updated_at: '2024-10-15T16:30:00Z'
-        },
-        {
-          id: '2',
-          empresa_id: '2',
-          empresa_nombre: 'Servicios Médicos ABC',
-          sede_id: '2',
-          sede_nombre: 'Sede Principal',
-          puesto_trabajo: 'Enfermero/a',
-          empleado_id: '2',
-          empleado_nombre: 'María González',
-          tipo_evaluacion: 'medicion_ambiental',
-          fecha_evaluacion: '2024-10-20',
-          fecha_proxima_evaluacion: '2024-12-20',
-          estado: 'en_progreso',
-          nivel_riesgo: 'medio',
-          score_riesgo: 45,
-          hallazgos_principales: [
-            'Ruido ambiente superior a 60 dB',
-            'Estaciones de trabajo sin regulaciones'
-          ],
-          recomendaciones_ia: [
-            'Instalar materiales absorbentes de sonido',
-            'Proveer escritorio regulable en altura'
-          ],
-          cumplimiento_normativo: ['NOM-011-STPS'],
-          created_at: '2024-10-20T09:00:00Z',
-          updated_at: '2024-10-20T15:45:00Z'
-        }
-      ]
+      const evaluacionesSimuladas: EvaluacionRiesgo[] = []
 
       const medicionesSimuladas: MedicionAmbiental[] = [
         {
@@ -764,8 +706,7 @@ export function EvaluacionesRiesgo() {
                       </label>
                       <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
                         <option>Seleccionar empleado</option>
-                        <option>Juan Pérez García</option>
-                        <option>María González</option>
+                        {/* Los empleados se cargarán dinámicamente */}
                       </select>
                     </div>
                   </div>

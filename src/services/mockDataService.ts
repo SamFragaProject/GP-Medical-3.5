@@ -47,78 +47,14 @@ export interface Receta {
   empresa_id: string
 }
 
-// Datos Demo Iniciales — Solo 2 pacientes para pruebas de visualización
-const DEMO_EMPRESA_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+// Datos iniciales vacíos — Sistema recién configurado, sin datos demo
+const DEMO_EMPRESA_ID = '' // Se configurará dinámicamente con el empresa_id del usuario
 
-const DEMO_PACIENTES: Paciente[] = [
-  {
-    id: 'pac-demo-001',
-    numero_empleado: 'EMP-1042',
-    nombre: 'Juan Carlos',
-    apellido_paterno: 'García',
-    apellido_materno: 'López',
-    genero: 'masculino',
-    fecha_nacimiento: '1985-03-15',
-    email: 'juan.garcia@mediflow.mx',
-    telefono: '55 4421 8832',
-    fecha_ingreso: '2023-06-01',
-    estatus: 'activo',
-    puesto_trabajo: {
-      nombre: 'Operario de Producción',
-      departamento: 'Manufactura'
-    },
-    proximos_examenes: 1,
-    alertas_activas: 0,
-    empresa_id: DEMO_EMPRESA_ID,
-    user_id: 'user-paciente-1'
-  },
-  {
-    id: 'pac-demo-002',
-    numero_empleado: 'EMP-1087',
-    nombre: 'María Elena',
-    apellido_paterno: 'Rodríguez',
-    apellido_materno: 'Martínez',
-    genero: 'femenino',
-    fecha_nacimiento: '1992-11-08',
-    email: 'maria.rodriguez@mediflow.mx',
-    telefono: '55 3310 7745',
-    fecha_ingreso: '2024-01-15',
-    estatus: 'activo',
-    puesto_trabajo: {
-      nombre: 'Coordinadora Administrativa',
-      departamento: 'Recursos Humanos'
-    },
-    proximos_examenes: 0,
-    alertas_activas: 0,
-    empresa_id: DEMO_EMPRESA_ID,
-    user_id: 'user-paciente-2'
-  }
-]
+// Sin pacientes demo pre-cargados - el usuario los registrará
+const DEMO_PACIENTES: Paciente[] = []
 
-const DEMO_CITAS: Cita[] = [
-  {
-    id: 'cita-1',
-    paciente_id: 'pac-demo-001',
-    medico_id: '00000000-0000-0000-0000-000000000003',
-    fechaHora: new Date(new Date().setHours(9, 0, 0, 0)).toISOString(),
-    duracion: 30,
-    tipo: 'consulta_general',
-    estado: 'programada',
-    motivo: 'Revisión anual',
-    empresa_id: DEMO_EMPRESA_ID
-  },
-  {
-    id: 'cita-2',
-    paciente_id: 'pac-demo-002',
-    medico_id: '00000000-0000-0000-0000-000000000003',
-    fechaHora: new Date(new Date().setHours(11, 0, 0, 0)).toISOString(),
-    duracion: 45,
-    tipo: 'examen_medico',
-    estado: 'completada',
-    motivo: 'Examen de ingreso',
-    empresa_id: DEMO_EMPRESA_ID
-  }
-]
+// Sin citas demo pre-cargadas
+const DEMO_CITAS: Cita[] = []
 
 // Clase de Servicio Mock
 class MockDataService {

@@ -29,18 +29,12 @@ interface PsicometriaTest {
     completados: number;
 }
 
-const TESTS_DEMO: PsicometriaTest[] = [
-    { id: '1', nombre: 'Evaluación NOM-035', categoria: 'riesgo', duracion: 25, preguntas: 72, asignados: 45, completados: 32 },
-    { id: '2', nombre: 'Test de Liderazgo Situacional', categoria: 'aptitud', duracion: 15, preguntas: 20, asignados: 10, completados: 8 },
-    { id: '3', nombre: 'Clima Laboral Q1', categoria: 'clima', duracion: 10, preguntas: 15, asignados: 120, completados: 115 },
-    { id: '4', nombre: 'Perfil de Personalidad (DISC)', categoria: 'personalidad', duracion: 30, preguntas: 40, asignados: 5, completados: 2 },
-];
 
 export const Psicometria = () => {
     const { isModuleActive } = useSystemIntegration();
     const isActive = isModuleActive('hr_psychometrics');
     const { currentUser } = useCurrentUser();
-    const [tests, setTests] = useState<PsicometriaTest[]>(TESTS_DEMO);
+    const [tests, setTests] = useState<PsicometriaTest[]>([]);
     const [selectedTest, setSelectedTest] = useState<PsicometriaTest | null>(null);
     const [isAssigning, setIsAssigning] = useState(false);
 
@@ -64,7 +58,7 @@ export const Psicometria = () => {
                     asignados: 0,
                     completados: 0
                 }));
-                setTests([...TESTS_DEMO, ...mappedTests]);
+                setTests(mappedTests);
             }
         };
         fetchTests();

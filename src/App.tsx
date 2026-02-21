@@ -101,9 +101,16 @@ const EspirometriaPage = React.lazy(() => import('@/pages/Espirometria'))
 const EstudiosVisualesPage = React.lazy(() => import('@/pages/EstudiosVisuales'))
 const EmpresaDashboardPage = React.lazy(() => import('@/components/dashboard/EmpresaDashboard'))
 const CosteoAnalysis = React.lazy(() => import('@/components/billing/CosteoAnalysis'))
+const FinanzasHub = React.lazy(() => import('@/pages/FinanzasHub'))
 const OrdenesServicio = React.lazy(() => import('@/pages/OrdenesServicio'))
+const CentroOperaciones = React.lazy(() => import('@/pages/CentroOperaciones'))
+const FarmaciaHub = React.lazy(() => import('@/pages/FarmaciaHub'))
 const LotesInventario = React.lazy(() => import('@/components/inventario/LotesInventario'))
 const EvidenciasSTPSPage = React.lazy(() => import('@/pages/legal/EvidenciasSTPS'))
+const CumplimientoLegalHub = React.lazy(() => import('@/pages/legal/CumplimientoLegalHub'))
+const LeySillaPage = React.lazy(() => import('@/pages/legal/LeySilla'))
+const NOM035Page = React.lazy(() => import('@/pages/legal/NOM035'))
+const ImportarExportarPage = React.lazy(() => import('@/pages/herramientas/ImportarExportar'))
 const ExpedienteMaestro = React.lazy(() => import('@/pages/ExpedienteMaestro').then(m => ({ default: m.ExpedienteMaestro })))
 const IntelligenceBureau = React.lazy(() => import('@/pages/IntelligenceBureau').then(m => ({ default: m.IntelligenceBureau })))
 const OnboardingWizard = React.lazy(() => import('@/components/onboarding/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })))
@@ -281,7 +288,11 @@ function App() {
                           <Route path="/apps/reportes" element={<ProtectedRoute resource="ia"><GeneradorReportes /></ProtectedRoute>} />
                           <Route path="/certificaciones" element={<ProtectedRoute resource="certificaciones"><Certificaciones /></ProtectedRoute>} />
                           <Route path="/tienda" element={<ProtectedRoute resource="tienda"><Tienda /></ProtectedRoute>} />
-                          <Route path="/facturacion" element={<ProtectedRoute resource="facturacion"><Facturacion /></ProtectedRoute>} />
+
+                          {/* Finanzas & Facturación Unified */}
+                          <Route path="/finanzas" element={<ProtectedRoute resource="facturacion"><FinanzasHub /></ProtectedRoute>} />
+                          <Route path="/facturacion" element={<Navigate to="/finanzas" replace />} />
+
                           <Route path="/reportes" element={<ProtectedRoute resource="reportes"><Reportes /></ProtectedRoute>} />
                           <Route path="/reportes/vigilancia" element={<ProtectedRoute resource="reportes"><VigilanciaEpidemiologica /></ProtectedRoute>} />
                           <Route path="/configuracion" element={<ProtectedRoute resource="configuracion"><Configuracion /></ProtectedRoute>} />
@@ -337,12 +348,25 @@ function App() {
                           <Route path="/dashboard-empresa" element={<ProtectedRoute resource="dashboard"><EmpresaDashboardPage /></ProtectedRoute>} />
                           {/* Finanzas: Costeo */}
                           <Route path="/admin/costeo" element={<ProtectedRoute resource="facturacion"><CosteoAnalysis /></ProtectedRoute>} />
-                          {/* Operaciones: Órdenes de Servicio */}
+                          {/* Operaciones: Centro de Operaciones */}
+                          <Route path="/operaciones" element={<ProtectedRoute resource="agenda"><CentroOperaciones /></ProtectedRoute>} />
                           <Route path="/operaciones/ordenes" element={<ProtectedRoute resource="agenda"><OrdenesServicio /></ProtectedRoute>} />
                           {/* Inventario: Lotes y Caducidades */}
                           <Route path="/inventario/lotes" element={<ProtectedRoute resource="inventario"><LotesInventario /></ProtectedRoute>} />
+                          {/* Farmacia Hub */}
+                          <Route path="/farmacia" element={<ProtectedRoute resource="inventario"><FarmaciaHub /></ProtectedRoute>} />
                           {/* Legal: Evidencias STPS */}
                           <Route path="/legal/evidencias" element={<ProtectedRoute resource="reportes"><EvidenciasSTPSPage /></ProtectedRoute>} />
+                          {/* Legal: Cumplimiento STPS */}
+                          <Route path="/legal/cumplimiento" element={<ProtectedRoute resource="reportes"><CumplimientoLegalHub /></ProtectedRoute>} />
+                          {/* Legal: Ley Silla */}
+                          <Route path="/legal/ley-silla" element={<ProtectedRoute resource="reportes"><LeySillaPage /></ProtectedRoute>} />
+                          {/* Legal: NOM-035 */}
+                          <Route path="/legal/nom035" element={<ProtectedRoute resource="reportes"><NOM035Page /></ProtectedRoute>} />
+                          {/* Legal: Riesgos de Trabajo */}
+                          <Route path="/legal/riesgos" element={<ProtectedRoute resource="reportes"><RiesgosTrabajo /></ProtectedRoute>} />
+                          {/* Herramientas: Importar/Exportar */}
+                          <Route path="/herramientas/importar" element={<ProtectedRoute resource="sistema"><ImportarExportarPage /></ProtectedRoute>} />
                         </Route>
 
                         <Route path="*" element={<NotFound />} />

@@ -42,7 +42,7 @@ export default function ProgramaAnual() {
 
     const loadData = async () => {
         try {
-            const data = await programaSaludService.getProgramaActual('emp-1', selectedYear)
+            const data = await programaSaludService.getProgramaActual(user?.empresa_id || '', selectedYear)
             setPrograma(data)
         } catch (error) {
             console.error(error)
@@ -54,7 +54,7 @@ export default function ProgramaAnual() {
     const handleCreatePrograma = async () => {
         try {
             const nuevo = await programaSaludService.createPrograma({
-                empresa_id: 'emp-1',
+                empresa_id: user?.empresa_id || '',
                 anio: selectedYear,
                 nombre: `Programa de Salud ${selectedYear}`,
                 estado: 'borrador',
@@ -72,7 +72,7 @@ export default function ProgramaAnual() {
         try {
             toast.loading('Analizando riesgos y generando calendario...')
             await new Promise(r => setTimeout(r, 2000)) // Simular proceso IA
-            await programaSaludService.generarPropuestaActividades(programa.id, 'emp-1')
+            await programaSaludService.generarPropuestaActividades(programa.id, user?.empresa_id || '')
             toast.dismiss()
             toast.success('Calendario generado exitosamente')
             loadData()

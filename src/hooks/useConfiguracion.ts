@@ -10,8 +10,8 @@ const initialSettings: SettingsState = {
   usuario: [
     {
       id: '1',
-      name: 'Dr. Carlos Mendoza',
-      email: 'carlos.mendoza@GPMedical.com',
+      name: 'Administrador del Sistema',
+      email: 'admin@empresa.com',
       role: 'Administrador',
       permissions: ['read', 'write', 'admin', 'delete'],
       lastLogin: new Date(),
@@ -23,8 +23,8 @@ const initialSettings: SettingsState = {
     },
     {
       id: '2',
-      name: 'Dra. María González',
-      email: 'maria.gonzalez@GPMedical.com',
+      name: 'Médico Ejemplo',
+      email: 'medico@empresa.com',
       role: 'Médico',
       permissions: ['read', 'write'],
       lastLogin: new Date(Date.now() - 86400000),
@@ -36,8 +36,8 @@ const initialSettings: SettingsState = {
     },
     {
       id: '3',
-      name: 'Ing. Roberto Silva',
-      email: 'roberto.silva@GPMedical.com',
+      name: 'Técnico Ejemplo',
+      email: 'tecnico@empresa.com',
       role: 'Técnico',
       permissions: ['read'],
       lastLogin: new Date(Date.now() - 172800000),
@@ -111,7 +111,7 @@ const initialSettings: SettingsState = {
         zipCode: '03100'
       },
       phone: '+52 55 1234 5678',
-      manager: 'Dr. Carlos Mendoza',
+      manager: 'Director de Sede',
       isMain: true,
       isActive: true,
       createdAt: new Date('2024-01-01')
@@ -129,7 +129,7 @@ const initialSettings: SettingsState = {
         zipCode: '02800'
       },
       phone: '+52 55 5678 9012',
-      manager: 'Dra. María González',
+      manager: 'Gerente de Sucursal',
       isMain: false,
       isActive: true,
       createdAt: new Date('2024-02-01')
@@ -252,7 +252,7 @@ const initialSettings: SettingsState = {
       { id: '1', name: 'NOM-006-STPS-2014', type: 'Federal', description: 'Manejo y almacenamiento de materiales peligrosos', complianceRequired: true, lastReview: new Date('2024-01-01'), nextReview: new Date('2024-12-31') }
     ],
     auditFrequency: 'quarterly',
-    responsiblePerson: 'Dr. Carlos Mendoza',
+    responsiblePerson: 'Responsable de Cumplimiento',
     lastAudit: new Date('2024-01-15'),
     nextAudit: new Date('2024-04-15')
   },
@@ -384,7 +384,7 @@ export function useConfiguracion() {
   }, [settings.usuario, saveSettings])
 
   const updateUsuario = useCallback((id: string, updates: Partial<Usuario>) => {
-    const updatedUsers = settings.usuario.map(user => 
+    const updatedUsers = settings.usuario.map(user =>
       user.id === id ? { ...user, ...updates } : user
     )
     saveSettings({ usuario: updatedUsers })
@@ -414,7 +414,7 @@ export function useConfiguracion() {
   }, [settings.roles, saveSettings])
 
   const updateRol = useCallback((id: string, updates: Partial<Rol>) => {
-    const updatedRoles = settings.roles.map(rol => 
+    const updatedRoles = settings.roles.map(rol =>
       rol.id === id ? { ...rol, ...updates } : rol
     )
     saveSettings({ roles: updatedRoles })
@@ -499,15 +499,15 @@ export function useConfiguracion() {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      
+
       const nextBackup = new Date()
       nextBackup.setDate(nextBackup.getDate() + (settings.backup.frequency === 'daily' ? 1 : settings.backup.frequency === 'weekly' ? 7 : 30))
-      
-      updateBackup({ 
-        lastBackup: new Date(), 
-        nextBackup 
+
+      updateBackup({
+        lastBackup: new Date(),
+        nextBackup
       })
-      
+
       addAuditLog('BACKUP', 'Sistema', 'all', { timestamp: new Date() })
       toast.success('Backup realizado exitosamente')
     } catch (error) {
@@ -549,7 +549,7 @@ export function useConfiguracion() {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      
+
       addAuditLog('EXPORT', 'Configuración', 'all', { timestamp: new Date() })
       toast.success('Configuración exportada exitosamente')
     } catch (error) {

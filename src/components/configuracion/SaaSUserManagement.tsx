@@ -368,7 +368,7 @@ function UserForm({ user, onSave, onCancel }: {
     id: 'demo-user',
     email: 'demo@GPMedical.com',
     hierarchy: 'super_admin' as const,
-    empresa: { nombre: 'GPMedical Demo Corp' },
+    empresa: { nombre: '' },
     sede: { nombre: 'Sede Principal' },
     enterpriseId: 'enterprise_1'
   }
@@ -439,7 +439,7 @@ function UserForm({ user, onSave, onCancel }: {
           <Input
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Dr. Juan Pérez"
+            placeholder="Nombre completo"
             required
           />
         </div>
@@ -582,7 +582,7 @@ export function SaaSUserManagement() {
     email: 'demo@GPMedical.com',
     name: 'Usuario Demo',
     hierarchy: 'super_admin' as const,
-    empresa: { nombre: 'GPMedical Demo Corp' },
+    empresa: { nombre: '' },
     sede: { nombre: 'Sede Principal' },
     enterpriseId: 'enterprise_1'
   }

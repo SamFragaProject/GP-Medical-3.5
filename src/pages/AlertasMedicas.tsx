@@ -27,84 +27,8 @@ import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader'
 import { PremiumMetricCard } from '@/components/ui/PremiumMetricCard'
 import { PremiumButton } from '@/components/ui/PremiumButton'
 
-// Datos demo para las alertas
-const DEMO_ALERTAS = [
-  {
-    id: '1',
-    tipo_alerta: 'examen_vencido' as const,
-    titulo: 'Examen Ocupacional Vencido',
-    descripcion: 'Juan Carlos García López requiere examen médico ocupacional anual',
-    paciente_id: '1',
-    paciente_nombre: 'Juan Carlos García López',
-    numero_empleado: 'EMP001',
-    fecha_vencimiento: '2024-10-15',
-    prioridad: 'alta' as const,
-    estado: 'activa' as const,
-    dias_restantes: -15,
-    accion_requerida: 'Programar examen médico ocupacional de inmediato',
-    fecha_creacion: '2024-10-15'
-  },
-  {
-    id: '2',
-    tipo_alerta: 'proximo_examen' as const,
-    titulo: 'Próximo Examen Periódico',
-    descripcion: 'María Elena Rodríguez tiene examen programado para la próxima semana',
-    paciente_id: '2',
-    paciente_nombre: 'María Elena Rodríguez Martínez',
-    numero_empleado: 'EMP002',
-    fecha_programada: '2024-11-10',
-    prioridad: 'media' as const,
-    estado: 'activa' as const,
-    dias_restantes: 7,
-    accion_requerida: 'Confirmar cita y enviar recordatorio al paciente',
-    fecha_creacion: '2024-11-01'
-  },
-  {
-    id: '3',
-    tipo_alerta: 'seguimiento_requerido' as const,
-    titulo: 'Seguimiento Post-Incapacidad',
-    descripción: 'Carlos Mendoza requiere seguimiento médico post-incapacidad',
-    paciente_id: '3',
-    paciente_nombre: 'Carlos Mendoza',
-    numero_empleado: 'EMP003',
-    fecha_programada: '2024-11-05',
-    prioridad: 'alta' as const,
-    estado: 'activa' as const,
-    dias_restantes: 2,
-    accion_requerida: 'Evaluación médica para retorno al trabajo',
-    fecha_creacion: '2024-11-01'
-  },
-  {
-    id: '4',
-    tipo_alerta: 'certificado_vencido' as const,
-    titulo: 'Certificado de Aptitud Vencido',
-    descripción: 'Ana López tiene certificado de aptitud laboral vencido',
-    paciente_id: '4',
-    paciente_nombre: 'Ana López',
-    numero_empleado: 'EMP004',
-    fecha_vencimiento: '2024-09-30',
-    prioridad: 'alta' as const,
-    estado: 'activa' as const,
-    dias_restantes: -30,
-    accion_requerida: 'Renovar certificado de aptitud médica',
-    fecha_creacion: '2024-09-30'
-  },
-  {
-    id: '5',
-    tipo_alerta: 'medicamento_vencido' as const,
-    titulo: 'Medicamento de Emergencia Vencido',
-    descripción: 'Revisar botiquín de emergencia en área de producción',
-    paciente_id: '1',
-    paciente_nombre: 'Juan Carlos García López',
-    numero_empleado: 'EMP001',
-    fecha_vencimiento: '2024-10-01',
-    prioridad: 'alta' as const,
-    estado: 'resuelta' as const,
-    dias_restantes: -25,
-    accion_requerida: 'Reemplazar medicamentos vencidos en botiquín',
-    fecha_creacion: '2024-10-01'
-  }
-]
+// Las alertas se cargarán dinámicamente desde Supabase
+const DEMO_ALERTAS: AlertaSeguimiento[] = []
 
 export function AlertasMedicas() {
   const [alertas] = useState<AlertaSeguimiento[]>(DEMO_ALERTAS as AlertaSeguimiento[])

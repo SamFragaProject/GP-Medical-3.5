@@ -361,8 +361,7 @@ export function Certificaciones() {
                   </label>
                   <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                     <option value="">Seleccionar médico</option>
-                    <option value="med_1">Dr. Roberto Méndez</option>
-                    <option value="med_2">Dra. Ana García</option>
+                    {/* Los médicos se cargarán dinámicamente desde la base de datos */}
                   </select>
                 </div>
               </div>
@@ -685,10 +684,10 @@ export function Certificaciones() {
               await enviarFirmaDigital(datos.certificadoId, datos.medico)
             }}
             medicoActual={{
-              id: 'med_1',
-              nombre: 'Roberto',
-              apellidos: 'Méndez',
-              cedulaProfesional: '1234567',
+              id: '',
+              nombre: '',
+              apellidos: '',
+              cedulaProfesional: '',
               especialidad: 'Medicina del Trabajo',
               certificacionFirmas: 'active'
             }}

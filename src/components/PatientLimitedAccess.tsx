@@ -1,11 +1,11 @@
 // Componente para acceso limitado de pacientes
 import React from 'react'
 import { motion } from 'framer-motion'
-import { 
-  User, 
-  Calendar, 
-  FileText, 
-  Shield, 
+import {
+  User,
+  Calendar,
+  FileText,
+  Shield,
   Clock,
   ArrowRight,
   AlertTriangle,
@@ -19,13 +19,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export function PatientLimitedAccess() {
   const user = {
-  id: 'demo-user',
-  email: 'demo@GPMedical.com',
-  hierarchy: 'super_admin' as const,
-  empresa: { nombre: 'GPMedical Demo Corp' },
-  sede: { nombre: 'Sede Principal' },
-  name: 'Usuario Demo'
-}
+    id: 'demo-user',
+    email: 'demo@GPMedical.com',
+    hierarchy: 'super_admin' as const,
+    empresa: { nombre: '' },
+    sede: { nombre: 'Sede Principal' },
+    name: 'Usuario Demo'
+  }
 
   const patientFeatures = [
     {
@@ -99,12 +99,12 @@ export function PatientLimitedAccess() {
           <p className="text-xl text-gray-600 mb-6">
             Portal del Paciente - Medicina del Trabajo
           </p>
-          
+
           <Alert className="max-w-2xl mx-auto">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               <strong>Acceso Limitado por Seguridad</strong><br />
-              Como paciente, tienes acceso únicamente a tu información personal médica. 
+              Como paciente, tienes acceso únicamente a tu información personal médica.
               Las funciones administrativas y de gestión están restringidas al personal autorizado.
             </AlertDescription>
           </Alert>
@@ -119,7 +119,7 @@ export function PatientLimitedAccess() {
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
             Tus Funcionalidades Disponibles
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {patientFeatures.map((feature, index) => (
               <motion.div
@@ -140,7 +140,7 @@ export function PatientLimitedAccess() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Button 
+                    <Button
                       className="w-full bg-primary hover:bg-primary/90"
                       onClick={() => {
                         // Aquí se implementarían las navegaciones específicas
@@ -166,7 +166,7 @@ export function PatientLimitedAccess() {
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
             Funcionalidades Administrativas (Restringidas)
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {restrictedFeatures.map((feature, index) => (
               <motion.div
@@ -187,7 +187,7 @@ export function PatientLimitedAccess() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Button 
+                    <Button
                       disabled
                       className="w-full bg-gray-200 text-gray-500 cursor-not-allowed"
                     >
@@ -217,7 +217,7 @@ export function PatientLimitedAccess() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-600">
-                Si necesitas acceder a alguna funcionalidad administrativa o tienes preguntas sobre tus datos médicos, 
+                Si necesitas acceder a alguna funcionalidad administrativa o tienes preguntas sobre tus datos médicos,
                 contacta a tu médico tratante o al administrador del sistema.
               </p>
               <div className="flex justify-center space-x-4">

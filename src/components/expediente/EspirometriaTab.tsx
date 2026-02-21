@@ -9,7 +9,9 @@ import {
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ESPIROMETRIA_DEMO, ESPIROMETRIA_PREVIA_DEMO } from '@/data/demoPacienteCompleto'
+import { supabase } from '@/lib/supabase'
+import { Loader2, Inbox } from 'lucide-react'
+import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 
 const CLASIF_STYLES: Record<string, { bg: string; text: string; border: string; label: string }> = {
     normal: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Normal' },
@@ -129,10 +131,63 @@ function SpiroCurve({ fvc, fev1, pef }: { fvc: number; fev1: number; pef: number
     )
 }
 
-export default function EspirometriaTab() {
-    const data = ESPIROMETRIA_DEMO
-    const prev = ESPIROMETRIA_PREVIA_DEMO
-    const [showPrev, setShowPrev] = useState(false)
+export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) {
+    const [loading, setLoading] = React.useState(true)
+    const [data, setData] = React.useState<any>(null)
+    const [prev, setPrev] = React.useState<any>(null)
+    const [showPrev, setShowPrev] = React.useState(false)
+
+    React.useEffect(() => {
+        if (pacienteId) loadData()
+    }, [pacienteId])
+
+    const loadData = async () => {
+        try {
+            setLoading(true)
+            const { data: records, error } = await supabase
+                .from('examenes_espirometria')
+                .select('*')
+                .eq('paciente_id', pacienteId)
+                .order('fecha', { ascending: false })
+                .limit(2)
+
+            if (records && records.length > 0) {
+                setData(records[0])
+                if (records.length > 1) setPrev(records[1])
+            } else if (pacienteId?.startsWith('demo')) {
+                const demoData = getExpedienteDemoCompleto()
+                setData(demoData.espirometria)
+                setPrev(demoData.espirometriaPrevia)
+            }
+        } catch (err) {
+            console.error('Error loading spirometry:', err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
+                <p className="text-slate-500 text-xs font-medium">Cargando estudios respiratorios...</p>
+            </div>
+        )
+    }
+
+    if (!data) {
+        return (
+            <Card className="border-0 shadow-sm p-12 text-center">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Inbox className="w-8 h-8 text-slate-300" />
+                </div>
+                <h3 className="text-slate-800 font-bold">Sin registros de espirometría</h3>
+                <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2">
+                    Este paciente aún no cuenta con estudios de espirometría realizados.
+                </p>
+            </Card>
+        )
+    }
 
     const clasifStyle = CLASIF_STYLES[data.clasificacion] || CLASIF_STYLES.normal
 
@@ -229,7 +284,7 @@ export default function EspirometriaTab() {
                         <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide">Recomendaciones</h4>
                     </div>
                     <ul className="space-y-2.5">
-                        {data.recomendaciones.map((rec, i) => (
+                        {data.recomendaciones && data.recomendaciones.map((rec: string, i: number) => (
                             <li key={i} className="flex items-start gap-3 text-sm text-slate-600 font-medium">
                                 <ArrowRight className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                                 <span>{rec}</span>
@@ -240,19 +295,21 @@ export default function EspirometriaTab() {
             </Card>
 
             {/* Previous comparison */}
-            <button
-                onClick={() => setShowPrev(!showPrev)}
-                className="w-full flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-colors"
-            >
-                <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-slate-400" />
-                    <span className="text-xs font-bold text-slate-500">
-                        Comparar con estudio previo ({new Date(prev.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })})
-                    </span>
-                </div>
-                {showPrev ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-            </button>
-            {showPrev && (
+            {prev && (
+                <button
+                    onClick={() => setShowPrev(!showPrev)}
+                    className="w-full flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-colors"
+                >
+                    <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-slate-400" />
+                        <span className="text-xs font-bold text-slate-500">
+                            Comparar con estudio previo ({new Date(prev.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })})
+                        </span>
+                    </div>
+                    {showPrev ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                </button>
+            )}
+            {showPrev && prev && (
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">

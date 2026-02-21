@@ -1,7 +1,7 @@
 // Componente para generación de certificados médicos
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
+import {
   Download,
   Eye,
   FileText,
@@ -100,10 +100,10 @@ export function CertificadoMedico({ certificado, onDownload, onEmail, onPrint }:
             <p className="text-sm text-gray-600">#{certificado.numeroCertificado}</p>
           </div>
         </div>
-        
+
         <span className={`px-3 py-1 text-xs rounded-full font-medium ${getEstadoColor(certificado.estado)}`}>
-          {certificado.estado === 'vigente' ? 'Vigente' : 
-           certificado.estado === 'vencido' ? 'Vencido' : 'Próximo a Vencer'}
+          {certificado.estado === 'vigente' ? 'Vigente' :
+            certificado.estado === 'vencido' ? 'Vencido' : 'Próximo a Vencer'}
         </span>
       </div>
 
@@ -115,13 +115,13 @@ export function CertificadoMedico({ certificado, onDownload, onEmail, onPrint }:
             <span className="text-sm font-medium text-gray-600">Empleado:</span>
             <span className="text-sm text-gray-900">{certificado.empleado}</span>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Building2 className="h-4 w-4 text-gray-400" />
             <span className="text-sm font-medium text-gray-600">Empresa:</span>
             <span className="text-sm text-gray-900">{certificado.empresa}</span>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Activity className="h-4 w-4 text-gray-400" />
             <span className="text-sm font-medium text-gray-600">Puesto:</span>
@@ -135,7 +135,7 @@ export function CertificadoMedico({ certificado, onDownload, onEmail, onPrint }:
             <span className="text-sm font-medium text-gray-600">Fecha Examen:</span>
             <span className="text-sm text-gray-900">{certificado.fechaExamen}</span>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Shield className="h-4 w-4 text-gray-400" />
             <span className="text-sm font-medium text-gray-600">Vencimiento:</span>
@@ -156,8 +156,8 @@ export function CertificadoMedico({ certificado, onDownload, onEmail, onPrint }:
           <div className={`flex items-center space-x-1 ${getResultadoColor(certificado.resultado)}`}>
             {getResultadoIcon(certificado.resultado)}
             <span className="font-medium">
-              {certificado.resultado === 'apto' ? 'APTO' : 
-               certificado.resultado === 'apto_con_restricciones' ? 'APTO CON RESTRICCIONES' : 'NO APTO'}
+              {certificado.resultado === 'apto' ? 'APTO' :
+                certificado.resultado === 'apto_con_restricciones' ? 'APTO CON RESTRICCIONES' : 'NO APTO'}
             </span>
           </div>
         </div>
@@ -188,7 +188,7 @@ export function CertificadoMedico({ certificado, onDownload, onEmail, onPrint }:
         <div className="text-xs text-gray-500">
           Generado por: {certificado.generadoPor}
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setMostrarDetalles(!mostrarDetalles)}
@@ -197,7 +197,7 @@ export function CertificadoMedico({ certificado, onDownload, onEmail, onPrint }:
             <Eye size={16} />
             <span>Ver Detalles</span>
           </button>
-          
+
           <button
             onClick={onDownload}
             className="text-gray-600 hover:text-gray-800 text-sm font-medium flex items-center space-x-1"
@@ -205,7 +205,7 @@ export function CertificadoMedico({ certificado, onDownload, onEmail, onPrint }:
             <Download size={16} />
             <span>Descargar</span>
           </button>
-          
+
           <button
             onClick={onPrint}
             className="text-gray-600 hover:text-gray-800 text-sm font-medium flex items-center space-x-1"
@@ -213,7 +213,7 @@ export function CertificadoMedico({ certificado, onDownload, onEmail, onPrint }:
             <Printer size={16} />
             <span>Imprimir</span>
           </button>
-          
+
           <button
             onClick={onEmail}
             className="text-gray-600 hover:text-gray-800 text-sm font-medium flex items-center space-x-1"
@@ -235,14 +235,14 @@ export function CertificadoMedico({ certificado, onDownload, onEmail, onPrint }:
           >
             <div className="bg-white border border-gray-200 rounded-lg p-4">
               <h4 className="font-medium text-gray-900 mb-3">Vista Previa del Certificado</h4>
-              
+
               {/* Simulación de certificado */}
               <div className="bg-white border-2 border-gray-300 rounded-lg p-6 font-serif">
                 <div className="text-center mb-6">
                   <h1 className="text-2xl font-bold text-gray-900">CERTIFICADO MÉDICO OCUPACIONAL</h1>
                   <div className="border-t-2 border-gray-300 mt-2"></div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -258,16 +258,16 @@ export function CertificadoMedico({ certificado, onDownload, onEmail, onPrint }:
                       <span className="font-bold">Fecha de Examen:</span> {certificado.fechaExamen}
                     </div>
                   </div>
-                  
+
                   <div className="border-t border-gray-300 pt-4">
                     <div className="text-center mb-4">
                       <span className="font-bold">RESULTADO:</span>
                       <div className={`text-xl font-bold mt-2 ${getResultadoColor(certificado.resultado)}`}>
-                        {certificado.resultado === 'apto' ? 'APTO PARA TRABAJAR' : 
-                         certificado.resultado === 'apto_con_restricciones' ? 'APTO CON RESTRICCIONES' : 'NO APTO PARA TRABAJAR'}
+                        {certificado.resultado === 'apto' ? 'APTO PARA TRABAJAR' :
+                          certificado.resultado === 'apto_con_restricciones' ? 'APTO CON RESTRICCIONES' : 'NO APTO PARA TRABAJAR'}
                       </div>
                     </div>
-                    
+
                     {certificado.restricciones && certificado.restricciones.length > 0 && (
                       <div>
                         <span className="font-bold">Restricciones:</span>
@@ -279,7 +279,7 @@ export function CertificadoMedico({ certificado, onDownload, onEmail, onPrint }:
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="border-t border-gray-300 pt-4">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
@@ -289,7 +289,7 @@ export function CertificadoMedico({ certificado, onDownload, onEmail, onPrint }:
                         <span className="font-bold">Certificado No.:</span> {certificado.numeroCertificado}
                       </div>
                     </div>
-                    
+
                     <div className="mt-6 text-right">
                       <div className="inline-block border-b border-gray-400 pb-1 px-4">
                         <span className="font-bold">{certificado.generadoPor}</span><br />
@@ -309,58 +309,14 @@ export function CertificadoMedico({ certificado, onDownload, onEmail, onPrint }:
 
 // Componente principal de gestión de certificados
 export function GestionCertificados() {
-  const [certificados, setCertificados] = useState<Certificado[]>([
-    {
-      id: 'CERT001',
-      empleado: 'Juan Pérez García',
-      empresa: 'Constructora SA',
-      puesto: 'Soldador',
-      tipoExamen: 'Periódico',
-      fechaExamen: '2025-10-28',
-      resultado: 'apto',
-      fechaVencimiento: '2026-10-28',
-      generadoPor: 'Dr. Roberto Hernández',
-      numeroCertificado: 'CM-2025-001',
-      observaciones: 'Examen dentro de parámetros normales. Continuar con protocolo establecido.',
-      estado: 'vigente'
-    },
-    {
-      id: 'CERT002',
-      empleado: 'María López Hernández',
-      empresa: 'Oficinas Corporativas',
-      puesto: 'Analista',
-      tipoExamen: 'Ingreso',
-      fechaExamen: '2025-10-25',
-      resultado: 'apto_con_restricciones',
-      restricciones: ['Uso obligatorio de lentes para computadora', 'Descansos cada 2 horas'],
-      fechaVencimiento: '2025-12-25',
-      generadoPor: 'Dra. Carmen López',
-      numeroCertificado: 'CM-2025-002',
-      observaciones: 'Requiere seguimiento oftalmológico en 3 meses.',
-      estado: 'proximamente_vencer'
-    },
-    {
-      id: 'CERT003',
-      empleado: 'Carlos Rodríguez Silva',
-      empresa: 'Fábrica Industrial',
-      puesto: 'Operador de maquinaria',
-      tipoExamen: 'Post-incidente',
-      fechaExamen: '2025-10-20',
-      resultado: 'no_apto',
-      fechaVencimiento: '2025-11-20',
-      generadoPor: 'Dr. Miguel Torres',
-      numeroCertificado: 'CM-2025-003',
-      observaciones: 'No apto para manejo de maquinaria pesada. Requiere evaluación especializada.',
-      estado: 'vencido'
-    }
-  ])
+  const [certificados, setCertificados] = useState<Certificado[]>([])
 
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'vigente' | 'vencido' | 'proximamente_vencer'>('todos')
   const [searchTerm, setSearchTerm] = useState('')
 
   const certificadosFiltrados = certificados.filter(cert => {
     const matchesSearch = cert.empleado.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         cert.empresa.toLowerCase().includes(searchTerm.toLowerCase())
+      cert.empresa.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesEstado = filtroEstado === 'todos' || cert.estado === filtroEstado
     return matchesSearch && matchesEstado
   })
@@ -389,8 +345,8 @@ export function GestionCertificados() {
           <h2 className="text-2xl font-bold text-gray-900">Certificados Médicos</h2>
           <p className="text-gray-600">Gestión y generación de certificados ocupacionales</p>
         </div>
-        
-        <button 
+
+        <button
           onClick={handleGenerarCertificado}
           className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
         >
@@ -457,7 +413,7 @@ export function GestionCertificados() {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-1 max-w-md px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
         />
-        
+
         <select
           value={filtroEstado}
           onChange={(e) => setFiltroEstado(e.target.value as any)}
@@ -492,7 +448,7 @@ export function GestionCertificados() {
           <p className="text-gray-600 mb-6">
             {searchTerm ? 'No se encontraron certificados con ese criterio' : 'Aún no se han generado certificados médicos'}
           </p>
-          <button 
+          <button
             onClick={handleGenerarCertificado}
             className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90"
           >

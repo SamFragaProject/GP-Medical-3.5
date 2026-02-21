@@ -35,7 +35,7 @@ export function ChatbotSuperinteligente({
     email: 'demo@GPMedical.com',
     name: 'Usuario Demo',
     hierarchy: 'super_admin' as const,
-    empresa: { id: 'demo-company-id', nombre: 'GPMedical Demo Corp' },
+    empresa: { id: '', nombre: '' },
   }
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)

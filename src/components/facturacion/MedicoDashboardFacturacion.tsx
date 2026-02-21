@@ -1,10 +1,10 @@
 // Dashboard de facturación para médicos - Vista especializada
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Stethoscope, 
-  DollarSign, 
-  TrendingUp, 
+import {
+  Stethoscope,
+  DollarSign,
+  TrendingUp,
   TrendingDown,
   Calendar,
   FileText,
@@ -68,7 +68,7 @@ const mockFacturas: FacturaMedica[] = [
   {
     id: '1',
     fecha_creacion: '2024-11-01T10:30:00Z',
-    paciente_nombre: 'Juan Carlos Pérez',
+    paciente_nombre: 'Paciente 001',
     servicios: 3,
     subtotal: 1850,
     total: 2146,
@@ -78,7 +78,7 @@ const mockFacturas: FacturaMedica[] = [
   {
     id: '2',
     fecha_creacion: '2024-11-02T14:15:00Z',
-    paciente_nombre: 'María González López',
+    paciente_nombre: 'Paciente 002',
     servicios: 1,
     subtotal: 800,
     total: 928,
@@ -88,7 +88,7 @@ const mockFacturas: FacturaMedica[] = [
   {
     id: '3',
     fecha_creacion: '2024-11-03T09:45:00Z',
-    paciente_nombre: 'Roberto Silva Martín',
+    paciente_nombre: 'Paciente 003',
     servicios: 2,
     subtotal: 1350,
     total: 1566,
@@ -312,25 +312,25 @@ export function MedicoDashboardFacturacion({ medico }: MedicoDashboardFacturacio
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={ingresosMensuales}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis 
-                      dataKey="mes" 
+                    <XAxis
+                      dataKey="mes"
                       stroke="#666"
                       tick={{ fontSize: 12 }}
                     />
-                    <YAxis 
+                    <YAxis
                       stroke="#666"
                       tick={{ fontSize: 12 }}
                       tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                     />
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value: any) => [formatMoneda(value), 'Ingresos']}
                       labelStyle={{ color: '#666' }}
                       contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb' }}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="ingresos" 
-                      stroke="#00BFA6" 
+                    <Line
+                      type="monotone"
+                      dataKey="ingresos"
+                      stroke="#00BFA6"
                       strokeWidth={3}
                       dot={{ fill: '#00BFA6', strokeWidth: 2, r: 4 }}
                       activeDot={{ r: 6, stroke: '#00BFA6', strokeWidth: 2 }}
@@ -375,7 +375,7 @@ export function MedicoDashboardFacturacion({ medico }: MedicoDashboardFacturacio
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value: any) => [`${value}%`, 'Porcentaje']}
                     />
                   </PieChart>
@@ -385,8 +385,8 @@ export function MedicoDashboardFacturacion({ medico }: MedicoDashboardFacturacio
                 {serviciosData.map((servicio, index) => (
                   <div key={index} className="flex items-center justify-between text-sm">
                     <div className="flex items-center space-x-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
+                      <div
+                        className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: servicio.color }}
                       ></div>
                       <span>{servicio.name}</span>

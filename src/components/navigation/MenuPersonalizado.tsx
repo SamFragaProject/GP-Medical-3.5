@@ -97,11 +97,11 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
     modules: ['facturacion', 'cotizaciones', 'cxc', 'inventario', 'tienda']
   },
   {
-    key: 'cumplimiento',
-    label: 'Cumplimiento',
+    key: 'legal',
+    label: 'Legal / STPS',
     icon: Shield,
     color: 'amber',
-    modules: ['normatividad', 'nom011', 'evaluaciones', 'matriz_riesgos', 'programa_anual', 'certificaciones']
+    modules: ['cumplimiento_legal', 'ley_silla', 'nom035', 'riesgos_trabajo', 'normatividad', 'nom011', 'evaluaciones', 'matriz_riesgos', 'programa_anual', 'certificaciones']
   },
   {
     key: 'analisis',
@@ -109,6 +109,13 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
     icon: BarChart3,
     color: 'violet',
     modules: ['reportes', 'ia', 'rrhh']
+  },
+  {
+    key: 'herramientas',
+    label: 'Herramientas',
+    icon: Settings,
+    color: 'cyan',
+    modules: ['importar_exportar']
   }
 ]
 

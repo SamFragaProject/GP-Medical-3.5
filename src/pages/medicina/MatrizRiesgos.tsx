@@ -47,22 +47,9 @@ export default function MatrizRiesgos() {
 
     const loadData = async () => {
         try {
-            const data = await matrizRiesgosService.getPuestos('emp-1')
+            const data = await matrizRiesgosService.getPuestos(user?.empresa_id || '')
             setPuestos(data || [])
-            // Mock si falla
-            if (!data || data.length === 0) {
-                setPuestos([
-                    {
-                        id: 'p1',
-                        nombre: 'Soldador Industrial',
-                        departamento: 'Mantenimiento',
-                        riesgos_asociados: [
-                            { id: 'rel1', puesto_id: 'p1', riesgo_id: 'r1', nivel_exposicion: 'alto', frecuencia: 'constante', riesgo: { id: 'r1', nombre: 'Humos de Soldadura', categoria: 'quimico' } },
-                            { id: 'rel2', puesto_id: 'p1', riesgo_id: 'r2', nivel_exposicion: 'medio', frecuencia: 'frecuente', riesgo: { id: 'r2', nombre: 'Radiación UV', categoria: 'fisico' } }
-                        ]
-                    }
-                ])
-            }
+            // Los datos se cargan dinámicamente desde Supabase
         } catch (error) {
             console.error(error)
         } finally {
@@ -87,7 +74,7 @@ export default function MatrizRiesgos() {
     const handleCreatePuesto = async () => {
         try {
             await matrizRiesgosService.createPuesto({
-                empresa_id: 'emp-1', // Demo ID
+                empresa_id: user?.empresa_id || '',
                 nombre: newPuestoNombre,
                 departamento: newPuestoDepto
             } as any)

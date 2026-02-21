@@ -81,9 +81,7 @@ export function NewAppointmentDialog({ open, onOpenChange, onSuccess, defaultDat
                                 </div>
                             </SelectTrigger>
                             <SelectContent className="rounded-xl">
-                                <SelectItem value="1">Juan Pérez</SelectItem>
-                                <SelectItem value="2">María González</SelectItem>
-                                <SelectItem value="new">TestPlayer Automated</SelectItem>
+                                {/* Los pacientes se cargarán dinámicamente desde Supabase */}
                             </SelectContent>
                         </Select>
                     </div>

@@ -4,7 +4,7 @@ import { usePreferences } from '@/hooks/usePreferences'
 import { ROLE_LABELS } from '@/types/auth'
 import {
   Settings, Users, Building2, Sliders, Shield, LayoutDashboard,
-  Eye, EyeOff, Moon, Sun, Monitor, Type, Languages, Bell, Save, CreditCard
+  Eye, EyeOff, Moon, Sun, Monitor, Type, Languages, Bell, Save, CreditCard, Palette
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader'
 import { BillingConfig } from '@/components/billing/BillingConfig'
+import { AparienciaEmpresaConfig } from '@/components/configuracion/AparienciaEmpresaConfig'
 
 interface TabDef { key: string; label: string; icon: React.ElementType; requireResource?: string }
 
@@ -30,6 +31,7 @@ export function Configuracion() {
     ]
     if (user.rol === 'admin_empresa') {
       base.push({ key: 'empresa', label: 'Mi Empresa', icon: Building2, requireResource: 'empresas' })
+      base.push({ key: 'apariencia_empresa', label: 'Marca y Apariencia', icon: Palette, requireResource: 'empresas' })
       base.push({ key: 'usuarios', label: 'Usuarios', icon: Users, requireResource: 'usuarios' })
     }
     if (user.rol === 'super_admin') {
@@ -279,7 +281,7 @@ export function Configuracion() {
                       <div className="flex items-center justify-between">
                         <div>
                           <CardTitle>Usuarios de la Empresa</CardTitle>
-                          <CardDescription>Gestiona el acceso de tu personal (Modo Demo)</CardDescription>
+                          <CardDescription>Gestiona el acceso de tu personal</CardDescription>
                         </div>
                         <Button>
                           <Users className="w-4 h-4 mr-2" />
@@ -288,48 +290,21 @@ export function Configuracion() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="overflow-hidden rounded-xl border border-slate-200">
-                        <table className="w-full text-sm text-left">
-                          <thead className="bg-slate-50 text-slate-500 font-medium">
-                            <tr>
-                              <th className="px-6 py-4">Usuario</th>
-                              <th className="px-6 py-4">Rol</th>
-                              <th className="px-6 py-4">Estado</th>
-                              <th className="px-6 py-4 text-right">Acciones</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 bg-white">
-                            {[
-                              { id: 'u1', nombre: 'Dr. Roberto Pérez', email: 'roberto@GPMedical.com', rol: 'medico', estado: 'activo' },
-                              { id: 'u2', nombre: 'Ana Asistente', email: 'ana@GPMedical.com', rol: 'asistente', estado: 'activo' },
-                              { id: 'u3', nombre: 'Pedro Médico', email: 'pedro@GPMedical.com', rol: 'medico', estado: 'inactivo' }
-                            ].map(u => (
-                              <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="px-6 py-4">
-                                  <div>
-                                    <p className="font-medium text-slate-900">{u.nombre}</p>
-                                    <p className="text-xs text-slate-500">{u.email}</p>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <Badge variant="outline" className="capitalize">{u.rol}</Badge>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                    ${u.estado === 'activo' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-800'}`}>
-                                    {u.estado}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 text-right space-x-2">
-                                  <Button variant="ghost" size="sm" className="h-8">Editar</Button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      <div className="flex flex-col items-center justify-center py-12">
+                        <div className="w-14 h-14 bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl flex items-center justify-center mb-3 border border-slate-200">
+                          <Users className="w-7 h-7 text-slate-300" />
+                        </div>
+                        <p className="text-sm font-bold text-slate-500 mb-1">Sin usuarios registrados</p>
+                        <p className="text-xs text-slate-400 text-center max-w-[240px]">
+                          Gestiona los usuarios de tu empresa desde el módulo de Usuarios en el menú lateral.
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
+                )}
+
+                {active === 'apariencia_empresa' && user.rol === 'admin_empresa' && (
+                  <AparienciaEmpresaConfig />
                 )}
 
                 {active === 'sistema' && user.rol === 'super_admin' && (

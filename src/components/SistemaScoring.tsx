@@ -113,94 +113,8 @@ export function SistemaScoring() {
       }
     ]
 
-    // Scores simulados de empleados
-    const scoresSimulados: ScoreData[] = [
-      {
-        empleado_id: 'EMP001',
-        nombre: 'Ana García López',
-        puesto: 'Operaria de Línea',
-        departamento: 'Producción',
-        scores: {
-          ergonomico: 78,
-          psicosocial: 45,
-          seguridad: 65,
-          salud_general: 52,
-          riesgo_total: 60
-        },
-        factores_contribuyentes: ['Posturas prolongadas', 'Movimientos repetitivos', 'Presión temporal'],
-        recomendaciones: ['Evaluación ergonómica', 'Rotación de puesto', 'Manejo de estrés'],
-        prioridad: 'alta',
-        ultimo_evaluado: '2025-11-01'
-      },
-      {
-        empleado_id: 'EMP002',
-        nombre: 'Carlos Mendoza',
-        puesto: 'Supervisor de Turno',
-        departamento: 'Operaciones',
-        scores: {
-          ergonomico: 32,
-          psicosocial: 82,
-          seguridad: 45,
-          salud_general: 68,
-          riesgo_total: 56
-        },
-        factores_contribuyentes: ['Estrés laboral', 'Responsabilidad por equipo', 'Horarios variables'],
-        recomendaciones: ['Programa anti-estrés', 'Apoyo psicológico', 'Revisión de turnos'],
-        prioridad: 'media',
-        ultimo_evaluado: '2025-11-01'
-      },
-      {
-        empleado_id: 'EMP003',
-        nombre: 'María Rodríguez',
-        puesto: 'Analista de Calidad',
-        departamento: 'Calidad',
-        scores: {
-          ergonomico: 45,
-          psicosocial: 55,
-          seguridad: 30,
-          salud_general: 42,
-          riesgo_total: 43
-        },
-        factores_contribuyentes: ['Postura sedentaria', 'Trabajo visual prolongado'],
-        recomendaciones: ['Evaluación ergonómica de oficina', 'Pausas visuales', 'Ejercicios posturales'],
-        prioridad: 'media',
-        ultimo_evaluado: '2025-11-01'
-      },
-      {
-        empleado_id: 'EMP004',
-        nombre: 'Luis Hernández',
-        puesto: 'Técnico de Mantenimiento',
-        departamento: 'Mantenimiento',
-        scores: {
-          ergonomico: 85,
-          psicosocial: 35,
-          seguridad: 88,
-          salud_general: 65,
-          riesgo_total: 68
-        },
-        factores_contribuyentes: ['Esfuerzos físicos', 'Manejo de herramientas pesadas', 'Trabajo en espacios reducidos'],
-        recomendaciones: ['Capacitación en ergonomía', 'Equipos de asistencia mecánica', 'Evaluación física'],
-        prioridad: 'critica',
-        ultimo_evaluado: '2025-11-01'
-      },
-      {
-        empleado_id: 'EMP005',
-        nombre: 'Elena Martínez',
-        puesto: 'Coordinadora de RH',
-        departamento: 'Recursos Humanos',
-        scores: {
-          ergonomico: 25,
-          psicosocial: 72,
-          seguridad: 40,
-          salud_general: 58,
-          riesgo_total: 49
-        },
-        factores_contribuyentes: ['Estrés emocional', 'Manejo de conflictos', 'Responsabilidad social'],
-        recomendaciones: ['Terapia de manejo de estrés', 'Técnicas de relajación', 'Apoyo profesional'],
-        prioridad: 'media',
-        ultimo_evaluado: '2025-11-01'
-      }
-    ]
+    // Los scores se cargarán dinámicamente desde Supabase
+    const scoresSimulados: ScoreData[] = []
 
     setCriterios(criteriosSimulados)
     setScores(scoresSimulados)
@@ -209,7 +123,7 @@ export function SistemaScoring() {
   const recalcularScoring = async () => {
     setLoading(true)
     toast.loading('Recalculando scores...', { id: 'scoring' })
-    
+
     setTimeout(() => {
       setLoading(false)
       toast.success('Scoring actualizado correctamente', { id: 'scoring' })
@@ -245,9 +159,9 @@ export function SistemaScoring() {
   }
 
   const departamentos = ['todos', 'Producción', 'Operaciones', 'Calidad', 'Mantenimiento', 'Recursos Humanos']
-  
-  const scoresFiltered = selectedDept === 'todos' 
-    ? scores 
+
+  const scoresFiltered = selectedDept === 'todos'
+    ? scores
     : scores.filter(score => score.departamento === selectedDept)
 
   const sortedScores = [...scoresFiltered].sort((a, b) => {
@@ -317,7 +231,7 @@ export function SistemaScoring() {
             <Users className="h-8 w-8 text-blue-500" />
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -329,7 +243,7 @@ export function SistemaScoring() {
             <AlertTriangle className="h-8 w-8 text-red-500" />
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -341,7 +255,7 @@ export function SistemaScoring() {
             <Clock className="h-8 w-8 text-orange-500" />
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -363,7 +277,7 @@ export function SistemaScoring() {
               <Settings className="h-5 w-5 text-primary mr-2" />
               Filtros y Ordenamiento
             </h3>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Departamento</label>
@@ -379,7 +293,7 @@ export function SistemaScoring() {
                   ))}
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Ordenar por</label>
                 <select
@@ -419,7 +333,7 @@ export function SistemaScoring() {
         <div className="lg:col-span-2">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Scores por Empleado</h3>
-            
+
             <div className="space-y-4">
               {sortedScores.map((score) => (
                 <motion.div
@@ -454,46 +368,46 @@ export function SistemaScoring() {
                         <span className="text-xs font-medium">{score.scores.ergonomico}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-blue-500 h-2 rounded-full"
                           style={{ width: `${score.scores.ergonomico}%` }}
                         />
                       </div>
                     </div>
-                    
+
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs text-gray-600">Psicosocial</span>
                         <span className="text-xs font-medium">{score.scores.psicosocial}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-purple-500 h-2 rounded-full"
                           style={{ width: `${score.scores.psicosocial}%` }}
                         />
                       </div>
                     </div>
-                    
+
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs text-gray-600">Seguridad</span>
                         <span className="text-xs font-medium">{score.scores.seguridad}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-red-500 h-2 rounded-full"
                           style={{ width: `${score.scores.seguridad}%` }}
                         />
                       </div>
                     </div>
-                    
+
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs text-gray-600">Salud General</span>
                         <span className="text-xs font-medium">{score.scores.salud_general}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-green-500 h-2 rounded-full"
                           style={{ width: `${score.scores.salud_general}%` }}
                         />
@@ -505,7 +419,7 @@ export function SistemaScoring() {
                     <h5 className="text-sm font-medium text-gray-900 mb-2">Recomendaciones IA:</h5>
                     <div className="flex flex-wrap gap-2">
                       {score.recomendaciones.map((rec, index) => (
-                        <span 
+                        <span
                           key={index}
                           className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs"
                         >

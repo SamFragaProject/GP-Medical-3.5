@@ -48,25 +48,25 @@ export function PerfilUsuario() {
                   <label className="text-sm font-medium text-gray-700 mb-1 block">
                     Nombre completo
                   </label>
-                  <Input defaultValue="Dr. Juan Pérez" />
+                  <Input placeholder="Nombre completo" defaultValue="" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-1 block">
                     Número de empleado
                   </label>
-                  <Input defaultValue="EMP-001" disabled />
+                  <Input placeholder="Número de empleado" defaultValue="" disabled />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-1 block">
                     Cédula profesional
                   </label>
-                  <Input defaultValue="12345678" />
+                  <Input placeholder="Cédula profesional" defaultValue="" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-1 block">
                     Especialidad
                   </label>
-                  <Input defaultValue="Medicina del Trabajo" />
+                  <Input placeholder="Especialidad" defaultValue="" />
                 </div>
               </div>
             </CardContent>
@@ -85,25 +85,25 @@ export function PerfilUsuario() {
                   <label className="text-sm font-medium text-gray-700 mb-1 block">
                     Email
                   </label>
-                  <Input type="email" defaultValue="doctor@GPMedical.com" />
+                  <Input type="email" placeholder="Correo electrónico" defaultValue="" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-1 block">
                     Teléfono
                   </label>
-                  <Input defaultValue="+52 55 1234-5678" />
+                  <Input placeholder="Teléfono" defaultValue="" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-1 block">
                     Teléfono de emergencias
                   </label>
-                  <Input defaultValue="+52 55 8765-4321" />
+                  <Input placeholder="Teléfono de emergencias" defaultValue="" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-1 block">
                     Fecha de nacimiento
                   </label>
-                  <Input type="date" defaultValue="1980-05-15" />
+                  <Input type="date" defaultValue="" />
                 </div>
               </div>
             </CardContent>

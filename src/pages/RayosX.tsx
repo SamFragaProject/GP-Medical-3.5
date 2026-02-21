@@ -176,56 +176,8 @@ export function RayosX() {
   }, [])
 
   const cargarEstudiosDemo = () => {
-    const estudiosDemo: EstudioRayosX[] = [
-      {
-        id: '1',
-        fecha: '2024-11-01',
-        paciente: 'Juan Pérez García',
-        tipo: 'Radiografía de Tórax',
-        imagenUrl: '/api/placeholder/800/600',
-        diagnosticoIA: {
-          confianza: 95,
-          hallazgos: ['Campos pulmonares claros', 'Silueta cardíaca normal', 'No se observan opacidades patológicas'],
-          recomendaciones: ['Continuar con controles rutinarios', 'Mantener estilo de vida saludable'],
-          severidad: 'normal',
-          areaAfectada: ['Pulmones', 'Corazón', 'Diafragma'],
-          prioridad: 'baja',
-          codigoDiagnostico: 'R04.0',
-          explicacion: 'El estudio muestra una radiografía de tórax dentro de parámetros normales. Los campos pulmonares presentan una transparencia adecuada sin signos de proceso inflamatorio, infeccioso o tumoral. La silueta cardíaca no presenta alteraciones en su tamaño ni configuración.'
-        },
-        estado: 'completado',
-        medico: 'Dr. María González',
-        observaciones: 'Estudio solicitado como parte del examen médico ocupacional anual.'
-      },
-      {
-        id: '2',
-        fecha: '2024-10-25',
-        paciente: 'Ana López Ruiz',
-        tipo: 'Radiografía de Columna Lumbar',
-        imagenUrl: '/api/placeholder/800/600',
-        diagnosticoIA: {
-          confianza: 88,
-          hallazgos: ['Leve disminución del espacio discal L4-L5', 'Esclerosis facetaria leve'],
-          recomendaciones: ['Fisioterapia específica', 'Ejercicios de fortalecimiento lumbar'],
-          severidad: 'leve',
-          areaAfectada: ['Columna lumbar', 'Espacios discales'],
-          prioridad: 'media',
-          codigoDiagnostico: 'M48.06',
-          explicacion: 'Se observa una leve disminución del espacio intervertebral en L4-L5 compatible con degeneración discal leve. Las facetarias articulares muestran cambios escleróticos mínimos. No hay signos de listesis o compromiso radicular.'
-        },
-        estado: 'revisado',
-        medico: 'Dr. Carlos Mendoza',
-        observaciones: 'Paciente con antecedentes de dolor lumbar ocupacional.'
-      },
-      {
-        id: '3',
-        fecha: '2024-10-20',
-        paciente: 'Roberto Sánchez',
-        tipo: 'Radiografía de Tórax',
-        imagenUrl: '/api/placeholder/800/600',
-        estado: 'pendiente'
-      }
-    ]
+    // Los estudios se cargarán dinámicamente desde Supabase
+    const estudiosDemo: EstudioRayosX[] = []
     setEstudios(estudiosDemo)
   }
 
@@ -691,7 +643,7 @@ export function RayosX() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {[
-                      { nombre: 'GPMedical Demo Corp', qty: 450, color: 'bg-blue-500' },
+                      { nombre: 'Empresa Principal', qty: 450, color: 'bg-blue-500' },
                       { nombre: 'TechHealth Systems', qty: 320, color: 'bg-indigo-500' },
                       { nombre: 'Industrial Safety MX', qty: 280, color: 'bg-purple-500' },
                       { nombre: 'PharmaCore Lab', qty: 190, color: 'bg-teal-500' },

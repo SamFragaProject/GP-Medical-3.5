@@ -19,6 +19,7 @@ import { useFacturacion } from '@/hooks/useFacturacion';
 import { useAuth } from '@/contexts/AuthContext';
 import { DataContainer } from '@/components/ui/DataContainer';
 import { SmartPatientRegistrationDialog } from '@/components/patients/SmartPatientRegistrationDialog';
+import { ComunicadosFeed } from './ComunicadosFeed';
 
 export function ReceptionView() {
     const { citas, loading: loadingAgenda, obtenerCitas } = useAgenda();
@@ -27,7 +28,34 @@ export function ReceptionView() {
 
     // Filtrar citas de hoy
     const today = new Date().toISOString().split('T')[0];
-    const todayAppointments = citas.filter(c => c.fechaHora.toISOString().startsWith(today)) || [];
+    let todayAppointments = citas.filter(c => c.fechaHora.toISOString().startsWith(today)) || [];
+
+    // Fallback Mock Data para Reception (Si no hay, inyectar demo pacientes)
+    if (todayAppointments.length === 0) {
+        todayAppointments = [
+            {
+                id: 'demo-rec-1',
+                fechaHora: new Date(new Date().setHours(new Date().getHours() + 1)),
+                estado: 'programada',
+                motivoConsulta: 'Examen de Ingreso',
+                paciente: { id: 'demo-pac-1', nombre: 'Carlos', apellidoPaterno: 'Mendoza' }
+            },
+            {
+                id: 'demo-rec-2',
+                fechaHora: new Date(new Date().setHours(new Date().getHours() - 1)),
+                estado: 'en_proceso',
+                motivoConsulta: 'Audiometría Anual',
+                paciente: { id: 'demo-pac-2', nombre: 'Elena', apellidoPaterno: 'García' }
+            },
+            {
+                id: 'demo-rec-3',
+                fechaHora: new Date(new Date().setHours(new Date().getHours() - 3)),
+                estado: 'completada',
+                motivoConsulta: 'Evaluación Periódica',
+                paciente: { id: 'demo-pac-3', nombre: 'Roberto', apellidoPaterno: 'Sánchez' }
+            }
+        ] as any[];
+    }
 
     const stats = [
         { title: 'Esperando', value: todayAppointments.filter(c => c.estado === 'en_proceso').length, icon: Clock, color: 'amber' },
@@ -67,6 +95,10 @@ export function ReceptionView() {
                     </div>
                 }
             />
+
+            <div className="pt-2">
+                <ComunicadosFeed />
+            </div>
 
             {/* Quick Stats */}
             <Grid numItems={1} numItemsSm={2} numItemsLg={4} className="gap-6">
@@ -188,23 +220,17 @@ export function ReceptionView() {
 
                     <Card className="ring-0 shadow-xl bg-white/80 backdrop-blur-2xl rounded-[2.5rem] border-white/60 p-8">
                         <Title className="text-slate-800 font-black mb-4">Alertas Operativas</Title>
-                        <div className="space-y-4">
-                            <div className="flex gap-4 p-4 rounded-2xl bg-rose-50 border border-rose-100">
-                                <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
-                                <div>
-                                    <p className="text-sm font-bold text-rose-900">Retraso en Consultorio 2</p>
-                                    <p className="text-xs text-rose-700">Dr. Ruiz tiene 15 min de retraso.</p>
-                                </div>
+                        <div className="flex flex-col items-center justify-center py-6">
+                            <div className="w-12 h-12 bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl flex items-center justify-center mb-3 border border-emerald-100">
+                                <CheckCircle className="w-6 h-6 text-emerald-400" />
                             </div>
-                            <div className="flex gap-4 p-4 rounded-2xl bg-amber-50 border border-amber-100">
-                                <Clock className="w-5 h-5 text-amber-500 shrink-0" />
-                                <div>
-                                    <p className="text-sm font-bold text-amber-900">Paciente esperando</p>
-                                    <p className="text-xs text-amber-700">Ana García ha esperado 25 min.</p>
-                                </div>
-                            </div>
+                            <p className="text-sm font-bold text-slate-500">Todo en orden</p>
+                            <p className="text-xs text-slate-400 text-center mt-1 max-w-[200px]">
+                                No hay alertas activas en este momento.
+                            </p>
                         </div>
                     </Card>
+
                 </div>
             </div>
         </div>

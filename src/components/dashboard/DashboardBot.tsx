@@ -1,13 +1,13 @@
 // Dashboard personalizado para Bot - Asistente de Ayuda
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  HelpCircle, 
-  MessageCircle, 
-  Book, 
-  Search, 
-  Clock, 
-  CheckCircle, 
+import {
+  HelpCircle,
+  MessageCircle,
+  Book,
+  Search,
+  Clock,
+  CheckCircle,
   AlertTriangle,
   TrendingUp,
   Users,
@@ -61,7 +61,7 @@ export function DashboardBot() {
     email: 'demo@GPMedical.com',
     name: 'Usuario Demo',
     hierarchy: 'super_admin' as const,
-    empresa: { nombre: 'GPMedical Demo Corp' },
+    empresa: { nombre: '' },
     sede: { nombre: 'Sede Principal' }
   }
   const [searchTerm, setSearchTerm] = useState('')
@@ -267,7 +267,7 @@ export function DashboardBot() {
                 />
               </div>
             </div>
-            <select 
+            <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-md"
@@ -309,14 +309,14 @@ export function DashboardBot() {
                     </div>
                     <div className="flex gap-2">
                       <Badge variant={
-                        ticket.prioridad === 'alta' ? 'destructive' : 
-                        ticket.prioridad === 'media' ? 'default' : 'secondary'
+                        ticket.prioridad === 'alta' ? 'destructive' :
+                          ticket.prioridad === 'media' ? 'default' : 'secondary'
                       }>
                         {ticket.prioridad}
                       </Badge>
                       <Badge variant={
-                        ticket.estado === 'activo' ? 'default' : 
-                        ticket.estado === 'pendiente' ? 'secondary' : 'outline'
+                        ticket.estado === 'activo' ? 'default' :
+                          ticket.estado === 'pendiente' ? 'secondary' : 'outline'
                       }>
                         {ticket.estado}
                       </Badge>
@@ -381,7 +381,7 @@ export function DashboardBot() {
                   <h4 className="font-medium">{tutorial.titulo}</h4>
                   <Badge variant={
                     tutorial.dificultad === 'basico' ? 'default' :
-                    tutorial.dificultad === 'intermedio' ? 'secondary' : 'destructive'
+                      tutorial.dificultad === 'intermedio' ? 'secondary' : 'destructive'
                   }>
                     {tutorial.dificultad}
                   </Badge>

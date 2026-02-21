@@ -1,12 +1,12 @@
 // Componente de dashboard administrativo para Super Admin
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Users, 
-  Shield, 
-  Activity, 
-  AlertTriangle, 
-  CheckCircle, 
+import {
+  Users,
+  Shield,
+  Activity,
+  AlertTriangle,
+  CheckCircle,
   Clock,
   Database,
   Settings,
@@ -47,7 +47,7 @@ export function AdminDashboard() {
     email: 'demo@GPMedical.com',
     name: 'Usuario Demo',
     hierarchy: 'super_admin' as const,
-    empresa: { nombre: 'GPMedical Demo Corp' },
+    empresa: { nombre: '' },
     sede: { nombre: 'Sede Principal' }
   }
   const canAccess = true
@@ -111,11 +111,11 @@ export function AdminDashboard() {
   const calculateSecurityScore = (): number => {
     const unauthorizedRate = (systemStats.unauthorizedAttempts24h / systemStats.permissionChecks24h) * 100
     const failedLoginRate = (systemStats.failedLogins24h / systemStats.activeUsers) * 100
-    
+
     let score = 100
     score -= unauthorizedRate * 2 // Penalizar intentos no autorizados
     score -= failedLoginRate * 1 // Penalizar intentos de login fallidos
-    
+
     return Math.max(0, Math.min(100, score))
   }
 
@@ -329,9 +329,8 @@ export function AdminDashboard() {
                 <div className="space-y-3">
                   {auditLogs.slice(0, 10).map((log) => (
                     <div key={log.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                      <div className={`p-2 rounded-full ${
-                        log.success ? 'bg-green-100' : 'bg-red-100'
-                      }`}>
+                      <div className={`p-2 rounded-full ${log.success ? 'bg-green-100' : 'bg-red-100'
+                        }`}>
                         {log.success ? (
                           <CheckCircle className="h-4 w-4 text-green-600" />
                         ) : (

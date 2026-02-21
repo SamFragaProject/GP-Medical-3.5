@@ -25,7 +25,7 @@ export interface User {
   sede_id?: string
   avatar_url?: string
   telefono?: string
-  empresa?: string
+  empresa?: Empresa
   cedula_profesional?: string
   especialidad?: string
   created_at?: string
@@ -42,6 +42,7 @@ export interface Empresa {
   logo_url?: string
   plan: 'basico' | 'profesional' | 'enterprise'
   activo: boolean
+  configuracion?: any
 }
 
 export interface Sede {

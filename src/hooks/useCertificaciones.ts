@@ -254,10 +254,10 @@ export function useCertificaciones() {
         recomendaciones: [],
         observacionesMedicas: '',
         medicoFirma: {
-          id: 'medico_1',
-          nombre: 'Dr. Juan',
-          apellidos: 'Pérez',
-          cedulaProfesional: '1234567',
+          id: '',
+          nombre: '',
+          apellidos: '',
+          cedulaProfesional: '',
           especialidad: 'Medicina del Trabajo',
           certificacionFirmas: 'active'
         },
@@ -466,9 +466,9 @@ export function useCertificaciones() {
           observacionesMedicas: 'Examen físico dentro de parámetros normales',
           medicoFirma: {
             id: 'med_1',
-            nombre: 'Dr. Roberto',
-            apellidos: 'Méndez Hernández',
-            cedulaProfesional: '1234567',
+            nombre: '',
+            apellidos: '',
+            cedulaProfesional: '',
             especialidad: 'Medicina del Trabajo',
             certificacionFirmas: 'active'
           },

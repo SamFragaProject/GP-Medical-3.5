@@ -2,15 +2,15 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { 
-  Lock, 
-  AlertTriangle, 
-  ArrowLeft, 
-  Home, 
-  RefreshCw, 
-  Shield, 
-  User, 
-  Building, 
+import {
+  Lock,
+  AlertTriangle,
+  ArrowLeft,
+  Home,
+  RefreshCw,
+  Shield,
+  User,
+  Building,
   MapPin,
   Clock,
   Eye,
@@ -151,7 +151,7 @@ export function AccessDeniedPage({
             <div className="space-y-4">
               <div>
                 <h3 className="font-semibold text-lg mb-2">Información del Acceso Denegado</h3>
-                
+
                 {resource && action && (
                   <div className="bg-red-100 p-4 rounded-lg">
                     <div className="flex items-start space-x-3">
@@ -195,7 +195,7 @@ export function AccessDeniedPage({
                           Empresa:
                         </span>
                         <p className="text-gray-900">
-                          {displayUser.empresa?.nombre || 'GPMedical Demo Corp'}
+                          {displayUser.empresa?.nombre || 'Empresa'}
                         </p>
                       </div>
                       <div className="md:col-span-2">
@@ -241,7 +241,7 @@ export function AccessDeniedPage({
             <ArrowLeft className="w-4 h-4 mr-2" />
             Regresar
           </Button>
-          
+
           <Button
             onClick={handleGoHome}
             variant="default"
@@ -304,12 +304,12 @@ export function AccessDeniedPage({
 }
 
 // Componente de error para loading states
-export function PermissionLoadingError({ 
-  onRetry, 
-  message = "Error verificando permisos" 
-}: { 
+export function PermissionLoadingError({
+  onRetry,
+  message = "Error verificando permisos"
+}: {
   onRetry?: () => void
-  message?: string 
+  message?: string
 }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center p-4">
@@ -335,12 +335,12 @@ export function PermissionLoadingError({
 }
 
 // Componente para errores de sesión
-export function SessionExpiredPage({ 
+export function SessionExpiredPage({
   onLogin,
-  userEmail 
-}: { 
+  userEmail
+}: {
   onLogin?: () => void
-  userEmail?: string 
+  userEmail?: string
 }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
@@ -351,15 +351,15 @@ export function SessionExpiredPage({
             <div>
               <h3 className="font-semibold">Sesión Expirada</h3>
               <p className="text-sm mt-1">
-                Tu sesión ha expirado por seguridad. 
+                Tu sesión ha expirado por seguridad.
                 {userEmail && (
                   <> Para continuar como <strong>{userEmail}</strong>, por favor inicia sesión nuevamente.</>
                 )}
               </p>
             </div>
             <div className="flex gap-2">
-              <Button 
-                onClick={onLogin || (() => window.location.href = '/login')} 
+              <Button
+                onClick={onLogin || (() => window.location.href = '/login')}
                 size="sm"
               >
                 Iniciar Sesión

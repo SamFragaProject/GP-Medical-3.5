@@ -13,18 +13,35 @@ import {
   X,
   CheckCircle2,
   AlertCircle,
-  ShieldCheck
+  ShieldCheck,
+  Award,
+  Stethoscope,
+  Calendar,
+  Clock
 } from 'lucide-react';
 import { SignaturePad } from '@/components/shared/SignaturePad';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { usePermisosDinamicos } from '@/hooks/usePermisosDinamicos';
+import { useAuth } from '@/contexts/AuthContext';
 import { DictamenForm } from './DictamenForm';
 import { ValidadorEstudios } from './ValidadorEstudios';
+import { dictamenService } from '@/services/dictamenService';
 import { toast } from 'react-hot-toast';
-import type { TipoEvaluacionDictamen as TipoEvaluacion, ResultadoDictamen } from '@/types/dictamen';
+import type {
+  TipoEvaluacionDictamen as TipoEvaluacion,
+  ResultadoDictamen,
+  RESULTADO_LABELS,
+  TIPO_EVALUACION_LABELS
+} from '@/types/dictamen';
+
+// ══════════════════════════════════════════════════════════════
+// SCHEMA ZOD — incluye datos del médico responsable
+// ══════════════════════════════════════════════════════════════
 
 const dictamenWizardSchema = z.object({
   paciente_id: z.string().min(1, 'Seleccione un paciente'),
@@ -36,9 +53,12 @@ const dictamenWizardSchema = z.object({
   recomendaciones_epp: z.array(z.string()),
   fecha_vigencia_inicio: z.string(),
   fecha_vigencia_fin: z.string().optional(),
+  // Datos del médico responsable
+  medico_nombre: z.string().min(1, 'Nombre del médico requerido'),
+  cedula_profesional: z.string().min(6, 'Cédula profesional requerida (mín. 6 caracteres)'),
+  especialidad_medico: z.string().optional(),
   firma_digital: z.string().optional(),
 }).refine((data) => {
-  // Si resultado no es 'apto', debe tener al menos una restricción
   if (data.resultado !== 'apto' && data.restricciones.length === 0) {
     return false;
   }
@@ -58,14 +78,40 @@ interface DictamenWizardProps {
 
 type WizardStep = 1 | 2 | 3 | 4;
 
+const RESULTADO_BADGE: Record<string, { label: string; variant: string; color: string }> = {
+  apto: { label: 'APTO', variant: 'success', color: 'bg-emerald-500 text-white' },
+  apto_restricciones: { label: 'APTO CON RESTRICCIONES', variant: 'warning', color: 'bg-amber-500 text-white' },
+  no_apto_temporal: { label: 'NO APTO TEMPORAL', variant: 'destructive', color: 'bg-orange-500 text-white' },
+  no_apto: { label: 'NO APTO', variant: 'destructive', color: 'bg-rose-600 text-white' },
+  evaluacion_complementaria: { label: 'EVALUACIÓN COMPLEMENTARIA', variant: 'default', color: 'bg-blue-500 text-white' },
+};
+
+const TIPO_EVAL_LABEL: Record<string, string> = {
+  preempleo: 'Pre-empleo / Ingreso',
+  ingreso: 'Ingreso',
+  periodico: 'Examen Periódico',
+  retorno: 'Retorno a Trabajo',
+  egreso: 'Egreso / Término',
+  reubicacion: 'Reubicación Laboral',
+  reincorporacion: 'Reincorporación',
+};
+
 export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWizardProps) {
   const { puede } = usePermisosDinamicos();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [estudiosValidos, setEstudiosValidos] = useState(false);
   const [estudiosFaltantes, setEstudiosFaltantes] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPacienteId, setSelectedPacienteId] = useState<string>(pacienteId || '');
   const [tipoEvaluacion, setTipoEvaluacion] = useState<TipoEvaluacion>('preempleo');
+
+  // Calcular vigencia por defecto (365 días para periódicos, 180 para pre-empleo)
+  const defaultVigenciaDays = tipoEvaluacion === 'periodico' ? 365 : tipoEvaluacion === 'egreso' ? 0 : 180;
+  const hoy = new Date().toISOString().split('T')[0];
+  const vigenciaDefault = defaultVigenciaDays > 0
+    ? new Date(Date.now() + defaultVigenciaDays * 86400000).toISOString().split('T')[0]
+    : '';
 
   const methods = useForm<DictamenWizardValues>({
     resolver: zodResolver(dictamenWizardSchema),
@@ -77,8 +123,11 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
       restricciones_detalle: '',
       recomendaciones_medicas: '',
       recomendaciones_epp: [],
-      fecha_vigencia_inicio: new Date().toISOString().split('T')[0],
-      fecha_vigencia_fin: '',
+      fecha_vigencia_inicio: hoy,
+      fecha_vigencia_fin: vigenciaDefault,
+      medico_nombre: user?.nombre ? `${user.nombre} ${user.apellido_paterno || ''}`.trim() : '',
+      cedula_profesional: '',
+      especialidad_medico: 'Medicina del Trabajo',
       firma_digital: '',
     },
   });
@@ -86,6 +135,8 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
   const { watch, handleSubmit, setValue, formState: { errors } } = methods;
   const resultado = watch('resultado');
   const restricciones = watch('restricciones');
+  const medicoNombre = watch('medico_nombre');
+  const cedulaPro = watch('cedula_profesional');
 
   useEffect(() => {
     if (pacienteId) {
@@ -93,6 +144,16 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
       setValue('paciente_id', pacienteId);
     }
   }, [pacienteId, setValue]);
+
+  // Actualizar vigencia cuando cambia el tipo de evaluación
+  useEffect(() => {
+    const days = tipoEvaluacion === 'periodico' ? 365 : tipoEvaluacion === 'egreso' ? 0 : 180;
+    if (days > 0) {
+      setValue('fecha_vigencia_fin', new Date(Date.now() + days * 86400000).toISOString().split('T')[0]);
+    } else {
+      setValue('fecha_vigencia_fin', '');
+    }
+  }, [tipoEvaluacion, setValue]);
 
   const handleValidacionChange = (valido: boolean, faltantes: string[]) => {
     setEstudiosValidos(valido);
@@ -108,7 +169,7 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
       case 3:
         return resultado && (resultado === 'apto' || restricciones.length > 0);
       case 4:
-        return true;
+        return medicoNombre && cedulaPro && cedulaPro.length >= 6;
       default:
         return false;
     }
@@ -122,12 +183,43 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
 
     setIsSubmitting(true);
     try {
-      // Aquí iría la llamada a la API
-      // await dictamenService.create(values);
-      toast.success('Dictamen creado exitosamente');
+      await dictamenService.crear({
+        empresa_id: user?.empresa_id || '',
+        paciente_id: values.paciente_id,
+        tipo_evaluacion: values.tipo_evaluacion,
+        resultado: values.resultado,
+        resultado_detalle: values.restricciones_detalle,
+        restricciones: values.restricciones.map(code => ({
+          codigo: code,
+          descripcion: code,
+          tipo: 'fisica' as const,
+        })),
+        restricciones_otras: values.restricciones_detalle,
+        recomendaciones_medicas: values.recomendaciones_medicas
+          ? values.recomendaciones_medicas.split('\n').filter(Boolean)
+          : [],
+        recomendaciones_epp: values.recomendaciones_epp,
+        recomendaciones_adicionales: '',
+        vigencia_inicio: values.fecha_vigencia_inicio,
+        vigencia_fin: values.fecha_vigencia_fin || undefined,
+        medico_nombre: values.medico_nombre,
+        cedula_profesional: values.cedula_profesional,
+        especialidad_medico: values.especialidad_medico || undefined,
+        medico_responsable_id: user?.id || undefined,
+      }, {
+        id: user?.id || '',
+        email: user?.email || '',
+        nombre: user?.nombre,
+        apellido_paterno: user?.apellido_paterno,
+        rol: user?.rol as any,
+        empresa_id: user?.empresa_id,
+      } as any);
+
+      toast.success('Dictamen creado y registrado exitosamente');
       onComplete();
-    } catch (error) {
-      toast.error('Error al crear el dictamen');
+    } catch (error: any) {
+      console.error('Error creando dictamen:', error);
+      toast.error(error?.message || 'Error al crear el dictamen');
     } finally {
       setIsSubmitting(false);
     }
@@ -137,7 +229,7 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
     { number: 1, title: 'Paciente', icon: User },
     { number: 2, title: 'Estudios', icon: FileCheck },
     { number: 3, title: 'Resultado', icon: AlertTriangle },
-    { number: 4, title: 'Firma', icon: FileSignature },
+    { number: 4, title: 'Firma & Médico', icon: FileSignature },
   ];
 
   const renderStepContent = () => {
@@ -145,8 +237,8 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
       case 1:
         return (
           <div className="space-y-6">
-            <Card className="border shadow-md">
-              <CardHeader className="bg-slate-50/50">
+            <Card className="border shadow-md rounded-2xl">
+              <CardHeader className="bg-slate-50/50 rounded-t-2xl">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <User className="w-5 h-5 text-emerald-600" />
                   Selección de Paciente y Tipo de Evaluación
@@ -155,36 +247,43 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
               <CardContent className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">
+                    <Label className="text-sm font-semibold text-slate-700">
                       Paciente <span className="text-red-500">*</span>
-                    </label>
-                    {/* Aquí iría el componente de búsqueda de pacientes */}
-                    <div className="p-3 border rounded-lg bg-slate-50">
+                    </Label>
+                    <div className="p-3 border rounded-xl bg-slate-50">
                       <p className="text-sm text-slate-500">
-                        {selectedPacienteId ? 'Paciente seleccionado' : 'Buscar paciente...'}
+                        {selectedPacienteId ? '✅ Paciente seleccionado' : 'Buscar paciente...'}
                       </p>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">
+                    <Label className="text-sm font-semibold text-slate-700">
                       Tipo de Evaluación <span className="text-red-500">*</span>
-                    </label>
+                    </Label>
                     <select
-                      className="w-full h-10 px-3 rounded-md border border-gray-200 bg-white text-sm"
+                      className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm font-medium"
                       value={tipoEvaluacion}
                       onChange={(e) => {
                         setTipoEvaluacion(e.target.value as TipoEvaluacion);
                         setValue('tipo_evaluacion', e.target.value as TipoEvaluacion);
                       }}
                     >
-                      <option value="preempleo">Preempleo</option>
-                      <option value="periodico">Periódico</option>
+                      <option value="preempleo">Pre-empleo / Ingreso</option>
+                      <option value="periodico">Examen Periódico</option>
                       <option value="retorno">Retorno a Trabajo</option>
-                      <option value="egreso">Egreso</option>
-                      <option value="reubicacion">Reubicación</option>
+                      <option value="egreso">Egreso / Término</option>
+                      <option value="reubicacion">Reubicación Laboral</option>
                       <option value="reincorporacion">Reincorporación</option>
                     </select>
                   </div>
+                </div>
+
+                {/* Info de vigencia automática */}
+                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                  <Clock className="w-4 h-4 text-blue-500" />
+                  <p className="text-xs text-blue-700 font-medium">
+                    Vigencia automática: <strong>{defaultVigenciaDays > 0 ? `${defaultVigenciaDays} días` : 'Sin vigencia (egreso)'}</strong> — puede modificarse en el paso 3
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -202,7 +301,7 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
               />
             )}
             {!estudiosValidos && estudiosFaltantes.length > 0 && (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
                 <div>
                   <p className="text-sm font-semibold text-amber-800">
@@ -227,63 +326,141 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
       case 4:
         return (
           <div className="space-y-6">
-            <Card className="border shadow-md">
+            {/* Resumen del dictamen */}
+            <Card className="border shadow-md rounded-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-emerald-50/30 rounded-t-2xl">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Stethoscope className="w-5 h-5 text-emerald-600" />
+                  Resumen del Dictamen
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-3 bg-slate-50 rounded-xl">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tipo</p>
+                    <p className="text-sm font-bold text-slate-900">{TIPO_EVAL_LABEL[tipoEvaluacion]}</p>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Resultado</p>
+                    <Badge className={`${RESULTADO_BADGE[resultado]?.color || 'bg-slate-500 text-white'} text-[10px] font-black uppercase tracking-wider`}>
+                      {RESULTADO_BADGE[resultado]?.label || resultado}
+                    </Badge>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Restricciones</p>
+                    <p className="text-sm font-bold text-slate-900">{restricciones.length} seleccionadas</p>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Vigencia</p>
+                    <p className="text-sm font-bold text-slate-900">{watch('fecha_vigencia_fin') || 'Sin vencimiento'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Datos del médico */}
+            <Card className="border-2 border-blue-200 shadow-md rounded-2xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50/30">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Award className="w-5 h-5 text-blue-600" />
+                  Médico Responsable — Datos Legales
+                </CardTitle>
+                <p className="text-xs text-slate-500 mt-1">
+                  Estos datos se estamparán en el documento PDF oficial del dictamen
+                </p>
+              </CardHeader>
+              <CardContent className="p-6 space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                      Nombre Completo del Médico <span className="text-rose-500">*</span>
+                    </Label>
+                    <Input
+                      {...methods.register('medico_nombre')}
+                      placeholder="Dr. / Dra. Nombre completo"
+                      className="rounded-xl h-11"
+                    />
+                    {errors.medico_nombre && (
+                      <p className="text-xs text-rose-500 font-medium">{errors.medico_nombre.message}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                      Cédula Profesional <span className="text-rose-500">*</span>
+                    </Label>
+                    <Input
+                      {...methods.register('cedula_profesional')}
+                      placeholder="Número de cédula profesional"
+                      className="rounded-xl h-11"
+                    />
+                    {errors.cedula_profesional && (
+                      <p className="text-xs text-rose-500 font-medium">{errors.cedula_profesional.message}</p>
+                    )}
+                    <p className="text-[10px] text-slate-400 font-medium">
+                      La cédula será verificada y aparecerá en el documento oficial
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-slate-700">
+                    Especialidad Médica
+                  </Label>
+                  <select
+                    className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-white text-sm font-medium"
+                    {...methods.register('especialidad_medico')}
+                  >
+                    <option value="Medicina del Trabajo">Medicina del Trabajo</option>
+                    <option value="Medicina General">Medicina General</option>
+                    <option value="Salud Ocupacional">Salud Ocupacional</option>
+                    <option value="Medicina Familiar">Medicina Familiar</option>
+                    <option value="Medicina Interna">Medicina Interna</option>
+                    <option value="Otorrinolaringología">Otorrinolaringología</option>
+                    <option value="Oftalmología">Oftalmología</option>
+                    <option value="Neumología">Neumología</option>
+                    <option value="Cardiología">Cardiología</option>
+                    <option value="Traumatología">Traumatología y Ortopedia</option>
+                  </select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Firma digital */}
+            <Card className="border shadow-md rounded-2xl overflow-hidden">
               <CardHeader className="bg-slate-50/50">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <FileSignature className="w-5 h-5 text-emerald-600" />
-                  Firma Digital y Recomendaciones
+                  Firma Electrónica del Médico
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6 space-y-6">
-                <div className="p-4 bg-slate-50 rounded-lg border">
-                  <h4 className="font-semibold text-slate-900 mb-2">Resumen del Dictamen</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-slate-500">Resultado:</span>
-                      <Badge
-                        variant={resultado === 'apto' ? 'success' : resultado.includes('no_apto') ? 'destructive' : 'warning'}
-                        className="ml-2"
-                      >
-                        {resultado === 'apto' && 'Apto'}
-                        {resultado === 'apto_restricciones' && 'Apto con Restricciones'}
-                        {resultado === 'no_apto_temporal' && 'No Apto Temporal'}
-                        {resultado === 'no_apto' && 'No Apto'}
-                        {resultado === 'evaluacion_complementaria' && 'Evaluación Complementaria'}
-                      </Badge>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Restricciones:</span>
-                      <span className="ml-2 font-medium">{restricciones.length}</span>
-                    </div>
-                  </div>
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-slate-500 font-medium">
+                    Dibuje su firma en el recuadro inferior
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setValue('firma_digital', '')}
+                    className="text-[10px] font-black uppercase text-rose-400 hover:text-rose-300 transition-colors px-3 py-1 rounded-lg hover:bg-rose-50"
+                  >
+                    Limpiar Firma
+                  </button>
                 </div>
 
-                {/* Componente de firma digital */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-black text-white/40 uppercase tracking-widest">
-                      Firma del Médico Responsable <span className="text-rose-500">*</span>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setValue('firma_digital', '')}
-                      className="text-[10px] font-black uppercase text-rose-400 hover:text-rose-300 transition-colors"
-                    >
-                      Limpiar Firma
-                    </button>
-                  </div>
+                <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl overflow-hidden p-4 hover:border-emerald-300 transition-colors">
+                  <SignaturePad
+                    onSave={(signatureUrl) => setValue('firma_digital', signatureUrl)}
+                    onClear={() => setValue('firma_digital', '')}
+                  />
+                </div>
 
-                  <div className="bg-white/5 border-2 border-dashed border-white/10 rounded-3xl overflow-hidden p-4">
-                    <SignaturePad
-                      onSave={(signatureUrl) => setValue('firma_digital', signatureUrl)}
-                      onClear={() => setValue('firma_digital', '')}
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
-                    <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                    <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider leading-tight">
-                      Esta firma será estampada digitalmente en el dictamen PDF y vinculada a su cédula profesional.
+                <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                  <div>
+                    <p className="text-xs text-emerald-700 font-bold">
+                      Firma con validez legal
+                    </p>
+                    <p className="text-[10px] text-emerald-600 mt-0.5">
+                      Esta firma será estampada digitalmente en el dictamen PDF junto con su cédula profesional ({cedulaPro || '---'}) y nombre ({medicoNombre || '---'}).
                     </p>
                   </div>
                 </div>
@@ -383,11 +560,11 @@ export function DictamenWizard({ pacienteId, onComplete, onCancel }: DictamenWiz
           <Button
             type="button"
             onClick={handleSubmit(onSubmit)}
-            disabled={isSubmitting}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+            disabled={isSubmitting || !canAdvance()}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-8"
           >
             <Save className="w-4 h-4 mr-2" />
-            {isSubmitting ? 'Guardando...' : 'Finalizar Dictamen'}
+            {isSubmitting ? 'Guardando...' : 'Firmar y Finalizar Dictamen'}
           </Button>
         )}
       </div>

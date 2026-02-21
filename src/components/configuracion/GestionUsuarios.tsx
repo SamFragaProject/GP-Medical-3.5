@@ -105,7 +105,7 @@ function UsuarioForm({ usuario, onSave, onCancel }: {
           <Input
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Dr. Juan Pérez"
+            placeholder="Nombre completo"
             required
           />
         </div>

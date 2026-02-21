@@ -10,18 +10,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Separator } from '../ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog'
-import { 
-  Users, 
-  Shield, 
-  Download, 
-  Upload, 
-  Copy, 
-  Save, 
-  RefreshCw, 
-  AlertTriangle, 
-  CheckCircle, 
-  FileText, 
-  Clock, 
+import {
+  Users,
+  Shield,
+  Download,
+  Upload,
+  Copy,
+  Save,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle,
+  FileText,
+  Clock,
   Activity,
   Settings,
   Database,
@@ -40,12 +40,12 @@ import {
   FileBarChart,
   UserX
 } from 'lucide-react'
-import { 
-  SaaSRole, 
-  SaaSUser, 
-  UserHierarchy, 
-  GranularPermission, 
-  ResourceType, 
+import {
+  SaaSRole,
+  SaaSUser,
+  UserHierarchy,
+  GranularPermission,
+  ResourceType,
   PermissionAction,
   RESOURCE_PERMISSIONS,
   HIERARCHY_LEVELS
@@ -115,10 +115,10 @@ export function AdminMenuManager() {
   const [importDialogOpen, setImportDialogOpen] = useState(false)
   const [exportDialogOpen, setExportDialogOpen] = useState(false)
   const [bulkConfirmDialog, setBulkConfirmDialog] = useState(false)
-  const [bulkOperationData, setBulkOperationData] = useState<{roleId: string, userIds: string[]} | null>(null)
+  const [bulkOperationData, setBulkOperationData] = useState<{ roleId: string, userIds: string[] } | null>(null)
   const [confirmPassword, setConfirmPassword] = useState('')
   const [operationInProgress, setOperationInProgress] = useState(false)
-  
+
   // Hook para notificaciones toast
   const { showSuccess, showError, showWarning } = useToast()
 
@@ -129,7 +129,7 @@ export function AdminMenuManager() {
 
   const loadInitialData = async () => {
     setLoading(true)
-    
+
     // Simular carga de roles
     const mockRoles: SaaSRole[] = [
       {
@@ -194,10 +194,10 @@ export function AdminMenuManager() {
     const mockUsers: SaaSUser[] = [
       {
         id: 'user-1',
-        name: 'Dr. Juan Pérez',
-        email: 'juan.perez@empresa.com',
+        name: 'Médico Ejemplo',
+        email: 'medico@empresa.com',
         hierarchy: 'medico_especialista',
-        enterpriseId: 'emp-1',
+        enterpriseId: '',
         permissions: [],
         preferences: {
           theme: 'light',
@@ -225,10 +225,10 @@ export function AdminMenuManager() {
       },
       {
         id: 'user-2',
-        name: 'Enfermera María González',
-        email: 'maria.gonzalez@empresa.com',
+        name: 'Enfermera Ejemplo',
+        email: 'enfermera@empresa.com',
         hierarchy: 'enfermera',
-        enterpriseId: 'emp-1',
+        enterpriseId: '',
         permissions: [],
         preferences: {
           theme: 'light',
@@ -259,7 +259,7 @@ export function AdminMenuManager() {
     setRoles(mockRoles)
     setUsers(mockUsers)
     setSelectedRole(mockRoles[0])
-    
+
     setLoading(false)
   }
 
@@ -274,7 +274,7 @@ export function AdminMenuManager() {
       if (role.id === selectedRole.id) {
         const existingIndex = role.permissions.findIndex(p => p.resource === resource)
         const updatedResource = { ...RESOURCE_PERMISSIONS[resource] }
-        
+
         updatedResource[action] = checked
 
         const newPermission: GranularPermission = {
@@ -305,11 +305,11 @@ export function AdminMenuManager() {
     if (!selectedRole) return
 
     setSaving(true)
-    
+
     try {
       // Simular guardado
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
+
       // Agregar entrada de auditoría
       const auditEntry: AuditEntry = {
         id: `audit-${Date.now()}`,
@@ -320,22 +320,22 @@ export function AdminMenuManager() {
         details: `Se actualizaron los permisos del rol ${selectedRole.name}`,
         status: 'success'
       }
-      
+
       setAuditLog(prev => [auditEntry, ...prev.slice(0, 49)]) // Mantener últimos 50
-      
-      setRoles(prev => prev.map(role => 
+
+      setRoles(prev => prev.map(role =>
         role.id === selectedRole.id ? { ...role, updatedAt: new Date() } : role
       ))
-      
+
       // Mostrar notificación de éxito
       showSuccess(
         'Rol actualizado',
         `Los permisos del rol "${selectedRole.name}" se han guardado correctamente`
       )
-      
+
     } catch (error) {
       console.error('Error al guardar rol:', error)
-      
+
       // Mostrar notificación de error
       showError(
         'Error al guardar',
@@ -365,7 +365,7 @@ export function AdminMenuManager() {
     if (!bulkOperationData || !confirmPassword) return
 
     setOperationInProgress(true)
-    
+
     try {
       // Validación de contraseña simulada
       if (confirmPassword.length < 6) {
@@ -376,7 +376,7 @@ export function AdminMenuManager() {
 
       // Simular aplicación masiva
       await new Promise(resolve => setTimeout(resolve, 2000))
-      
+
       // Agregar auditoría detallada
       const selectedRole = roles.find(r => r.id === bulkOperationData.roleId)
       const auditEntry: AuditEntry = {
@@ -388,23 +388,23 @@ export function AdminMenuManager() {
         details: `Se aplicaron permisos del rol "${selectedRole?.name}" a ${bulkOperationData.userIds.length} usuarios. Contraseña confirmada.`,
         status: 'success'
       }
-      
+
       setAuditLog(prev => [auditEntry, ...prev.slice(0, 49)])
-      
+
       setSelectedUsers([])
       setBulkConfirmDialog(false)
       setBulkOperationData(null)
       setConfirmPassword('')
-      
+
       // Mostrar notificación de éxito
       showSuccess(
         'Aplicación masiva completada',
         `Se aplicaron permisos a ${bulkOperationData.userIds.length} usuarios exitosamente`
       )
-      
+
     } catch (error) {
       console.error('Error en aplicación masiva:', error)
-      
+
       // Mostrar notificación de error
       showError(
         'Error en aplicación masiva',
@@ -417,9 +417,9 @@ export function AdminMenuManager() {
 
   const handleApplyTemplate = (template: Template) => {
     if (!selectedRole) return
-    
-    setRoles(prev => prev.map(role => 
-      role.id === selectedRole?.id 
+
+    setRoles(prev => prev.map(role =>
+      role.id === selectedRole?.id
         ? { ...role, permissions: [...template.permissions] }
         : role
     ))
@@ -428,7 +428,7 @@ export function AdminMenuManager() {
   const handleApplyTemplateToRole = (roleId: string, hierarchy: UserHierarchy) => {
     // Simular aplicación de plantilla predefinida
     const templatePermissions: GranularPermission[] = []
-    
+
     // Generar permisos según la jerarquía
     switch (hierarchy) {
       case 'medico_especialista':
@@ -479,13 +479,13 @@ export function AdminMenuManager() {
           }
         )
     }
-    
-    setRoles(prev => prev.map(role => 
-      role.id === roleId 
+
+    setRoles(prev => prev.map(role =>
+      role.id === roleId
         ? { ...role, permissions: templatePermissions, updatedAt: new Date() }
         : role
     ))
-    
+
     // Agregar auditoría
     const selectedRole = roles.find(r => r.id === roleId)
     const auditEntry: AuditEntry = {
@@ -497,9 +497,9 @@ export function AdminMenuManager() {
       details: `Se aplicó plantilla "${HIERARCHY_TITLES[hierarchy]}" al rol "${selectedRole?.name}"`,
       status: 'success'
     }
-    
+
     setAuditLog(prev => [auditEntry, ...prev.slice(0, 49)])
-    
+
     // Notificar éxito
     showSuccess(
       'Plantilla aplicada',
@@ -514,7 +514,7 @@ export function AdminMenuManager() {
       exportedAt: new Date().toISOString(),
       version: '1.0'
     }
-    
+
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -522,7 +522,7 @@ export function AdminMenuManager() {
     a.download = `roles-permisos-${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
-    
+
     // Mostrar notificación de éxito
     showSuccess(
       'Exportación completada',
@@ -544,7 +544,7 @@ export function AdminMenuManager() {
         if (importData.templates) {
           setTemplates(importData.templates)
         }
-        
+
         const auditEntry: AuditEntry = {
           id: `audit-${Date.now()}`,
           action: 'import_roles',
@@ -554,18 +554,18 @@ export function AdminMenuManager() {
           details: `Se importaron roles desde archivo`,
           status: 'success'
         }
-        
+
         setAuditLog(prev => [auditEntry, ...prev.slice(0, 49)])
-        
+
         // Mostrar notificación de éxito
         showSuccess(
           'Importación completada',
           `Se importaron roles y plantillas desde el archivo`
         )
-        
+
       } catch (error) {
         console.error('Error al importar:', error)
-        
+
         // Mostrar notificación de error
         showError(
           'Error al importar',
@@ -579,7 +579,7 @@ export function AdminMenuManager() {
   // Filtrar roles
   const filteredRoles = roles.filter(role => {
     const matchesSearch = role.name.toLowerCase().includes(searchRole.toLowerCase()) ||
-                         role.description.toLowerCase().includes(searchRole.toLowerCase())
+      role.description.toLowerCase().includes(searchRole.toLowerCase())
     const matchesHierarchy = filterHierarchy === 'all' || role.hierarchy === filterHierarchy
     return matchesSearch && matchesHierarchy
   })
@@ -587,7 +587,7 @@ export function AdminMenuManager() {
   // Filtrar usuarios
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchUser.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchUser.toLowerCase())
+      user.email.toLowerCase().includes(searchUser.toLowerCase())
     const matchesHierarchy = filterHierarchy === 'all' || user.hierarchy === filterHierarchy
     return matchesSearch && matchesHierarchy
   })
@@ -698,11 +698,10 @@ export function AdminMenuManager() {
                   {filteredRoles.map(role => (
                     <div
                       key={role.id}
-                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                        selectedRole?.id === role.id 
-                          ? 'border-blue-500 bg-blue-50' 
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedRole?.id === role.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}
                       onClick={() => handleRoleSelect(role)}
                     >
                       <div className="flex items-center justify-between">
@@ -757,7 +756,7 @@ export function AdminMenuManager() {
                                 <Label className="text-sm font-medium capitalize">{action}</Label>
                                 <Checkbox
                                   checked={getPermissionStatus(selectedRole, resource as ResourceType, action as keyof PermissionAction)}
-                                  onCheckedChange={(checked) => 
+                                  onCheckedChange={(checked) =>
                                     handlePermissionChange(resource as ResourceType, action as keyof PermissionAction, checked as boolean)
                                   }
                                 />
@@ -807,8 +806,8 @@ export function AdminMenuManager() {
                       ))}
                     </div>
                     <div className="space-y-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="w-full"
                         disabled={!selectedRole}
                         onClick={() => {
@@ -869,7 +868,7 @@ export function AdminMenuManager() {
                       Seleccionar todos ({filteredUsers.length})
                     </Label>
                   </div>
-                  
+
                   {filteredUsers.map(user => (
                     <div key={user.id} className="flex items-center space-x-2 p-2 border rounded">
                       <Checkbox
@@ -915,7 +914,7 @@ export function AdminMenuManager() {
                 )}
 
                 <div className="space-y-2">
-                  <Button 
+                  <Button
                     onClick={() => selectedRole && handleBulkApplyConfirm(selectedRole.id, selectedUsers)}
                     disabled={!selectedRole || selectedUsers.length === 0 || operationInProgress}
                     className="w-full"
@@ -924,8 +923,8 @@ export function AdminMenuManager() {
                     {operationInProgress ? 'Aplicando...' : `Aplicar a ${selectedUsers.length} usuarios`}
                   </Button>
 
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full"
                     onClick={() => setSelectedUsers([])}
                   >
@@ -957,13 +956,12 @@ export function AdminMenuManager() {
                 {auditLog.length > 0 ? auditLog.map(entry => (
                   <div key={entry.id} className="flex items-center justify-between p-3 border rounded">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${
-                        entry.status === 'success' ? 'bg-green-100' :
+                      <div className={`p-2 rounded-full ${entry.status === 'success' ? 'bg-green-100' :
                         entry.status === 'warning' ? 'bg-yellow-100' : 'bg-red-100'
-                      }`}>
+                        }`}>
                         {entry.status === 'success' ? <CheckCircle className="h-4 w-4 text-green-600" /> :
-                         entry.status === 'warning' ? <AlertTriangle className="h-4 w-4 text-yellow-600" /> :
-                         <AlertTriangle className="h-4 w-4 text-red-600" />}
+                          entry.status === 'warning' ? <AlertTriangle className="h-4 w-4 text-yellow-600" /> :
+                            <AlertTriangle className="h-4 w-4 text-red-600" />}
                       </div>
                       <div>
                         <p className="font-medium">{entry.action}</p>
@@ -1006,7 +1004,7 @@ export function AdminMenuManager() {
                 Esta acción afectará inmediatamente el acceso de estos usuarios al sistema.
               </p>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña de administrador</Label>
               <Input
@@ -1018,7 +1016,7 @@ export function AdminMenuManager() {
                 disabled={operationInProgress}
               />
             </div>
-            
+
             <div className="flex gap-2 justify-end">
               <Button
                 variant="outline"

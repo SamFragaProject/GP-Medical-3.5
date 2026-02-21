@@ -129,7 +129,7 @@ export function Facturacion() {
 
   // Métricas exclusivas Super Admin
   const comparativaEmpresas = [
-    { nombre: 'GPMedical Demo Corp', ingresos: 125000, color: '#3B82F6' },
+    { nombre: 'Empresa Principal', ingresos: 125000, color: '#3B82F6' },
     { nombre: 'TechHealth Systems', ingresos: 98000, color: '#8B5CF6' },
     { nombre: 'Industrial Safety MX', ingresos: 75000, color: '#00BFA6' },
     { nombre: 'PharmaCore Lab', ingresos: 62000, color: '#F59E0B' },

@@ -10,7 +10,8 @@ import {
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { RECETAS_DEMO } from '@/data/demoPacienteCompleto'
+import { supabase } from '@/lib/supabase'
+import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 
 const ESTADO_STYLES: Record<string, { bg: string; text: string; border: string; label: string; icon: any }> = {
     vigente: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Vigente', icon: CheckCircle },
@@ -18,11 +19,67 @@ const ESTADO_STYLES: Record<string, { bg: string; text: string; border: string; 
     cancelada: { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200', label: 'Cancelada', icon: AlertTriangle },
 }
 
-export default function RecetasTab() {
-    const recetas = RECETAS_DEMO
-    const [expandedId, setExpandedId] = useState<string | null>(recetas[0]?.id || null)
+interface RecetasTabProps {
+    pacienteId?: string
+}
+
+export default function RecetasTab({ pacienteId }: RecetasTabProps) {
+    const [recetas, setRecetas] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+    const [expandedId, setExpandedId] = useState<string | null>(null)
+
+    React.useEffect(() => {
+        if (!pacienteId) return
+        async function fetchRecetas() {
+            try {
+                setLoading(true)
+                const { data, error } = await supabase
+                    .from('examenes_recetas') // Verificar nombre de tabla
+                    .select('*')
+                    .eq('paciente_id', pacienteId)
+                    .order('fecha', { ascending: false })
+
+                if (data && data.length > 0) {
+                    setRecetas(data)
+                    setExpandedId(data[0].id)
+                } else if (pacienteId?.startsWith('demo')) {
+                    const demoData = getExpedienteDemoCompleto()
+                    setRecetas(demoData.recetas)
+                    if (demoData.recetas.length > 0) setExpandedId(demoData.recetas[0].id)
+                }
+            } catch (e) {
+                console.error(e)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchRecetas()
+    }, [pacienteId])
 
     const vigentes = recetas.filter(r => r.estado === 'vigente').length
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100">
+                <Clock className="w-10 h-10 animate-spin text-teal-500 mb-4" />
+                <p className="text-sm font-semibold text-slate-500">Cargando recetas...</p>
+            </div>
+        )
+    }
+
+    if (recetas.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-dashed border-slate-200">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                    <Pill className="w-8 h-8 text-slate-300" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-700">Sin recetas emitidas</h3>
+                <p className="text-sm text-slate-400 max-w-xs text-center mt-2">
+                    Este trabajador no cuenta con registros de recetas médicas en el sistema.
+                </p>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6">
@@ -87,7 +144,7 @@ export default function RecetasTab() {
                                                 {receta.medico}
                                             </span>
                                             <span className="text-slate-300">|</span>
-                                            <span>{receta.medicamentos.length} medicamento{receta.medicamentos.length !== 1 ? 's' : ''}</span>
+                                            <span>{receta.medicamentos?.length || 0} medicamento{receta.medicamentos?.length !== 1 ? 's' : ''}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -105,38 +162,40 @@ export default function RecetasTab() {
                                     >
                                         <div className="px-6 pb-6 space-y-4 border-t border-slate-100 pt-4">
                                             {/* Medications */}
-                                            <div className="space-y-3">
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Medicamentos prescritos</p>
-                                                {receta.medicamentos.map((med, i) => (
-                                                    <div key={i} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <div className="w-6 h-6 rounded-lg bg-teal-100 flex items-center justify-center">
-                                                                <Pill className="w-3 h-3 text-teal-600" />
+                                            {receta.medicamentos && (
+                                                <div className="space-y-3">
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Medicamentos prescritos</p>
+                                                    {receta.medicamentos.map((med: any, i: number) => (
+                                                        <div key={i} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <div className="w-6 h-6 rounded-lg bg-teal-100 flex items-center justify-center">
+                                                                    <Pill className="w-3 h-3 text-teal-600" />
+                                                                </div>
+                                                                <h5 className="text-sm font-black text-slate-800">{med.nombre}</h5>
+                                                                <Badge className="bg-teal-100 text-teal-700 border-0 text-[9px] font-bold">{med.dosis}</Badge>
                                                             </div>
-                                                            <h5 className="text-sm font-black text-slate-800">{med.nombre}</h5>
-                                                            <Badge className="bg-teal-100 text-teal-700 border-0 text-[9px] font-bold">{med.dosis}</Badge>
+                                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                                                                <div>
+                                                                    <p className="text-[10px] text-slate-400 font-bold">Vía</p>
+                                                                    <p className="text-slate-700 font-medium">{med.via}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-[10px] text-slate-400 font-bold">Frecuencia</p>
+                                                                    <p className="text-slate-700 font-medium">{med.frecuencia}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-[10px] text-slate-400 font-bold">Duración</p>
+                                                                    <p className="text-slate-700 font-medium">{med.duracion}</p>
+                                                                </div>
+                                                                <div className="col-span-2 sm:col-span-1">
+                                                                    <p className="text-[10px] text-slate-400 font-bold">Indicaciones</p>
+                                                                    <p className="text-slate-700 font-medium">{med.indicaciones}</p>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                                                            <div>
-                                                                <p className="text-[10px] text-slate-400 font-bold">Vía</p>
-                                                                <p className="text-slate-700 font-medium">{med.via}</p>
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-[10px] text-slate-400 font-bold">Frecuencia</p>
-                                                                <p className="text-slate-700 font-medium">{med.frecuencia}</p>
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-[10px] text-slate-400 font-bold">Duración</p>
-                                                                <p className="text-slate-700 font-medium">{med.duracion}</p>
-                                                            </div>
-                                                            <div className="col-span-2 sm:col-span-1">
-                                                                <p className="text-[10px] text-slate-400 font-bold">Indicaciones</p>
-                                                                <p className="text-slate-700 font-medium">{med.indicaciones}</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
+                                                    ))}
+                                                </div>
+                                            )}
 
                                             {/* General instructions */}
                                             <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
@@ -147,7 +206,7 @@ export default function RecetasTab() {
                                             {/* Meta */}
                                             <div className="flex items-center justify-between text-xs text-slate-400">
                                                 <span>Cédula: <b className="text-slate-600 font-mono">{receta.cedula}</b></span>
-                                                <span>Vigencia: <b className="text-slate-600">{new Date(receta.vigencia).toLocaleDateString('es-MX')}</b></span>
+                                                <span>Vigencia: <b className="text-slate-600">{receta.vigencia && new Date(receta.vigencia).toLocaleDateString('es-MX')}</b></span>
                                             </div>
                                         </div>
                                     </motion.div>
@@ -156,14 +215,6 @@ export default function RecetasTab() {
                         </Card>
                     )
                 })}
-            </div>
-
-            {/* Timeline footer */}
-            <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <Clock className="w-4 h-4 text-slate-400" />
-                <p className="text-[11px] text-slate-500 font-medium">
-                    Historial de prescripciones: {recetas.map(r => r.fecha).join(' • ')} — Se conservan para trazabilidad farmacológica completa.
-                </p>
             </div>
         </div>
     )

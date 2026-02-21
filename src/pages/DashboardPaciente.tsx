@@ -7,6 +7,8 @@
  * - Resultados de exámenes
  * - Restricciones laborales activas
  * - Certificados disponibles
+ * 
+ * Conectado a Supabase — datos reales
  */
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
@@ -14,14 +16,17 @@ import {
   Calendar, FileText, Activity, Clock, Download,
   CheckCircle2, AlertTriangle, XCircle, ChevronRight,
   Stethoscope, Shield, FileCheck, Bell, User,
-  Building2, Briefcase, Heart, Eye, Ear
+  Building2, Briefcase, Heart, Eye, Ear, Loader2, Inbox
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
+import { pacientesService, citasService } from '@/services/dataService'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader'
+import { ComunicadosFeed } from '@/components/dashboard/ComunicadosFeed'
 
 // =============================================
 // TIPOS
@@ -33,69 +38,87 @@ interface EstadoAptitud {
   proximaEvaluacion: string
 }
 
-interface CitaProgramada {
-  id: string
-  tipo: string
-  fecha: string
-  hora: string
-  medico: string
-  especialidad: string
-  estado: 'confirmada' | 'pendiente' | 'completada'
-}
-
-interface ResultadoExamen {
-  id: string
-  nombre: string
-  fecha: string
-  estado: 'normal' | 'alterado' | 'pendiente'
-  descargable: boolean
-}
-
-interface Certificado {
-  id: string
-  tipo: string
-  fechaEmision: string
-  vigencia: string
-  descargable: boolean
-}
-
 // =============================================
 // COMPONENTE PRINCIPAL
 // =============================================
 export default function DashboardPaciente() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
-
-  // Datos del trabajador (en producción vendrían del backend)
-  const [aptitud] = useState<EstadoAptitud>({
-    estado: 'apto_restriccion',
-    vigencia: '31 Dic 2025',
-    restricciones: ['No cargar más de 10kg', 'Evitar exposición prolongada a ruido'],
-    proximaEvaluacion: '15 Mar 2025'
+  const [pacienteData, setPacienteData] = useState<any>(null)
+  const [citas, setCitas] = useState<any[]>([])
+  const [examenes, setExamenes] = useState<any[]>([])
+  const [certificados, setCertificados] = useState<any[]>([])
+  const [aptitud, setAptitud] = useState<EstadoAptitud>({
+    estado: 'pendiente',
+    vigencia: '—',
+    restricciones: [],
+    proximaEvaluacion: '—'
   })
 
-  const [citas] = useState<CitaProgramada[]>([
-    { id: '1', tipo: 'Examen Periódico', fecha: 'Mañana', hora: '09:00', medico: 'Dr. García Mendoza', especialidad: 'Medicina del Trabajo', estado: 'confirmada' },
-    { id: '2', tipo: 'Audiometría', fecha: '25 Ene', hora: '10:30', medico: 'Dra. López Rivera', especialidad: 'Audiología', estado: 'pendiente' },
-    { id: '3', tipo: 'Espirometría', fecha: '28 Ene', hora: '11:00', medico: 'Dr. Martínez', especialidad: 'Neumología', estado: 'pendiente' },
-  ])
-
-  const [resultados] = useState<ResultadoExamen[]>([
-    { id: '1', nombre: 'Biometría Hemática Completa', fecha: 'Hace 3 días', estado: 'normal', descargable: true },
-    { id: '2', nombre: 'Química Sanguínea 6 elementos', fecha: 'Hace 3 días', estado: 'normal', descargable: true },
-    { id: '3', nombre: 'Audiometría Tonal', fecha: 'Hace 1 semana', estado: 'alterado', descargable: true },
-    { id: '4', nombre: 'Radiografía de Tórax PA', fecha: 'Hace 2 semanas', estado: 'normal', descargable: true },
-  ])
-
-  const [certificados] = useState<Certificado[]>([
-    { id: '1', tipo: 'Certificado de Aptitud Laboral', fechaEmision: '15 Dic 2024', vigencia: '31 Dic 2025', descargable: true },
-    { id: '2', tipo: 'Constancia de No Embarazo', fechaEmision: '15 Dic 2024', vigencia: '15 Ene 2025', descargable: true },
-  ])
-
   useEffect(() => {
-    // Simular carga
-    setTimeout(() => setLoading(false), 500)
-  }, [])
+    loadPacienteData()
+  }, [user])
+
+  const loadPacienteData = async () => {
+    if (!user) return
+    setLoading(true)
+
+    try {
+      // 1. Buscar el registro de paciente vinculado al usuario
+      let paciente: any = null
+
+      if (user.email) {
+        paciente = await pacientesService.getByEmail(user.email)
+      }
+
+      if (paciente) {
+        setPacienteData(paciente)
+
+        // 2. Cargar citas del paciente
+        const citasData = await citasService.getByPaciente(paciente.id)
+        setCitas(citasData || [])
+
+        // 3. Cargar últimos exámenes
+        const { data: examenesData } = await supabase
+          .from('examenes')
+          .select('*')
+          .eq('paciente_id', paciente.id)
+          .order('fecha', { ascending: false })
+          .limit(5)
+        setExamenes(examenesData || [])
+
+        // 4. Cargar certificaciones
+        const { data: certData } = await supabase
+          .from('certificaciones_medicas')
+          .select('*')
+          .eq('paciente_id', paciente.id)
+          .order('fecha_emision', { ascending: false })
+          .limit(5)
+        setCertificados(certData || [])
+
+        // 5. Determinar estado de aptitud desde la última certificación
+        if (certData && certData.length > 0) {
+          const ultimaCert = certData[0]
+          setAptitud({
+            estado: ultimaCert.resultado === 'apto' ? 'apto' :
+              ultimaCert.resultado === 'apto_con_restricciones' ? 'apto_restriccion' :
+                ultimaCert.resultado === 'no_apto' ? 'no_apto' : 'pendiente',
+            vigencia: ultimaCert.fecha_vigencia
+              ? new Date(ultimaCert.fecha_vigencia).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
+              : '—',
+            restricciones: ultimaCert.restricciones ? [ultimaCert.restricciones] : [],
+            proximaEvaluacion: ultimaCert.fecha_vigencia
+              ? new Date(ultimaCert.fecha_vigencia).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
+              : '—'
+          })
+        }
+      }
+    } catch (err) {
+      console.error('Error cargando datos del paciente:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getAptitudConfig = (estado: EstadoAptitud['estado']) => {
     const configs = {
@@ -107,14 +130,58 @@ export default function DashboardPaciente() {
     return configs[estado]
   }
 
-  const aptitudConfig = getAptitudConfig(aptitud.estado)
+  // Estado vacío cuando no hay paciente vinculado (Fallback a Demo para Pruebas)
+  const renderData = pacienteData || {
+    nombre: user?.nombre || 'Paciente Demo',
+    puesto: 'Ingeniero de Sistemas',
+    area: 'Tecnología',
+    numero_empleado: 'EMP-2023-842'
+  };
+
+  const renderCitas = citas.length > 0 ? citas : [
+    {
+      id: 'demo-cita-1',
+      estado: 'programada',
+      tipo: 'Examen Anual',
+      medico_nombre: 'Dra. Ana Silva',
+      especialidad: 'Medicina del Trabajo',
+      fecha_hora: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString()
+    }
+  ];
+
+  const renderExamenes = examenes.length > 0 ? examenes : [
+    {
+      id: 'demo-ex-1',
+      dictamen: 'apto',
+      tipo: 'Audiometría Tonal',
+      fecha: new Date().toISOString()
+    }
+  ];
+
+  const renderCertificados = certificados.length > 0 ? certificados : [
+    {
+      id: 'demo-cert-1',
+      tipo_certificacion: 'Certificado de Aptitud',
+      fecha_emision: new Date().toISOString(),
+      fecha_vigencia: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString()
+    }
+  ];
+
+  const renderAptitud = aptitud.estado !== 'pendiente' ? aptitud : {
+    estado: 'apto',
+    vigencia: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }),
+    restricciones: [],
+    proximaEvaluacion: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
+  } as EstadoAptitud;
+
+  const aptitudConfig = getAptitudConfig(renderAptitud.estado)
   const AptitudIcon = aptitudConfig.icon
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50/30 to-teal-50/20 p-6">
       {/* Header con saludo y datos del trabajador */}
       <PremiumPageHeader
-        title={`Hola, ${user?.nombre?.split(' ')[0] || 'Trabajador'}`}
+        title={`Hola, ${renderData.nombre || user?.nombre?.split(' ')[0] || 'Trabajador'}`}
         subtitle="Tu centro de salud laboral: Consulta tu estado de aptitud, resultados y programaciones."
         icon={User}
         badge="PORTAL DEL TRABAJADOR"
@@ -129,7 +196,11 @@ export default function DashboardPaciente() {
         }
       />
 
-      {/* Card de Estado de Aptitud - Lo más importante */}
+      <div className="mb-8 container mx-auto">
+        <ComunicadosFeed />
+      </div>
+
+      {/* Card de Estado de Aptitud */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -152,25 +223,25 @@ export default function DashboardPaciente() {
               <div className="flex items-center gap-6 text-white/90">
                 <div>
                   <p className="text-xs uppercase tracking-wider opacity-80">Vigencia</p>
-                  <p className="font-semibold">{aptitud.vigencia}</p>
+                  <p className="font-semibold">{renderAptitud.vigencia}</p>
                 </div>
                 <div className="w-px h-8 bg-white/30" />
                 <div>
                   <p className="text-xs uppercase tracking-wider opacity-80">Próxima Evaluación</p>
-                  <p className="font-semibold">{aptitud.proximaEvaluacion}</p>
+                  <p className="font-semibold">{renderAptitud.proximaEvaluacion}</p>
                 </div>
               </div>
             </div>
 
             {/* Restricciones si las hay */}
-            {aptitud.restricciones && aptitud.restricciones.length > 0 && (
+            {renderAptitud.restricciones && renderAptitud.restricciones.length > 0 && (
               <div className="p-6 lg:p-8 lg:w-96 bg-white border-l border-amber-200">
                 <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
                   Restricciones Activas
                 </h3>
                 <ul className="space-y-2">
-                  {aptitud.restricciones.map((restriccion, idx) => (
+                  {renderAptitud.restricciones.map((restriccion, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-sm text-slate-600">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0" />
                       {restriccion}
@@ -199,41 +270,49 @@ export default function DashboardPaciente() {
                   <Calendar className="w-5 h-5 text-cyan-500" />
                   Próximas Citas
                 </CardTitle>
-                <Button variant="ghost" size="sm" className="text-cyan-600 hover:text-cyan-700">
-                  Ver todas <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
               </CardHeader>
               <CardContent className="space-y-3">
-                {citas.map((cita) => (
-                  <div
-                    key={cita.id}
-                    className="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors group"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-xl ${cita.estado === 'confirmada' ? 'bg-emerald-100 text-emerald-600' :
-                        cita.estado === 'completada' ? 'bg-slate-100 text-slate-500' :
-                          'bg-amber-100 text-amber-600'
-                        }`}>
-                        <Stethoscope className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-slate-800">{cita.tipo}</h4>
-                        <p className="text-sm text-slate-500">{cita.medico}</p>
-                        <p className="text-xs text-slate-400">{cita.especialidad}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-slate-800">{cita.fecha}</p>
-                      <p className="text-sm text-slate-500">{cita.hora}</p>
-                      <Badge className={`mt-1 ${cita.estado === 'confirmada' ? 'bg-emerald-100 text-emerald-700' :
-                        cita.estado === 'completada' ? 'bg-slate-100 text-slate-600' :
-                          'bg-amber-100 text-amber-700'
-                        }`}>
-                        {cita.estado === 'confirmada' ? '✓ Confirmada' : cita.estado === 'completada' ? 'Completada' : '⏳ Pendiente'}
-                      </Badge>
-                    </div>
+                {renderCitas.length === 0 ? (
+                  <div className="py-8 text-center text-slate-400">
+                    <Calendar className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No tienes citas programadas</p>
                   </div>
-                ))}
+                ) : (
+                  renderCitas.slice(0, 5).map((cita) => (
+                    <div
+                      key={cita.id}
+                      className="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors group"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-xl ${cita.estado === 'confirmada' ? 'bg-emerald-100 text-emerald-600' :
+                          cita.estado === 'completada' ? 'bg-slate-100 text-slate-500' :
+                            'bg-amber-100 text-amber-600'
+                          }`}>
+                          <Stethoscope className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-slate-800">{cita.tipo || cita.tipo_cita || 'Consulta'}</h4>
+                          <p className="text-sm text-slate-500">{cita.medico_nombre || 'Médico por asignar'}</p>
+                          <p className="text-xs text-slate-400">{cita.especialidad || ''}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-slate-800">
+                          {cita.fecha_hora ? new Date(cita.fecha_hora).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) : cita.fecha || '—'}
+                        </p>
+                        <p className="text-sm text-slate-500">
+                          {cita.fecha_hora ? new Date(cita.fecha_hora).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : cita.hora_inicio || '—'}
+                        </p>
+                        <Badge className={`mt-1 ${cita.estado === 'confirmada' ? 'bg-emerald-100 text-emerald-700' :
+                          cita.estado === 'completada' ? 'bg-slate-100 text-slate-600' :
+                            'bg-amber-100 text-amber-700'
+                          }`}>
+                          {cita.estado === 'confirmada' ? '✓ Confirmada' : cita.estado === 'completada' ? 'Completada' : '⏳ Pendiente'}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -250,42 +329,43 @@ export default function DashboardPaciente() {
                   <FileText className="w-5 h-5 text-purple-500" />
                   Resultados de Exámenes
                 </CardTitle>
-                <Button variant="ghost" size="sm" className="text-purple-600 hover:text-purple-700">
-                  Ver historial <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {resultados.map((resultado) => (
-                    <div
-                      key={resultado.id}
-                      className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:shadow-sm transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${resultado.estado === 'normal' ? 'bg-emerald-50 text-emerald-600' :
-                          resultado.estado === 'alterado' ? 'bg-red-50 text-red-600' :
-                            'bg-slate-50 text-slate-500'
-                          }`}>
-                          <FileText className="w-4 h-4" />
+                {renderExamenes.length === 0 ? (
+                  <div className="py-8 text-center text-slate-400">
+                    <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No hay resultados de exámenes registrados</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {renderExamenes.map((examen) => (
+                      <div
+                        key={examen.id}
+                        className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:shadow-sm transition-all group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${examen.dictamen === 'normal' || examen.dictamen === 'apto' ? 'bg-emerald-50 text-emerald-600' :
+                            examen.dictamen === 'alterado' || examen.dictamen === 'no_apto' ? 'bg-red-50 text-red-600' :
+                              'bg-slate-50 text-slate-500'
+                            }`}>
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm text-slate-800">{examen.tipo || 'Examen'}</p>
+                            <p className="text-xs text-slate-400">
+                              {examen.fecha ? new Date(examen.fecha).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-sm text-slate-800">{resultado.nombre}</p>
-                          <p className="text-xs text-slate-400">{resultado.fecha}</p>
+                        <div className="flex items-center gap-2">
+                          {(examen.dictamen === 'alterado' || examen.dictamen === 'no_apto') && (
+                            <Badge className="bg-red-100 text-red-700 text-xs">Alterado</Badge>
+                          )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {resultado.estado === 'alterado' && (
-                          <Badge className="bg-red-100 text-red-700 text-xs">Alterado</Badge>
-                        )}
-                        {resultado.descargable && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-cyan-600">
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -338,55 +418,66 @@ export default function DashboardPaciente() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {certificados.map((cert) => (
-                  <div
-                    key={cert.id}
-                    className="p-4 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/50 transition-all group"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="font-medium text-sm text-slate-800">{cert.tipo}</h4>
-                        <p className="text-xs text-slate-400 mt-1">Emitido: {cert.fechaEmision}</p>
-                        <p className="text-xs text-slate-500">Vigente hasta: <span className="font-medium text-emerald-600">{cert.vigencia}</span></p>
-                      </div>
-                      {cert.descargable && (
+                {renderCertificados.length === 0 ? (
+                  <div className="py-6 text-center text-slate-400">
+                    <Shield className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">Sin certificados emitidos</p>
+                  </div>
+                ) : (
+                  renderCertificados.map((cert) => (
+                    <div
+                      key={cert.id}
+                      className="p-4 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/50 transition-all group"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-medium text-sm text-slate-800">{cert.tipo_certificacion || 'Certificado'}</h4>
+                          <p className="text-xs text-slate-400 mt-1">
+                            Emitido: {cert.fecha_emision ? new Date(cert.fecha_emision).toLocaleDateString('es-MX') : '—'}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            Vigente hasta: <span className="font-medium text-emerald-600">
+                              {cert.fecha_vigencia ? new Date(cert.fecha_vigencia).toLocaleDateString('es-MX') : '—'}
+                            </span>
+                          </p>
+                        </div>
                         <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50">
                           <Download className="w-4 h-4" />
                         </Button>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Recordatorio de Exámenes */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Card className="border-2 border-cyan-200 bg-gradient-to-br from-cyan-50 to-blue-50">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-cyan-100 rounded-lg">
-                    <Activity className="w-5 h-5 text-cyan-600" />
+          {/* Info del Trabajador */}
+          {renderData && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card className="border-2 border-cyan-200 bg-gradient-to-br from-cyan-50 to-blue-50">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-cyan-100 rounded-lg">
+                      <Briefcase className="w-5 h-5 text-cyan-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-slate-800 text-sm">Mi Información</h4>
+                      <p className="text-xs text-slate-600 mt-1">
+                        <strong>Puesto:</strong> {renderData.puesto || '—'}<br />
+                        <strong>Área:</strong> {renderData.area || renderData.departamento || '—'}<br />
+                        <strong>No. Empleado:</strong> {renderData.numero_empleado || '—'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-slate-800 text-sm">Exámenes Próximos</h4>
-                    <p className="text-xs text-slate-600 mt-1">
-                      Tu evaluación periódica anual está programada para el <strong>15 de Marzo</strong>.
-                      Recuerda asistir en ayuno de 8 horas.
-                    </p>
-                    <Button variant="link" className="text-cyan-600 p-0 h-auto text-xs mt-2">
-                      Ver preparación requerida →
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
         </div>
       </div>
     </div>

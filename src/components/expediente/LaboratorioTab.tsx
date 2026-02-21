@@ -9,13 +9,9 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import {
-    LABORATORIO_DEMO, LABORATORIO_PREVIO_DEMO
-} from '@/data/demoPacienteCompleto'
-
-type LabData = typeof LABORATORIO_DEMO
-type LabGrupo = LabData['grupos'][0]
-type LabResultado = LabGrupo['resultados'][0]
+import { supabase } from '@/lib/supabase'
+import { Loader2, Inbox } from 'lucide-react'
+import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 
 const FLAG_STYLES: Record<string, { bg: string; text: string; dot: string; label: string }> = {
     normal: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Normal' },
@@ -24,18 +20,18 @@ const FLAG_STYLES: Record<string, { bg: string; text: string; dot: string; label
     critico: { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', label: 'Crítico' },
 }
 
-function getFlagForParam(param: string, prevLab: typeof LABORATORIO_PREVIO_DEMO | null): string | null {
+function getFlagForParam(param: string, prevLab: any | null): string | null {
     if (!prevLab) return null
-    for (const grupo of prevLab.grupos) {
-        const found = grupo.resultados.find(r => r.parametro === param)
+    for (const grupo of prevLab.grupos || []) {
+        const found = grupo.resultados?.find((r: any) => r.parametro === param)
         if (found) return found.resultado
     }
     return null
 }
 
-function ResultRow({ r, prevValue }: { r: LabResultado; prevValue: string | null }) {
+function ResultRow({ r, prevValue }: { r: any; prevValue: string | null }) {
     const flag = FLAG_STYLES[r.bandera] || FLAG_STYLES.normal
-    const currNum = parseFloat(r.resultado.replace(/,/g, ''))
+    const currNum = parseFloat(r.resultado?.replace(/,/g, '') || '0')
     const prevNum = prevValue ? parseFloat(prevValue.replace(/,/g, '')) : NaN
 
     let trend: 'up' | 'down' | 'same' | null = null
@@ -70,10 +66,10 @@ function ResultRow({ r, prevValue }: { r: LabResultado; prevValue: string | null
     )
 }
 
-function GrupoCard({ grupo, prevLab }: { grupo: LabGrupo; prevLab: typeof LABORATORIO_PREVIO_DEMO | null }) {
-    const [expanded, setExpanded] = useState(true)
-    const abnormalCount = grupo.resultados.filter(r => r.bandera !== 'normal').length
-    const total = grupo.resultados.length
+function GrupoCard({ grupo, prevLab }: { grupo: any; prevLab: any | null }) {
+    const [expanded, setExpanded] = React.useState(true)
+    const abnormalCount = grupo.resultados?.filter((r: any) => r.bandera !== 'normal').length || 0
+    const total = grupo.resultados?.length || 0
 
     return (
         <Card className="border-slate-100 shadow-sm overflow-hidden">
@@ -110,7 +106,6 @@ function GrupoCard({ grupo, prevLab }: { grupo: LabGrupo; prevLab: typeof LABORA
                     animate={{ height: 'auto', opacity: 1 }}
                     transition={{ duration: 0.2 }}
                 >
-                    {/* Column headers */}
                     <div className="flex items-center gap-2 py-1.5 px-3 bg-slate-50 border-y border-slate-100 text-[9px] font-black uppercase tracking-widest text-slate-400">
                         <span className="w-2" />
                         <span className="flex-1">Parámetro</span>
@@ -119,7 +114,7 @@ function GrupoCard({ grupo, prevLab }: { grupo: LabGrupo; prevLab: typeof LABORA
                         <span className="w-24 text-right hidden sm:block">Ref.</span>
                         <span className="w-5" />
                     </div>
-                    {grupo.resultados.map((r, i) => (
+                    {grupo.resultados?.map((r: any, i: number) => (
                         <ResultRow key={i} r={r} prevValue={getFlagForParam(r.parametro, prevLab)} />
                     ))}
                 </motion.div>
@@ -128,12 +123,65 @@ function GrupoCard({ grupo, prevLab }: { grupo: LabGrupo; prevLab: typeof LABORA
     )
 }
 
-export default function LaboratorioTab() {
-    const lab = LABORATORIO_DEMO
-    const prevLab = LABORATORIO_PREVIO_DEMO
+export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
+    const [loading, setLoading] = React.useState(true)
+    const [lab, setLab] = React.useState<any>(null)
+    const [prevLab, setPrevLab] = React.useState<any>(null)
 
-    const totalParams = lab.grupos.reduce((acc, g) => acc + g.resultados.length, 0)
-    const abnormalTotal = lab.grupos.reduce((acc, g) => acc + g.resultados.filter(r => r.bandera !== 'normal').length, 0)
+    React.useEffect(() => {
+        if (pacienteId) loadData()
+    }, [pacienteId])
+
+    const loadData = async () => {
+        try {
+            setLoading(true)
+            const { data: records, error } = await supabase
+                .from('examenes_laboratorio')
+                .select('*')
+                .eq('paciente_id', pacienteId)
+                .order('fecha', { ascending: false })
+                .limit(2)
+
+            if (records && records.length > 0) {
+                setLab(records[0])
+                if (records.length > 1) setPrevLab(records[1])
+            } else if (pacienteId?.startsWith('demo')) {
+                const demoData = getExpedienteDemoCompleto()
+                setLab(demoData.laboratorio)
+                setPrevLab(demoData.laboratorioPrevio)
+            }
+        } catch (err) {
+            console.error('Error loading lab results:', err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                <p className="text-slate-500 text-xs font-medium">Cargando resultados de laboratorio...</p>
+            </div>
+        )
+    }
+
+    if (!lab) {
+        return (
+            <Card className="border-0 shadow-sm p-12 text-center">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Inbox className="w-8 h-8 text-slate-300" />
+                </div>
+                <h3 className="text-slate-800 font-bold">Sin resultados de laboratorio</h3>
+                <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2">
+                    Este paciente aún no cuenta con resultados de laboratorio registrados.
+                </p>
+            </Card>
+        )
+    }
+
+    const totalParams = lab.grupos?.reduce((acc: number, g: any) => acc + g.resultados?.length, 0) || 0
+    const abnormalTotal = lab.grupos?.reduce((acc: number, g: any) => acc + g.resultados?.filter((r: any) => r.bandera !== 'normal').length, 0) || 0
 
     return (
         <div className="space-y-6">
