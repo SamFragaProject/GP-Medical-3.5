@@ -43,6 +43,8 @@ const RecetasTab = React.lazy(() => import('@/components/expediente/RecetasTab')
 const IncapacidadesTab = React.lazy(() => import('@/components/expediente/IncapacidadesTab'))
 const DictamenesTab = React.lazy(() => import('@/components/expediente/DictamenesTab'))
 const DocumentosExpedienteTab = React.lazy(() => import('@/components/expediente/DocumentosExpedienteTab'))
+const PatientDashboardTab = React.lazy(() => import('@/components/expediente/PatientDashboardTab'))
+const EstudiosHub = React.lazy(() => import('@/components/expediente/EstudiosHub'))
 
 // =============================================
 // HELPERS
@@ -73,10 +75,12 @@ interface TabConfig {
 }
 
 const TABS: TabConfig[] = [
+    { value: 'dashboard', label: 'Dashboard', icon: Activity, group: 'clinico', description: 'Semáforo clínico, alertas y resumen ejecutivo' },
     { value: 'general', label: 'General', icon: User, group: 'info' },
     { value: 'laboral', label: 'Laboral', icon: Building2, group: 'info' },
     { value: 'contacto', label: 'Contacto', icon: Phone, group: 'info' },
-    { value: 'expediente', label: 'Expediente', icon: Stethoscope, group: 'clinico', description: 'Exploración física, APNP, AHF, AGO, estudios' },
+    { value: 'estudios', label: 'Estudios', icon: FlaskConical, group: 'clinico', description: 'Labs, Audiometría, Espirometría, ECG, RX, Optometría' },
+    { value: 'expediente', label: 'Expediente', icon: Stethoscope, group: 'clinico', description: 'APNP, AHF, Exploración Física, Notas Médicas' },
     { value: 'documentos', label: 'Documentos', icon: FolderOpen, group: 'clinico', description: 'Documentos cifrados del paciente' },
     { value: 'recetas', label: 'Recetas', icon: Pill, group: 'diagnostico', description: 'Prescripciones médicas' },
     { value: 'dictamenes', label: 'Dictámenes', icon: FileText, group: 'diagnostico', description: 'Dictámenes de aptitud laboral' },
@@ -157,7 +161,7 @@ export default function PerfilPaciente() {
         (location.state as any)?.paciente || null
     )
     const [loading, setLoading] = useState(!paciente)
-    const [activeTab, setActiveTab] = useState('general')
+    const [activeTab, setActiveTab] = useState('dashboard')
     const [editing, setEditing] = useState(false)
     const [saving, setSaving] = useState(false)
     const [editData, setEditData] = useState<Partial<Paciente>>({})
@@ -753,6 +757,20 @@ export default function PerfilPaciente() {
                                     <p className="text-[10px] text-slate-400 mt-2 font-medium">Click para subir o cambiar la fotografía</p>
                                 </CardContent>
                             </Card>
+                        </TabsContent>
+
+                        {/* ═══ DASHBOARD TAB ═══ */}
+                        <TabsContent value="dashboard" className="mt-0">
+                            <Suspense fallback={<TabLoader label="Cargando dashboard clínico..." />}>
+                                <PatientDashboardTab pacienteId={id!} />
+                            </Suspense>
+                        </TabsContent>
+
+                        {/* ═══ ESTUDIOS TAB ═══ */}
+                        <TabsContent value="estudios" className="mt-0">
+                            <Suspense fallback={<TabLoader label="Cargando estudios..." />}>
+                                <EstudiosHub pacienteId={id!} paciente={paciente} />
+                            </Suspense>
                         </TabsContent>
 
                         {/* ═══ CLINICAL TAB ═══ */}

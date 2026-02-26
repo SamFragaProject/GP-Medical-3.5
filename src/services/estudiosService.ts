@@ -12,8 +12,8 @@ import { supabase } from '@/lib/supabase'
 // ─── Tipos ───
 export type TipoEstudio =
     | 'laboratorio' | 'audiometria' | 'espirometria'
-    | 'electrocardiograma' | 'optometria' | 'radiografia'
-    | 'historia_clinica' | 'aptitud_laboral'
+    | 'electrocardiograma' | 'ecg' | 'optometria' | 'radiografia'
+    | 'historia_clinica' | 'aptitud_laboral' | 'odontograma'
 
 export type Bandera = 'normal' | 'alto' | 'bajo' | 'critico' | 'anormal'
 
