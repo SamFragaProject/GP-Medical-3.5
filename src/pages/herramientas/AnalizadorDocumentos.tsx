@@ -254,6 +254,12 @@ export default function AnalizadorDocumentos() {
         return Object.entries(counts).filter(([, v]) => v > 0).map(([name, value]) => ({ name, value }));
     }, [allParams]);
 
+    const groupedFiles = useMemo(() => {
+        const g: Record<string, FileItem[]> = {};
+        fileItems.forEach(i => { if (!g[i.category]) g[i.category] = []; g[i.category].push(i); });
+        return g;
+    }, [fileItems]);
+
     // ── Render Step Navigation ──
     const renderStepNav = () => (
         <div className="mx-4 mb-6">
@@ -312,11 +318,7 @@ export default function AnalizadorDocumentos() {
             </div>
 
             {/* File list by category */}
-            {Object.entries(useMemo(() => {
-                const g: Record<string, FileItem[]> = {};
-                fileItems.forEach(i => { if (!g[i.category]) g[i.category] = []; g[i.category].push(i); });
-                return g;
-            }, [fileItems])).map(([cat, items]) => {
+            {Object.entries(groupedFiles).map(([cat, items]) => {
                 const CatIcon = CATEGORY_ICONS[cat] || FileIcon;
                 return (
                     <div key={cat} className="glass-card rounded-2xl p-5">
