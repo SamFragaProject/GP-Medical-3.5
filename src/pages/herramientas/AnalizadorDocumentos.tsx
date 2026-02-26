@@ -60,12 +60,11 @@ export default function AnalizadorDocumentos() {
     const { user } = useAuth();
     const isSuperAdmin = user?.rol === 'super_admin';
 
-    const STEPS: { id: WizardStep; label: string; icon: any; superOnly?: boolean }[] = [
+    const STEPS: { id: WizardStep; label: string; icon: any }[] = [
         { id: 'upload', label: 'Documentos', icon: UploadCloud },
         { id: 'results', label: 'Extracción', icon: Database },
         { id: 'verify', label: 'Verificar', icon: CheckSquare },
-        { id: 'charts', label: 'Gráficas', icon: BarChart3 },
-        ...(isSuperAdmin ? [{ id: 'usage' as WizardStep, label: 'Control IA', icon: Shield, superOnly: true }] : []),
+        { id: 'charts', label: 'Visualización', icon: BarChart3 },
     ];
 
     const [step, setStep] = useState<WizardStep>('upload');
@@ -651,14 +650,6 @@ export default function AnalizadorDocumentos() {
                         </table>
                     </div>
                 )}
-
-                {selectedForIntegration.size > 0 && (
-                    <div className="flex justify-center">
-                        <button onClick={() => { toast.success(`${selectedForIntegration.size} parámetros listos para integrar al expediente`); }} className="btn-premium px-8 py-3 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-xl">
-                            <Sparkles className="w-5 h-5" /> Confirmar Integración ({selectedForIntegration.size} datos)
-                        </button>
-                    </div>
-                )}
             </div>
         );
     };
@@ -699,11 +690,11 @@ export default function AnalizadorDocumentos() {
                         return (
                             <button key={s.id} onClick={() => { const idx = STEPS.findIndex(x => x.id === s.id); if (idx < stepIdx) setStep(s.id); }}
                                 className={`flex-1 flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 ${isActive ? 'bg-white/10 backdrop-blur-md border border-white/20 shadow-lg' :
-                                        isCompleted ? 'bg-emerald-500/10 border border-emerald-500/20 cursor-pointer hover:bg-emerald-500/20' :
-                                            'bg-white/5 border border-white/5'
+                                    isCompleted ? 'bg-emerald-500/10 border border-emerald-500/20 cursor-pointer hover:bg-emerald-500/20' :
+                                        'bg-white/5 border border-white/5'
                                     }`}>
                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all ${isActive ? `bg-gradient-to-br ${COLORS[s.id] || 'from-emerald-500 to-teal-600'} shadow-lg` :
-                                        isCompleted ? 'bg-emerald-500/20' : 'bg-white/5'
+                                    isCompleted ? 'bg-emerald-500/20' : 'bg-white/5'
                                     }`}>
                                     {isCompleted ? <CheckCircle className="w-5 h-5 text-emerald-400" /> : <StepIcon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-500'}`} />}
                                 </div>
@@ -745,7 +736,6 @@ export default function AnalizadorDocumentos() {
                             {step === 'results' && renderResults()}
                             {step === 'verify' && renderVerify()}
                             {step === 'charts' && renderCharts()}
-                            {step === 'usage' && isSuperAdmin && renderUsage()}
                         </motion.div>
                     </AnimatePresence>
                 </CardContent>
@@ -761,13 +751,23 @@ export default function AnalizadorDocumentos() {
                         <div key={s.id} className={`w-2 h-2 rounded-full transition-all ${step === s.id ? 'w-6 bg-emerald-500' : STEPS.findIndex(x => x.id === s.id) < stepIdx ? 'bg-emerald-300' : 'bg-slate-200'}`} />
                     ))}
                 </div>
-                {stepIdx < STEPS.length - 1 ? (
+                {step === 'verify' ? (
+                    <Button onClick={() => { toast.success(`${selectedForIntegration.size} parámetros confirmados para integración`); handleNext(); }} disabled={selectedForIntegration.size === 0} className="h-11 px-6 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white gap-2 font-bold shadow-lg shadow-violet-500/30">
+                        <Sparkles className="w-4 h-4" /> Confirmar Integración ({selectedForIntegration.size})
+                    </Button>
+                ) : stepIdx < STEPS.length - 1 ? (
                     <Button onClick={handleNext} disabled={!canGoNext()} className="h-11 px-6 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white gap-2 font-bold">
                         Siguiente <ArrowRight className="w-4 h-4" />
                     </Button>
                 ) : (
-                    <Button onClick={() => toast.success('Proceso completado')} className="h-11 px-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white gap-2 font-black shadow-lg shadow-emerald-500/30">
-                        <Save className="w-4 h-4" /> Finalizar
+                    <Button onClick={() => {
+                        // Collect integration data
+                        const integrationData = allParams.filter((_, i) => selectedForIntegration.has(`${i}-${allParams[i]?.parametro}`));
+                        const patientInfo = completedResults[0]?.structuredData?.paciente || 'Paciente';
+                        console.log('[MedExtract Pro] Integración finalizada:', { paciente: patientInfo, parametros: integrationData.length, graficas: allGraphData.length, archivos: completedResults.length });
+                        toast.success(`✅ ${integrationData.length} parámetros y ${allGraphData.length} gráficas integrados al expediente de ${patientInfo}`);
+                    }} className="h-11 px-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white gap-2 font-black shadow-lg shadow-emerald-500/30">
+                        <Save className="w-4 h-4" /> Finalizar y Guardar
                     </Button>
                 )}
             </div>
