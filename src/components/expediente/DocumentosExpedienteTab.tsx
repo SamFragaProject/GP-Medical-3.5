@@ -21,6 +21,7 @@ import {
     FileSpreadsheet, Presentation, FileImage,
     Activity, ChevronDown
 } from 'lucide-react'
+import DocumentoViewerModal from '@/components/ui/DocumentoViewerModal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -91,6 +92,7 @@ export default function DocumentosExpedienteTab({ pacienteId, empresaId, pacient
     const [searchQuery, setSearchQuery] = useState('')
     const [filtroCategoria, setFiltroCategoria] = useState<string>('all')
     const [viewingDoc, setViewingDoc] = useState<SecureViewResult | null>(null)
+    const [selectedDocForViewer, setSelectedDocForViewer] = useState<DocumentoExpediente | null>(null)
     const [showUploadZone, setShowUploadZone] = useState(false)
     const [selectedCategoria, setSelectedCategoria] = useState<string>('')
     const [descripcion, setDescripcion] = useState('')
@@ -556,17 +558,15 @@ export default function DocumentosExpedienteTab({ pacienteId, empresaId, pacient
 
                                             {/* Acciones */}
                                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {canView && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-8 w-8 p-0 rounded-lg hover:bg-emerald-50 hover:text-emerald-600"
-                                                        onClick={() => handleView(doc)}
-                                                        title="Ver documento"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                    </Button>
-                                                )}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-8 w-8 p-0 rounded-lg hover:bg-emerald-50 hover:text-emerald-600"
+                                                    onClick={() => setSelectedDocForViewer(doc)}
+                                                    title="Ver / Renombrar / Descargar"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -595,76 +595,18 @@ export default function DocumentosExpedienteTab({ pacienteId, empresaId, pacient
                 </div>
             )}
 
-            {/* Visor de documentos (Modal) */}
-            <AnimatePresence>
-                {viewingDoc && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-                        onClick={() => { viewingDoc.cleanup(); setViewingDoc(null) }}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col"
-                            onClick={e => e.stopPropagation()}
-                        >
-                            {/* Header del visor */}
-                            <div className="flex items-center justify-between p-4 border-b bg-slate-50">
-                                <div className="flex items-center gap-3">
-                                    <FileText className="w-5 h-5 text-emerald-600" />
-                                    <div>
-                                        <p className="font-bold text-sm text-slate-800">{viewingDoc.nombreOriginal}</p>
-                                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                                            <span>{viewingDoc.tamano}</span>
-                                            {viewingDoc.integrityOk ? (
-                                                <span className="flex items-center gap-1 text-emerald-600">
-                                                    <CheckCircle className="w-3 h-3" /> Integridad verificada
-                                                </span>
-                                            ) : (
-                                                <span className="flex items-center gap-1 text-red-600">
-                                                    <AlertTriangle className="w-3 h-3" /> Error de integridad
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => { viewingDoc.cleanup(); setViewingDoc(null) }}
-                                    className="w-8 h-8 rounded-lg hover:bg-slate-200 flex items-center justify-center transition-colors"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-
-                            {/* Contenido */}
-                            <div className="flex-1 overflow-auto bg-slate-100 p-4 flex items-center justify-center min-h-[60vh]">
-                                {viewingDoc.mimeType.startsWith('image/') ? (
-                                    <img
-                                        src={viewingDoc.objectUrl}
-                                        alt={viewingDoc.nombreOriginal}
-                                        className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-lg"
-                                    />
-                                ) : viewingDoc.mimeType === 'application/pdf' ? (
-                                    <iframe
-                                        src={viewingDoc.objectUrl}
-                                        title={viewingDoc.nombreOriginal}
-                                        className="w-full h-[75vh] rounded-lg shadow-lg bg-white"
-                                    />
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <File className="w-16 h-16 mx-auto text-slate-400 mb-4" />
-                                        <p className="text-slate-500">Este formato no se puede previsualizar</p>
-                                    </div>
-                                )}
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {/* Modal Viewer con Renombrar y Descargar */}
+            <DocumentoViewerModal
+                documento={selectedDocForViewer}
+                empresaId={empresaId}
+                onClose={() => setSelectedDocForViewer(null)}
+                onRenamed={(id, nuevoNombre) => {
+                    setDocumentos(prev => prev.map(d =>
+                        d.id === id ? { ...d, nombre_original: nuevoNombre } : d
+                    ))
+                    setSelectedDocForViewer(null)
+                }}
+            />
         </div>
     )
 }

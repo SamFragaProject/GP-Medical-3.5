@@ -189,7 +189,13 @@ const ALL_MODULES_CATALOG: PermisoModulo[] = [
     { modulo_codigo: 'roles_permisos', modulo_nombre: 'Roles', modulo_ruta: '/admin/roles', modulo_icono: 'Shield', modulo_gradiente: 'from-slate-700 to-slate-900', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
     { modulo_codigo: 'sedes', modulo_nombre: 'Sedes', modulo_ruta: '/sedes', modulo_icono: 'MapPin', modulo_gradiente: 'from-red-500 to-rose-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
     { modulo_codigo: 'configuracion', modulo_nombre: 'Configuración', modulo_ruta: '/configuracion', modulo_icono: 'Settings', modulo_gradiente: 'from-gray-500 to-slate-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'sistema', modulo_nombre: 'Sistema', modulo_ruta: '/admin/dashboard', modulo_icono: 'Server', modulo_gradiente: 'from-slate-800 to-black', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true }
+    { modulo_codigo: 'sistema', modulo_nombre: 'Sistema', modulo_ruta: '/admin/dashboard', modulo_icono: 'Server', modulo_gradiente: 'from-slate-800 to-black', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+
+    // ═══════════════════════════════════════════════════
+    // HERRAMIENTAS
+    // ═══════════════════════════════════════════════════
+    { modulo_codigo: 'importar_exportar', modulo_nombre: 'Importar / Exportar', modulo_ruta: '/herramientas/importar', modulo_icono: 'Database', modulo_gradiente: 'from-cyan-500 to-blue-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
+    { modulo_codigo: 'analizador_documentos', modulo_nombre: 'Analizador IA', modulo_ruta: '/herramientas/analizador', modulo_icono: 'Brain', modulo_gradiente: 'from-violet-500 to-fuchsia-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true }
 ];
 
 // ═══════════════════════════════════════════════════
@@ -215,7 +221,8 @@ const DEMO_ROLE_PERMISSIONS: Record<string, string[]> = {
         'reportes', 'ia',
         'normatividad', 'nom011', 'evaluaciones', 'matriz_riesgos', 'programa_anual',
         'rrhh', 'medicos',
-        'usuarios', 'sedes', 'configuracion'
+        'usuarios', 'sedes', 'configuracion',
+        'importar_exportar', 'analizador_documentos'
     ],
     'medico': [
         'dashboard', 'pacientes', 'estudios_medicos', 'prescripcion', 'incapacidades',

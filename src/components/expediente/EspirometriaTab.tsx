@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase'
 import { Loader2, Inbox } from 'lucide-react'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
+import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
 
 const CLASIF_STYLES: Record<string, { bg: string; text: string; border: string; label: string }> = {
     normal: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Normal' },
@@ -437,6 +438,13 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                     </div>
                 </motion.div>
             )}
+
+            {/* Documentos adjuntos de espirometría */}
+            <DocumentosAdjuntos
+                pacienteId={pacienteId}
+                categoria="espirometria"
+                titulo="Documentos de Espirometría"
+            />
         </div>
     )
 }

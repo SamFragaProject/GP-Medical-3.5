@@ -112,6 +112,7 @@ const CumplimientoLegalHub = React.lazy(() => import('@/pages/legal/Cumplimiento
 const LeySillaPage = React.lazy(() => import('@/pages/legal/LeySilla'))
 const NOM035Page = React.lazy(() => import('@/pages/legal/NOM035'))
 const ImportarExportarPage = React.lazy(() => import('@/pages/herramientas/ImportarExportar'))
+const AnalizadorDocumentos = React.lazy(() => import('@/pages/herramientas/AnalizadorDocumentos'))
 const ExpedienteMaestro = React.lazy(() => import('@/pages/ExpedienteMaestro').then(m => ({ default: m.ExpedienteMaestro })))
 const IntelligenceBureau = React.lazy(() => import('@/pages/IntelligenceBureau').then(m => ({ default: m.IntelligenceBureau })))
 const OnboardingWizard = React.lazy(() => import('@/components/onboarding/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })))
@@ -369,6 +370,8 @@ function App() {
                           <Route path="/legal/riesgos" element={<ProtectedRoute resource="reportes"><RiesgosTrabajo /></ProtectedRoute>} />
                           {/* Herramientas: Importar/Exportar */}
                           <Route path="/herramientas/importar" element={<ProtectedRoute resource="sistema"><ImportarExportarPage /></ProtectedRoute>} />
+                          {/* Herramientas: Analizador de Documentos IA */}
+                          <Route path="/herramientas/analizador" element={<ProtectedRoute resource="sistema"><AnalizadorDocumentos /></ProtectedRoute>} />
                         </Route>
 
                         <Route path="*" element={<NotFound />} />

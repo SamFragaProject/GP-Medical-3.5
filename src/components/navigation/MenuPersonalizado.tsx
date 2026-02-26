@@ -115,7 +115,7 @@ const SIDEBAR_SECTIONS: SidebarSection[] = [
     label: 'Herramientas',
     icon: Settings,
     color: 'cyan',
-    modules: ['importar_exportar']
+    modules: ['importar_exportar', 'analizador_documentos']
   }
 ]
 

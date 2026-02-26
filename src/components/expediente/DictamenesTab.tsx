@@ -16,6 +16,7 @@ import toast from 'react-hot-toast'
 import { dictamenService } from '@/services/dictamenService'
 import type { DictamenMedico } from '@/types/dictamen'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
+import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
 
 const RESULTADO_STYLES: Record<string, { bg: string; text: string; border: string; badgeBg: string; label: string }> = {
     apto: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', badgeBg: 'bg-emerald-100', label: 'APTO' },
@@ -494,6 +495,15 @@ export default function DictamenesTab({ pacienteId }: DictamenesTabProps) {
                         {dictamenes[0].cedula_profesional && ` (Céd. ${dictamenes[0].cedula_profesional})`}
                     </p>
                 </div>
+            )}
+
+            {/* Documentos adjuntos de dictámenes */}
+            {pacienteId && (
+                <DocumentosAdjuntos
+                    pacienteId={pacienteId}
+                    categoria="dictamen"
+                    titulo="Documentos de Dictámenes"
+                />
             )}
         </div>
     )

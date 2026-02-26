@@ -3,21 +3,21 @@
  * Servicio de Análisis de Documentos Médicos con Gemini AI
  * GPMedical ERP — Integrado con el sistema de AI existente
  * ============================================================
- * Usa la VITE_GEMINI_API_KEY del ERP para analizar documentos
+ * Usa la VITE_GOOGLE_API_KEY del ERP para analizar documentos
  * médicos subidos y extraer datos estructurados.
  */
 
 import { GoogleGenAI, Type } from '@google/genai';
 
 // Reutilizamos la API key del ERP
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 
 let aiInstance: GoogleGenAI | null = null;
 
 function getAI(): GoogleGenAI {
     if (!aiInstance) {
         if (!API_KEY) {
-            throw new Error('VITE_GEMINI_API_KEY no configurada. Ve a Configuración → IA para agregarla.');
+            throw new Error('VITE_GOOGLE_API_KEY no configurada. Ve a Configuración → IA para agregarla.');
         }
         aiInstance = new GoogleGenAI({ apiKey: API_KEY });
     }

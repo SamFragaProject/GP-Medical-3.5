@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase'
 import { Loader2, Inbox, Upload, ScanLine } from 'lucide-react'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 import { SubirRadiografiaModal } from '@/components/ui/SubirRadiografiaModal'
+import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
 
 const RESULTADO_STYLES: Record<string, { bg: string; text: string; border: string; label: string; dot: string }> = {
     normal: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Normal', dot: 'bg-emerald-500' },
@@ -337,6 +338,13 @@ export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
                     Historial radiológico: {estudios.map(e => e.fecha).join(' • ')} — Se conservan para comparación temporal y vigilancia de neumoconiosis.
                 </p>
             </div>
+
+            {/* Documentos adjuntos de radiografía */}
+            <DocumentosAdjuntos
+                pacienteId={pacienteId}
+                categoria="radiografia"
+                titulo="Documentos de Radiografía"
+            />
 
             <SubirRadiografiaModal
                 isOpen={uploadModalOpen}

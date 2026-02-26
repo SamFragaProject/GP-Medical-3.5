@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase'
 import { Loader2, Inbox } from 'lucide-react'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
+import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
 
 const FREQUENCIES = ['250', '500', '1000', '2000', '3000', '4000', '6000', '8000']
 const FREQ_LABELS = ['250', '500', '1K', '2K', '3K', '4K', '6K', '8K']
@@ -449,6 +450,13 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
                     </div>
                 </motion.div>
             )}
+
+            {/* Documentos adjuntos de audiometría */}
+            <DocumentosAdjuntos
+                pacienteId={pacienteId}
+                categoria="audiometria"
+                titulo="Documentos de Audiometría"
+            />
         </div>
     )
 }

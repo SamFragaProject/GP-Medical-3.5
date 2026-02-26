@@ -377,6 +377,65 @@ export const secureStorageService = {
     },
 
     /**
+     * ✏️ RENOMBRAR DOCUMENTO
+     */
+    async rename(
+        documentoId: string,
+        nuevoNombre: string,
+        empresaId: string,
+        userId?: string
+    ): Promise<void> {
+        try {
+            const { error } = await supabase
+                .from('documentos_expediente')
+                .update({ nombre_original: nuevoNombre })
+                .eq('id', documentoId)
+                .eq('empresa_id', empresaId)
+
+            if (error) throw error
+
+            // Audit log
+            try {
+                await supabase.from('auditoria_documentos').insert({
+                    documento_id: documentoId,
+                    empresa_id: empresaId,
+                    accion: 'rename',
+                    usuario_id: userId || null,
+                    detalle: { nuevo_nombre: nuevoNombre },
+                })
+            } catch { /* silent */ }
+        } catch {
+            // Fallback demo
+            const allDocs = JSON.parse(localStorage.getItem('GPMedical_documentos') || '[]')
+            const updated = allDocs.map((d: any) =>
+                d.id === documentoId ? { ...d, nombre_original: nuevoNombre } : d
+            )
+            localStorage.setItem('GPMedical_documentos', JSON.stringify(updated))
+        }
+    },
+
+    /**
+     * 📋 LISTAR DOCUMENTOS POR CATEGORÍA de un paciente
+     */
+    async getByPacienteAndCategoria(pacienteId: string, categoria: string): Promise<DocumentoExpediente[]> {
+        try {
+            const { data, error } = await supabase
+                .from('documentos_expediente')
+                .select('*')
+                .eq('paciente_id', pacienteId)
+                .eq('categoria', categoria)
+                .eq('activo', true)
+                .order('created_at', { ascending: false })
+
+            if (error) throw error
+            return (data || []) as DocumentoExpediente[]
+        } catch {
+            const allDocs = JSON.parse(localStorage.getItem('GPMedical_documentos') || '[]')
+            return allDocs.filter((d: DocumentoExpediente) => d.paciente_id === pacienteId && d.categoria === categoria && d.activo)
+        }
+    },
+
+    /**
      * 📊 OBTENER ESTADÍSTICAS de documentos por paciente
      */
     async getStats(pacienteId: string): Promise<Record<string, number>> {

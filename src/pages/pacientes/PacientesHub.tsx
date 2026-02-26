@@ -33,12 +33,12 @@ import toast from 'react-hot-toast'
 
 // Componentes internos
 import WizardAltaPaciente from './WizardAltaPaciente'
-import ImportarExpedienteWizard from './ImportarExpedienteWizard'
+
 
 // =============================================
 // TIPOS Y CONSTANTES
 // =============================================
-type ViewMode = 'list' | 'wizard' | 'import'
+type ViewMode = 'list' | 'wizard'
 type SortField = 'nombre' | 'fecha' | 'empresa' | 'puesto'
 type SortDir = 'asc' | 'desc'
 
@@ -198,118 +198,7 @@ export default function PacientesHub() {
         )
     }
 
-    if (viewMode === 'import') {
-        return (
-            <ImportarExpedienteWizard
-                onComplete={async (data, existingPacienteId) => {
-                    try {
-                        const { pacientesService } = await import('@/services/dataService')
 
-                        // Construir payload completo con TODOS los campos extraídos
-                        const patientPayload: Record<string, any> = {
-                            // Datos personales
-                            nombre: data.nombre || '',
-                            apellido_paterno: data.apellido_paterno || '',
-                            apellido_materno: data.apellido_materno || '',
-                            fecha_nacimiento: data.fecha_nacimiento || null,
-                            genero: data.genero || '',
-                            curp: data.curp || '',
-                            rfc: data.rfc || '',
-                            nss: data.nss || '',
-                            estado_civil: data.estado_civil || '',
-                            tipo_sangre: data.tipo_sangre || '',
-                            email: data.email || '',
-                            telefono: data.telefono || '',
-
-                            // Datos laborales
-                            numero_empleado: data.numero_empleado || '',
-                            empresa_nombre: data.empresa_nombre || '',
-                            puesto: data.puesto || '',
-                            area: data.area || '',
-                            departamento: data.departamento || '',
-                            turno: data.turno || '',
-                            fecha_ingreso: data.fecha_ingreso || null,
-
-                            // Datos médicos
-                            alergias: data.alergias || '',
-                            antecedentes_personales: data.antecedentes_personales || '',
-                            antecedentes_familiares: data.antecedentes_familiares || '',
-                            padecimiento_actual: data.padecimiento_actual || '',
-
-                            // Contacto de emergencia
-                            contacto_emergencia_nombre: data.contacto_emergencia_nombre || '',
-                            contacto_emergencia_parentesco: data.contacto_emergencia_parentesco || '',
-                            contacto_emergencia_telefono: data.contacto_emergencia_telefono || '',
-
-                            // Dictamen
-                            dictamen_aptitud: data.dictamen_aptitud || '',
-                            restricciones: Array.isArray(data.restricciones) ? data.restricciones.join('; ') : (data.restricciones || ''),
-                            recomendaciones: Array.isArray(data.recomendaciones) ? data.recomendaciones.join('; ') : (data.recomendaciones || ''),
-
-                            // Signos vitales (columnas directas)
-                            peso_kg: data.signos_vitales?.peso_kg || null,
-                            talla_cm: data.signos_vitales?.talla_cm || null,
-                            imc: data.signos_vitales?.imc || null,
-                            presion_sistolica: data.signos_vitales?.presion_sistolica || null,
-                            presion_diastolica: data.signos_vitales?.presion_diastolica || null,
-                            frecuencia_cardiaca: data.signos_vitales?.frecuencia_cardiaca || null,
-                            saturacion_o2: data.signos_vitales?.saturacion_o2 || null,
-                            temperatura: data.signos_vitales?.temperatura || null,
-
-                            // Estudios médicos (JSONB)
-                            exploracion_fisica: data.exploracion_fisica || {},
-                            audiometria: data.audiometria || {},
-                            espirometria: data.espirometria || {},
-                            laboratorio: data.laboratorio || {},
-                            radiografia: data.radiografia || {},
-
-                            // Markdown del expediente
-                            expediente_md: (data as any)._expediente_md || '',
-                        }
-                        console.log('📦 patientPayload keys:', Object.keys(patientPayload))
-                        console.log('📦 existingPacienteId:', existingPacienteId)
-                        console.log('🔬 laboratorio a guardar:', JSON.stringify(data.laboratorio, null, 2))
-                        console.log('🔬 laboratorio campos con valor:', data.laboratorio ? Object.entries(data.laboratorio).filter(([_, v]) => v !== null && v !== undefined && v !== 0 && v !== '').map(([k]) => k) : 'VACÍO')
-
-                        if (existingPacienteId) {
-                            // Actualizar paciente existente — solo campos con valor
-                            const cleanPayload = Object.fromEntries(
-                                Object.entries(patientPayload).filter(([_, v]) =>
-                                    v !== '' && v !== null && v !== undefined &&
-                                    !(typeof v === 'object' && Object.keys(v).length === 0)
-                                )
-                            )
-                            console.log('📝 Actualizando paciente con', Object.keys(cleanPayload).length, 'campos:', Object.keys(cleanPayload))
-                            await pacientesService.update(existingPacienteId, cleanPayload as any)
-                            toast.success('✅ Expediente integrado al paciente exitosamente')
-                        } else {
-                            // Validar empresa_id
-                            if (!user?.empresa_id) {
-                                toast.error('❌ No se puede crear paciente: empresa no identificada. Cierre sesión e ingrese nuevamente.')
-                                return
-                            }
-                            // Crear nuevo paciente con TODA la data
-                            console.log('🆕 Creando paciente nuevo con empresa_id:', user.empresa_id)
-                            await pacientesService.create({
-                                ...patientPayload,
-                                empresa_id: user.empresa_id,
-                                estatus: 'activo',
-                            } as any)
-                            toast.success('✅ Paciente creado con expediente completo')
-                        }
-                    } catch (err: any) {
-                        console.error('❌ Error procesando paciente:', err)
-                        toast.error(`Error al guardar: ${err.message || 'Error desconocido'}`)
-                        return // NO navegar — mantener wizard abierto para que el usuario no pierda datos
-                    }
-                    setViewMode('list')
-                    refresh()
-                }}
-                onCancel={() => setViewMode('list')}
-                empresaId={user?.empresa_id}
-            />
-        )
-    }
 
     // =============================================
     // RENDER: LISTA PRINCIPAL
@@ -325,11 +214,11 @@ export default function PacientesHub() {
                     <div className="flex items-center gap-3">
                         <Button
                             variant="outline"
-                            onClick={() => setViewMode('import')}
+                            onClick={() => navigate('/herramientas/analizador')}
                             className="h-11 px-5 rounded-xl bg-purple-500/20 border-purple-400/30 text-white hover:bg-purple-500/30 font-black text-[10px] uppercase tracking-widest gap-2"
                         >
                             <Brain className="w-4 h-4" />
-                            Importar Expediente
+                            Analizador IA
                         </Button>
                         <Button
                             onClick={() => setViewMode('wizard')}
@@ -507,8 +396,8 @@ export default function PacientesHub() {
                                 <Button onClick={() => setViewMode('wizard')} className="bg-emerald-500 hover:bg-emerald-600 text-white gap-2 rounded-xl">
                                     <UserPlus className="w-4 h-4" /> Alta Manual
                                 </Button>
-                                <Button variant="outline" onClick={() => setViewMode('import')} className="gap-2 rounded-xl">
-                                    <FileSpreadsheet className="w-4 h-4" /> Importar Expediente
+                                <Button variant="outline" onClick={() => navigate('/herramientas/analizador')} className="gap-2 rounded-xl">
+                                    <Brain className="w-4 h-4" /> Analizador IA
                                 </Button>
                             </div>
                         </div>

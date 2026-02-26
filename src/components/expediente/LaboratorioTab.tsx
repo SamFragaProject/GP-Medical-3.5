@@ -21,6 +21,7 @@ import {
     calcularBandera, BANDERA_STYLES, getCatalogo, crearEstudioConResultados,
 } from '@/services/estudiosService'
 import AgregarParametroModal from './AgregarParametroModal'
+import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
 
 // ================== RANGOS LEGACY ==================
 const RANGOS_REF: Record<string, { min: number; max: number; unidad: string; label: string; grupo: string }> = {
@@ -414,6 +415,13 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
                     tipoEstudio="laboratorio"
                 />
             )}
+
+            {/* Documentos adjuntos de laboratorio */}
+            <DocumentosAdjuntos
+                pacienteId={pacienteId}
+                categoria="laboratorio"
+                titulo="Documentos de Laboratorio"
+            />
         </div>
     )
 }

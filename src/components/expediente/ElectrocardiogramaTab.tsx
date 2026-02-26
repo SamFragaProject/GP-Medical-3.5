@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { HeartPulse, Loader2, Calendar, FileText, AlertTriangle, Download, Activity, Zap } from 'lucide-react';
 import { printSeccionPDF } from '@/components/expediente/ExportarPDFPaciente';
+import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos';
 
 export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacienteId: string; paciente?: any }) {
     const [estudios, setEstudios] = useState<Electrocardiograma[]>([]);
@@ -159,6 +160,13 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                     </Card>
                 );
             })}
+
+            {/* Documentos adjuntos de electrocardiograma */}
+            <DocumentosAdjuntos
+                pacienteId={pacienteId}
+                categoria="electrocardiograma"
+                titulo="Documentos de ECG"
+            />
         </div>
     );
 }
