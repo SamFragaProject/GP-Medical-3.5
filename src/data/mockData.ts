@@ -7,6 +7,8 @@
  */
 
 import { User, UserRole } from '@/types/auth'
+import { EMPRESA_PRINCIPAL_ID } from '@/config/empresa'
+
 
 // =====================================================
 // EMPRESAS MOCK
@@ -14,7 +16,7 @@ import { User, UserRole } from '@/types/auth'
 
 export const EMPRESAS_MOCK = [
     {
-        id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        id: '550e8400-e29b-41d4-a716-446655440001',
         nombre: 'MediWork Ocupacional',
         rfc: 'MWO2020010ABC',
         plan: 'profesional',
@@ -42,9 +44,9 @@ export const EMPRESAS_MOCK = [
 
 export const SEDES_MOCK = [
     // MediWork
-    { id: 's1a1b1c1-1111-1111-1111-111111111111', empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', nombre: 'Matriz CDMX', es_matriz: true },
-    { id: 's1a1b1c1-2222-2222-2222-222222222222', empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', nombre: 'Sucursal Monterrey', es_matriz: false },
-    { id: 's1a1b1c1-3333-3333-3333-333333333333', empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', nombre: 'Sucursal Guadalajara', es_matriz: false },
+    { id: 's1a1b1c1-1111-1111-1111-111111111111', empresa_id: '550e8400-e29b-41d4-a716-446655440001', nombre: 'Matriz CDMX', es_matriz: true },
+    { id: 's1a1b1c1-2222-2222-2222-222222222222', empresa_id: '550e8400-e29b-41d4-a716-446655440001', nombre: 'Sucursal Monterrey', es_matriz: false },
+    { id: 's1a1b1c1-3333-3333-3333-333333333333', empresa_id: '550e8400-e29b-41d4-a716-446655440001', nombre: 'Sucursal Guadalajara', es_matriz: false },
     // Salud Industrial
     { id: 's2a2b2c2-1111-1111-1111-111111111111', empresa_id: 'b2c3d4e5-f6a7-8901-bcde-f23456789012', nombre: 'Planta Norte', es_matriz: true },
     { id: 's2a2b2c2-2222-2222-2222-222222222222', empresa_id: 'b2c3d4e5-f6a7-8901-bcde-f23456789012', nombre: 'Planta Toluca', es_matriz: false },
@@ -94,7 +96,7 @@ export const USUARIOS_MOCK: MockUser[] = [
         apellido_paterno: 'Hernández',
         apellido_materno: 'López',
         rol: 'admin_empresa',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-1111-1111-1111-111111111111',
         cedula_profesional: null,
         avatar_url: null,
@@ -107,7 +109,7 @@ export const USUARIOS_MOCK: MockUser[] = [
         apellido_paterno: 'Martínez',
         apellido_materno: 'García',
         rol: 'medico',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-1111-1111-1111-111111111111',
         cedula_profesional: '12345678',
         avatar_url: null,
@@ -120,7 +122,7 @@ export const USUARIOS_MOCK: MockUser[] = [
         apellido_paterno: 'González',
         apellido_materno: 'Ramírez',
         rol: 'medico',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-2222-2222-2222-222222222222',
         cedula_profesional: '87654321',
         avatar_url: null,
@@ -133,7 +135,7 @@ export const USUARIOS_MOCK: MockUser[] = [
         apellido_paterno: 'López',
         apellido_materno: 'Sánchez',
         rol: 'enfermera',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-1111-1111-1111-111111111111',
         cedula_profesional: 'ENF-123456',
         avatar_url: null,
@@ -146,7 +148,7 @@ export const USUARIOS_MOCK: MockUser[] = [
         apellido_paterno: 'Torres',
         apellido_materno: 'Mendoza',
         rol: 'recepcion',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-1111-1111-1111-111111111111',
         cedula_profesional: null,
         avatar_url: null,
@@ -225,7 +227,7 @@ export const PACIENTES_MOCK: MockPaciente[] = [
     // MediWork Pacientes
     {
         id: 'p1a1b1c1-0001-0001-0001-000000000001',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-1111-1111-1111-111111111111',
         nombre: 'José Luis',
         apellido_paterno: 'García',
@@ -244,7 +246,7 @@ export const PACIENTES_MOCK: MockPaciente[] = [
     },
     {
         id: 'p1a1b1c1-0002-0002-0002-000000000002',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-1111-1111-1111-111111111111',
         nombre: 'María Fernanda',
         apellido_paterno: 'Rodríguez',
@@ -263,7 +265,7 @@ export const PACIENTES_MOCK: MockPaciente[] = [
     },
     {
         id: 'p1a1b1c1-0003-0003-0003-000000000003',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-1111-1111-1111-111111111111',
         nombre: 'Carlos Alberto',
         apellido_paterno: 'Martínez',
@@ -282,7 +284,7 @@ export const PACIENTES_MOCK: MockPaciente[] = [
     },
     {
         id: 'p1a1b1c1-0004-0004-0004-000000000004',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-1111-1111-1111-111111111111',
         nombre: 'Ana Patricia',
         apellido_paterno: 'González',
@@ -301,7 +303,7 @@ export const PACIENTES_MOCK: MockPaciente[] = [
     },
     {
         id: 'p1a1b1c1-0005-0005-0005-000000000005',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-1111-1111-1111-111111111111',
         nombre: 'Roberto',
         apellido_paterno: 'Hernández',
@@ -321,7 +323,7 @@ export const PACIENTES_MOCK: MockPaciente[] = [
     // Monterrey
     {
         id: 'p1a1b1c1-0006-0006-0006-000000000006',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-2222-2222-2222-222222222222',
         nombre: 'Laura Beatriz',
         apellido_paterno: 'Vega',
@@ -340,7 +342,7 @@ export const PACIENTES_MOCK: MockPaciente[] = [
     },
     {
         id: 'p1a1b1c1-0007-0007-0007-000000000007',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-2222-2222-2222-222222222222',
         nombre: 'Miguel Ángel',
         apellido_paterno: 'Flores',
@@ -360,7 +362,7 @@ export const PACIENTES_MOCK: MockPaciente[] = [
     // Guadalajara
     {
         id: 'p1a1b1c1-0008-0008-0008-000000000008',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-3333-3333-3333-333333333333',
         nombre: 'Sandra Patricia',
         apellido_paterno: 'Luna',
@@ -380,7 +382,7 @@ export const PACIENTES_MOCK: MockPaciente[] = [
     // Más pacientes CDMX
     {
         id: 'p1a1b1c1-0009-0009-0009-000000000009',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-1111-1111-1111-111111111111',
         nombre: 'Francisco Javier',
         apellido_paterno: 'Reyes',
@@ -399,7 +401,7 @@ export const PACIENTES_MOCK: MockPaciente[] = [
     },
     {
         id: 'p1a1b1c1-0010-0010-0010-000000000010',
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: '550e8400-e29b-41d4-a716-446655440001',
         sede_id: 's1a1b1c1-1111-1111-1111-111111111111',
         nombre: 'Gabriela',
         apellido_paterno: 'Mendoza',
@@ -552,7 +554,7 @@ export function mockUserToUser(mockUser: MockUser): User {
         cedula_profesional: mockUser.cedula_profesional,
         avatar_url: mockUser.avatar_url,
         empresa_id: mockUser.empresa_id || undefined,
-        empresa: empresa?.nombre,
+        empresa: empresa?.nombre as any,
         sede_id: mockUser.sede_id || undefined
     }
 }

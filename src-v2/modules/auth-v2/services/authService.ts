@@ -102,7 +102,8 @@ class AuthService {
       throw this.handleError(dbError);
     }
 
-    const user = await this.getUserDetails(authData.user.id);
+    const userDetails = await this.getUserDetails(authData.user.id);
+    const user: User = { id: authData.user.id, email: data.email, ...userDetails };
 
     return { user };
   }
@@ -112,7 +113,7 @@ class AuthService {
    */
   async logout(): Promise<void> {
     const { error } = await supabase.auth.signOut();
-    
+
     if (error) {
       throw this.handleError(error);
     }
@@ -202,7 +203,7 @@ class AuthService {
   /**
    * Obtener datos del usuario desde la BD
    */
-  private async getUserDetails(userId: string): Promise<Partial<User>> {
+  private async getUserDetails(userId: string): Promise<Omit<User, 'id' | 'email'>> {
     const { data, error } = await supabase
       .from('usuarios')
       .select('*')

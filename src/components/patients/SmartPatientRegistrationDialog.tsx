@@ -18,7 +18,7 @@ export function SmartPatientRegistrationDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-[95vw] w-[1200px] p-0 overflow-hidden border-none bg-transparent shadow-none">
-                <div className="bg-slate-50 rounded-[2.5rem] overflow-hidden h-[90vh]">
+                <div className="bg-slate-50 rounded-[2.5rem] overflow-hidden h-[90vh] flex flex-col">
                     <WizardAltaPaciente
                         onComplete={async () => {
                             onSuccess?.()

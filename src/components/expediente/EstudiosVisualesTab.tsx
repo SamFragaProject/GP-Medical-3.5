@@ -88,16 +88,86 @@ export default function EstudiosVisualesTab({ pacienteId }: { pacienteId: string
     const loadData = async () => {
         try {
             setLoading(true)
-            const { data: records, error } = await supabase
-                .from('examenes_vista')
+
+            // FUENTE 1: Nuevas tablas unificadas
+            const { data: estudios } = await supabase
+                .from('estudios_clinicos')
                 .select('*')
                 .eq('paciente_id', pacienteId)
-                .order('fecha', { ascending: false })
+                .eq('tipo_estudio', 'optometria')
+                .order('fecha_estudio', { ascending: false })
+                .limit(2)
+
+            if (estudios && estudios.length > 0) {
+                for (let idx = 0; idx < Math.min(estudios.length, 2); idx++) {
+                    const { data: resultados } = await supabase
+                        .from('resultados_estudio')
+                        .select('*')
+                        .eq('estudio_id', estudios[idx].id)
+                    if (resultados && resultados.length > 0) {
+                        const resMap: Record<string, string> = {}
+                        resultados.forEach(r => { resMap[r.parametro_nombre] = r.resultado })
+                        const transformed = {
+                            id: estudios[idx].id,
+                            fecha: estudios[idx].fecha_estudio,
+                            clasificacion: estudios[idx].diagnostico?.toLowerCase().includes('normal') ? 'normal' : 'con_hallazgos',
+                            evaluador: estudios[idx].medico_responsable || 'Oftalmólogo',
+                            equipo: estudios[idx].equipo || 'Snellen / Ishihara',
+                            apto: true,
+                            observaciones: estudios[idx].diagnostico || '',
+                            od_sin_correccion: resMap['av_lejana_od_sc'] || '20/20',
+                            oi_sin_correccion: resMap['av_lejana_oi_sc'] || '20/20',
+                            od_con_correccion: resMap['av_lejana_od_cc'] || null,
+                            oi_con_correccion: resMap['av_lejana_oi_cc'] || null,
+                            od_jaeger: resMap['av_cercana_od_sc'] || 'J1',
+                            oi_jaeger: resMap['av_cercana_oi_sc'] || 'J1',
+                            ishihara_placas_correctas: resMap['vision_cromatica']?.includes('14/14') ? 14 : 12,
+                            ishihara_placas_total: 14,
+                            ishihara_resultado: resMap['vision_cromatica'] || 'Visión al color normal',
+                            campimetria_realizada: !!resMap['campimetria'],
+                            recomendaciones: ['Control oftalmológico anual'],
+                        }
+                        if (idx === 0) setData(transformed)
+                        else setPrev(transformed)
+                    }
+                }
+                return
+            }
+
+            // FUENTE 2: estudios_visuales (legacy)
+            const { data: records } = await supabase
+                .from('estudios_visuales')
+                .select('*')
+                .eq('paciente_id', pacienteId)
+                .order('created_at', { ascending: false })
                 .limit(2)
 
             if (records && records.length > 0) {
-                setData(records[0])
-                if (records.length > 1) setPrev(records[1])
+                const transformed = records.map(r => ({
+                    ...r,
+                    fecha: r.fecha_estudio || r.fecha || new Date().toISOString(),
+                    clasificacion: r.diagnostico?.toLowerCase().includes('normal') ? 'normal' : 'con_hallazgos',
+                    evaluador: r.medico_responsable || 'Oftalmólogo',
+                    equipo: r.equipo || 'Snellen / Ishihara',
+                    apto: true,
+                    observaciones: r.diagnostico || '',
+                    od_sin_correccion: r.agudeza_od_sc || '20/20',
+                    oi_sin_correccion: r.agudeza_oi_sc || '20/20',
+                    od_con_correccion: r.agudeza_od_cc || null,
+                    oi_con_correccion: r.agudeza_oi_cc || null,
+                    od_jaeger: 'J1',
+                    oi_jaeger: 'J1',
+                    ishihara_placas_correctas: r.vision_cromatica === 'Normal (Ishihara 14/14)' ? 14 : 12,
+                    ishihara_placas_total: 14,
+                    ishihara_resultado: r.vision_cromatica || 'Visión al color normal',
+                    usa_lentes: r.usa_lentes || false,
+                    campimetria_realizada: !!r.campimetria,
+                    recomendaciones: r.recomendaciones
+                        ? (typeof r.recomendaciones === 'string' ? r.recomendaciones.split('. ').filter(Boolean) : r.recomendaciones)
+                        : ['Control oftalmológico anual'],
+                }))
+                setData(transformed[0])
+                if (transformed.length > 1) setPrev(transformed[1])
             }
         } catch (err) {
             console.error('Error loading vision studies:', err)

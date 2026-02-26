@@ -10,8 +10,9 @@ import {
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase'
-import { Loader2, Inbox } from 'lucide-react'
+import { Loader2, Inbox, Upload, ScanLine } from 'lucide-react'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
+import { SubirRadiografiaModal } from '@/components/ui/SubirRadiografiaModal'
 
 const RESULTADO_STYLES: Record<string, { bg: string; text: string; border: string; label: string; dot: string }> = {
     normal: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Normal', dot: 'bg-emerald-500' },
@@ -23,6 +24,8 @@ export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
     const [loading, setLoading] = React.useState(true)
     const [estudios, setEstudios] = React.useState<any[]>([])
     const [expandedId, setExpandedId] = React.useState<string | null>(null)
+    const [uploadModalOpen, setUploadModalOpen] = React.useState(false)
+    const [activeRxId, setActiveRxId] = React.useState<string | null>(null)
 
     React.useEffect(() => {
         if (pacienteId) loadData()
@@ -31,16 +34,98 @@ export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
     const loadData = async () => {
         try {
             setLoading(true)
-            const { data: records, error } = await supabase
-                .from('examenes_rayos_x')
+
+            // FUENTE 1: Nuevas tablas unificadas
+            const { data: estudios } = await supabase
+                .from('estudios_clinicos')
                 .select('*')
                 .eq('paciente_id', pacienteId)
-                .order('fecha', { ascending: false })
+                .eq('tipo_estudio', 'radiografia')
+                .order('fecha_estudio', { ascending: false })
 
-            if (records && records.length > 0) {
-                setEstudios(records)
-                setExpandedId(records[0].id)
-            } else if (pacienteId?.startsWith('demo')) {
+            if (estudios && estudios.length > 0) {
+                const transformed = estudios.map(e => ({
+                    id: e.id,
+                    fecha: e.fecha_estudio || new Date().toISOString(),
+                    tipo: e.clasificacion || 'Radiografía',
+                    region: e.datos_extra?.region_anatomica || 'Tórax',
+                    resultado: e.clasificacion === '0/0' ? 'normal' : (e.diagnostico?.toLowerCase().includes('normal') ? 'normal' : 'anormal'),
+                    hallazgos: e.datos_extra?.hallazgos || '',
+                    impresion: e.interpretacion || '',
+                    motivo: 'Examen médico ocupacional',
+                    clasificacion_ilo: e.datos_extra?.clasificacion_oit || '',
+                    tecnico: e.medico_responsable || 'Médico radiólogo',
+                    equipo: e.equipo || 'Equipo digital',
+                    medico_interpreta: e.medico_responsable || 'Radiólogo certificado',
+                    cedula_rad: e.cedula_medico || 'Cédula en expediente',
+                    imagen_url: e.datos_extra?.imagen_url,
+                }))
+                setEstudios(transformed)
+                setExpandedId(transformed[0].id)
+                return
+            }
+
+            // FUENTE 2: rayos_x (tabla legacy)
+            const { data: legacyRecords } = await supabase
+                .from('rayos_x')
+                .select('*')
+                .eq('paciente_id', pacienteId)
+                .order('created_at', { ascending: false })
+
+            if (legacyRecords && legacyRecords.length > 0) {
+                const transformed = legacyRecords.map(r => ({
+                    ...r,
+                    id: r.id,
+                    fecha: r.fecha_estudio || r.fecha || new Date().toISOString(),
+                    tipo: r.tipo_estudio || r.tipo || 'Radiografía',
+                    region: r.tipo_estudio || 'Tórax',
+                    resultado: r.clasificacion_oit === '0/0' ? 'normal' : 'anormal',
+                    hallazgos: r.hallazgos || '',
+                    impresion: r.conclusion || r.impresion || '',
+                    motivo: r.motivo || 'Examen médico ocupacional periódico',
+                    clasificacion_ilo: r.clasificacion_oit || r.clasificacion_ilo || '',
+                    tecnico: r.medico_responsable || r.tecnico || 'Médico radiólogo',
+                    equipo: r.equipo || 'Equipo digital',
+                    medico_interpreta: r.medico_responsable || 'Radiólogo certificado',
+                    cedula_rad: r.cedula_rad || 'Cédula en expediente',
+                }))
+                setEstudios(transformed)
+                setExpandedId(transformed[0].id)
+                return
+            }
+
+            // FUENTE 3: pacientes.radiografia JSONB
+            const { data: pac } = await supabase
+                .from('pacientes')
+                .select('radiografia')
+                .eq('id', pacienteId)
+                .single()
+
+            if (pac?.radiografia && typeof pac.radiografia === 'object') {
+                const rx = pac.radiografia as Record<string, any>
+                const fakeId = `jsonb-rx-${pacienteId}`
+                setEstudios([{
+                    id: fakeId,
+                    fecha: rx.fecha || new Date().toISOString(),
+                    tipo: rx.tipo || 'Radiografía PA de Tórax',
+                    region: 'Tórax',
+                    resultado: (rx.clasificacion_oit === '0/0' || !rx.clasificacion_oit) ? 'normal' : 'anormal',
+                    hallazgos: rx.hallazgos || '',
+                    impresion: rx.conclusion || '',
+                    motivo: 'Examen médico ocupacional periódico',
+                    clasificacion_ilo: rx.clasificacion_oit || '',
+                    tecnico: rx.medico_responsable || 'Médico radiólogo',
+                    equipo: rx.equipo || 'Equipo digital',
+                    medico_interpreta: rx.medico_responsable || 'Radiólogo certificado',
+                    cedula_rad: 'Cédula en expediente',
+                    recomendaciones: rx.recomendaciones || '',
+                }])
+                setExpandedId(fakeId)
+                return
+            }
+
+            // Demo fallback
+            if (pacienteId?.startsWith('demo')) {
                 const demoData = getExpedienteDemoCompleto()
                 setEstudios(demoData.rayosX)
                 if (demoData.rayosX.length > 0) setExpandedId(demoData.rayosX[0].id)
@@ -49,6 +134,17 @@ export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
             console.error('Error loading radiology:', err)
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleUploadFinish = async (url: string) => {
+        if (!activeRxId) return;
+        // Update local state
+        setEstudios(prev => prev.map(e => e.id === activeRxId ? { ...e, imagen_url: url } : e));
+
+        // Update supabase
+        if (!activeRxId.startsWith('demo')) {
+            await supabase.from('examenes_rayos_x').update({ imagen_url: url }).eq('id', activeRxId);
         }
     }
 
@@ -200,6 +296,31 @@ export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
                                                     <p className="text-slate-700 font-mono font-medium mt-0.5">{rx.cedula_rad}</p>
                                                 </div>
                                             </div>
+
+                                            {/* Imagen Adjunta */}
+                                            <div className="pt-4 border-t border-slate-100">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Archivo de Imagen (RX)</p>
+                                                <div className="flex items-center gap-3">
+                                                    <input
+                                                        type="text"
+                                                        value={rx.imagen_url || ''}
+                                                        readOnly
+                                                        placeholder="Ninguna imagen adjunta"
+                                                        className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-600 outline-none"
+                                                    />
+                                                    <button
+                                                        onClick={() => { setActiveRxId(rx.id); setUploadModalOpen(true); }}
+                                                        className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-xs font-bold transition-colors flex items-center gap-2"
+                                                    >
+                                                        <Upload className="w-3.5 h-3.5" /> Adjuntar RX (JPG)
+                                                    </button>
+                                                </div>
+                                                {rx.imagen_url && (
+                                                    <div className="mt-3 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 relative aspect-video flex items-center justify-center">
+                                                        <img src={rx.imagen_url} alt="Radiografía" className="max-w-full max-h-full object-contain" />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </motion.div>
                                 )}
@@ -216,6 +337,12 @@ export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
                     Historial radiológico: {estudios.map(e => e.fecha).join(' • ')} — Se conservan para comparación temporal y vigilancia de neumoconiosis.
                 </p>
             </div>
+
+            <SubirRadiografiaModal
+                isOpen={uploadModalOpen}
+                onClose={() => setUploadModalOpen(false)}
+                onUploadFinish={handleUploadFinish}
+            />
         </div>
     )
 }

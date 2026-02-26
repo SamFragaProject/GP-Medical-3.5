@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '@/lib/supabase';
 import { authService } from '../services/authService';
 import type {
   User,
@@ -29,7 +30,7 @@ interface UseAuthReturn {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: AuthError | null;
-  
+
   // Acciones
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
@@ -37,12 +38,12 @@ interface UseAuthReturn {
   resetPassword: (data: PasswordResetData) => Promise<void>;
   updatePassword: (data: UpdatePasswordData) => Promise<void>;
   clearError: () => void;
-  
+
   // Permisos
   hasPermission: (resource: string, action: Permission['action']) => boolean;
   hasRole: (roles: UserRole[]) => boolean;
   canAccess: (resource: string) => boolean;
-  
+
   // Utilidades
   refreshSession: () => Promise<boolean>;
 }
@@ -56,7 +57,7 @@ export function useAuth(): UseAuthReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<AuthError | null>(null);
   const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(null);
-  
+
   // Refs para evitar re-renders innecesarios
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isRefreshingRef = useRef(false);
@@ -72,13 +73,13 @@ export function useAuth(): UseAuthReturn {
 
     try {
       const { user: userData, session } = await authService.login(credentials);
-      
+
       setUser(userData);
       setSessionExpiresAt(session.expiresAt);
-      
+
       // Iniciar refresh automático
       startRefreshInterval(session.expiresAt);
-      
+
     } catch (err: any) {
       setError(err);
       throw err;
@@ -95,11 +96,11 @@ export function useAuth(): UseAuthReturn {
 
     try {
       await authService.logout();
-      
+
       setUser(null);
       setSessionExpiresAt(null);
       clearRefreshInterval();
-      
+
     } catch (err: any) {
       setError(err);
       throw err;
@@ -172,24 +173,24 @@ export function useAuth(): UseAuthReturn {
    */
   const refreshSession = useCallback(async (): Promise<boolean> => {
     if (isRefreshingRef.current) return false;
-    
+
     isRefreshingRef.current = true;
-    
+
     try {
       const session = await authService.refreshSession();
-      
+
       if (session) {
         setUser(session.user);
         setSessionExpiresAt(session.expiresAt);
         startRefreshInterval(session.expiresAt);
         return true;
       }
-      
+
       // Si no hay sesión, hacer logout
       setUser(null);
       setSessionExpiresAt(null);
       return false;
-      
+
     } catch (err) {
       console.error('Error refrescando sesión:', err);
       return false;
@@ -208,15 +209,15 @@ export function useAuth(): UseAuthReturn {
     if (!user) return false;
 
     const permissions = ROLE_PERMISSIONS[user.rol];
-    
+
     // Super admin tiene todos los permisos
     if (permissions.some(p => p.resource === '*' && p.action === 'manage')) {
       return true;
     }
 
     return permissions.some(
-      p => p.resource === resource && 
-      (p.action === action || p.action === 'manage')
+      p => p.resource === resource &&
+        (p.action === action || p.action === 'manage')
     );
   }, [user]);
 
@@ -235,7 +236,7 @@ export function useAuth(): UseAuthReturn {
     if (!user) return false;
 
     const permissions = ROLE_PERMISSIONS[user.rol];
-    
+
     return permissions.some(
       p => p.resource === resource || p.resource === '*'
     );
@@ -246,9 +247,9 @@ export function useAuth(): UseAuthReturn {
    */
   const startRefreshInterval = useCallback((expiresAt: number) => {
     clearRefreshInterval();
-    
+
     const timeUntilRefresh = expiresAt - Date.now() - REFRESH_THRESHOLD;
-    
+
     if (timeUntilRefresh > 0) {
       refreshIntervalRef.current = setTimeout(() => {
         refreshSession();
@@ -275,7 +276,7 @@ export function useAuth(): UseAuthReturn {
     const restoreSession = async () => {
       try {
         const session = await authService.getCurrentSession();
-        
+
         if (mounted && session) {
           setUser(session.user);
           setSessionExpiresAt(session.expiresAt);

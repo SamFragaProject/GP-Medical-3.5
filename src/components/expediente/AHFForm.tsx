@@ -35,9 +35,11 @@ type AHFFormValues = z.infer<typeof ahfSchema>;
 interface AHFFormProps {
     expedienteId: string;
     data: AHF | null;
+    onSuccess?: () => void;
+    onCancel?: () => void;
 }
 
-export function AHFForm({ expedienteId, data }: AHFFormProps) {
+export function AHFForm({ expedienteId, data, onSuccess, onCancel }: AHFFormProps) {
     const { register, handleSubmit, control, watch, formState: { isSubmitting, isDirty } } = useForm<AHFFormValues>({
         resolver: zodResolver(ahfSchema),
         defaultValues: data || {
@@ -54,6 +56,7 @@ export function AHFForm({ expedienteId, data }: AHFFormProps) {
         try {
             await ahfService.createOrUpdate(expedienteId, values);
             toast.success('Antecedentes heredofamiliares guardados');
+            if (onSuccess) onSuccess();
         } catch (error) {
             toast.error('Error al guardar antecedentes');
             console.error(error);
@@ -125,18 +128,30 @@ export function AHFForm({ expedienteId, data }: AHFFormProps) {
                         <p className="text-xs text-slate-500">Historia médica familiar y genética</p>
                     </div>
                 </div>
-                <Button
-                    type="submit"
-                    disabled={isSubmitting || !isDirty}
-                    className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/20"
-                >
-                    {isSubmitting ? 'Guardando...' : (
-                        <>
-                            <Save className="w-4 h-4 mr-2" />
-                            Guardar Cambios
-                        </>
+                <div className="flex gap-2">
+                    {onCancel && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onCancel}
+                            disabled={isSubmitting}
+                        >
+                            Cancelar
+                        </Button>
                     )}
-                </Button>
+                    <Button
+                        type="submit"
+                        disabled={isSubmitting || !isDirty}
+                        className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/20"
+                    >
+                        {isSubmitting ? 'Guardando...' : (
+                            <>
+                                <Save className="w-4 h-4 mr-2" />
+                                Guardar Cambios
+                            </>
+                        )}
+                    </Button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

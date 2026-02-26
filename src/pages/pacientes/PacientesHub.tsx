@@ -33,13 +33,12 @@ import toast from 'react-hot-toast'
 
 // Componentes internos
 import WizardAltaPaciente from './WizardAltaPaciente'
-import CargaMasivaPacientes from './CargaMasivaPacientes'
 import ImportarExpedienteWizard from './ImportarExpedienteWizard'
 
 // =============================================
 // TIPOS Y CONSTANTES
 // =============================================
-type ViewMode = 'list' | 'wizard' | 'bulk' | 'import'
+type ViewMode = 'list' | 'wizard' | 'import'
 type SortField = 'nombre' | 'fecha' | 'empresa' | 'puesto'
 type SortDir = 'asc' | 'desc'
 
@@ -182,32 +181,12 @@ export default function PacientesHub() {
         }
     }
 
-    const handleBulkComplete = async (patients: any[]) => {
-        let success = 0
-        let errors = 0
-        for (const p of patients) {
-            try {
-                await createPaciente({
-                    ...p,
-                    empresa_id: p.empresa_id || user?.empresa_id,
-                    estatus: 'activo',
-                })
-                success++
-            } catch {
-                errors++
-            }
-        }
-        toast.success(`${success} pacientes registrados${errors > 0 ? `, ${errors} con errores` : ''}`)
-        setViewMode('list')
-        refresh()
-    }
-
     const openProfile = (paciente: Paciente) => {
         navigate(`/pacientes/${paciente.id}/perfil`, { state: { paciente } })
     }
 
     // =============================================
-    // RENDER: WIZARD o BULK
+    // RENDER: WIZARD o IMPORT
     // =============================================
     if (viewMode === 'wizard') {
         return (
@@ -219,28 +198,20 @@ export default function PacientesHub() {
         )
     }
 
-    if (viewMode === 'bulk') {
-        return (
-            <CargaMasivaPacientes
-                onComplete={handleBulkComplete}
-                onCancel={() => setViewMode('list')}
-                empresaId={user?.empresa_id}
-            />
-        )
-    }
-
     if (viewMode === 'import') {
         return (
             <ImportarExpedienteWizard
                 onComplete={async (data, existingPacienteId) => {
-                    // Integrar datos extraídos (crear o actualizar)
                     try {
                         const { pacientesService } = await import('@/services/dataService')
-                        const patientPayload = {
+
+                        // Construir payload completo con TODOS los campos extraídos
+                        const patientPayload: Record<string, any> = {
+                            // Datos personales
                             nombre: data.nombre || '',
                             apellido_paterno: data.apellido_paterno || '',
                             apellido_materno: data.apellido_materno || '',
-                            fecha_nacimiento: data.fecha_nacimiento || '',
+                            fecha_nacimiento: data.fecha_nacimiento || null,
                             genero: data.genero || '',
                             curp: data.curp || '',
                             rfc: data.rfc || '',
@@ -249,36 +220,87 @@ export default function PacientesHub() {
                             tipo_sangre: data.tipo_sangre || '',
                             email: data.email || '',
                             telefono: data.telefono || '',
+
+                            // Datos laborales
                             numero_empleado: data.numero_empleado || '',
+                            empresa_nombre: data.empresa_nombre || '',
                             puesto: data.puesto || '',
                             area: data.area || '',
                             departamento: data.departamento || '',
                             turno: data.turno || '',
-                            fecha_ingreso: data.fecha_ingreso || '',
+                            fecha_ingreso: data.fecha_ingreso || null,
+
+                            // Datos médicos
                             alergias: data.alergias || '',
+                            antecedentes_personales: data.antecedentes_personales || '',
+                            antecedentes_familiares: data.antecedentes_familiares || '',
+                            padecimiento_actual: data.padecimiento_actual || '',
+
+                            // Contacto de emergencia
                             contacto_emergencia_nombre: data.contacto_emergencia_nombre || '',
                             contacto_emergencia_parentesco: data.contacto_emergencia_parentesco || '',
                             contacto_emergencia_telefono: data.contacto_emergencia_telefono || '',
+
+                            // Dictamen
+                            dictamen_aptitud: data.dictamen_aptitud || '',
+                            restricciones: Array.isArray(data.restricciones) ? data.restricciones.join('; ') : (data.restricciones || ''),
+                            recomendaciones: Array.isArray(data.recomendaciones) ? data.recomendaciones.join('; ') : (data.recomendaciones || ''),
+
+                            // Signos vitales (columnas directas)
+                            peso_kg: data.signos_vitales?.peso_kg || null,
+                            talla_cm: data.signos_vitales?.talla_cm || null,
+                            imc: data.signos_vitales?.imc || null,
+                            presion_sistolica: data.signos_vitales?.presion_sistolica || null,
+                            presion_diastolica: data.signos_vitales?.presion_diastolica || null,
+                            frecuencia_cardiaca: data.signos_vitales?.frecuencia_cardiaca || null,
+                            saturacion_o2: data.signos_vitales?.saturacion_o2 || null,
+                            temperatura: data.signos_vitales?.temperatura || null,
+
+                            // Estudios médicos (JSONB)
+                            exploracion_fisica: data.exploracion_fisica || {},
+                            audiometria: data.audiometria || {},
+                            espirometria: data.espirometria || {},
+                            laboratorio: data.laboratorio || {},
+                            radiografia: data.radiografia || {},
+
+                            // Markdown del expediente
+                            expediente_md: (data as any)._expediente_md || '',
                         }
+                        console.log('📦 patientPayload keys:', Object.keys(patientPayload))
+                        console.log('📦 existingPacienteId:', existingPacienteId)
+                        console.log('🔬 laboratorio a guardar:', JSON.stringify(data.laboratorio, null, 2))
+                        console.log('🔬 laboratorio campos con valor:', data.laboratorio ? Object.entries(data.laboratorio).filter(([_, v]) => v !== null && v !== undefined && v !== 0 && v !== '').map(([k]) => k) : 'VACÍO')
 
                         if (existingPacienteId) {
-                            // Si existe, actualizamos para no duplicar tablas ni registros
-                            // Solo actualizamos campos no vacíos extraídos por IA (evitar sobreescribir con blancos)
-                            const cleanPayload = Object.fromEntries(Object.entries(patientPayload).filter(([_, v]) => v !== ''))
+                            // Actualizar paciente existente — solo campos con valor
+                            const cleanPayload = Object.fromEntries(
+                                Object.entries(patientPayload).filter(([_, v]) =>
+                                    v !== '' && v !== null && v !== undefined &&
+                                    !(typeof v === 'object' && Object.keys(v).length === 0)
+                                )
+                            )
+                            console.log('📝 Actualizando paciente con', Object.keys(cleanPayload).length, 'campos:', Object.keys(cleanPayload))
                             await pacientesService.update(existingPacienteId, cleanPayload as any)
-                            toast.success('Expediente integrado al paciente exitosamente')
+                            toast.success('✅ Expediente integrado al paciente exitosamente')
                         } else {
-                            // Si no existe, creamos
+                            // Validar empresa_id
+                            if (!user?.empresa_id) {
+                                toast.error('❌ No se puede crear paciente: empresa no identificada. Cierre sesión e ingrese nuevamente.')
+                                return
+                            }
+                            // Crear nuevo paciente con TODA la data
+                            console.log('🆕 Creando paciente nuevo con empresa_id:', user.empresa_id)
                             await pacientesService.create({
                                 ...patientPayload,
-                                empresa_id: user?.empresa_id || '',
+                                empresa_id: user.empresa_id,
                                 estatus: 'activo',
                             } as any)
-                            toast.success('Paciente creado exitosamente desde expediente importado')
+                            toast.success('✅ Paciente creado con expediente completo')
                         }
-                    } catch (err) {
-                        console.error('Error procesando paciente:', err)
-                        toast.error('Error al procesar el expediente')
+                    } catch (err: any) {
+                        console.error('❌ Error procesando paciente:', err)
+                        toast.error(`Error al guardar: ${err.message || 'Error desconocido'}`)
+                        return // NO navegar — mantener wizard abierto para que el usuario no pierda datos
                     }
                     setViewMode('list')
                     refresh()
@@ -308,14 +330,6 @@ export default function PacientesHub() {
                         >
                             <Brain className="w-4 h-4" />
                             Importar Expediente
-                        </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => setViewMode('bulk')}
-                            className="h-11 px-5 rounded-xl bg-white/10 border-white/20 text-white hover:bg-white/20 font-black text-[10px] uppercase tracking-widest gap-2"
-                        >
-                            <Upload className="w-4 h-4" />
-                            Carga Masiva
                         </Button>
                         <Button
                             onClick={() => setViewMode('wizard')}
@@ -493,8 +507,8 @@ export default function PacientesHub() {
                                 <Button onClick={() => setViewMode('wizard')} className="bg-emerald-500 hover:bg-emerald-600 text-white gap-2 rounded-xl">
                                     <UserPlus className="w-4 h-4" /> Alta Manual
                                 </Button>
-                                <Button variant="outline" onClick={() => setViewMode('bulk')} className="gap-2 rounded-xl">
-                                    <FileSpreadsheet className="w-4 h-4" /> Carga Masiva
+                                <Button variant="outline" onClick={() => setViewMode('import')} className="gap-2 rounded-xl">
+                                    <FileSpreadsheet className="w-4 h-4" /> Importar Expediente
                                 </Button>
                             </div>
                         </div>

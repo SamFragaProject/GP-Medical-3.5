@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { User, UserRole, hasPermission, ROLE_LABELS } from '@/types/auth'
 import { supabase } from '@/lib/supabase'
+import { EMPRESA_PRINCIPAL_ID } from '@/config/empresa'
 import toast from 'react-hot-toast'
 
 interface AuthContextType {
@@ -222,7 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         nombre: 'Carlos',
         apellido_paterno: 'Ramírez',
         rol: 'admin_empresa' as UserRole,
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: EMPRESA_PRINCIPAL_ID,
         created_at: new Date().toISOString()
       }
     },
@@ -234,7 +235,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         nombre: 'Ana',
         apellido_paterno: 'López',
         rol: 'medico' as UserRole,
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: EMPRESA_PRINCIPAL_ID,
         cedula_profesional: 'CED-12345',
         especialidad: 'Medicina Ocupacional',
         created_at: new Date().toISOString()
@@ -248,7 +249,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         nombre: 'Laura',
         apellido_paterno: 'Ruiz',
         rol: 'enfermera' as UserRole,
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: EMPRESA_PRINCIPAL_ID,
         created_at: new Date().toISOString()
       }
     },
@@ -260,7 +261,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         nombre: 'María',
         apellido_paterno: 'González',
         rol: 'recepcion' as UserRole,
-        empresa_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        empresa_id: EMPRESA_PRINCIPAL_ID,
         created_at: new Date().toISOString()
       }
     }

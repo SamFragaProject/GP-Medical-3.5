@@ -145,7 +145,7 @@ export default function PipelineEpisodios() {
     // Mover episodio a siguiente etapa
     const moverEpisodio = async (episodioId: string, nuevaEtapa: EtapaEpisodio) => {
         setEpisodios(prev => prev.map(e => e.id === episodioId ? { ...e, etapa: nuevaEtapa } : e));
-        await supabase.from('episodios_medicos').update({ estatus: nuevaEtapa }).eq('id', episodioId).catch(() => { });
+        try { await supabase.from('episodios_medicos').update({ estatus: nuevaEtapa }).eq('id', episodioId); } catch (e) { }
     };
 
     return (
@@ -154,8 +154,7 @@ export default function PipelineEpisodios() {
                 title="Pipeline de Episodios"
                 subtitle="Vista Kanban del flujo de episodios médicos"
                 badge="OPERACIONES"
-                badgeColor="purple"
-                icon={<Clock className="w-7 h-7 text-white" />}
+                icon={Clock}
             />
 
             {/* Filtros */}

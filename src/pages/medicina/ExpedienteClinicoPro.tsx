@@ -33,6 +33,7 @@ import { ExploracionFisicaList } from '@/components/expediente/ExploracionFisica
 import { ConsultasList } from '@/components/expediente/ConsultasList';
 import { EstudiosList } from '@/components/expediente/EstudiosList';
 import { ConsentimientosList } from '@/components/expediente/ConsentimientosList';
+import OdontogramaTab from '@/components/expediente/OdontogramaTab';
 
 export default function ExpedienteClinicoPro() {
   const { pacienteId } = useParams<{ pacienteId: string }>();
@@ -311,11 +312,13 @@ export default function ExpedienteClinicoPro() {
               />
             </TabsContent>
 
-            <TabsContent value="exploracion" className="mt-0">
+            <TabsContent value="exploracion" className="mt-0 space-y-8">
               <ExploracionFisicaList
                 expedienteId={expediente.id}
                 data={exploraciones || []}
               />
+              <Separator />
+              <OdontogramaTab />
             </TabsContent>
 
             <TabsContent value="consultas" className="mt-0">

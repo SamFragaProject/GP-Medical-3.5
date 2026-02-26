@@ -29,7 +29,7 @@ interface Props {
     open: boolean
     onOpenChange: (open: boolean) => void
     pacienteNombre: string
-    onExport: (filters: ExportFilter) => void
+    onExport: (filters: ExportFilter, type: 'json' | 'pdf') => void
 }
 
 const SECTIONS = [
@@ -90,12 +90,12 @@ export function ExportarHistorialDialog({ open, onOpenChange, pacienteNombre, on
 
     const selectedCount = SECTIONS.filter(s => filters[s.key as keyof ExportFilter]).length
 
-    const handleExport = async () => {
+    const handleExport = async (type: 'json' | 'pdf') => {
         setExporting(true)
         try {
             await new Promise(r => setTimeout(r, 800)) // Simulate processing
-            onExport(filters)
-            toast.success('Historial exportado correctamente')
+            onExport(filters, type)
+            toast.success(type === 'pdf' ? 'PDF generado correctamente' : 'Historial exportado correctamente')
             onOpenChange(false)
         } catch {
             toast.error('Error al exportar')
@@ -170,8 +170,8 @@ export function ExportarHistorialDialog({ open, onOpenChange, pacienteNombre, on
                                         onClick={() => toggleFilter(section.key)}
                                         whileTap={{ scale: 0.98 }}
                                         className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${isSelected
-                                                ? COLOR_MAP[section.color]
-                                                : 'bg-slate-50 border-slate-100 text-slate-400'
+                                            ? COLOR_MAP[section.color]
+                                            : 'bg-slate-50 border-slate-100 text-slate-400'
                                             }`}
                                     >
                                         <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'
@@ -197,12 +197,20 @@ export function ExportarHistorialDialog({ open, onOpenChange, pacienteNombre, on
                             Cancelar
                         </Button>
                         <Button
-                            onClick={handleExport}
+                            onClick={() => handleExport('json')}
                             disabled={selectedCount === 0 || exporting}
                             className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-2"
                         >
                             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                            {exporting ? 'Exportando...' : 'Exportar JSON'}
+                            {exporting ? 'Exportando...' : 'JSON'}
+                        </Button>
+                        <Button
+                            onClick={() => handleExport('pdf')}
+                            disabled={selectedCount === 0 || exporting}
+                            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2"
+                        >
+                            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                            {exporting ? 'Generando...' : 'Exportar PDF'}
                         </Button>
                     </div>
                 </DialogFooter>

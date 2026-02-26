@@ -74,8 +74,8 @@ export default function RecetasTab({ pacienteId }: RecetasTabProps) {
                     <Pill className="w-8 h-8 text-slate-300" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-700">Sin recetas emitidas</h3>
-                <p className="text-sm text-slate-400 max-w-xs text-center mt-2">
-                    Este trabajador no cuenta con registros de recetas médicas en el sistema.
+                <p className="text-sm text-slate-400 max-w-sm text-center mt-2">
+                    No hay recetas registradas. Es probable que no apliquen o no se requiera tratamiento por el tipo de puesto del trabajador.
                 </p>
             </div>
         )

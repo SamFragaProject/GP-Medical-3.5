@@ -244,7 +244,7 @@ export default function Campanias() {
                             <PremiumMetricCard title="Padrón Total" value={metricas.total} icon={Users} gradient="blue" />
                             <PremiumMetricCard title="Aptos" value={metricas.aptos} icon={CheckCircle2} gradient="emerald" />
                             <PremiumMetricCard title="Restricciones" value={metricas.aptos_restricciones} icon={AlertTriangle} gradient="amber" />
-                            <PremiumMetricCard title="No Aptos" value={metricas.no_aptos_definitivos} icon={XCircle} gradient="red" />
+                            <PremiumMetricCard title="No Aptos" value={metricas.no_aptos_definitivos} icon={XCircle} gradient="rose" />
                             <button className="bg-white/80 backdrop-blur-md border border-white/60 rounded-[2rem] p-6 text-left shadow-sm hover:shadow-lg transition-all">
                                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Avance Global</div>
                                 <div className="text-3xl font-black text-slate-900 mb-2">{metricas.porcentaje_avance}%</div>
@@ -260,8 +260,9 @@ export default function Campanias() {
                                     titulo="Importar Padrón de Trabajadores"
                                     camposDestino={COLUMNAS_PADRON_REQUERIDAS}
                                     onImport={async (data) => {
-                                        await importarPadron({ campania_id: campaniaActiva.id, trabajadores: data });
+                                        await importarPadron({ campania_id: campaniaActiva.id, trabajadores: data as any });
                                         setShowImporter(false);
+                                        return { insertados: data.length, errores: [] };
                                     }}
                                     onCancel={() => setShowImporter(false)}
                                 />

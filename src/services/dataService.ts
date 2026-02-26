@@ -97,7 +97,6 @@ export interface Examen {
 
 export const pacientesService = {
     // Obtener todos los pacientes (filtrado automático por RLS)
-    // Con fallback a datos demo si Supabase falla
     async getAll() {
         try {
             const { data, error } = await supabase
@@ -110,56 +109,34 @@ export const pacientesService = {
 
             if (error) throw error
 
-            const pacientes = (data || []).map((p: any) => ({
+            return (data || []).map((p: any) => ({
                 ...p,
                 empresa_nombre: p.empresa?.nombre || 'Sin empresa',
                 sede_nombre: p.sede_nombre || 'General'
             })) as Paciente[]
-
-            // Si Supabase devolvió datos, retornarlos
-            if (pacientes.length > 0) return pacientes
-
-            // Si la tabla está vacía pero Supabase funciona, agregar demos
-            console.log('📋 Tabla de pacientes vacía — incluyendo pacientes demo')
-            const localPacientes = getDemoLocalPacientes()
-            return [...PACIENTES_DEMO_COMPLETOS, ...localPacientes]
         } catch (err) {
-            console.warn('⚠️ Supabase no disponible para pacientes, usando datos demo:', err)
-            const localPacientes = getDemoLocalPacientes()
-            return [...PACIENTES_DEMO_COMPLETOS, ...localPacientes]
+            console.warn('⚠️ Error cargando pacientes:', err)
+            return []
         }
     },
 
     // Obtener un paciente por ID
-    // Con fallback a pacientes demo
     async getById(id: string) {
-        try {
-            const { data, error } = await supabase
-                .from('pacientes')
-                .select(`
-                    *,
-                    empresa:empresas(nombre)
-                `)
-                .eq('id', id)
-                .single()
+        const { data, error } = await supabase
+            .from('pacientes')
+            .select(`
+                *,
+                empresa:empresas(nombre)
+            `)
+            .eq('id', id)
+            .single()
 
-            if (error) throw error
-            return {
-                ...data,
-                empresa_nombre: data.empresa?.nombre || 'Sin empresa',
-                sede_nombre: data.sede_nombre || 'General'
-            } as Paciente
-        } catch (err) {
-            // Buscar en pacientes demo
-            const demoPac = PACIENTES_DEMO_COMPLETOS.find(p => p.id === id)
-            if (demoPac) return demoPac
-
-            const localPacs = getDemoLocalPacientes()
-            const localPac = localPacs.find(p => p.id === id)
-            if (localPac) return localPac
-
-            throw err // Re-throw si no es demo
-        }
+        if (error) throw error
+        return {
+            ...data,
+            empresa_nombre: data.empresa?.nombre || 'Sin empresa',
+            sede_nombre: data.sede_nombre || 'General'
+        } as Paciente
     },
 
     // Obtener un paciente por Email (para conectar auth user con paciente data)
@@ -190,16 +167,10 @@ export const pacientesService = {
             if (error) throw error
             return data as Paciente[]
         } catch {
-            // Buscar en datos demo
-            const q = query.toLowerCase()
-            const allDemo = [...PACIENTES_DEMO_COMPLETOS, ...getDemoLocalPacientes()]
-            return allDemo.filter(p =>
-                p.nombre.toLowerCase().includes(q) ||
-                p.apellido_paterno.toLowerCase().includes(q) ||
-                (p.curp || '').toLowerCase().includes(q)
-            ).slice(0, 20)
+            return []
         }
     },
+
 
     // Crear paciente
     // Con fallback a localStorage si Supabase no está disponible
@@ -293,35 +264,73 @@ export const pacientesService = {
             }
 
             return newPatient
-        } catch (err) {
-            // Fallback: guardar en localStorage para modo demo
-            console.warn('⚠️ Supabase no disponible para crear paciente, guardando en localStorage')
-            const newPatient: Paciente = {
-                ...patientData,
-                id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-                foto_url: foto_url || '',
-                firma_url: firma_url || '',
-                created_at: new Date().toISOString(),
-                empresa_nombre: 'MediWork Ocupacional',
-                sede_nombre: 'Matriz CDMX',
+        } catch (err: any) {
+            // Log detallado del error real
+            console.error('❌ Error creando paciente en Supabase:', {
+                message: err.message,
+                code: err.code,
+                details: err.details,
+                hint: err.hint,
+                status: err.status,
+            })
+
+            // Solo hacer fallback a localStorage para errores de RED (FETCH_ERROR/timeout)
+            // Para errores de DB (RLS, constraints, etc) → relanzar el error para que el usuario lo vea
+            const isNetworkError = err.message?.includes('SUPABASE_TIMEOUT') ||
+                err.message?.includes('Failed to fetch') ||
+                err.message?.includes('NetworkError')
+
+            if (isNetworkError) {
+                console.warn('⚠️ Red no disponible, guardando en localStorage como respaldo')
+                const newPatient: Paciente = {
+                    ...patientData,
+                    id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+                    foto_url: foto_url || '',
+                    firma_url: firma_url || '',
+                    created_at: new Date().toISOString(),
+                    empresa_nombre: 'MediWork Ocupacional',
+                    sede_nombre: 'Matriz CDMX',
+                }
+                const localPacs = getDemoLocalPacientes()
+                localPacs.push(newPatient)
+                saveDemoLocalPacientes(localPacs)
+                return newPatient
             }
-            const localPacs = getDemoLocalPacientes()
-            localPacs.push(newPatient)
-            saveDemoLocalPacientes(localPacs)
-            return newPatient
+
+            // Para errores de DB → relanzar con mensaje claro
+            const friendlyMessages: Record<string, string> = {
+                '42501': 'Sin permisos para crear pacientes. Contacte al administrador.',
+                '23505': 'Ya existe un paciente con esos datos (CURP/RFC duplicado).',
+                '23502': 'Faltan datos obligatorios para crear el paciente.',
+                '23503': 'Referencia inválida (empresa no encontrada).',
+            }
+            const friendlyMsg = friendlyMessages[err.code] || err.message || 'Error desconocido al guardar'
+            throw new Error(friendlyMsg)
         }
     },
 
-    // Actualizar paciente
-    async update(id: string, updates: Partial<Paciente>) {
+    // Actualizar paciente (acepta campos extras como JSONB que no están en el tipo Paciente)
+    async update(id: string, updates: Record<string, any>) {
+        // Eliminar campos computados/join que no existen como columnas en la DB
+        const { empresa_nombre, sede_nombre, empresa, _confianza, _campos_encontrados, _campos_faltantes, _texto_original, ...cleanUpdates } = updates
+        console.log('📝 pacientesService.update — id:', id, 'fields:', Object.keys(cleanUpdates))
         const { data, error } = await supabase
             .from('pacientes')
-            .update(updates)
+            .update(cleanUpdates)
             .eq('id', id)
             .select()
             .single()
 
-        if (error) throw error
+        if (error) {
+            console.error('❌ Error actualizando paciente:', {
+                message: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint,
+            })
+            throw new Error(error.message || 'Error al actualizar paciente')
+        }
+        console.log('✅ Paciente actualizado exitosamente:', data?.id)
         return data as Paciente
     },
 

@@ -21,13 +21,21 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { NotasMedicasVersionadas } from '@/components/expediente/NotasMedicasVersionadas'
 import { ExportarHistorialDialog } from '@/components/expediente/ExportarHistorialDialog'
+import { APNPForm } from '@/components/expediente/APNPForm'
+import { AHFForm } from '@/components/expediente/AHFForm'
+import { HistoriaOcupacionalList } from '@/components/expediente/HistoriaOcupacionalList'
+import { ExploracionFisicaList } from '@/components/expediente/ExploracionFisicaList'
 import AudiometriaTab from '@/components/expediente/AudiometriaTab'
 import EspirometriaTab from '@/components/expediente/EspirometriaTab'
+import ElectrocardiogramaTab from '@/components/expediente/ElectrocardiogramaTab'
 import EstudiosVisualesTab from '@/components/expediente/EstudiosVisualesTab'
 import LaboratorioTab from '@/components/expediente/LaboratorioTab'
 import RayosXTab from '@/components/expediente/RayosXTab'
+import OdontogramaTab from '@/components/expediente/OdontogramaTab'
+import { printExpedienteCompleto } from '@/components/expediente/ExportarPDFPaciente'
 import { supabase } from '@/lib/supabase'
 import { pacientesService } from '@/services/dataService'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
@@ -85,15 +93,21 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId: s
                 return
             }
 
+            const isDemoPatient = paciente?.nombre?.toLowerCase().includes('demo') ||
+                paciente?.apellido_paterno?.toLowerCase().includes('demo') ||
+                pacienteId?.startsWith('demo');
+
+            const demoData = isDemoPatient ? getExpedienteDemoCompleto() : null;
+
             setExpediente({
                 paciente,
-                apnp: apnp || {},
-                ahf: ahf || {},
-                historiaOcupacional: historiaOcupacional || [],
-                exploracionesFisicas: exploracionesFisicas || [],
-                consentimientos: consentimientos || [],
-                notasMedicas: notasMedicas || [],
-                eventosClinicos: eventosClinicos || []
+                apnp: apnp || (isDemoPatient ? demoData?.apnp : {}),
+                ahf: ahf || (isDemoPatient ? demoData?.ahf : {}),
+                historiaOcupacional: historiaOcupacional?.length ? historiaOcupacional : (isDemoPatient ? demoData?.historiaOcupacional : []),
+                exploracionesFisicas: exploracionesFisicas?.length ? exploracionesFisicas : (isDemoPatient ? demoData?.exploracionesFisicas : []),
+                consentimientos: consentimientos?.length ? consentimientos : (isDemoPatient ? demoData?.consentimientos : []),
+                notasMedicas: notasMedicas?.length ? notasMedicas : (isDemoPatient ? demoData?.notasMedicas : []),
+                eventosClinicos: eventosClinicos?.length ? eventosClinicos : (isDemoPatient ? demoData?.eventosClinicos : [])
             })
 
         } catch (error) {
@@ -104,7 +118,7 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId: s
         }
     }
 
-    const handleExport = (filters: any) => {
+    const handleExport = (filters: any, type: 'json' | 'pdf' = 'json') => {
         if (!expediente) return
 
         const exportData: any = {
@@ -123,6 +137,15 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId: s
         if (filters.includeConsentimientos) exportData.consentimientos = expediente.consentimientos
         if (filters.includeNotasMedicas) exportData.notas_medicas = expediente.notasMedicas
         if (filters.includeEventosClinicos) exportData.eventos_clinicos = expediente.eventosClinicos
+
+        if (type === 'pdf') {
+            printExpedienteCompleto(expediente.paciente, {
+                laboratorio: { grupos: [] }, // You can pass actual labs if available
+                exploracionFisica: expediente.exploracionesFisicas?.[0] || {},
+                notasMedicas: expediente.notasMedicas || []
+            })
+            return;
+        }
 
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
         const url = URL.createObjectURL(blob)
@@ -160,6 +183,7 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId: s
         { value: 'exploracion', label: 'Exploración Física', icon: Stethoscope },
         { value: 'audiometria', label: 'Audiometría', icon: Ear },
         { value: 'espirometria', label: 'Espiometría', icon: Wind },
+        { value: 'electrocardiograma', label: 'ECG', icon: Heart },
         { value: 'vision', label: 'Visión', icon: EyeIcon },
         { value: 'laboratorio', label: 'Laboratorio', icon: FlaskConical },
         { value: 'rayosx', label: 'Rayos X', icon: Bone },
@@ -198,22 +222,24 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId: s
 
                         {/* ═══ APNP ═══ */}
                         <TabsContent value="apnp" className="mt-0">
-                            <APNPTab apnp={data.apnp} />
+                            <APNPTab apnp={data.apnp} pacienteId={pacienteId} reload={loadExpedienteCompleto} />
                         </TabsContent>
 
                         {/* ═══ AHF ═══ */}
                         <TabsContent value="ahf" className="mt-0">
-                            <AHFTab ahf={data.ahf} />
+                            <AHFTab ahf={data.ahf} pacienteId={pacienteId} reload={loadExpedienteCompleto} />
                         </TabsContent>
 
                         {/* ═══ OCUPACIONAL ═══ */}
                         <TabsContent value="ocupacional" className="mt-0">
-                            <OcupacionalTab historias={data.historiaOcupacional} />
+                            <HistoriaOcupacionalList data={data.historiaOcupacional} expedienteId={pacienteId} />
                         </TabsContent>
 
                         {/* ═══ EXPLORACIÓN FÍSICA ═══ */}
-                        <TabsContent value="exploracion" className="mt-0">
-                            <ExploracionTab exploraciones={data.exploracionesFisicas} />
+                        <TabsContent value="exploracion" className="mt-0 space-y-8">
+                            <ExploracionFisicaList data={data.exploracionesFisicas} expedienteId={pacienteId} />
+                            <Separator />
+                            <OdontogramaTab />
                         </TabsContent>
 
                         {/* ═══ AUDIOMETRÍA ═══ */}
@@ -224,6 +250,11 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId: s
                         {/* ═══ ESPIROMETRÍA ═══ */}
                         <TabsContent value="espirometria" className="mt-0">
                             <EspirometriaTab pacienteId={pacienteId} />
+                        </TabsContent>
+
+                        {/* ═══ ELECTROCARDIOGRAMA ═══ */}
+                        <TabsContent value="electrocardiograma" className="mt-0">
+                            <ElectrocardiogramaTab pacienteId={pacienteId} paciente={data.paciente} />
                         </TabsContent>
 
                         {/* ═══ VISIÓN ═══ */}
@@ -273,10 +304,20 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId: s
 // RESUMEN TAB
 // =====================================================
 function ResumenTab({ data }: { data: any }) {
-    const latestEF = data.exploracionesFisicas?.[0] || {
-        ta_sistolica: '—', ta_diastolica: '—', fc: '—', temperatura: '—', spo2: '—', imc: '—', glucosa: '—'
-    }
+    const ef = data.exploracionesFisicas?.[0]
     const p = data.paciente
+    // Fallback: si no hay exploración física separada, usar campos directos del paciente
+    const latestEF = ef || {
+        ta_sistolica: p?.presion_sistolica || '—',
+        ta_diastolica: p?.presion_diastolica || '—',
+        fc: p?.frecuencia_cardiaca || '—',
+        temperatura: p?.temperatura || '—',
+        spo2: p?.saturacion_o2 || '—',
+        imc: p?.imc || '—',
+        glucosa: p?.laboratorio?.glucosa || '—',
+        peso_kg: p?.peso_kg || '—',
+        talla_cm: p?.talla_cm || '—',
+    }
     return (
         <div className="space-y-4">
             {/* Alergias Alert */}
@@ -350,7 +391,18 @@ function ResumenTab({ data }: { data: any }) {
 // =====================================================
 // APNP TAB
 // =====================================================
-function APNPTab({ apnp }: { apnp: any }) {
+function APNPTab({ apnp, pacienteId, reload }: { apnp: any, pacienteId: string, reload: () => void }) {
+    const [isEditing, setIsEditing] = useState(false);
+
+    if (isEditing) {
+        return <APNPForm
+            expedienteId={pacienteId}
+            data={apnp}
+            onSuccess={() => { setIsEditing(false); reload() }}
+            onCancel={() => setIsEditing(false)}
+        />
+    }
+
     const habits = [
         { icon: Cigarette, label: 'Tabaco', active: apnp.tabaco, detail: apnp.tabaco ? `${apnp.tabaco_cantidad} — ${apnp.tabaco_frecuencia}. ${apnp.tabaco_tiempo}` : 'Negado', color: apnp.tabaco ? 'amber' : 'emerald' },
         { icon: Wine, label: 'Alcohol', active: apnp.alcohol, detail: apnp.alcohol ? `${apnp.alcohol_frecuencia}. ${apnp.alcohol_cantidad}` : 'Negado', color: apnp.alcohol ? 'amber' : 'emerald' },
@@ -362,7 +414,12 @@ function APNPTab({ apnp }: { apnp: any }) {
     ]
 
     return (
-        <div className="space-y-3">
+        <div className="space-y-3 relative">
+            <div className="absolute right-0 top-0">
+                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
+                    <Pen className="w-4 h-4" /> Editar Datos
+                </Button>
+            </div>
             <SectionHeader icon={Heart} title="Antecedentes Personales No Patológicos" subtitle="Hábitos y estilo de vida" color="rose" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {habits.map(h => (
@@ -399,7 +456,18 @@ function APNPTab({ apnp }: { apnp: any }) {
 // =====================================================
 // AHF TAB
 // =====================================================
-function AHFTab({ ahf }: { ahf: any }) {
+function AHFTab({ ahf, pacienteId, reload }: { ahf: any, pacienteId: string, reload: () => void }) {
+    const [isEditing, setIsEditing] = useState(false);
+
+    if (isEditing) {
+        return <AHFForm
+            expedienteId={pacienteId}
+            data={ahf}
+            onSuccess={() => { setIsEditing(false); reload() }}
+            onCancel={() => setIsEditing(false)}
+        />
+    }
+
     const items = [
         { label: 'Diabetes', present: ahf.diabetes, who: ahf.diabetes_quien, color: 'amber' },
         { label: 'Hipertensión', present: ahf.hipertension, who: ahf.hipertension_quien, color: 'rose' },
@@ -410,7 +478,12 @@ function AHFTab({ ahf }: { ahf: any }) {
     ]
 
     return (
-        <div className="space-y-3">
+        <div className="space-y-3 relative">
+            <div className="absolute right-0 top-0">
+                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="gap-2">
+                    <Pen className="w-4 h-4" /> Editar Datos
+                </Button>
+            </div>
             <SectionHeader icon={Shield} title="Antecedentes Heredofamiliares" subtitle="Carga genética y familiar" color="blue" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {items.map(item => (
@@ -519,6 +592,43 @@ function RiskField({ label, value, color }: { label: string; value?: string; col
 // =====================================================
 // EXPLORACIÓN FÍSICA TAB
 // =====================================================
+function VitalCard({ s, alertMsg }: { s: any, alertMsg: string | null }) {
+    const [showTooltip, setShowTooltip] = useState(false);
+
+    return (
+        <Card className={`border-0 shadow-sm relative transition-colors ${alertMsg && showTooltip ? 'bg-rose-50' : 'bg-slate-50 hover:bg-slate-100'}`}>
+            <CardContent className="p-2.5 text-center relative h-full flex flex-col justify-center">
+                {alertMsg && (
+                    <button
+                        onClick={() => setShowTooltip(!showTooltip)}
+                        className="absolute top-1.5 right-1.5 text-rose-500 hover:text-rose-600 transition-colors focus:outline-none"
+                    >
+                        <AlertTriangle className={`w-3.5 h-3.5 ${showTooltip ? 'animate-pulse' : ''}`} />
+                    </button>
+                )}
+                <p className={`text-lg font-black ${alertMsg ? 'text-rose-600' : 'text-slate-800'}`}>{s.v}</p>
+                <p className={`text-[9px] font-bold uppercase mt-1 ${alertMsg ? 'text-rose-400' : 'text-slate-400'}`}>
+                    {s.l} <span className="opacity-70">({s.u})</span>
+                </p>
+
+                <AnimatePresence>
+                    {showTooltip && alertMsg && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 5 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 5 }}
+                            className="absolute -top-16 left-1/2 -translate-x-1/2 z-50 w-40 bg-zinc-900 text-white text-[10px] p-2 rounded-lg font-medium leading-tight shadow-xl border border-zinc-800 pointer-events-none"
+                        >
+                            {alertMsg}
+                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-zinc-900 rotate-45 border-r border-b border-zinc-800" />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </CardContent>
+        </Card>
+    );
+}
+
 function ExploracionTab({ exploraciones }: { exploraciones: any[] }) {
     const [selectedIdx, setSelectedIdx] = useState(0)
     const ef = exploraciones[selectedIdx]
@@ -543,21 +653,32 @@ function ExploracionTab({ exploraciones }: { exploraciones: any[] }) {
             {/* Vitals */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
                 {[
-                    { l: 'TA', v: `${ef.ta_sistolica}/${ef.ta_diastolica}`, u: 'mmHg' },
+                    { l: 'TA', v: `${ef.ta_sistolica}/${ef.ta_diastolica}`, u: 'mmHg', sys: ef.ta_sistolica, dia: ef.ta_diastolica },
                     { l: 'FC', v: ef.fc, u: 'lpm' },
                     { l: 'FR', v: ef.fr, u: 'rpm' },
                     { l: 'Temp', v: ef.temperatura, u: '°C' },
                     { l: 'SpO₂', v: ef.spo2, u: '%' },
                     { l: 'IMC', v: ef.imc, u: 'kg/m²' },
                     { l: 'Glucosa', v: ef.glucosa, u: 'mg/dL' },
-                ].map(s => (
-                    <Card key={s.l} className="border-0 shadow-sm bg-slate-50">
-                        <CardContent className="p-2.5 text-center">
-                            <p className="text-lg font-black text-slate-800">{s.v}</p>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase">{s.l} <span className="text-slate-300">({s.u})</span></p>
-                        </CardContent>
-                    </Card>
-                ))}
+                ].map(s => {
+                    let alertMsg = null;
+                    const val = Number(s.v);
+
+                    if (s.l === 'TA') {
+                        if (Number(s.sys) > 120 || Number(s.dia) > 80) alertMsg = 'Presión arterial elevada. Valores normales: sistólica < 120, diastólica < 80.';
+                    } else if (!isNaN(val)) {
+                        if (s.l === 'FC' && (val < 60 || val > 100)) alertMsg = 'Frecuencia cardíaca fuera de rango normal (60-100)';
+                        if (s.l === 'FR' && (val < 12 || val > 20)) alertMsg = 'Frecuencia respiratoria fuera de rango normal (12-20)';
+                        if (s.l === 'Temp' && (val < 36.5 || val > 37.5)) alertMsg = 'Temperatura anormal. Rango esperado: 36.5-37.5';
+                        if (s.l === 'SpO₂' && val < 95) alertMsg = 'Saturación de oxígeno baja. Rango esperado: 95-100%';
+                        if (s.l === 'IMC' && (val < 18.5 || val > 24.9)) alertMsg = 'IMC fuera de rango normal (18.5 - 24.9)';
+                        if (s.l === 'Glucosa' && (val < 70 || val > 100)) alertMsg = 'Glucosa fuera de rango esperado (70 - 100)';
+                    }
+
+                    return (
+                        <VitalCard key={s.l} s={s} alertMsg={alertMsg} />
+                    );
+                })}
             </div>
 
             {/* Somatometría */}
@@ -616,11 +737,13 @@ function ExploracionTab({ exploraciones }: { exploraciones: any[] }) {
 // CONSENTIMIENTOS TAB
 // =====================================================
 function ConsentimientosTab({ consentimientos }: { consentimientos: any[] }) {
+    const [selectedConsent, setSelectedConsent] = useState<any | null>(null);
+
     return (
         <div className="space-y-3">
             <SectionHeader icon={Pen} title="Consentimientos Informados" subtitle="Firma digital con trazabilidad legal" color="cyan" />
             {consentimientos.map(c => (
-                <Card key={c.id} className={`border shadow-sm ${c.firmado ? 'border-emerald-200' : 'border-amber-200'}`}>
+                <Card key={c.id} className={`border shadow-sm transition-colors hover:shadow-md ${c.firmado ? 'border-emerald-200' : 'border-amber-200'}`}>
                     <CardContent className="p-4">
                         <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -632,24 +755,106 @@ function ConsentimientosTab({ consentimientos }: { consentimientos: any[] }) {
                                     {c.ip_firma && <Badge variant="outline" className="bg-slate-50 font-mono">IP: {c.ip_firma}</Badge>}
                                 </div>
                             </div>
-                            <div className="ml-4 flex-shrink-0 text-center">
+                            <div className="ml-4 flex-shrink-0 text-center flex flex-col items-center justify-center gap-2">
                                 {c.firmado ? (
-                                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 w-full">
                                         <CheckCircle className="w-6 h-6 text-emerald-500 mx-auto mb-1" />
                                         <p className="text-[10px] font-bold text-emerald-700">Firmado</p>
                                         <p className="text-[9px] text-emerald-500">{c.fecha_firma ? new Date(c.fecha_firma).toLocaleDateString('es-MX') : ''}</p>
                                     </div>
                                 ) : (
-                                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-200">
+                                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 w-full">
                                         <Clock className="w-6 h-6 text-amber-500 mx-auto mb-1" />
                                         <p className="text-[10px] font-bold text-amber-700">Pendiente</p>
                                     </div>
                                 )}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full text-[10px] h-7 bg-white"
+                                    onClick={() => setSelectedConsent(c)}
+                                >
+                                    Ver Documento
+                                </Button>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
             ))}
+
+            <Dialog open={!!selectedConsent} onOpenChange={(open) => !open && setSelectedConsent(null)}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 rounded-2xl border-none shadow-2xl">
+                    {selectedConsent && (
+                        <div className="bg-slate-50 relative">
+                            <div className="sticky top-0 bg-white/80 backdrop-blur-md p-4 border-b border-slate-100 z-10 flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                                        <Pen className="w-4 h-4 text-cyan-600" />
+                                        {selectedConsent.titulo}
+                                    </h2>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                        Versión {selectedConsent.version} • {selectedConsent.fecha_firma ? new Date(selectedConsent.fecha_firma).toLocaleString('es-MX') : 'Borrador'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Document Preview Mockup */}
+                            <div className="p-8 bg-white mx-4 my-6 shadow-sm border border-slate-200 rounded-xl min-h-[400px]">
+                                <div className="max-w-prose mx-auto text-sm text-slate-700 leading-relaxed font-serif">
+                                    <div className="text-center mb-8 border-b border-slate-200 pb-4">
+                                        <h1 className="text-xl font-bold uppercase mb-2">Consentimiento Informado</h1>
+                                        <p className="text-slate-500">{selectedConsent.titulo}</p>
+                                    </div>
+                                    <p className="mb-4">
+                                        Por medio de la presente, yo manifiesto mi conformidad y otórgo mi consentimiento informado para el procedimiento / investigación descrito a continuación:
+                                    </p>
+                                    <p className="p-4 bg-slate-50 rounded-lg italic text-slate-600 border border-slate-100 mb-8 whitespace-pre-wrap">
+                                        {selectedConsent.contenido}
+                                    </p>
+                                    <p className="mb-12">
+                                        Declaro que se me ha explicado claramente la naturaleza, propósitos, riesgos y beneficios del procedimiento en un lenguaje comprensible.
+                                    </p>
+
+                                    {/* Signatures Area */}
+                                    <div className="mt-16 grid grid-cols-2 gap-12">
+                                        <div className="text-center">
+                                            <div className="h-20 border-b border-slate-300 relative flex items-end justify-center">
+                                                {selectedConsent.firmado && (
+                                                    <div className="font-[SignatureFont] text-3xl text-blue-900 absolute bottom-2 opacity-80 transform -rotate-3 mb-2 font-handwriting italic tracking-wider">
+                                                        Firma Electrónica
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p className="text-xs font-bold mt-2">Paciente / Representante Legal</p>
+                                            {selectedConsent.ip_firma && <p className="text-[9px] text-slate-400 font-mono mt-1">IP: {selectedConsent.ip_firma}</p>}
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="h-20 border-b border-slate-300 relative flex items-end justify-center">
+                                                {selectedConsent.firmado && (
+                                                    <div className="font-[SignatureFont] text-2xl text-slate-800 absolute bottom-2 opacity-60 mb-2 font-handwriting italic">
+                                                        {selectedConsent.testigo_nombre}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p className="text-xs font-bold mt-2">Médico Responsable / Testigo</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Legal Metadata (Blockchain/Traceability simulation) */}
+                                    {selectedConsent.firmado && (
+                                        <div className="mt-12 p-3 bg-emerald-50 border border-emerald-100 rounded-lg text-center flex flex-col items-center">
+                                            <Shield className="w-5 h-5 text-emerald-500 mb-1" />
+                                            <p className="text-[9px] text-emerald-700 font-mono">
+                                                Documento sellado digitalmente. SHA-256 Hash: {Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

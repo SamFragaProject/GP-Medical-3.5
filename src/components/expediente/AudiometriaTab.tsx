@@ -134,6 +134,48 @@ function SemaforoIndicator({ label, semaforo, ptaDb }: { label: string; semaforo
     )
 }
 
+/** Transform flat audiometry data to component format */
+function transformAudioData(d: any): any {
+    // If already in component format (has oido_derecho object), return as-is
+    if (d.oido_derecho && typeof d.oido_derecho === 'object') return d
+
+    const od: Record<string, number> = {}
+    const oi: Record<string, number> = {}
+    for (const f of FREQUENCIES) {
+        od[f] = d[`od_${f}`] ?? d[`oido_derecho_${f}`] ?? 0
+        oi[f] = d[`oi_${f}`] ?? d[`oido_izquierdo_${f}`] ?? 0
+    }
+
+    // PTA (500, 1000, 2000, 4000 Hz)
+    const ptaOd = Math.round(((od['500'] || 0) + (od['1000'] || 0) + (od['2000'] || 0) + (od['4000'] || 0)) / 4)
+    const ptaOi = Math.round(((oi['500'] || 0) + (oi['1000'] || 0) + (oi['2000'] || 0) + (oi['4000'] || 0)) / 4)
+
+    const getSemaforo = (pta: number) => pta <= 25 ? 'verde' : pta <= 40 ? 'amarillo' : 'rojo'
+
+    const recomendaciones = d.recomendaciones
+        ? (typeof d.recomendaciones === 'string' ? d.recomendaciones.split('. ').filter(Boolean) : d.recomendaciones)
+        : ['Control audiométrico anual']
+
+    return {
+        ...d,
+        fecha: d.fecha_estudio || d.fecha || new Date().toISOString(),
+        oido_derecho: od,
+        oido_izquierdo: oi,
+        promedio_tonal_od: ptaOd,
+        promedio_tonal_oi: ptaOi,
+        semaforo_od: getSemaforo(ptaOd),
+        semaforo_oi: getSemaforo(ptaOi),
+        semaforo_general: getSemaforo(Math.max(ptaOd, ptaOi)),
+        diagnostico: d.diagnostico || (ptaOd <= 25 && ptaOi <= 25 ? 'Audición normal bilateral' : 'Hipoacusia detectada'),
+        interpretacion_nom011: d.interpretacion || 'Evaluación según NOM-011-STPS-2001',
+        tecnico: d.medico_responsable || d.tecnico || 'Médico ocupacional',
+        equipo: d.equipo || 'Audiómetro clínico',
+        recomendaciones,
+        requiere_reevaluacion: ptaOd > 25 || ptaOi > 25,
+        tiempo_reevaluacion_meses: ptaOd > 25 || ptaOi > 25 ? 6 : 12,
+    }
+}
+
 export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
     const [loading, setLoading] = React.useState(true)
     const [audio, setAudio] = React.useState<any>(null)
@@ -147,17 +189,72 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
     const loadData = async () => {
         try {
             setLoading(true)
-            const { data, error } = await supabase
-                .from('examenes_audiometria')
+
+            // FUENTE 1: Nuevas tablas unificadas (estudios_clinicos + resultados_estudio)
+            const { data: estudios } = await supabase
+                .from('estudios_clinicos')
                 .select('*')
                 .eq('paciente_id', pacienteId)
-                .order('fecha', { ascending: false })
+                .eq('tipo_estudio', 'audiometria')
+                .order('fecha_estudio', { ascending: false })
                 .limit(2)
 
-            if (data && data.length > 0) {
-                setAudio(data[0])
-                if (data.length > 1) setPrev(data[1])
-            } else if (pacienteId?.startsWith('demo')) {
+            if (estudios && estudios.length > 0) {
+                for (let idx = 0; idx < estudios.length; idx++) {
+                    const { data: resultados } = await supabase
+                        .from('resultados_estudio')
+                        .select('*')
+                        .eq('estudio_id', estudios[idx].id)
+                    if (resultados && resultados.length > 0) {
+                        // Convert resultados to flat object for transformAudioData
+                        const flat: Record<string, any> = {
+                            fecha_estudio: estudios[idx].fecha_estudio,
+                            diagnostico: estudios[idx].diagnostico,
+                            interpretacion: estudios[idx].interpretacion,
+                            medico_responsable: estudios[idx].medico_responsable,
+                            equipo: estudios[idx].equipo,
+                        }
+                        resultados.forEach(r => {
+                            flat[r.parametro_nombre] = r.resultado_numerico ?? r.resultado
+                        })
+                        const transformed = transformAudioData(flat)
+                        if (idx === 0) setAudio(transformed)
+                        else setPrev(transformed)
+                    }
+                }
+                if (estudios.length > 0) return
+            }
+
+            // FUENTE 2: audiometrias (tabla legacy)
+            const { data: legacyData } = await supabase
+                .from('audiometrias')
+                .select('*')
+                .eq('paciente_id', pacienteId)
+                .order('created_at', { ascending: false })
+                .limit(2)
+
+            if (legacyData && legacyData.length > 0) {
+                const transformed = legacyData.map(transformAudioData)
+                setAudio(transformed[0])
+                if (transformed.length > 1) setPrev(transformed[1])
+                return
+            }
+
+            // FUENTE 3: pacientes.audiometria JSONB
+            const { data: pac } = await supabase
+                .from('pacientes')
+                .select('audiometria')
+                .eq('id', pacienteId)
+                .single()
+
+            if (pac?.audiometria && typeof pac.audiometria === 'object') {
+                const a = pac.audiometria as Record<string, any>
+                setAudio(transformAudioData(a))
+                return
+            }
+
+            // Demo fallback
+            if (pacienteId?.startsWith('demo')) {
                 const demoData = getExpedienteDemoCompleto()
                 setAudio(demoData.audiometria)
                 setPrev(demoData.audiometriaPrevio)
@@ -238,7 +335,7 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
             {/* Audiogram + Semáforos */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="lg:col-span-2">
-                    <AudiogramChart od={audio.oido_derecho} oi={audio.oido_izquierdo} title="Audiograma — Estudio Actual" />
+                    <AudiogramChart od={audio.oido_derecho || {}} oi={audio.oido_izquierdo || {}} title="Audiograma — Estudio Actual" />
                 </div>
                 <div className="space-y-3">
                     <SemaforoIndicator label="Oído Derecho" semaforo={audio.semaforo_od} ptaDb={audio.promedio_tonal_od} />
@@ -276,7 +373,7 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
                                     <div className="w-2.5 h-2.5 rounded-full bg-red-500" /> OD (Der.)
                                 </td>
                                 {FREQUENCIES.map(f => {
-                                    const val = audio.oido_derecho[f]
+                                    const val = audio.oido_derecho?.[f] ?? 0
                                     return (
                                         <td key={f} className={`px-3 py-2.5 text-center font-bold tabular-nums ${val > 25 ? 'text-amber-600 bg-amber-50/50' : 'text-slate-700'}`}>
                                             {val}
@@ -290,7 +387,7 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
                                     <div className="w-2.5 h-2.5 rounded-full bg-blue-500" /> OI (Izq.)
                                 </td>
                                 {FREQUENCIES.map(f => {
-                                    const val = audio.oido_izquierdo[f]
+                                    const val = audio.oido_izquierdo?.[f] ?? 0
                                     return (
                                         <td key={f} className={`px-3 py-2.5 text-center font-bold tabular-nums ${val > 25 ? 'text-amber-600 bg-amber-50/50' : 'text-slate-700'}`}>
                                             {val}
@@ -312,7 +409,7 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
                         <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide">Recomendaciones Audiológicas</h4>
                     </div>
                     <ul className="space-y-2.5">
-                        {audio.recomendaciones.map((rec, i) => (
+                        {(Array.isArray(audio.recomendaciones) ? audio.recomendaciones : [audio.recomendaciones || 'Control audiométrico anual']).map((rec: string, i: number) => (
                             <li key={i} className="flex items-start gap-3 text-sm text-slate-600 font-medium">
                                 <ArrowRight className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                                 <span>{rec}</span>

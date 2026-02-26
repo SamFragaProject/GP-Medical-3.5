@@ -644,8 +644,8 @@ export function Usuarios() {
                         key={estado}
                         onClick={() => setFiltroEstado(estado)}
                         className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${filtroEstado === estado
-                            ? 'bg-white text-slate-900 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-700'
+                          ? 'bg-white text-slate-900 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-700'
                           }`}
                       >
                         {estado === 'todos' ? 'Todos' : estado === 'activo' ? '🟢 Activos' : '🔴 Inactivos'}
@@ -780,7 +780,7 @@ export function Usuarios() {
                             stroke="#06B6D4"
                             strokeWidth={3}
                             fill="url(#colorUsuarios)"
-                            dot={{ r: 5, fill: '#06B6D4', stroke: '#fff', strokeWidth: 2 }}
+                            dot={false}
                           />
                         </AreaChart>
                       </ResponsiveContainer>
@@ -815,7 +815,7 @@ export function Usuarios() {
                     {/* Gráfico de barras */}
                     <div className="md:col-span-2 h-56">
                       <ResponsiveContainer width="100%" height="100%">
-                        <ReBarChart data={datosRegistrosMensuales} barCategoryGap="20%">
+                        <ReBarChart data={datosRegistrosMensuales}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                           <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600 }} />
                           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
@@ -823,14 +823,7 @@ export function Usuarios() {
                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}
                             formatter={(value: number) => [`${value} usuarios`, 'Registros']}
                           />
-                          <Bar dataKey="registros" radius={[8, 8, 0, 0]}>
-                            {datosRegistrosMensuales.map((_, idx) => (
-                              <Cell
-                                key={idx}
-                                fill={idx === datosRegistrosMensuales.length - 1 ? '#06B6D4' : '#e2e8f0'}
-                              />
-                            ))}
-                          </Bar>
+                          <Bar dataKey="registros" radius={8} fill="#06B6D4" />
                         </ReBarChart>
                       </ResponsiveContainer>
                     </div>
@@ -842,7 +835,7 @@ export function Usuarios() {
                       {metricas.crecimientoMensualPct !== null ? (
                         <>
                           <p className={`text-3xl font-black mt-2 ${metricas.crecimientoMensualPct > 0 ? 'text-emerald-600' :
-                              metricas.crecimientoMensualPct < 0 ? 'text-rose-600' : 'text-slate-700'
+                            metricas.crecimientoMensualPct < 0 ? 'text-rose-600' : 'text-slate-700'
                             }`}>
                             {metricas.crecimientoMensualPct > 0 ? '+' : ''}{metricas.crecimientoMensualPct}%
                           </p>

@@ -32,49 +32,49 @@ import {
 interface ButtonV2Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** Variante visual del botón */
   variant?: 'default' | 'destructive' | 'outline' | 'ghost' | 'link' | 'primary';
-  
+
   /** Tamaño del botón */
   size?: 'sm' | 'md' | 'lg' | 'icon';
-  
+
   /** Estado de carga */
   isLoading?: boolean;
-  
+
   /** Texto a mostrar durante carga */
   loadingText?: string;
-  
+
   /** Requiere confirmación antes de ejecutar */
   confirmAction?: boolean;
-  
+
   /** Título del diálogo de confirmación */
   confirmTitle?: string;
-  
+
   /** Descripción del diálogo de confirmación */
   confirmDescription?: string;
-  
+
   /** Texto del botón de confirmación */
   confirmButtonText?: string;
-  
+
   /** Permiso requerido para mostrar el botón */
   requirePermission?: {
     resource: string;
     action: 'create' | 'read' | 'update' | 'delete' | 'manage';
   };
-  
+
   /** Callback cuando ocurre un error */
-  onError?: (error: Error) => void;
-  
+  onActionError?: (error: Error) => void;
+
   /** Callback cuando la acción tiene éxito */
   onSuccess?: () => void;
-  
+
   /** Icono a mostrar antes del texto */
   icon?: React.ReactNode;
-  
+
   /** Icono a mostrar después del texto */
   iconRight?: React.ReactNode;
-  
+
   /** Mostrar badge de notificación */
   badge?: number | string;
-  
+
   /** Tooltip text */
   tooltip?: string;
 }
@@ -96,7 +96,7 @@ export const ButtonV2 = React.forwardRef<HTMLButtonElement, ButtonV2Props>(
     confirmButtonText = 'Confirmar',
     requirePermission,
     onClick,
-    onError,
+    onActionError,
     onSuccess,
     disabled,
     icon,
@@ -110,7 +110,7 @@ export const ButtonV2 = React.forwardRef<HTMLButtonElement, ButtonV2Props>(
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<Error | null>(null);
-    
+
     // Contexto de auth para permisos
     const auth = useAuthContext();
 
@@ -143,17 +143,17 @@ export const ButtonV2 = React.forwardRef<HTMLButtonElement, ButtonV2Props>(
         } catch (err) {
           const error = err instanceof Error ? err : new Error(String(err));
           setError(error);
-          onError?.(error);
+          onActionError?.(error);
         } finally {
           setIsProcessing(false);
         }
       }
-    }, [confirmAction, isConfirmOpen, onClick, onSuccess, onError]);
+    }, [confirmAction, isConfirmOpen, onClick, onSuccess, onActionError]);
 
     // Confirmar acción destructiva
     const handleConfirm = async () => {
       setIsConfirmOpen(false);
-      
+
       if (onClick) {
         setIsProcessing(true);
         setError(null);
@@ -161,16 +161,16 @@ export const ButtonV2 = React.forwardRef<HTMLButtonElement, ButtonV2Props>(
         try {
           // Crear evento sintético para compatibilidad
           const syntheticEvent = {
-            preventDefault: () => {},
-            stopPropagation: () => {},
+            preventDefault: () => { },
+            stopPropagation: () => { },
           } as React.MouseEvent<HTMLButtonElement>;
-          
+
           await onClick(syntheticEvent);
           onSuccess?.();
         } catch (err) {
           const error = err instanceof Error ? err : new Error(String(err));
           setError(error);
-          onError?.(error);
+          onActionError?.(error);
         } finally {
           setIsProcessing(false);
         }
@@ -179,7 +179,7 @@ export const ButtonV2 = React.forwardRef<HTMLButtonElement, ButtonV2Props>(
 
     // Estilos base
     const baseStyles = 'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
-    
+
     // Variantes
     const variants = {
       default: 'bg-gray-900 text-white hover:bg-gray-800',
@@ -221,27 +221,27 @@ export const ButtonV2 = React.forwardRef<HTMLButtonElement, ButtonV2Props>(
         {showLoading && (
           <Loader2 className="h-4 w-4 animate-spin" />
         )}
-        
+
         {!showLoading && icon && (
           <span className="flex-shrink-0">{icon}</span>
         )}
-        
+
         {showLoading && loadingText ? (
           <span>{loadingText}</span>
         ) : (
           children
         )}
-        
+
         {!showLoading && iconRight && (
           <span className="flex-shrink-0">{iconRight}</span>
         )}
-        
+
         {badge !== undefined && (
           <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-medium text-white">
             {badge}
           </span>
         )}
-        
+
         {error && (
           <AlertCircle className="h-4 w-4 ml-1" />
         )}
@@ -259,7 +259,7 @@ export const ButtonV2 = React.forwardRef<HTMLButtonElement, ButtonV2Props>(
         <AlertDialogTrigger asChild>
           {ButtonContent}
         </AlertDialogTrigger>
-        
+
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{confirmTitle}</AlertDialogTitle>
@@ -267,7 +267,7 @@ export const ButtonV2 = React.forwardRef<HTMLButtonElement, ButtonV2Props>(
               {confirmDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          
+
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
@@ -333,7 +333,7 @@ export function SaveButton(props: Omit<ButtonV2Props, 'variant' | 'loadingText'>
 function TrashIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+      <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
     </svg>
   );
 }
@@ -341,7 +341,7 @@ function TrashIcon() {
 function SaveIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" />
     </svg>
   );
 }

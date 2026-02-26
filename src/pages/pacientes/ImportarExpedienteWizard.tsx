@@ -1,11 +1,12 @@
 /**
  * ImportarExpedienteWizard — Importación Inteligente de Expedientes
  * 
- * Wizard de 4 pasos:
- *   1. 📤 Subir archivos (PDF, DOCX, PPTX, JPG)
+ * Wizard de 5 pasos:
+ *   1. 📤 Subir archivos (PDF, DOCX, PPTX, JPG, ZIP)
  *   2. 🤖 Extracción con IA (OpenAI GPT-4o)
- *   3. ✅ Revisión y edición de datos
- *   4. 💾 Confirmación y creación del paciente
+ *   3. 📄 Vista previa Markdown del expediente
+ *   4. ✅ Revisión y edición de datos
+ *   5. 💾 Confirmación y creación del paciente
  */
 
 import React, { useState, useRef, useCallback } from 'react'
@@ -16,7 +17,7 @@ import {
     User, Building2, Heart, Phone, Stethoscope, Activity,
     Eye, Ear, Wind, FlaskConical, Bone, X, Download,
     FolderOpen, ArrowRight, Save, FileImage, Presentation,
-    FileSpreadsheet, Check, AlertCircle, Zap, Clock
+    FileSpreadsheet, Check, AlertCircle, Zap, Clock, Archive, FileDown
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,6 +29,11 @@ import {
     type DatosExtraidos,
     type ExtractionResult
 } from '@/services/documentExtractorService'
+import {
+    generarMarkdownExpediente,
+    descargarMarkdown,
+    type MarkdownExpediente
+} from '@/services/expedienteMarkdownService'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 
@@ -54,14 +60,25 @@ interface FileWithPreview {
 // HELPERS
 // ============================================
 
-const ACCEPTED = '.pdf,.jpg,.jpeg,.png,.webp,.docx,.doc,.pptx,.ppt,.xlsx,.xls'
+const ACCEPTED = '.pdf,.jpg,.jpeg,.png,.webp,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.zip'
 
+/** Normaliza capitalizacion: "JUAN CARLOS" -> "Juan Carlos", "juan" -> "Juan" */
+function normalizeCapitalization(text: string): string {
+    if (!text) return text
+    return text.trim().split(/\s+/).map(word => {
+        if (word.length <= 2 && ['de', 'la', 'el', 'en', 'y', 'o', 'a'].includes(word.toLowerCase())) {
+            return word.toLowerCase()
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    }).join(' ')
+}
 const EXTENSION_ICONS: Record<string, typeof FileText> = {
     pdf: FileText,
     jpg: FileImage, jpeg: FileImage, png: FileImage, webp: FileImage,
     docx: FileSpreadsheet, doc: FileSpreadsheet,
     pptx: Presentation, ppt: Presentation,
     xlsx: FileSpreadsheet, xls: FileSpreadsheet,
+    zip: Archive,
 }
 
 const EXT_COLORS: Record<string, string> = {
@@ -70,6 +87,7 @@ const EXT_COLORS: Record<string, string> = {
     docx: 'bg-indigo-500', doc: 'bg-indigo-500',
     pptx: 'bg-orange-500', ppt: 'bg-orange-500',
     xlsx: 'bg-emerald-500', xls: 'bg-emerald-500',
+    zip: 'bg-yellow-500',
 }
 
 function detectCategory(name: string): string {
@@ -95,6 +113,7 @@ function formatFileSize(bytes: number): string {
 const STEP_LABELS = [
     { label: 'Subir Archivos', icon: Upload },
     { label: 'Extracción IA', icon: Brain },
+    { label: 'Markdown', icon: FileDown },
     { label: 'Revisar Datos', icon: CheckCircle },
     { label: 'Crear Paciente', icon: Save },
 ]
@@ -118,11 +137,44 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
     const [dragOver, setDragOver] = useState(false)
     const [existingPacientes, setExistingPacientes] = useState<any[]>([])
     const [selectedExistingId, setSelectedExistingId] = useState<string | null>(null)
+    const [markdownExpediente, setMarkdownExpediente] = useState<MarkdownExpediente | null>(null)
+    const [zipExtracting, setZipExtracting] = useState(false)
 
     // ---- Step 1: File Upload ----
 
-    const addFiles = useCallback((newFiles: FileList | File[]) => {
-        const fileArray = Array.from(newFiles).map(file => {
+    const addFiles = useCallback(async (newFiles: FileList | File[]) => {
+        const incoming = Array.from(newFiles)
+        const regularFiles: File[] = []
+        const zipFiles: File[] = []
+
+        // Separar ZIPs de archivos normales
+        for (const file of incoming) {
+            const ext = file.name.split('.').pop()?.toLowerCase() || ''
+            if (ext === 'zip') {
+                zipFiles.push(file)
+            } else {
+                regularFiles.push(file)
+            }
+        }
+
+        // Procesar ZIPs: descomprimir y agregar archivos individuales
+        if (zipFiles.length > 0) {
+            setZipExtracting(true)
+            for (const zipFile of zipFiles) {
+                try {
+                    toast.loading(`📦 Descomprimiendo ${zipFile.name}...`, { id: 'zip-extract' })
+                    const extracted = await documentExtractorService.extractFilesFromZip(zipFile)
+                    regularFiles.push(...extracted)
+                    toast.success(`📦 ${extracted.length} archivos extraídos de ${zipFile.name}`, { id: 'zip-extract' })
+                } catch (err: any) {
+                    toast.error(`Error al descomprimir ${zipFile.name}: ${err.message}`, { id: 'zip-extract' })
+                }
+            }
+            setZipExtracting(false)
+        }
+
+        // Convertir a FileWithPreview
+        const fileArray = regularFiles.map(file => {
             const ext = file.name.split('.').pop()?.toLowerCase() || ''
             const preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
             return {
@@ -133,6 +185,7 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
                 status: 'pending' as const
             }
         })
+
         setFiles(prev => [...prev, ...fileArray])
     }, [])
 
@@ -196,6 +249,14 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
         setExtractedData(mergedData)
         setEditableData(flattenForEditing(mergedData))
 
+        // 📄 Generar Markdown
+        const mdExpediente = generarMarkdownExpediente(
+            mergedData,
+            files.map(f => f.file.name)
+        )
+        setMarkdownExpediente(mdExpediente)
+        console.log('📄 Markdown generado:', mdExpediente.resumen)
+
         // 🚨 Verificar si el paciente existe
         await checkForExistingPatient(mergedData)
 
@@ -243,7 +304,7 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
 
     // ---- Step 4: Confirm & Create ----
 
-    const handleCreate = () => {
+    const handleCreate = async () => {
         if (!extractedData) return
 
         // Reconstruir datos con ediciones
@@ -252,8 +313,21 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
             ...unflattenFromEditing(editableData)
         }
 
-        onComplete(finalData)
-        toast.success('🎉 Paciente creado a partir del expediente importado')
+        // Normalizar textos — inicial mayúscula en nombres
+        if (finalData.nombre) finalData.nombre = normalizeCapitalization(finalData.nombre)
+        if (finalData.apellido_paterno) finalData.apellido_paterno = normalizeCapitalization(finalData.apellido_paterno)
+        if (finalData.apellido_materno) finalData.apellido_materno = normalizeCapitalization(finalData.apellido_materno)
+        if (finalData.contacto_emergencia_nombre) finalData.contacto_emergencia_nombre = normalizeCapitalization(finalData.contacto_emergencia_nombre)
+
+        // Incluir markdown generado
+        if (markdownExpediente) {
+            (finalData as any)._expediente_md = markdownExpediente.markdown
+        }
+
+        console.log('📋 handleCreate — selectedExistingId:', selectedExistingId)
+        console.log('📋 handleCreate — finalData keys:', Object.keys(finalData))
+
+        onComplete(finalData, selectedExistingId || undefined)
     }
 
     // ============================================
@@ -477,8 +551,103 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
                         </Card>
                     )}
 
-                    {/* ═══ STEP 3: Review ═══ */}
-                    {step === 3 && extractedData && (
+                    {/* ═══ STEP 3: Markdown Preview ═══ */}
+                    {step === 3 && markdownExpediente && (
+                        <div className="space-y-6">
+                            {/* Header con acciones */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-100 to-emerald-100 flex items-center justify-center">
+                                        <FileDown className="w-5 h-5 text-teal-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black text-slate-800">Expediente en Markdown</h3>
+                                        <p className="text-xs text-slate-500">{markdownExpediente.resumen}</p>
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => descargarMarkdown(markdownExpediente)}
+                                    className="rounded-xl gap-2 text-xs border-teal-200 text-teal-700 hover:bg-teal-50"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    Descargar .md
+                                </Button>
+                            </div>
+
+                            {/* Secciones completadas */}
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                {markdownExpediente.secciones.map((sec, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`p-3 rounded-xl border transition-all ${sec.camposEncontrados > 0
+                                            ? 'bg-emerald-50/70 border-emerald-200'
+                                            : 'bg-slate-50 border-slate-200'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-sm">{sec.icono}</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600">
+                                                {sec.titulo}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                                <div
+                                                    className="h-full bg-emerald-500 rounded-full transition-all"
+                                                    style={{ width: `${sec.camposTotales > 0 ? (sec.camposEncontrados / sec.camposTotales) * 100 : 0}%` }}
+                                                />
+                                            </div>
+                                            <span className="text-[10px] font-bold text-slate-500">
+                                                {sec.camposEncontrados}/{sec.camposTotales}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Alert de paciente existente */}
+                            {existingPacientes.length > 0 && (
+                                <div className="p-4 rounded-xl bg-amber-50 border-2 border-amber-300 flex items-start gap-3">
+                                    <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="font-bold text-amber-900">
+                                            ⚠️ Paciente ya existe en la base de datos
+                                        </p>
+                                        <p className="text-sm text-amber-700 mt-1">
+                                            Se encontró a <strong>{existingPacientes[0]?.nombre} {existingPacientes[0]?.apellido_paterno}</strong>
+                                            {existingPacientes[0]?.curp && ` (CURP: ${existingPacientes[0].curp})`}.
+                                            Puedes actualizar su expediente o crear uno nuevo.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Markdown rendered */}
+                            <Card className="overflow-hidden">
+                                <CardHeader className="py-3 bg-slate-50 border-b">
+                                    <CardTitle className="text-xs font-bold text-slate-500 flex items-center gap-2">
+                                        <FileText className="w-4 h-4" />
+                                        VISTA PREVIA DEL EXPEDIENTE (.md)
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <pre className="p-6 text-xs leading-relaxed text-slate-700 bg-white overflow-auto max-h-[500px] font-mono whitespace-pre-wrap">
+                                        {markdownExpediente.markdown}
+                                    </pre>
+                                </CardContent>
+                            </Card>
+
+                            {/* Archivos procesados */}
+                            <div className="text-[10px] text-slate-400 flex items-center gap-2 justify-center">
+                                <Archive className="w-3 h-3" />
+                                Archivos: {markdownExpediente.archivosProcesados.join(' • ')}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ═══ STEP 4: Review ═══ */}
+                    {step === 4 && extractedData && (
                         <div className="space-y-6">
                             {/* Confidence banner */}
                             <div className={`flex items-center gap-3 p-4 rounded-2xl border ${extractedData._confianza >= 80 ? 'bg-emerald-50 border-emerald-200' :
@@ -549,6 +718,14 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
                                                     </div>
                                                 ))}
                                             </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setSelectedExistingId(null)}
+                                                className="mt-3 text-xs text-slate-500 border-slate-300 hover:bg-slate-100"
+                                            >
+                                                ❌ Ignorar coincidencias — Crear como paciente nuevo
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
@@ -665,12 +842,192 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
                                         </CardContent>
                                     </Card>
                                 )}
+
+                                {/* Audiometría */}
+                                {(editableData.audiometria_diagnostico || editableData.audiometria_pta_derecho) && (
+                                    <Card>
+                                        <CardHeader className="pb-3">
+                                            <CardTitle className="text-sm font-bold flex items-center gap-2">
+                                                <Ear className="w-4 h-4 text-purple-500" /> Audiometría
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-3">
+                                            <EditField label="PTA Oído Derecho (dB)" field="audiometria_pta_derecho" value={editableData.audiometria_pta_derecho} onChange={updateField} type="number" />
+                                            <EditField label="PTA Oído Izquierdo (dB)" field="audiometria_pta_izquierdo" value={editableData.audiometria_pta_izquierdo} onChange={updateField} type="number" />
+                                            <EditField label="Diagnóstico Audiológico" field="audiometria_diagnostico" value={editableData.audiometria_diagnostico} onChange={updateField} multiline />
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {/* Espirometría */}
+                                {(editableData.espirometria_fvc || editableData.espirometria_diagnostico) && (
+                                    <Card>
+                                        <CardHeader className="pb-3">
+                                            <CardTitle className="text-sm font-bold flex items-center gap-2">
+                                                <Wind className="w-4 h-4 text-cyan-500" /> Espirometría
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-3">
+                                            <div className="grid grid-cols-3 gap-3">
+                                                <EditField label="FVC (L)" field="espirometria_fvc" value={editableData.espirometria_fvc} onChange={updateField} type="number" />
+                                                <EditField label="FEV1 (L)" field="espirometria_fev1" value={editableData.espirometria_fev1} onChange={updateField} type="number" />
+                                                <EditField label="FEV1/FVC (%)" field="espirometria_fev1_fvc" value={editableData.espirometria_fev1_fvc} onChange={updateField} type="number" />
+                                            </div>
+                                            <EditField label="Patrón" field="espirometria_patron" value={editableData.espirometria_patron} onChange={updateField} />
+                                            <EditField label="Diagnóstico" field="espirometria_diagnostico" value={editableData.espirometria_diagnostico} onChange={updateField} multiline />
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {/* Laboratorio */}
+                                {Object.keys(editableData).some(k => k.startsWith('laboratorio_') && editableData[k]) && (
+                                    <Card className="lg:col-span-2">
+                                        <CardHeader className="pb-3">
+                                            <CardTitle className="text-sm font-bold flex items-center gap-2">
+                                                <FlaskConical className="w-4 h-4 text-amber-500" /> Laboratorios
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            {/* Biometría Hemática */}
+                                            {(editableData.laboratorio_hemoglobina || editableData.laboratorio_leucocitos || editableData.laboratorio_eritrocitos) && (
+                                                <div>
+                                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Biometría Hemática</p>
+                                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                                        <EditField label="Hemoglobina (g/dL)" field="laboratorio_hemoglobina" value={editableData.laboratorio_hemoglobina} onChange={updateField} type="number" />
+                                                        <EditField label="Hematocrito (%)" field="laboratorio_hematocrito" value={editableData.laboratorio_hematocrito} onChange={updateField} type="number" />
+                                                        <EditField label="Leucocitos (/µL)" field="laboratorio_leucocitos" value={editableData.laboratorio_leucocitos} onChange={updateField} type="number" />
+                                                        <EditField label="Eritrocitos (M/µL)" field="laboratorio_eritrocitos" value={editableData.laboratorio_eritrocitos} onChange={updateField} type="number" />
+                                                        <EditField label="Plaquetas (/µL)" field="laboratorio_plaquetas" value={editableData.laboratorio_plaquetas} onChange={updateField} type="number" />
+                                                        <EditField label="VGM (fL)" field="laboratorio_vgm" value={editableData.laboratorio_vgm} onChange={updateField} type="number" />
+                                                        <EditField label="HGM (pg)" field="laboratorio_hgm" value={editableData.laboratorio_hgm} onChange={updateField} type="number" />
+                                                        <EditField label="CMHG (g/dL)" field="laboratorio_cmhg" value={editableData.laboratorio_cmhg} onChange={updateField} type="number" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {/* Diferencial */}
+                                            {(editableData.laboratorio_neutrofilos || editableData.laboratorio_linfocitos) && (
+                                                <div>
+                                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Diferencial Leucocitario</p>
+                                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                                        <EditField label="Neutrófilos (%)" field="laboratorio_neutrofilos" value={editableData.laboratorio_neutrofilos} onChange={updateField} type="number" />
+                                                        <EditField label="Linfocitos (%)" field="laboratorio_linfocitos" value={editableData.laboratorio_linfocitos} onChange={updateField} type="number" />
+                                                        <EditField label="Monocitos (%)" field="laboratorio_monocitos" value={editableData.laboratorio_monocitos} onChange={updateField} type="number" />
+                                                        <EditField label="Eosinófilos (%)" field="laboratorio_eosinofilos" value={editableData.laboratorio_eosinofilos} onChange={updateField} type="number" />
+                                                        <EditField label="Basófilos (%)" field="laboratorio_basofilos" value={editableData.laboratorio_basofilos} onChange={updateField} type="number" />
+                                                        <EditField label="Bandas (%)" field="laboratorio_bandas" value={editableData.laboratorio_bandas} onChange={updateField} type="number" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {/* Química Sanguínea */}
+                                            {(editableData.laboratorio_glucosa || editableData.laboratorio_creatinina || editableData.laboratorio_urea) && (
+                                                <div>
+                                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Química Sanguínea</p>
+                                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                                        <EditField label="Glucosa (mg/dL)" field="laboratorio_glucosa" value={editableData.laboratorio_glucosa} onChange={updateField} type="number" />
+                                                        <EditField label="Urea (mg/dL)" field="laboratorio_urea" value={editableData.laboratorio_urea} onChange={updateField} type="number" />
+                                                        <EditField label="BUN (mg/dL)" field="laboratorio_bun" value={editableData.laboratorio_bun} onChange={updateField} type="number" />
+                                                        <EditField label="Creatinina (mg/dL)" field="laboratorio_creatinina" value={editableData.laboratorio_creatinina} onChange={updateField} type="number" />
+                                                        <EditField label="Ácido Úrico (mg/dL)" field="laboratorio_acido_urico" value={editableData.laboratorio_acido_urico} onChange={updateField} type="number" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {/* Perfil Lipídico */}
+                                            {(editableData.laboratorio_colesterol_total || editableData.laboratorio_trigliceridos) && (
+                                                <div>
+                                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Perfil Lipídico</p>
+                                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                                        <EditField label="Colesterol Total" field="laboratorio_colesterol_total" value={editableData.laboratorio_colesterol_total} onChange={updateField} type="number" />
+                                                        <EditField label="HDL" field="laboratorio_colesterol_hdl" value={editableData.laboratorio_colesterol_hdl} onChange={updateField} type="number" />
+                                                        <EditField label="LDL" field="laboratorio_colesterol_ldl" value={editableData.laboratorio_colesterol_ldl} onChange={updateField} type="number" />
+                                                        <EditField label="Triglicéridos" field="laboratorio_trigliceridos" value={editableData.laboratorio_trigliceridos} onChange={updateField} type="number" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {/* Hepático */}
+                                            {(editableData.laboratorio_tgo_ast || editableData.laboratorio_bilirrubina_total) && (
+                                                <div>
+                                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Perfil Hepático</p>
+                                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                                        <EditField label="TGO/AST (U/L)" field="laboratorio_tgo_ast" value={editableData.laboratorio_tgo_ast} onChange={updateField} type="number" />
+                                                        <EditField label="TGP/ALT (U/L)" field="laboratorio_tgp_alt" value={editableData.laboratorio_tgp_alt} onChange={updateField} type="number" />
+                                                        <EditField label="Fosfatasa Alcalina" field="laboratorio_fosfatasa_alcalina" value={editableData.laboratorio_fosfatasa_alcalina} onChange={updateField} type="number" />
+                                                        <EditField label="GGT" field="laboratorio_ggt" value={editableData.laboratorio_ggt} onChange={updateField} type="number" />
+                                                        <EditField label="Bilirrubina Total" field="laboratorio_bilirrubina_total" value={editableData.laboratorio_bilirrubina_total} onChange={updateField} type="number" />
+                                                        <EditField label="Bilirrubina Directa" field="laboratorio_bilirrubina_directa" value={editableData.laboratorio_bilirrubina_directa} onChange={updateField} type="number" />
+                                                        <EditField label="Proteínas Totales" field="laboratorio_proteinas_totales" value={editableData.laboratorio_proteinas_totales} onChange={updateField} type="number" />
+                                                        <EditField label="Albúmina" field="laboratorio_albumina" value={editableData.laboratorio_albumina} onChange={updateField} type="number" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {/* EGO */}
+                                            <EditField label="Examen de Orina (EGO)" field="laboratorio_examen_orina" value={editableData.laboratorio_examen_orina} onChange={updateField} multiline />
+                                            {/* Otros detectados */}
+                                            {editableData.laboratorio_otros && Object.keys(editableData.laboratorio_otros).length > 0 && (
+                                                <div>
+                                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Otros Estudios Detectados</p>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        {Object.entries(editableData.laboratorio_otros).map(([key, val]) => (
+                                                            <div key={key} className="flex items-center gap-2 text-sm">
+                                                                <span className="font-medium text-slate-600">{key}:</span>
+                                                                <span className="text-slate-800">{String(val)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {/* Radiografía */}
+                                {(editableData.radiografia_hallazgos || editableData.radiografia_tipo) && (
+                                    <Card>
+                                        <CardHeader className="pb-3">
+                                            <CardTitle className="text-sm font-bold flex items-center gap-2">
+                                                <Bone className="w-4 h-4 text-gray-500" /> Radiografías
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-3">
+                                            <EditField label="Tipo" field="radiografia_tipo" value={editableData.radiografia_tipo} onChange={updateField} />
+                                            <EditField label="Hallazgos" field="radiografia_hallazgos" value={editableData.radiografia_hallazgos} onChange={updateField} multiline />
+                                            <EditField label="Impresión Diagnóstica" field="radiografia_impresion_diagnostica" value={editableData.radiografia_impresion_diagnostica} onChange={updateField} multiline />
+                                            <EditField label="Clasificación OIT" field="radiografia_clasificacion_oit" value={editableData.radiografia_clasificacion_oit} onChange={updateField} />
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {/* Exploración Física */}
+                                {(editableData.exploracion_fisica_cabeza || editableData.exploracion_fisica_ojos) && (
+                                    <Card className="lg:col-span-2">
+                                        <CardHeader className="pb-3">
+                                            <CardTitle className="text-sm font-bold flex items-center gap-2">
+                                                <Eye className="w-4 h-4 text-teal-500" /> Exploración Física
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-3">
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <EditField label="Cabeza" field="exploracion_fisica_cabeza" value={editableData.exploracion_fisica_cabeza} onChange={updateField} />
+                                                <EditField label="Ojos" field="exploracion_fisica_ojos" value={editableData.exploracion_fisica_ojos} onChange={updateField} />
+                                                <EditField label="Oídos" field="exploracion_fisica_oidos" value={editableData.exploracion_fisica_oidos} onChange={updateField} />
+                                                <EditField label="Nariz" field="exploracion_fisica_nariz" value={editableData.exploracion_fisica_nariz} onChange={updateField} />
+                                                <EditField label="Boca" field="exploracion_fisica_boca" value={editableData.exploracion_fisica_boca} onChange={updateField} />
+                                                <EditField label="Cuello" field="exploracion_fisica_cuello" value={editableData.exploracion_fisica_cuello} onChange={updateField} />
+                                                <EditField label="Tórax" field="exploracion_fisica_torax" value={editableData.exploracion_fisica_torax} onChange={updateField} />
+                                                <EditField label="Abdomen" field="exploracion_fisica_abdomen" value={editableData.exploracion_fisica_abdomen} onChange={updateField} />
+                                                <EditField label="Extremidades" field="exploracion_fisica_extremidades" value={editableData.exploracion_fisica_extremidades} onChange={updateField} />
+                                                <EditField label="Piel" field="exploracion_fisica_piel" value={editableData.exploracion_fisica_piel} onChange={updateField} />
+                                                <EditField label="Neurológico" field="exploracion_fisica_neurologico" value={editableData.exploracion_fisica_neurologico} onChange={updateField} />
+                                                <EditField label="Columna" field="exploracion_fisica_columna" value={editableData.exploracion_fisica_columna} onChange={updateField} />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )}
                             </div>
                         </div>
                     )}
 
-                    {/* ═══ STEP 4: Confirmation ═══ */}
-                    {step === 4 && (
+                    {/* ═══ STEP 5: Confirmation ═══ */}
+                    {step === 5 && (
                         <Card>
                             <CardContent className="p-12 text-center">
                                 <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-emerald-100 to-green-100 flex items-center justify-center">
@@ -705,7 +1062,7 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
                                 <div className="flex justify-center gap-3">
                                     <Button
                                         variant="outline"
-                                        onClick={() => setStep(3)}
+                                        onClick={() => setStep(4)}
                                         className="rounded-xl gap-2"
                                     >
                                         <ChevronLeft className="w-4 h-4" /> Revisar de nuevo
@@ -751,6 +1108,15 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
                 {step === 3 && (
                     <Button
                         onClick={() => setStep(4)}
+                        className="bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-xl px-6 gap-2 shadow-lg shadow-teal-500/30"
+                    >
+                        Revisar datos <ArrowRight className="w-4 h-4" />
+                    </Button>
+                )}
+
+                {step === 4 && (
+                    <Button
+                        onClick={() => setStep(5)}
                         className="bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-xl px-6 gap-2 shadow-lg shadow-emerald-500/30"
                     >
                         Confirmar datos <ArrowRight className="w-4 h-4" />

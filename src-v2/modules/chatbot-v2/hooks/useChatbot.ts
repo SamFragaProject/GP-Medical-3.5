@@ -16,7 +16,8 @@ export interface MensajeUI {
 }
 
 export function useChatbot() {
-  const { user, empresaId } = useAuthContext();
+  const { user } = useAuthContext();
+  const empresaId = user?.empresaId;
   const [mensajes, setMensajes] = useState<MensajeUI[]>([
     {
       id: 'welcome',

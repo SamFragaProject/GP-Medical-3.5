@@ -131,6 +131,45 @@ function SpiroCurve({ fvc, fev1, pef }: { fvc: number; fev1: number; pef: number
     )
 }
 
+/** Transform flat DB or JSONB espirometry data to component format */
+function transformSpiroData(d: any): any {
+    const recomendaciones = d.recomendaciones
+        ? (typeof d.recomendaciones === 'string' ? d.recomendaciones.split('. ').filter(Boolean) : d.recomendaciones)
+        : ['Control espirométrico anual']
+
+    // Determine clasificacion from fev1_fvc ratio
+    let clasificacion = d.clasificacion || d.patron || 'normal'
+    if (clasificacion === 'Normal' || clasificacion === 'normal') clasificacion = 'normal'
+    else if (clasificacion.toLowerCase().includes('obstruc')) {
+        if (d.fev1_porcentaje >= 60) clasificacion = 'obstruccion_leve'
+        else if (d.fev1_porcentaje >= 40) clasificacion = 'obstruccion_moderada'
+        else clasificacion = 'obstruccion_severa'
+    }
+
+    return {
+        ...d,
+        fecha: d.fecha_estudio || d.fecha || new Date().toISOString(),
+        fvc: d.fvc || d.fvc_litros || 0,
+        fev1: d.fev1 || d.fev1_litros || 0,
+        fvc_predicho: d.fvc_predicho || 0,
+        fev1_predicho: d.fev1_predicho || 0,
+        fvc_porcentaje: d.fvc_porcentaje || 0,
+        fev1_porcentaje: d.fev1_porcentaje || 0,
+        fev1_fvc: d.fev1_fvc || (d.fev1 && d.fvc ? Math.round((d.fev1 / d.fvc) * 100 * 10) / 10 : 0),
+        pef: d.pef || 0,
+        clasificacion,
+        calidad_prueba: d.calidad_prueba || d.calidad || 'A',
+        tecnico: d.medico_responsable || d.tecnico || 'Médico ocupacional',
+        equipo: d.equipo || 'Espirómetro clínico',
+        interpretacion: d.interpretacion || d.diagnostico || 'Evaluación espirométrica',
+        recomendaciones,
+        edad: d.edad || 50,
+        sexo: d.sexo || 'masculino',
+        talla_cm: d.talla_cm || 175,
+        peso_kg: d.peso_kg || 80,
+    }
+}
+
 export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) {
     const [loading, setLoading] = React.useState(true)
     const [data, setData] = React.useState<any>(null)
@@ -144,17 +183,70 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
     const loadData = async () => {
         try {
             setLoading(true)
-            const { data: records, error } = await supabase
-                .from('examenes_espirometria')
+
+            // FUENTE 1: Nuevas tablas unificadas
+            const { data: estudios } = await supabase
+                .from('estudios_clinicos')
                 .select('*')
                 .eq('paciente_id', pacienteId)
-                .order('fecha', { ascending: false })
+                .eq('tipo_estudio', 'espirometria')
+                .order('fecha_estudio', { ascending: false })
                 .limit(2)
 
-            if (records && records.length > 0) {
-                setData(records[0])
-                if (records.length > 1) setPrev(records[1])
-            } else if (pacienteId?.startsWith('demo')) {
+            if (estudios && estudios.length > 0) {
+                for (let idx = 0; idx < estudios.length; idx++) {
+                    const { data: resultados } = await supabase
+                        .from('resultados_estudio')
+                        .select('*')
+                        .eq('estudio_id', estudios[idx].id)
+                    if (resultados && resultados.length > 0) {
+                        const flat: Record<string, any> = {
+                            fecha_estudio: estudios[idx].fecha_estudio,
+                            diagnostico: estudios[idx].diagnostico,
+                            interpretacion: estudios[idx].interpretacion,
+                            calidad: estudios[idx].calidad,
+                            medico_responsable: estudios[idx].medico_responsable,
+                            equipo: estudios[idx].equipo,
+                        }
+                        resultados.forEach(r => { flat[r.parametro_nombre] = r.resultado_numerico ?? r.resultado })
+                        const transformed = transformSpiroData(flat)
+                        if (idx === 0) setData(transformed)
+                        else setPrev(transformed)
+                    }
+                }
+                return
+            }
+
+            // FUENTE 2: espirometrias (tabla legacy)
+            const { data: legacyRecords } = await supabase
+                .from('espirometrias')
+                .select('*')
+                .eq('paciente_id', pacienteId)
+                .order('created_at', { ascending: false })
+                .limit(2)
+
+            if (legacyRecords && legacyRecords.length > 0) {
+                setData(transformSpiroData(legacyRecords[0]))
+                if (legacyRecords.length > 1) setPrev(transformSpiroData(legacyRecords[1]))
+                return
+            }
+
+            // FUENTE 3: pacientes.espirometria JSONB
+            const { data: pac } = await supabase
+                .from('pacientes')
+                .select('espirometria, peso_kg, talla_cm, genero, fecha_nacimiento')
+                .eq('id', pacienteId)
+                .single()
+
+            if (pac?.espirometria && typeof pac.espirometria === 'object') {
+                const sp = pac.espirometria as Record<string, any>
+                const age = pac.fecha_nacimiento ? Math.floor((Date.now() - new Date(pac.fecha_nacimiento).getTime()) / 31557600000) : 50
+                setData(transformSpiroData({ ...sp, edad: age, sexo: pac.genero || 'masculino', talla_cm: pac.talla_cm || 175, peso_kg: pac.peso_kg || 80 }))
+                return
+            }
+
+            // Demo fallback
+            if (pacienteId?.startsWith('demo')) {
                 const demoData = getExpedienteDemoCompleto()
                 setData(demoData.espirometria)
                 setPrev(demoData.espirometriaPrevia)

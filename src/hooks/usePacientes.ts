@@ -3,6 +3,12 @@ import { pacientesService, Paciente } from '@/services/dataService'
 import { useAuth } from '@/contexts/AuthContext'
 import toast from 'react-hot-toast'
 
+// Roles que tienen acceso completo a ver pacientes (sin filtrado por empresa)
+const FULL_ACCESS_ROLES = ['super_admin']
+
+// Roles que ven los pacientes de su propia empresa
+const EMPRESA_ROLES = ['admin_empresa', 'medico', 'enfermera', 'recepcion', 'asistente']
+
 export function usePacientes() {
     const { user } = useAuth()
     const [pacientes, setPacientes] = useState<Paciente[]>([])
@@ -10,21 +16,39 @@ export function usePacientes() {
     const [error, setError] = useState<Error | null>(null)
 
     const fetchPacientes = useCallback(async () => {
+        if (!user) return;
         try {
             setLoading(true)
-            const data = await pacientesService.getAll()
+            setError(null)
+            let data = await pacientesService.getAll()
 
-            // El filtrado por empresa ya lo hace el RLS en el backend, 
-            // pero el service.getAll() en dataService.ts ya maneja el mapeo.
+            // Filtrado por rol — Supabase RLS ya filtra en backend,
+            // pero aplicamos doble seguridad en frontend
+            if (FULL_ACCESS_ROLES.includes(user.rol)) {
+                // Super Admin ve TODOS los pacientes de todas las empresas
+            } else if (EMPRESA_ROLES.includes(user.rol)) {
+                // Admin empresa, médico, enfermera, recepción y asistente
+                // ven los pacientes de SU empresa
+                if (user.empresa_id) {
+                    data = data.filter((p: Paciente) => p.empresa_id === user.empresa_id)
+                }
+            }
+
             setPacientes(data)
+
+            if (data.length === 0) {
+                console.info('ℹ️ 0 pacientes encontrados para este usuario/empresa')
+            } else {
+                console.info(`✅ ${data.length} pacientes cargados`)
+            }
         } catch (err: any) {
-            console.error('Error fetching patients:', err)
+            console.error('❌ Error cargando pacientes:', err)
             setError(err)
-            toast.error('Error al cargar la lista de pacientes')
+            toast.error('Error al cargar pacientes. Verifica tu conexión.')
         } finally {
             setLoading(false)
         }
-    }, [])
+    }, [user?.id, user?.rol, user?.empresa_id])
 
     useEffect(() => {
         fetchPacientes()
@@ -34,9 +58,10 @@ export function usePacientes() {
         try {
             const newPatient = await pacientesService.create({
                 ...data,
-                empresa_id: user?.empresa_id
+                empresa_id: data.empresa_id || user?.empresa_id
             })
             setPacientes(prev => [newPatient, ...prev])
+            toast.success('Paciente registrado exitosamente')
             return newPatient
         } catch (err) {
             toast.error('Error al crear paciente')
@@ -48,6 +73,7 @@ export function usePacientes() {
         try {
             const updated = await pacientesService.update(id, data)
             setPacientes(prev => prev.map(p => p.id === id ? updated : p))
+            toast.success('Paciente actualizado')
             return updated
         } catch (err) {
             toast.error('Error al actualizar paciente')

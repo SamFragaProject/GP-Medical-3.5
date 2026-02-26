@@ -19,7 +19,7 @@ import {
 } from 'lucide-react'
 import { MenuPersonalizado, MenuHierarchyIndicator } from '@/components/navigation/MenuPersonalizado'
 import { ChatbotSuperinteligente } from '@/components/ChatbotSuperinteligente'
-import { AIHealthIndicator } from '@/components/ia/AIHealthIndicator'
+
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
@@ -224,10 +224,7 @@ export function Layout({ children }: LayoutProps) {
 
               {/* Acciones del header */}
               <div className="flex items-center space-x-4">
-                {/* Indicador de Salud IA */}
-                <div className="hidden sm:block">
-                  <AIHealthIndicator />
-                </div>
+
 
                 {/* Botón nueva cita */}
                 {canCreateAppointment && (

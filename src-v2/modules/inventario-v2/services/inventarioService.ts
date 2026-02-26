@@ -53,9 +53,8 @@ class InventarioService {
       query = query.eq('proveedor_id', filters.proveedorId);
     }
 
-    if (filters.bajoStock) {
-      query = query.lte('stock_actual', supabase.raw('stock_minimo'));
-    }
+    // El filtro bajoStock se aplica en memoria porque supabase-js no soporta comparar columnas directamente sin rpc
+    // if (filters.bajoStock) { ... }
 
     query = query.order('nombre');
 
@@ -65,7 +64,13 @@ class InventarioService {
       throw this.handleError(error);
     }
 
-    return (data || []).map(this.mapProductoFromDB);
+    let results: Producto[] = (data || []).map((d: any) => this.mapProductoFromDB(d));
+
+    if (filters.bajoStock) {
+      results = results.filter(p => p.stockActual <= p.stockMinimo);
+    }
+
+    return results;
   }
 
   /**
@@ -155,7 +160,7 @@ class InventarioService {
     // Obtener stock actual
     const { data: producto, error: errorProducto } = await supabase
       .from(this.TABLE_PRODUCTOS)
-      .select('stock_actual, stock_disponible')
+      .select('stock_actual, stock_disponible, stock_reservado')
       .eq('id', input.productoId)
       .eq('empresa_id', empresaId)
       .single();

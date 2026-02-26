@@ -1,0 +1,37 @@
+﻿src-v2/modules/auth-v2/hooks/useAuth.ts(305,32): error TS2304: Cannot find name 'supabase'.
+src-v2/modules/auth-v2/services/authService.ts(39,11): error TS2322: Type '{ id: string; email: string; nombre?: string; apellidoPaterno?: string; apellidoMaterno?: string; rol?: UserRole; empresaId?: string; sedeId?: string; avatar?: string; telefono?: string; ... 5 more ...; updatedAt?: string; }' is not assignable to type 'User'.
+  Property 'nombre' is optional in type '{ id: string; email: string; nombre?: string; apellidoPaterno?: string; apellidoMaterno?: string; rol?: UserRole; empresaId?: string; sedeId?: string; avatar?: string; telefono?: string; especialidad?: string; ... 4 more ...; updatedAt?: string; }' but required in type 'User'.
+src-v2/modules/auth-v2/services/authService.ts(107,14): error TS2322: Type 'Partial<User>' is not assignable to type 'User'.
+  Property 'id' is optional in type 'Partial<User>' but required in type 'User'.
+src-v2/modules/auth-v2/services/authService.ts(140,7): error TS2322: Type '{ id: string; email: string; nombre?: string; apellidoPaterno?: string; apellidoMaterno?: string; rol?: UserRole; empresaId?: string; sedeId?: string; avatar?: string; telefono?: string; ... 5 more ...; updatedAt?: string; }' is not assignable to type 'User'.
+  Property 'nombre' is optional in type '{ id: string; email: string; nombre?: string; apellidoPaterno?: string; apellidoMaterno?: string; rol?: UserRole; empresaId?: string; sedeId?: string; avatar?: string; telefono?: string; especialidad?: string; ... 4 more ...; updatedAt?: string; }' but required in type 'User'.
+src-v2/modules/auth-v2/services/authService.ts(194,7): error TS2322: Type '{ id: string; email: string; nombre?: string; apellidoPaterno?: string; apellidoMaterno?: string; rol?: UserRole; empresaId?: string; sedeId?: string; avatar?: string; telefono?: string; ... 5 more ...; updatedAt?: string; }' is not assignable to type 'User'.
+  Property 'nombre' is optional in type '{ id: string; email: string; nombre?: string; apellidoPaterno?: string; apellidoMaterno?: string; rol?: UserRole; empresaId?: string; sedeId?: string; avatar?: string; telefono?: string; especialidad?: string; ... 4 more ...; updatedAt?: string; }' but required in type 'User'.
+src-v2/modules/chatbot-v2/hooks/useChatbot.ts(19,17): error TS2339: Property 'empresaId' does not exist on type 'AuthContextType'.
+src-v2/modules/inventario-v2/hooks/useInventario.ts(31,17): error TS2339: Property 'empresaId' does not exist on type 'AuthContextType'.
+src-v2/modules/inventario-v2/services/inventarioService.ts(57,50): error TS2339: Property 'raw' does not exist on type 'SupabaseClient<any, "public", "public", any, any>'.
+src-v2/modules/inventario-v2/services/inventarioService.ts(187,49): error TS2339: Property 'stock_reservado' does not exist on type '{ stock_actual: any; stock_disponible: any; }'.
+src-v2/shared/components/ui/ButtonV2.tsx(32,11): error TS2430: Interface 'ButtonV2Props' incorrectly extends interface 'ButtonHTMLAttributes<HTMLButtonElement>'.
+  Types of property 'onError' are incompatible.
+    Type '(error: Error) => void' is not assignable to type 'ReactEventHandler<HTMLButtonElement>'.
+      Types of parameters 'error' and 'event' are incompatible.
+        Type 'SyntheticEvent<HTMLButtonElement, Event>' is missing the following properties from type 'Error': name, message
+src/components/workspace/WorkspaceSelector.tsx(10,25): error TS2307: Cannot find module '@/context/AuthContext' or its corresponding type declarations.
+src/data/mockData.ts(555,9): error TS2322: Type 'string' is not assignable to type 'Empresa'.
+src/pages/admin/GestionUsuariosEmpresa.tsx(162,42): error TS2304: Cannot find name 'ShieldAlert'.
+src/pages/admin/GestionUsuariosEmpresa.tsx(223,30): error TS2304: Cannot find name 'Briefcase'.
+src/pages/Campanias.tsx(247,118): error TS2322: Type '"red"' is not assignable to type '"emerald" | "purple" | "blue" | "amber" | "rose"'.
+src/pages/Campanias.tsx(262,37): error TS2322: Type '(data: Record<string, unknown>[]) => Promise<void>' is not assignable to type '(data: Record<string, unknown>[]) => Promise<{ insertados: number; errores: string[]; }>'.
+  Type 'Promise<void>' is not assignable to type 'Promise<{ insertados: number; errores: string[]; }>'.
+    Type 'void' is not assignable to type '{ insertados: number; errores: string[]; }'.
+src/pages/Campanias.tsx(263,96): error TS2322: Type 'Record<string, unknown>[]' is not assignable to type 'Omit<TrabajadorPadron, "created_at" | "id" | "estado" | "updated_at" | "campania_id">[]'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'Omit<TrabajadorPadron, "created_at" | "id" | "estado" | "updated_at" | "campania_id">': nombre, apellido_paterno
+src/pages/Electrocardiograma.tsx(9,33): error TS2305: Module '"lucide-react"' has no exported member 'ScanHeart'.
+src/pages/operaciones/PipelineEpisodios.tsx(148,103): error TS2551: Property 'catch' does not exist on type 'PostgrestFilterBuilder<any, any, any, null, "episodios_medicos", unknown, "PATCH">'. Did you mean 'match'?
+src/pages/operaciones/PipelineEpisodios.tsx(158,17): error TS2741: Property '$$typeof' is missing in type 'ReactElement<any, any>' but required in type 'ForwardRefExoticComponent<LucideProps>'.
+src/pages/Usuarios.tsx(783,36): error TS2353: Object literal may only specify known properties, and 'r' does not exist in type 'ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | ComponentClass<...> | FunctionComponent<...>'.
+src/pages/Usuarios.tsx(818,68): error TS2322: Type '{ children: Element[]; data: { mes: string; registros: number; }[]; barCategoryGap: string; }' is not assignable to type 'IntrinsicAttributes & ChartProps'.
+  Property 'barCategoryGap' does not exist on type 'IntrinsicAttributes & ChartProps'.
+src/pages/Usuarios.tsx(826,28): error TS2322: Type '{ children: Element[]; dataKey: string; radius: [number, number, number, number]; }' is not assignable to type 'IntrinsicAttributes & BarProps'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & BarProps'.
+src/services/reportesAutoService.ts(176,16): error TS2551: Property 'catch' does not exist on type 'PostgrestFilterBuilder<any, any, any, null, "registro_envios_reportes", unknown, "POST">'. Did you mean 'match'?

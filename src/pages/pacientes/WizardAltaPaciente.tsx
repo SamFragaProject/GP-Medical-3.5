@@ -6,9 +6,10 @@
  * 2. Datos Laborales (empresa, sede, puesto, turno, etc.)
  * 3. Datos Médicos (tipo sangre, alergias, contacto emergencia)
  * 4. Contacto (email, teléfono, foto)
- * 5. Revisión y Confirmación
+ * 5. Exámenes Médicos (Laboratorios y Exámenes de ingreso)
+ * 6. Revisión y Confirmación
  */
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     User, Building2, Heart, Phone, CheckCircle,
@@ -17,7 +18,7 @@ import {
     Droplets, AlertTriangle, Users, Mail, Camera,
     Shield, FileText, Clock, ClipboardList,
     LogIn, LogOut, ArrowRightLeft, RotateCcw,
-    Brain, ShieldAlert, Sparkles, HardHat
+    Brain, ShieldAlert, Sparkles, HardHat, TestTube, Microscope
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -68,11 +69,20 @@ interface PatientFormData {
     contacto_emergencia_nombre: string
     contacto_emergencia_parentesco: string
     contacto_emergencia_telefono: string
+    // Nuevas adiciones médicas
+    antecedentes_heredofamiliares: string
+    antecedentes_zootecnicos: boolean
+    mascotas: string
     // Paso 4: Contacto
     email: string
     telefono: string
     foto_url: string
     estatus: string
+    // Paso 5: Exámenes y Laboratorios
+    examenes_fisicos_completados: boolean
+    laboratorios_completados: boolean
+    notas_examenes: string
+    examenes_no_aplica: boolean
 }
 
 const INITIAL_DATA: PatientFormData = {
@@ -85,9 +95,12 @@ const INITIAL_DATA: PatientFormData = {
     turno: '', fecha_ingreso: '', tipo_contrato: '',
     jornada_horas: '', supervisor_nombre: '',
     tipo_sangre: '', alergias: '',
+    antecedentes_heredofamiliares: '',
+    antecedentes_zootecnicos: false, mascotas: '',
     contacto_emergencia_nombre: '', contacto_emergencia_parentesco: '',
     contacto_emergencia_telefono: '',
     email: '', telefono: '', foto_url: '', estatus: 'activo',
+    examenes_fisicos_completados: false, laboratorios_completados: false, notas_examenes: '', examenes_no_aplica: false
 }
 
 const STEPS = [
@@ -95,7 +108,8 @@ const STEPS = [
     { id: 2, title: 'Datos Laborales', subtitle: 'Información de la empresa', icon: Building2, color: 'from-blue-500 to-indigo-600' },
     { id: 3, title: 'Datos Médicos', subtitle: 'Salud y emergencia', icon: Heart, color: 'from-rose-500 to-pink-600' },
     { id: 4, title: 'Contacto', subtitle: 'Email, teléfono y foto', icon: Phone, color: 'from-violet-500 to-purple-600' },
-    { id: 5, title: 'Confirmar', subtitle: 'Revisión final', icon: CheckCircle, color: 'from-emerald-400 to-green-600' },
+    { id: 5, title: 'Exámenes', subtitle: 'Laboratorios y físicos', icon: Microscope, color: 'from-cyan-500 to-blue-600' },
+    { id: 6, title: 'Confirmar', subtitle: 'Revisión final', icon: CheckCircle, color: 'from-emerald-400 to-green-600' },
 ]
 
 const GENEROS = [
@@ -156,11 +170,29 @@ function SelectField({ value, onChange, options, placeholder }: {
 // =============================================
 export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: WizardProps) {
     const [step, setStep] = useState(1)
-    const [data, setData] = useState<PatientFormData>(() => ({
-        ...INITIAL_DATA,
-        empresa_id: empresaId || '',
-    }))
+    const [data, setData] = useState<PatientFormData>(() => {
+        // AUTOSAVE: Load from localStorage on mount
+        const saved = localStorage.getItem('wizard_alta_paciente')
+        if (saved) {
+            try {
+                return { ...JSON.parse(saved), empresa_id: empresaId || '' }
+            } catch (e) {
+                // Ignore parse errors
+            }
+        }
+        return {
+            ...INITIAL_DATA,
+            empresa_id: empresaId || '',
+        }
+    })
     const [saving, setSaving] = useState(false)
+
+    // Autosave sync to localStorage
+    useEffect(() => {
+        if (data && Object.values(data).some(val => val !== '' && val !== false)) {
+            localStorage.setItem('wizard_alta_paciente', JSON.stringify(data))
+        }
+    }, [data])
 
     // Riesgos Laborales - AI powered
     const [riesgos, setRiesgos] = useState<OccupationalRisks>({ ...EMPTY_RISKS })
@@ -213,12 +245,13 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
             case 3: return true
             case 4: return true
             case 5: return true
+            case 6: return true
             default: return false
         }
     }
 
     const handleNext = () => {
-        if (step < 5) setStep(step + 1)
+        if (step < 6) setStep(step + 1)
     }
 
     const handlePrev = () => {
@@ -241,6 +274,8 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
             cleanData.analisis_puesto_ai = aiAnalysis
 
             await onComplete(cleanData)
+            // Clear autosave progress after success
+            localStorage.removeItem('wizard_alta_paciente')
         } catch {
             // parent handles error
         } finally {
@@ -248,7 +283,7 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
         }
     }
 
-    const progress = (step / 5) * 100
+    const progress = (step / 6) * 100
 
     return (
         <div className="min-h-[80vh] flex flex-col">
@@ -313,8 +348,8 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
             </div>
 
             {/* ── CONTENT ── */}
-            <Card className="flex-1 border-0 shadow-xl bg-white rounded-3xl overflow-hidden">
-                <CardContent className="p-8">
+            <Card className="flex-1 border-0 shadow-xl bg-white rounded-3xl overflow-hidden flex flex-col min-h-0">
+                <CardContent className="p-8 flex-1 overflow-y-auto custom-scrollbar">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={step}
@@ -518,6 +553,12 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                             <Input
                                                 value={data.puesto}
                                                 onChange={e => updateField('puesto', e.target.value)}
+                                                onBlur={() => {
+                                                    // Trigger AI automatically on blur if not analyzed yet
+                                                    if (data.puesto.trim() && !showRiesgos && !isAnalyzingAI) {
+                                                        handleAnalyzeWithAI()
+                                                    }
+                                                }}
                                                 placeholder="Ingeniero de Producción"
                                                 className="h-11 rounded-xl"
                                             />
@@ -742,6 +783,48 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                         </FormField>
                                     </div>
 
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <FormField label="Antecedentes Heredofamiliares" hint="Diabetes, Hipertensión, Cáncer, Cardiopatías...">
+                                            <textarea
+                                                value={data.antecedentes_heredofamiliares}
+                                                onChange={e => updateField('antecedentes_heredofamiliares', e.target.value)}
+                                                placeholder="Madre finada por cáncer, Padre hipertenso..."
+                                                rows={4}
+                                                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm resize-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
+                                            />
+                                        </FormField>
+
+                                        <div className="space-y-4">
+                                            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-all mt-6">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={data.antecedentes_zootecnicos}
+                                                    onChange={e => updateField('antecedentes_zootecnicos', e.target.checked ? "true" : "false")}
+                                                    className="w-5 h-5 text-purple-500 rounded border-slate-300 focus:ring-purple-500"
+                                                />
+                                                <span className="text-sm font-medium text-slate-700">Antecedentes Zootécnicos (Tiene mascotas)</span>
+                                            </label>
+                                            <AnimatePresence>
+                                                {data.antecedentes_zootecnicos && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, height: 0 }}
+                                                        animate={{ opacity: 1, height: 'auto' }}
+                                                        exit={{ opacity: 0, height: 0 }}
+                                                    >
+                                                        <FormField label="Especifique las mascotas" hint="Perros, gatos, aves, etc. y condiciones">
+                                                            <Input
+                                                                value={data.mascotas}
+                                                                onChange={e => updateField('mascotas', e.target.value)}
+                                                                placeholder="2 perros (vacunados), 1 gato..."
+                                                                className="h-11 rounded-xl"
+                                                            />
+                                                        </FormField>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+                                    </div>
+
                                     {/* Contacto de Emergencia */}
                                     <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200">
                                         <div className="flex items-center gap-2 mb-4">
@@ -828,8 +911,98 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                 </div>
                             )}
 
-                            {/* STEP 5: Revisión */}
+                            {/* STEP 5: Exámenes Médicos y Laboratorios */}
                             {step === 5 && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3 mb-8">
+                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                                            <Microscope className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-black text-slate-800">Laboratorios y Exámenes</h2>
+                                            <p className="text-sm text-slate-500">Ingreso de todos los exámenes y laboratorios iniciales en la misma sesión.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 mb-6">
+                                        <div className="flex gap-3">
+                                            <div className="bg-blue-100 rounded-lg p-2 flex-shrink-0 h-10 w-10 flex items-center justify-center">
+                                                <TestTube className="w-5 h-5 text-blue-600" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-bold text-blue-900">Ingreso Integral</h3>
+                                                <p className="text-xs text-blue-700 mt-1">
+                                                    Para el alta de este paciente, debes registrar tanto la exploración física como los resultados de laboratorio en este primer paso. Cualquier ajuste posterior requerirá solicitud al médico o administrador de la empresa.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-6">
+                                        <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-all">
+                                            <input
+                                                type="checkbox"
+                                                checked={data.examenes_no_aplica}
+                                                onChange={e => updateField('examenes_no_aplica', e.target.checked ? "true" : "false")}
+                                                className="w-5 h-5 text-amber-500 rounded border-amber-300 focus:ring-amber-500"
+                                            />
+                                            <span className="text-sm font-bold text-amber-800">No aplica — Omitir captura de exámenes y laboratorios en este momento</span>
+                                        </label>
+                                    </div>
+
+                                    {!data.examenes_no_aplica && (
+                                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                                <div className="space-y-4 rounded-xl border border-slate-200 p-5 bg-white">
+                                                    <div className="flex items-center gap-2 text-slate-700 font-bold mb-2">
+                                                        <Heart className="w-5 h-5 text-rose-500" />
+                                                        Exploración Física
+                                                    </div>
+                                                    <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-all">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={data.examenes_fisicos_completados}
+                                                            onChange={e => updateField('examenes_fisicos_completados', e.target.checked ? "true" : "false")}
+                                                            className="w-5 h-5 text-emerald-500 rounded border-slate-300 focus:ring-emerald-500"
+                                                        />
+                                                        <span className="text-sm font-medium text-slate-700">Exploración física inicial capturada</span>
+                                                    </label>
+                                                </div>
+
+                                                <div className="space-y-4 rounded-xl border border-slate-200 p-5 bg-white">
+                                                    <div className="flex items-center gap-2 text-slate-700 font-bold mb-2">
+                                                        <TestTube className="w-5 h-5 text-indigo-500" />
+                                                        Laboratorios clínicos
+                                                    </div>
+                                                    <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-all">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={data.laboratorios_completados}
+                                                            onChange={e => updateField('laboratorios_completados', e.target.checked ? "true" : "false")}
+                                                            className="w-5 h-5 text-emerald-500 rounded border-slate-300 focus:ring-emerald-500"
+                                                        />
+                                                        <span className="text-sm font-medium text-slate-700">Muestras y resultados iniciales registrados</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <FormField label="Notas adicionales sobre los exámenes de ingreso" hint="Cualquier observación general para el expediente integral">
+                                                <textarea
+                                                    value={data.notas_examenes}
+                                                    onChange={e => updateField('notas_examenes', e.target.value)}
+                                                    placeholder="El paciente reporta haber estado en ayuno de 12 horas. Se tomaron signos vitales..."
+                                                    rows={4}
+                                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm resize-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
+                                                />
+                                            </FormField>
+                                        </motion.div>
+                                    )}
+
+                                </div>
+                            )}
+
+                            {/* STEP 6: Revisión */}
+                            {step === 6 && (
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-3 mb-8">
                                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -884,20 +1057,23 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                             items={[
                                                 { label: 'Tipo Sangre', value: data.tipo_sangre },
                                                 { label: 'Alergias', value: data.alergias },
+                                                { label: 'Heredofamiliares', value: data.antecedentes_heredofamiliares },
+                                                { label: 'Mascotas (Zootécnicos)', value: data.antecedentes_zootecnicos ? data.mascotas || 'Sí' : 'No' },
                                                 { label: 'Contacto Emergencia', value: data.contacto_emergencia_nombre },
                                                 { label: 'Parentesco', value: data.contacto_emergencia_parentesco },
                                                 { label: 'Tel. Emergencia', value: data.contacto_emergencia_telefono },
                                             ]}
                                         />
 
-                                        {/* Contacto */}
+                                        {/* Exámenes */}
                                         <ReviewSection
-                                            title="Contacto"
-                                            icon={Phone}
-                                            color="violet"
+                                            title="Exámenes Integrales"
+                                            icon={Microscope}
+                                            color="emerald"
                                             items={[
-                                                { label: 'Email', value: data.email },
-                                                { label: 'Teléfono', value: data.telefono },
+                                                { label: 'Examen Físico', value: data.examenes_fisicos_completados ? 'Recabado' : 'Pendiente' },
+                                                { label: 'Laboratorios', value: data.laboratorios_completados ? 'Recabados' : 'Pendientes' },
+                                                { label: 'Notas', value: data.notas_examenes },
                                             ]}
                                         />
                                     </div>
@@ -929,7 +1105,7 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                     ))}
                 </div>
 
-                {step < 5 ? (
+                {step < 6 ? (
                     <Button
                         onClick={handleNext}
                         disabled={!canAdvance()}

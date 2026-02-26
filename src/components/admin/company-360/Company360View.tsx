@@ -4,13 +4,14 @@ import {
     Building2, Users, FileText, ShieldCheck, Activity,
     ArrowLeft, TrendingUp, Clock, Plus, Download, Mail, Phone,
     MapPin, Calendar, CheckCircle, XCircle, AlertTriangle,
-    Briefcase, Zap, Scale, BarChart3, FileDown, Shield
+    Briefcase, Zap, Scale, BarChart3, FileDown, Shield, Database
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Empresa, b2bService, empresasService } from '@/services/dataService';
+import { seedDemoPatients } from '@/utils/seeder_5_pacientes';
 import toast from 'react-hot-toast';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -146,6 +147,9 @@ export function Company360View({ empresaId, onBack }: Company360ViewProps) {
                     <ArrowLeft className="w-4 h-4" /> Volver al Ecosistema
                 </Button>
                 <div className="flex gap-3">
+                    <Button variant="outline" className="rounded-xl border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 font-bold" onClick={() => seedDemoPatients(empresaId)}>
+                        <Database className="w-4 h-4 mr-2" /> Inyectar 5 Pacientes Reales
+                    </Button>
                     <Button variant="outline" className="rounded-xl border-slate-200 text-slate-600 font-bold" onClick={() => handleDescargarReporte(reportes.find(r => r.id === 'reporte-anual')!)}>
                         <Download className="w-4 h-4 mr-2" /> Reporte Anual
                     </Button>

@@ -210,8 +210,8 @@ export default function DictamenesTab({ pacienteId }: DictamenesTabProps) {
                     <ScrollText className="w-8 h-8 text-slate-300" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-700">Sin dictámenes emitidos</h3>
-                <p className="text-sm text-slate-400 max-w-xs text-center mt-2">
-                    Este trabajador no cuenta con dictámenes médico-laborales registrados en el sistema.
+                <p className="text-sm text-slate-400 max-w-sm text-center mt-2">
+                    No hay datos registrados. Es posible que estas evaluaciones no se hayan realizado o no correspondan debido al perfil de puesto del trabajador.
                 </p>
             </div>
         )

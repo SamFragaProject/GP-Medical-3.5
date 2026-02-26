@@ -21,6 +21,11 @@ export function ExploracionFisicaList({ expedienteId, data }: ExploracionFisicaL
         setIsAddModalOpen(true);
     };
 
+    const handleEdit = (exploracion: ExploracionFisica) => {
+        setSelectedExploracion(exploracion);
+        setIsAddModalOpen(true);
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center bg-white p-4 rounded-xl border shadow-sm">
@@ -50,7 +55,7 @@ export function ExploracionFisicaList({ expedienteId, data }: ExploracionFisicaL
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {data.map((exploracion) => (
-                        <Card key={exploracion.id} className="group hover:shadow-md transition-all cursor-pointer border-l-4 border-l-emerald-500">
+                        <Card key={exploracion.id} onClick={() => handleEdit(exploracion)} className="group hover:shadow-md transition-all cursor-pointer border-l-4 border-l-emerald-500">
                             <CardContent className="p-5">
                                 <div className="flex justify-between items-center">
                                     <div className="space-y-2">
@@ -80,18 +85,19 @@ export function ExploracionFisicaList({ expedienteId, data }: ExploracionFisicaL
                 </div>
             )}
 
-            {/* Modal para Agregar */}
+            {/* Modal para Agregar/Editar */}
             <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Plus className="w-5 h-5 text-emerald-600" />
-                            Nueva Exploración Física
+                            {selectedExploracion ? 'Detalles de la Exploración' : 'Nueva Exploración Física'}
                         </DialogTitle>
                     </DialogHeader>
                     <div className="py-4">
                         <ExploracionFisicaForm
                             expedienteId={expedienteId}
+                            initialData={selectedExploracion || undefined}
                             onSuccess={() => setIsAddModalOpen(false)}
                             onCancel={() => setIsAddModalOpen(false)}
                         />

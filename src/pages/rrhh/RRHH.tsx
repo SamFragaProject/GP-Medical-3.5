@@ -17,10 +17,12 @@ import {
     Brain,
     Heart,
     Calendar,
-    Bell
+    Bell,
+    Clock
 } from 'lucide-react'
 import { Psicometria } from './Psicometria'
 import { NominaPanel } from './Nomina'
+import { RelojChecador } from './RelojChecador'
 
 // Componentes RRHH
 import {
@@ -60,7 +62,7 @@ export default function RRHH() {
     const [busqueda, setBusqueda] = React.useState('')
 
     // Tab activa
-    const [activeTab, setActiveTab] = React.useState('empleados')
+    const [activeTab, setActiveTab] = React.useState('reloj')
 
     // Cargar datos
     const loadData = React.useCallback(async () => {
@@ -139,6 +141,7 @@ export default function RRHH() {
     }
 
     const tabs = [
+        { id: 'reloj', label: 'Reloj GPS', icon: Clock },
         { id: 'empleados', label: 'Empleados', icon: Users },
         { id: 'vacaciones', label: 'Vacaciones', icon: Palmtree },
         { id: 'nomina', label: 'Nómina', icon: DollarSign },
@@ -239,6 +242,10 @@ export default function RRHH() {
                         </div>
 
                         <div className="mt-8">
+                            <TabsContent value="reloj" className="outline-none">
+                                <RelojChecador />
+                            </TabsContent>
+
                             <TabsContent value="empleados" className="space-y-6 outline-none">
                                 {/* Grid de empleados */}
                                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">

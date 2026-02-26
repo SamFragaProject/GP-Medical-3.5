@@ -1,29 +1,23 @@
 /**
  * PerfilPaciente - Vista UNIFICADA del Expediente Maestro del Paciente
  * 
- * Centro neurálgico donde se visualiza toda la información del paciente:
+ * Todo editable inline con guardado automático:
  * - Datos personales, laborales, contacto
- * - Historial Clínico completo (APNP, AHF, Consultas, etc.)
- * - Estudios Visuales (con escala Jaeger)
- * - Espirometría
- * - Rayos X
- * - Recetas Médicas
- * - Incapacidades
- * - Dictámenes
- * 
- * Todo desde un solo lugar, unificado y centrado en el paciente.
+ * - Analizador de riesgos con IA (OpenAI)
+ * - Historial Clínico completo
+ * - Recetas, Dictámenes, Incapacidades
  */
-import React, { useState, useEffect, Suspense } from 'react'
+import React, { useState, useEffect, Suspense, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     User, Building2, Heart, Phone, Mail, Calendar,
-    ArrowLeft, Download, Edit, Shield,
+    ArrowLeft, Download, Edit, Shield, Save,
     MapPin, Briefcase, Clock, Activity, FileText,
     Droplets, AlertTriangle, CheckCircle, ChevronRight,
     Users, Clipboard, Eye, Stethoscope, Loader2,
     Wind, Bone, Pill, FileBarChart, ScrollText,
     Plus, FlaskConical, BarChart3, Ear, Printer, FileCheck,
-    FolderOpen
+    FolderOpen, Pencil, X, Zap, Brain
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -37,31 +31,33 @@ import toast from 'react-hot-toast'
 import FotoPaciente from '@/components/expediente/FotoPaciente'
 import { supabase } from '@/lib/supabase'
 import { printCertificadoAptitud, printExpedienteCompleto } from '@/components/expediente/ExportarPDFPaciente'
+import {
+    analyzeJobPosition,
+    type OccupationalRisks, type AIJobAnalysis,
+    EMPTY_RISKS, RISK_CATEGORIES
+} from '@/services/aiService'
 
 // Lazy-load clinical sub-modules for performance
 const HistorialClinicoCompleto = React.lazy(() => import('@/components/expediente/HistorialClinicoCompleto'))
 const RecetasTab = React.lazy(() => import('@/components/expediente/RecetasTab'))
 const IncapacidadesTab = React.lazy(() => import('@/components/expediente/IncapacidadesTab'))
 const DictamenesTab = React.lazy(() => import('@/components/expediente/DictamenesTab'))
-const OdontogramaTab = React.lazy(() => import('@/components/expediente/OdontogramaTab'))
 const DocumentosExpedienteTab = React.lazy(() => import('@/components/expediente/DocumentosExpedienteTab'))
 
 // =============================================
 // HELPERS
 // =============================================
-function calcularEdad(fechaNac: string): number {
-    const birth = new Date(fechaNac)
-    const today = new Date()
-    let age = today.getFullYear() - birth.getFullYear()
-    const m = today.getMonth() - birth.getMonth()
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
-    return age
+const calcularEdad = (fechaNac: string): number => {
+    const hoy = new Date()
+    const nacimiento = new Date(fechaNac)
+    let edad = hoy.getFullYear() - nacimiento.getFullYear()
+    const m = hoy.getMonth() - nacimiento.getMonth()
+    if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) edad--
+    return edad
 }
 
-function formatDate(date?: string | null): string {
-    if (!date) return '—'
-    return new Date(date).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
-}
+const formatDate = (date?: string | null): string =>
+    date ? new Date(date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'
 
 const GENERO_GRADIENT: Record<string, string> = {
     masculino: 'from-blue-500 to-indigo-600',
@@ -73,34 +69,79 @@ const GENERO_GRADIENT: Record<string, string> = {
 // TAB CONFIGURATION
 // =============================================
 interface TabConfig {
-    value: string
-    label: string
-    icon: any
-    group: 'info' | 'clinico' | 'diagnostico'
-    description?: string
+    value: string; label: string; icon: any; group: 'info' | 'clinico' | 'diagnostico'; description?: string
 }
 
 const TABS: TabConfig[] = [
-    // ── Información del Paciente ──
     { value: 'general', label: 'General', icon: User, group: 'info' },
     { value: 'laboral', label: 'Laboral', icon: Building2, group: 'info' },
     { value: 'contacto', label: 'Contacto', icon: Phone, group: 'info' },
-    // ── Expediente Clínico (hub principal) ──
-    { value: 'expediente', label: 'Expediente', icon: Stethoscope, group: 'clinico', description: 'Historial clínico completo — Laboratorio, Audiometría, Espirometría, Rayos X, Visión y más' },
-    // ── Documentos ──
-    { value: 'documentos', label: 'Documentos', icon: FolderOpen, group: 'clinico', description: 'Documentos cifrados del expediente — AES-256-GCM' },
-    // ── Tratamiento y Reportes ──
+    { value: 'expediente', label: 'Expediente', icon: Stethoscope, group: 'clinico', description: 'Exploración física, APNP, AHF, AGO, estudios' },
+    { value: 'documentos', label: 'Documentos', icon: FolderOpen, group: 'clinico', description: 'Documentos cifrados del paciente' },
     { value: 'recetas', label: 'Recetas', icon: Pill, group: 'diagnostico', description: 'Prescripciones médicas' },
-    { value: 'dictamenes', label: 'Dictámenes', icon: ScrollText, group: 'diagnostico', description: 'Dictámenes médico-laborales' },
+    { value: 'dictamenes', label: 'Dictámenes', icon: FileText, group: 'diagnostico', description: 'Dictámenes de aptitud laboral' },
     { value: 'incapacidades', label: 'Incapacidades', icon: FileBarChart, group: 'diagnostico', description: 'Certificados de incapacidad' },
-    { value: 'odontograma', label: 'Odontograma', icon: Activity, group: 'diagnostico', description: 'Diagrama dental interactivo — Sistema FDI' },
 ]
 
-// Group colors for visual differentiation
-const GROUP_COLORS = {
-    info: { bg: 'bg-slate-100', text: 'text-slate-500', label: 'Información' },
-    clinico: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Expediente' },
-    diagnostico: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Tratamiento' },
+// =============================================
+// EDITABLE FIELD COMPONENT
+// =============================================
+function EditableField({ icon: Icon, label, value, field, type = 'text', options, editing, onChange }: {
+    icon: any; label: string; value: string; field: string; type?: string
+    options?: string[]; editing: boolean; onChange: (field: string, value: string) => void
+}) {
+    if (!editing) {
+        return (
+            <div className="group relative flex items-start gap-3 p-4 bg-slate-50/80 rounded-2xl border border-slate-100 hover:border-emerald-200 transition-all">
+                <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white shadow-sm border border-slate-100">
+                    <Icon className="w-4 h-4 text-slate-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-0.5">{label}</p>
+                    <p className={`text-sm font-semibold text-slate-800 truncate ${type === 'mono' ? 'font-mono tracking-wider' : ''}`}>{value || '—'}</p>
+                </div>
+            </div>
+        )
+    }
+
+    if (options) {
+        return (
+            <div className="flex items-start gap-3 p-4 bg-emerald-50/50 rounded-2xl border-2 border-emerald-200 transition-all">
+                <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white shadow-sm border border-emerald-200">
+                    <Icon className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-600 mb-1">{label}</p>
+                    <select
+                        value={value || ''}
+                        onChange={(e) => onChange(field, e.target.value)}
+                        className="w-full bg-white border border-emerald-200 rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    >
+                        <option value="">— Seleccionar —</option>
+                        {options.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="flex items-start gap-3 p-4 bg-emerald-50/50 rounded-2xl border-2 border-emerald-200 transition-all">
+            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white shadow-sm border border-emerald-200">
+                <Icon className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-600 mb-1">{label}</p>
+                <input
+                    type={type === 'date' ? 'date' : type === 'number' ? 'number' : 'text'}
+                    value={value || ''}
+                    onChange={(e) => onChange(field, e.target.value)}
+                    className="w-full bg-white border border-emerald-200 rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    placeholder={label}
+                />
+            </div>
+        </div>
+    )
 }
 
 // =============================================
@@ -117,22 +158,127 @@ export default function PerfilPaciente() {
     )
     const [loading, setLoading] = useState(!paciente)
     const [activeTab, setActiveTab] = useState('general')
+    const [editing, setEditing] = useState(false)
+    const [saving, setSaving] = useState(false)
+    const [editData, setEditData] = useState<Partial<Paciente>>({})
 
-    // Load patient data if not passed via state
+    // Risk analyzer state
+    const [isAnalyzingAI, setIsAnalyzingAI] = useState(false)
+    const [riesgos, setRiesgos] = useState<OccupationalRisks>({ ...EMPTY_RISKS })
+    const [showRiesgos, setShowRiesgos] = useState(false)
+
+    // Load patient data
     useEffect(() => {
         if (!paciente && id) {
             setLoading(true)
-            pacientesService.getAll().then((allPacientes) => {
-                const found = allPacientes.find((p) => p.id === id)
-                if (found) setPaciente(found)
-                setLoading(false)
-            }).catch(() => setLoading(false))
+            pacientesService.getById(id)
+                .then((found) => {
+                    setPaciente(found)
+                    if (found.riesgos_ocupacionales && typeof found.riesgos_ocupacionales === 'object') {
+                        setRiesgos({ ...EMPTY_RISKS, ...found.riesgos_ocupacionales })
+                        setShowRiesgos(Object.values(found.riesgos_ocupacionales).some((cat: any) =>
+                            typeof cat === 'object' && Object.values(cat).some(Boolean)
+                        ))
+                    }
+                })
+                .catch(() => toast.error('No se pudo cargar el paciente'))
+                .finally(() => setLoading(false))
+        } else if (paciente?.riesgos_ocupacionales) {
+            setRiesgos({ ...EMPTY_RISKS, ...paciente.riesgos_ocupacionales })
+            setShowRiesgos(Object.values(paciente.riesgos_ocupacionales).some((cat: any) =>
+                typeof cat === 'object' && Object.values(cat).some(Boolean)
+            ))
         }
-    }, [id, paciente])
+    }, [id])
+
+    const startEditing = () => {
+        setEditData({ ...paciente })
+        setEditing(true)
+    }
+
+    const cancelEditing = () => {
+        setEditing(false)
+        setEditData({})
+    }
+
+    const handleFieldChange = (field: string, value: string) => {
+        setEditData(prev => ({ ...prev, [field]: value }))
+    }
+
+    const handleSave = async () => {
+        if (!id || !paciente) return
+        setSaving(true)
+        try {
+            // Include risk data
+            const updates = {
+                ...editData,
+                riesgos_ocupacionales: riesgos,
+            }
+            const updated = await pacientesService.update(id, updates)
+            setPaciente(updated)
+            setEditing(false)
+            setEditData({})
+            toast.success('Paciente actualizado correctamente')
+        } catch (err: any) {
+            console.error('Error saving:', err)
+            toast.error(err.message || 'Error al guardar')
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const handleAnalyzeRisks = async () => {
+        const puesto = editing ? (editData.puesto || paciente?.puesto) : paciente?.puesto
+        if (!puesto?.trim()) {
+            toast.error('El paciente necesita un puesto de trabajo para analizar riesgos')
+            return
+        }
+        setIsAnalyzingAI(true)
+        setShowRiesgos(true)
+        try {
+            const result = await analyzeJobPosition(puesto)
+            setRiesgos(result.riesgos)
+            toast.success(`Riesgos analizados para "${puesto}"`)
+        } catch (error: any) {
+            console.error('AI analysis error:', error)
+            toast.error(error.message || 'Error al analizar riesgos')
+        } finally {
+            setIsAnalyzingAI(false)
+        }
+    }
+
+    const toggleRisk = (category: string, risk: string) => {
+        setRiesgos(prev => ({
+            ...prev,
+            [category]: {
+                ...prev[category as keyof OccupationalRisks],
+                [risk]: !((prev as any)[category]?.[risk] ?? false)
+            }
+        }))
+    }
+
+    const totalRisksCount = Object.values(riesgos).reduce((total, cat) =>
+        total + Object.values(cat).filter(Boolean).length, 0
+    )
+
+    const saveRisksOnly = async () => {
+        if (!id) return
+        setSaving(true)
+        try {
+            const updated = await pacientesService.update(id, { riesgos_ocupacionales: riesgos } as any)
+            setPaciente(updated)
+            toast.success('Riesgos guardados correctamente')
+        } catch (err: any) {
+            toast.error(err.message || 'Error al guardar riesgos')
+        } finally {
+            setSaving(false)
+        }
+    }
 
     const edad = paciente?.fecha_nacimiento ? calcularEdad(paciente.fecha_nacimiento) : null
     const gradient = GENERO_GRADIENT[paciente?.genero || ''] || 'from-slate-400 to-slate-600'
     const initials = paciente ? `${(paciente.nombre || '')[0] || ''}${(paciente.apellido_paterno || '')[0] || ''}`.toUpperCase() : ''
+    const v = (field: string) => editing ? ((editData as any)[field] ?? (paciente as any)?.[field] ?? '') : ((paciente as any)?.[field] ?? '')
 
     // Export patient data
     const handleExport = () => {
@@ -153,6 +299,7 @@ export default function PerfilPaciente() {
             },
             datos_medicos: { tipo_sangre: paciente.tipo_sangre, alergias: paciente.alergias },
             contacto: { email: paciente.email, telefono: paciente.telefono },
+            riesgos_ocupacionales: riesgos,
         }
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
         const url = URL.createObjectURL(blob)
@@ -170,18 +317,18 @@ export default function PerfilPaciente() {
         if (!paciente || !id) return
         try {
             setPrinting(true)
-            // Fetch latest note and latest physical exploration
-            const [
-                { data: note },
-                { data: ef }
-            ] = await Promise.all([
-                supabase.from('notas_medicas').select('*').eq('paciente_id', id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
-                supabase.from('exploraciones_fisicas').select('*').eq('paciente_id', id).order('fecha_exploracion', { ascending: false }).limit(1).maybeSingle()
-            ])
-            printCertificadoAptitud(paciente, note, ef)
-        } catch (error) {
-            console.error('Error fetching print data:', error)
-            toast.error('Error al generar el certificado')
+            const { data: examData } = await supabase
+                .from('examenes')
+                .select('*')
+                .eq('paciente_id', id)
+                .order('fecha', { ascending: false })
+                .limit(1)
+                .maybeSingle()
+
+            printCertificadoAptitud(paciente, examData)
+            toast.success('Certificado generado')
+        } catch (err) {
+            toast.error('Error al generar certificado')
         } finally {
             setPrinting(false)
         }
@@ -191,31 +338,20 @@ export default function PerfilPaciente() {
         if (!paciente || !id) return
         try {
             setPrinting(true)
-            // Fetch a snapshot of clinical data for the print view
-            const [
-                { data: ef },
-                { data: notas },
-                { data: labs },
-                { data: audio }
-            ] = await Promise.all([
-                supabase.from('exploraciones_fisicas').select('*').eq('paciente_id', id).order('fecha_exploracion', { ascending: false }).limit(1).maybeSingle(),
-                supabase.from('notas_medicas').select('*').eq('paciente_id', id).order('created_at', { ascending: false }).limit(5),
-                supabase.from('examenes_laboratorio').select('*').eq('paciente_id', id).order('fecha', { ascending: false }).limit(1).maybeSingle(),
-                supabase.from('audio_evaluaciones').select('*').eq('paciente_id', id).order('fecha', { ascending: false }).limit(1).maybeSingle()
+            const [examRes, recetaRes, incapRes] = await Promise.all([
+                supabase.from('examenes').select('*').eq('paciente_id', id).order('fecha', { ascending: false }),
+                supabase.from('recetas').select('*').eq('paciente_id', id).order('created_at', { ascending: false }),
+                supabase.from('incapacidades').select('*').eq('paciente_id', id).order('fecha_inicio', { ascending: false }),
             ])
 
-            // Map the fetched data to the structure the print function expects
-            const printData = {
-                exploracionFisica: ef,
-                notasMedicas: notas,
-                laboratorio: labs,
-                audiometria: audio
-            }
-
-            printExpedienteCompleto(paciente, printData)
-        } catch (error) {
-            console.error('Error fetching full print data:', error)
-            toast.error('Error al generar el expediente PDF')
+            printExpedienteCompleto(paciente, {
+                examenes: examRes.data || [],
+                recetas: recetaRes.data || [],
+                incapacidades: incapRes.data || [],
+            })
+            toast.success('Expediente PDF generado')
+        } catch (err) {
+            toast.error('Error al generar expediente')
         } finally {
             setPrinting(false)
         }
@@ -260,27 +396,56 @@ export default function PerfilPaciente() {
                             <ArrowLeft className="w-4 h-4" /> Regresar
                         </Button>
                         <div className="flex gap-2">
-                            <Button
-                                variant="ghost"
-                                onClick={handlePrintCertificate}
-                                disabled={printing}
-                                className="text-slate-400 hover:text-white hover:bg-emerald-500/20 rounded-xl gap-2"
-                            >
-                                {printing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileCheck className="w-4 h-4" />}
-                                Certificado
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={handlePrintFullExpediente}
-                                disabled={printing}
-                                className="text-slate-400 hover:text-white hover:bg-blue-500/20 rounded-xl gap-2"
-                            >
-                                {printing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-                                Expediente PDF
-                            </Button>
-                            <Button variant="ghost" onClick={handleExport} className="text-slate-400 hover:text-white hover:bg-white/10 rounded-xl gap-2">
-                                <Download className="w-4 h-4" /> JSON
-                            </Button>
+                            {editing ? (
+                                <>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={cancelEditing}
+                                        className="text-slate-400 hover:text-white hover:bg-red-500/20 rounded-xl gap-2"
+                                    >
+                                        <X className="w-4 h-4" /> Cancelar
+                                    </Button>
+                                    <Button
+                                        onClick={handleSave}
+                                        disabled={saving}
+                                        className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl gap-2"
+                                    >
+                                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                        Guardar Todo
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={startEditing}
+                                        className="text-slate-400 hover:text-white hover:bg-violet-500/20 rounded-xl gap-2"
+                                    >
+                                        <Pencil className="w-4 h-4" /> Editar
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={handlePrintCertificate}
+                                        disabled={printing}
+                                        className="text-slate-400 hover:text-white hover:bg-emerald-500/20 rounded-xl gap-2"
+                                    >
+                                        {printing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileCheck className="w-4 h-4" />}
+                                        Certificado
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={handlePrintFullExpediente}
+                                        disabled={printing}
+                                        className="text-slate-400 hover:text-white hover:bg-blue-500/20 rounded-xl gap-2"
+                                    >
+                                        {printing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+                                        Expediente PDF
+                                    </Button>
+                                    <Button variant="ghost" onClick={handleExport} className="text-slate-400 hover:text-white hover:bg-white/10 rounded-xl gap-2">
+                                        <Download className="w-4 h-4" /> JSON
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -304,14 +469,10 @@ export default function PerfilPaciente() {
                             <p className="text-sm text-white/40 font-medium mb-2">Expediente Maestro — Centro de Información Clínica</p>
                             <div className="flex flex-wrap gap-3 mt-2">
                                 {paciente.numero_empleado && (
-                                    <Badge className="bg-white/10 text-white/70 border-white/10 text-xs">
-                                        #{paciente.numero_empleado}
-                                    </Badge>
+                                    <Badge className="bg-white/10 text-white/70 border-white/10 text-xs">#{paciente.numero_empleado}</Badge>
                                 )}
                                 {edad && (
-                                    <Badge className="bg-white/10 text-white/70 border-white/10 text-xs">
-                                        {edad} años
-                                    </Badge>
+                                    <Badge className="bg-white/10 text-white/70 border-white/10 text-xs">{edad} años</Badge>
                                 )}
                                 {paciente.genero && (
                                     <Badge className={`bg-gradient-to-r ${gradient} text-white border-0 text-xs`}>
@@ -329,6 +490,11 @@ export default function PerfilPaciente() {
                                         }`}>
                                         {paciente.estatus === 'activo' ? <CheckCircle className="w-3 h-3 mr-1" /> : <Clock className="w-3 h-3 mr-1" />}
                                         {paciente.estatus}
+                                    </Badge>
+                                )}
+                                {editing && (
+                                    <Badge className="bg-violet-500/30 text-violet-300 border-violet-500/40 text-xs animate-pulse">
+                                        <Pencil className="w-3 h-3 mr-1" /> Modo Edición
                                     </Badge>
                                 )}
                             </div>
@@ -354,9 +520,7 @@ export default function PerfilPaciente() {
 
             {/* ── UNIFIED TABS ── */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                {/* Tab navigation with visual grouping */}
                 <div className="bg-white shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-100 p-2">
-                    {/* Group labels */}
                     <div className="flex flex-wrap items-center gap-1 mb-1 px-1">
                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mr-1">📋 Información</span>
                         <span className="text-slate-200 mx-1">|</span>
@@ -371,7 +535,6 @@ export default function PerfilPaciente() {
                                 : tab.group === 'diagnostico'
                                     ? 'data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-blue-200'
                                     : 'data-[state=active]:bg-slate-50 data-[state=active]:text-slate-800 data-[state=active]:border-slate-200'
-
                             return (
                                 <TabsTrigger
                                     key={tab.value}
@@ -386,7 +549,6 @@ export default function PerfilPaciente() {
                     </TabsList>
                 </div>
 
-                {/* Active tab description bar */}
                 {activeTabConfig?.description && (
                     <motion.div
                         key={activeTab}
@@ -407,20 +569,21 @@ export default function PerfilPaciente() {
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2 }}
                     >
-                        {/* ═══ INFO TABS ═══ */}
+                        {/* ═══ GENERAL TAB ═══ */}
                         <TabsContent value="general" className="space-y-6 mt-0">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <InfoCard icon={User} label="Nombre Completo" value={`${paciente.nombre} ${paciente.apellido_paterno} ${paciente.apellido_materno || ''}`} />
-                                <InfoCard icon={Calendar} label="Fecha de Nacimiento" value={formatDate(paciente.fecha_nacimiento)} />
-                                <InfoCard icon={Users} label="Género" value={paciente.genero || '—'} />
-                                <InfoCard icon={Shield} label="CURP" value={paciente.curp || '—'} mono />
-                                <InfoCard icon={FileText} label="RFC" value={paciente.rfc || '—'} mono />
-                                <InfoCard icon={Shield} label="NSS (IMSS)" value={paciente.nss || '—'} mono />
-                                <InfoCard icon={Heart} label="Estado Civil" value={paciente.estado_civil || '—'} />
-                                <InfoCard icon={Droplets} label="Tipo de Sangre" value={paciente.tipo_sangre || '—'} highlight="rose" />
-                                <InfoCard icon={AlertTriangle} label="Alergias" value={paciente.alergias || 'Ninguna conocida'} highlight={paciente.alergias ? 'amber' : undefined} />
-                                <InfoCard icon={CheckCircle} label="Estatus" value={paciente.estatus || '—'} highlight={paciente.estatus === 'activo' ? 'emerald' : undefined} />
-                                <InfoCard icon={Calendar} label="Fecha de Registro" value={formatDate(paciente.created_at)} />
+                                <EditableField icon={User} label="Nombre" value={v('nombre')} field="nombre" editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={User} label="Apellido Paterno" value={v('apellido_paterno')} field="apellido_paterno" editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={User} label="Apellido Materno" value={v('apellido_materno')} field="apellido_materno" editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={Calendar} label="Fecha de Nacimiento" value={editing ? v('fecha_nacimiento') : formatDate(paciente.fecha_nacimiento)} field="fecha_nacimiento" type={editing ? 'date' : 'text'} editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={Users} label="Género" value={v('genero')} field="genero" editing={editing} onChange={handleFieldChange} options={['masculino', 'femenino', 'otro']} />
+                                <EditableField icon={Shield} label="CURP" value={v('curp')} field="curp" type="mono" editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={FileText} label="RFC" value={v('rfc')} field="rfc" type="mono" editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={Shield} label="NSS (IMSS)" value={v('nss')} field="nss" type="mono" editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={Heart} label="Estado Civil" value={v('estado_civil')} field="estado_civil" editing={editing} onChange={handleFieldChange} options={['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Unión libre']} />
+                                <EditableField icon={Droplets} label="Tipo de Sangre" value={v('tipo_sangre')} field="tipo_sangre" editing={editing} onChange={handleFieldChange} options={['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']} />
+                                <EditableField icon={AlertTriangle} label="Alergias" value={v('alergias')} field="alergias" editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={CheckCircle} label="Estatus" value={v('estatus')} field="estatus" editing={editing} onChange={handleFieldChange} options={['activo', 'inactivo', 'baja']} />
                             </div>
 
                             {/* Emergency Contact */}
@@ -433,43 +596,143 @@ export default function PerfilPaciente() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div>
-                                            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 mb-1">Nombre</p>
-                                            <p className="text-sm font-semibold text-amber-900">{paciente.contacto_emergencia_nombre || '—'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 mb-1">Parentesco</p>
-                                            <p className="text-sm font-semibold text-amber-900">{paciente.contacto_emergencia_parentesco || '—'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 mb-1">Teléfono</p>
-                                            <p className="text-sm font-semibold text-amber-900">{paciente.contacto_emergencia_telefono || '—'}</p>
-                                        </div>
+                                        <EditableField icon={User} label="Nombre" value={v('contacto_emergencia_nombre')} field="contacto_emergencia_nombre" editing={editing} onChange={handleFieldChange} />
+                                        <EditableField icon={Users} label="Parentesco" value={v('contacto_emergencia_parentesco')} field="contacto_emergencia_parentesco" editing={editing} onChange={handleFieldChange} />
+                                        <EditableField icon={Phone} label="Teléfono" value={v('contacto_emergencia_telefono')} field="contacto_emergencia_telefono" editing={editing} onChange={handleFieldChange} />
                                     </div>
                                 </CardContent>
                             </Card>
                         </TabsContent>
 
+                        {/* ═══ LABORAL TAB ═══ */}
                         <TabsContent value="laboral" className="space-y-6 mt-0">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <InfoCard icon={Clipboard} label="Número de Empleado" value={paciente.numero_empleado || '—'} mono />
-                                <InfoCard icon={Building2} label="Empresa" value={paciente.empresa_nombre || '—'} />
-                                <InfoCard icon={MapPin} label="Sede" value={paciente.sede_nombre || '—'} />
-                                <InfoCard icon={Briefcase} label="Puesto" value={paciente.puesto || '—'} />
-                                <InfoCard icon={Users} label="Área" value={paciente.area || '—'} />
-                                <InfoCard icon={Users} label="Departamento" value={paciente.departamento || '—'} />
-                                <InfoCard icon={Clock} label="Turno" value={paciente.turno || '—'} />
-                                <InfoCard icon={FileText} label="Tipo de Contrato" value={paciente.tipo_contrato || '—'} />
-                                <InfoCard icon={Calendar} label="Fecha de Ingreso" value={formatDate(paciente.fecha_ingreso)} />
-                                <InfoCard icon={Clock} label="Jornada" value={paciente.jornada_horas ? `${paciente.jornada_horas} horas` : '—'} />
-                                <InfoCard icon={User} label="Supervisor" value={paciente.supervisor_nombre || '—'} />
+                                <EditableField icon={Clipboard} label="Número de Empleado" value={v('numero_empleado')} field="numero_empleado" type="mono" editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={Building2} label="Empresa" value={v('empresa_nombre')} field="empresa_nombre" editing={false} onChange={() => { }} />
+                                <EditableField icon={MapPin} label="Sede" value={v('sede_nombre')} field="sede_nombre" editing={false} onChange={() => { }} />
+                                <EditableField icon={Briefcase} label="Puesto" value={v('puesto')} field="puesto" editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={Users} label="Área" value={v('area')} field="area" editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={Users} label="Departamento" value={v('departamento')} field="departamento" editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={Clock} label="Turno" value={v('turno')} field="turno" editing={editing} onChange={handleFieldChange} options={['Matutino', 'Vespertino', 'Nocturno', 'Mixto']} />
+                                <EditableField icon={FileText} label="Tipo de Contrato" value={v('tipo_contrato')} field="tipo_contrato" editing={editing} onChange={handleFieldChange} options={['Indeterminado', 'Temporal', 'Prueba', 'Capacitación', 'De obra']} />
+                                <EditableField icon={Calendar} label="Fecha de Ingreso" value={editing ? v('fecha_ingreso') : formatDate(paciente.fecha_ingreso)} field="fecha_ingreso" type={editing ? 'date' : 'text'} editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={Clock} label="Jornada (horas)" value={v('jornada_horas')?.toString() || ''} field="jornada_horas" type="number" editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={User} label="Supervisor" value={v('supervisor_nombre')} field="supervisor_nombre" editing={editing} onChange={handleFieldChange} />
                             </div>
+
+                            {/* ═══ RISK ANALYZER SECTION ═══ */}
+                            <Card className="border-violet-200 bg-gradient-to-br from-violet-50/80 to-indigo-50/50 shadow-lg">
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="flex items-center gap-2 text-violet-800 text-base">
+                                            <Brain className="w-5 h-5 text-violet-500" />
+                                            Analizador de Riesgos Laborales
+                                            <Badge className="bg-violet-100 text-violet-700 border-violet-200 text-[10px]">IA</Badge>
+                                        </CardTitle>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                onClick={handleAnalyzeRisks}
+                                                disabled={isAnalyzingAI}
+                                                size="sm"
+                                                className="bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white rounded-xl gap-2 text-xs shadow-md"
+                                            >
+                                                {isAnalyzingAI ? (
+                                                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Analizando...</>
+                                                ) : (
+                                                    <><Zap className="w-3.5 h-3.5" /> Analizar con IA</>
+                                                )}
+                                            </Button>
+                                            {showRiesgos && totalRisksCount > 0 && (
+                                                <Button
+                                                    onClick={saveRisksOnly}
+                                                    disabled={saving}
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded-xl gap-2 text-xs"
+                                                >
+                                                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                                    Guardar Riesgos
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    {isAnalyzingAI && (
+                                        <div className="flex flex-col items-center py-8">
+                                            <div className="relative">
+                                                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 animate-pulse flex items-center justify-center">
+                                                    <Brain className="w-8 h-8 text-white animate-bounce" />
+                                                </div>
+                                            </div>
+                                            <p className="text-sm font-bold text-violet-700 mt-4">OpenAI analizando riesgos para "{v('puesto')}"...</p>
+                                            <p className="text-xs text-violet-400 mt-1">Identificando riesgos físicos, químicos, ergonómicos y más</p>
+                                        </div>
+                                    )}
+
+                                    {!isAnalyzingAI && !showRiesgos && (
+                                        <div className="text-center py-6">
+                                            <Zap className="w-10 h-10 mx-auto text-violet-300 mb-2" />
+                                            <p className="text-sm font-semibold text-slate-500">Presiona "Analizar con IA" para identificar riesgos del puesto</p>
+                                            <p className="text-xs text-slate-400 mt-1">La IA analizará el puesto "{v('puesto') || '(sin puesto)'}" y determinará los riesgos laborales</p>
+                                        </div>
+                                    )}
+
+                                    {!isAnalyzingAI && showRiesgos && (
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                                                <CheckCircle className="w-5 h-5 text-emerald-500" />
+                                                <span className="text-sm font-bold text-emerald-800">
+                                                    Análisis completado — {totalRisksCount} riesgos identificados
+                                                </span>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                                {Object.entries(RISK_CATEGORIES).map(([catKey, cat]) => {
+                                                    const catRisks = (riesgos as any)[catKey] || {}
+                                                    const activeCount = Object.values(catRisks).filter(Boolean).length
+                                                    return (
+                                                        <div key={catKey} className={`rounded-xl border p-3 transition-all ${activeCount > 0 ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-100'}`}>
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <span className="text-lg">{cat.emoji}</span>
+                                                                <span className="text-xs font-bold text-slate-700">{cat.label}</span>
+                                                                {activeCount > 0 && (
+                                                                    <Badge className="bg-amber-200 text-amber-800 text-[9px] ml-auto">{activeCount}</Badge>
+                                                                )}
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                {Object.entries(cat.items).map(([riskKey, riskLabel]) => {
+                                                                    const active = catRisks[riskKey] || false
+                                                                    return (
+                                                                        <button
+                                                                            key={riskKey}
+                                                                            onClick={() => toggleRisk(catKey, riskKey)}
+                                                                            className={`w-full text-left px-2 py-1 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5 ${active
+                                                                                ? 'bg-amber-200/80 text-amber-900'
+                                                                                : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                                                                                }`}
+                                                                        >
+                                                                            <span className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${active ? 'bg-amber-500 border-amber-500' : 'border-slate-300'}`} />
+                                                                            {riskLabel}
+                                                                        </button>
+                                                                    )
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
                         </TabsContent>
 
+                        {/* ═══ CONTACTO TAB ═══ */}
                         <TabsContent value="contacto" className="space-y-6 mt-0">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <InfoCard icon={Mail} label="Correo Electrónico" value={paciente.email || '—'} />
-                                <InfoCard icon={Phone} label="Teléfono" value={paciente.telefono || '—'} />
+                                <EditableField icon={Mail} label="Correo Electrónico" value={v('email')} field="email" editing={editing} onChange={handleFieldChange} />
+                                <EditableField icon={Phone} label="Teléfono" value={v('telefono')} field="telefono" editing={editing} onChange={handleFieldChange} />
                             </div>
                             <Card className="border-0 shadow-lg">
                                 <CardHeader className="pb-2">
@@ -500,7 +763,6 @@ export default function PerfilPaciente() {
                         </TabsContent>
 
                         {/* ═══ TREATMENT TABS ═══ */}
-
                         <TabsContent value="recetas" className="mt-0">
                             <Suspense fallback={<TabLoader label="Cargando recetas..." />}>
                                 <RecetasTab pacienteId={id!} />
@@ -510,12 +772,6 @@ export default function PerfilPaciente() {
                         <TabsContent value="incapacidades" className="mt-0">
                             <Suspense fallback={<TabLoader label="Cargando incapacidades..." />}>
                                 <IncapacidadesTab pacienteId={id!} />
-                            </Suspense>
-                        </TabsContent>
-
-                        <TabsContent value="odontograma" className="mt-0">
-                            <Suspense fallback={<TabLoader label="Cargando odontograma..." />}>
-                                <OdontogramaTab />
                             </Suspense>
                         </TabsContent>
 
@@ -546,73 +802,9 @@ export default function PerfilPaciente() {
 // =============================================
 function TabLoader({ label }: { label: string }) {
     return (
-        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100">
-            <Loader2 className="w-10 h-10 animate-spin text-emerald-500 mb-4" />
-            <p className="text-sm font-semibold text-slate-500">{label}</p>
+        <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 animate-spin text-emerald-500 mb-3" />
+            <p className="text-sm font-semibold text-slate-400">{label}</p>
         </div>
-    )
-}
-
-// =============================================
-// COMING SOON CARD
-// =============================================
-function ComingSoonCard({ icon: Icon, title, description, color }: {
-    icon: any; title: string; description: string; color: string
-}) {
-    const colorMap: Record<string, { gradient: string; iconBg: string; iconText: string; textColor: string; border: string }> = {
-        cyan: { gradient: 'from-cyan-500 to-blue-600', iconBg: 'bg-cyan-100', iconText: 'text-cyan-600', textColor: 'text-cyan-800', border: 'border-cyan-200' },
-        slate: { gradient: 'from-slate-500 to-slate-700', iconBg: 'bg-slate-100', iconText: 'text-slate-600', textColor: 'text-slate-800', border: 'border-slate-200' },
-        teal: { gradient: 'from-teal-500 to-green-600', iconBg: 'bg-teal-100', iconText: 'text-teal-600', textColor: 'text-teal-800', border: 'border-teal-200' },
-        rose: { gradient: 'from-rose-500 to-pink-600', iconBg: 'bg-rose-100', iconText: 'text-rose-600', textColor: 'text-rose-800', border: 'border-rose-200' },
-        purple: { gradient: 'from-purple-500 to-violet-600', iconBg: 'bg-purple-100', iconText: 'text-purple-600', textColor: 'text-purple-800', border: 'border-purple-200' },
-    }
-    const c = colorMap[color] || colorMap.slate
-    return (
-        <div className={`bg-white rounded-3xl border ${c.border} p-12 flex flex-col items-center justify-center text-center`}>
-            <div className={`w-20 h-20 rounded-3xl ${c.iconBg} flex items-center justify-center mb-6 shadow-lg`}>
-                <Icon className={`w-10 h-10 ${c.iconText}`} />
-            </div>
-            <h3 className={`text-2xl font-black ${c.textColor} mb-3`}>{title}</h3>
-            <p className="text-sm text-slate-500 max-w-md mb-6">{description}</p>
-            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-200">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-bold text-emerald-700">Integración en progreso — datos se vincularán a este paciente</span>
-            </div>
-        </div>
-    )
-}
-
-// =============================================
-// INFO CARD COMPONENT
-// =============================================
-function InfoCard({ icon: Icon, label, value, mono, highlight }: {
-    icon: any; label: string; value: string; mono?: boolean;
-    highlight?: 'emerald' | 'rose' | 'amber'
-}) {
-    const highlightStyles: Record<string, string> = {
-        emerald: 'bg-emerald-50 border-emerald-200',
-        rose: 'bg-rose-50 border-rose-200',
-        amber: 'bg-amber-50 border-amber-200',
-    }
-
-    return (
-        <Card className={`border shadow-sm ${highlight ? highlightStyles[highlight] : 'bg-white/90 border-slate-100'}`}>
-            <CardContent className="p-4 flex items-start gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${highlight
-                    ? highlight === 'emerald' ? 'bg-emerald-100 text-emerald-600'
-                        : highlight === 'rose' ? 'bg-rose-100 text-rose-600'
-                            : 'bg-amber-100 text-amber-600'
-                    : 'bg-slate-100 text-slate-500'
-                    }`}>
-                    <Icon className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">{label}</p>
-                    <p className={`text-sm font-semibold text-slate-800 ${mono ? 'font-mono' : ''} ${value === '—' ? 'text-slate-400' : ''}`}>
-                        {value}
-                    </p>
-                </div>
-            </CardContent>
-        </Card>
     )
 }

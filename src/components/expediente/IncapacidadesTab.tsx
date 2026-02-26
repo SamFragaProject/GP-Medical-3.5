@@ -115,8 +115,8 @@ export default function IncapacidadesTab({ pacienteId }: IncapacidadesTabProps) 
                     <FileBarChart className="w-8 h-8 text-slate-300" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-700">Sin incapacidades registradas</h3>
-                <p className="text-sm text-slate-400 max-w-xs text-center mt-2">
-                    Este trabajador no cuenta con registros de incapacidad en el sistema.
+                <p className="text-sm text-slate-400 max-w-sm text-center mt-2">
+                    No hay registros de incapacidad. Es probable que no apliquen o no se requieran registros por el tipo de puesto del trabajador.
                 </p>
             </div>
         )

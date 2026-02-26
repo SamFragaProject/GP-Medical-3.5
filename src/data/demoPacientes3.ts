@@ -21,8 +21,9 @@
  */
 
 import { Paciente } from '@/services/dataService'
+import { EMPRESA_PRINCIPAL_ID } from '@/config/empresa'
 
-const EMPRESA_DEMO_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+const EMPRESA_DEMO_ID = EMPRESA_PRINCIPAL_ID
 const SEDE_DEMO_ID = 's1a1b1c1-1111-1111-1111-111111111111'
 
 // ==========================================================================

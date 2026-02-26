@@ -204,6 +204,8 @@ export interface CrearEstudioVisualDTO {
     usa_lentes: boolean;
     tipo_lentes?: 'armazon' | 'contacto' | 'ambos';
     campimetria_realizada: boolean;
+    campimetria_od?: string;
+    campimetria_oi?: string;
     estereopsis_segundos_arco?: number;
     observaciones?: string;
     referencia_oftalmologo: boolean;

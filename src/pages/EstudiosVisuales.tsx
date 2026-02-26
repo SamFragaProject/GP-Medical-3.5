@@ -6,8 +6,9 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, Search, Loader2, AlertTriangle, Eye, ChevronRight,
-    Calendar, User, CheckCircle2, XCircle, Glasses, BookOpen, Info
+    Calendar, User, CheckCircle2, XCircle, Glasses, BookOpen, Info, ScanLine
 } from 'lucide-react';
+import { CampimetriaVisualizer } from '@/components/ui/CampimetriaVisualizer';
 import { visionService } from '@/services/visionService';
 import {
     CLASIFICACION_VISUAL_LABELS,
@@ -89,6 +90,8 @@ function FormVision({ onCrear, onCerrar }: {
         usa_lentes: false,
         tipo_lentes: '' as string,
         campimetria_realizada: false,
+        campimetria_od: '' as string,
+        campimetria_oi: '' as string,
         estereopsis_segundos_arco: undefined as number | undefined,
         observaciones: '',
         referencia_oftalmologo: false,
@@ -374,6 +377,37 @@ function FormVision({ onCrear, onCerrar }: {
                 </div>
             </div>
 
+            {/* Campimetría */}
+            <div className="mb-6 p-4 border border-slate-200 rounded-xl bg-slate-50/50">
+                <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <ScanLine className="w-4 h-4 text-purple-600" />
+                        Campimetría Computarizada
+                    </h4>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={form.campimetria_realizada} onChange={e => setForm(f => ({ ...f, campimetria_realizada: e.target.checked }))} className="w-4 h-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500" />
+                        <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Estudio Realizado</span>
+                    </label>
+                </div>
+
+                {form.campimetria_realizada && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="overflow-hidden">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-2">
+                            <CampimetriaVisualizer
+                                label="Ojo Derecho (Ejes con defecto)"
+                                value={form.campimetria_od || ''}
+                                onChange={(val) => setForm(f => ({ ...f, campimetria_od: val }))}
+                            />
+                            <CampimetriaVisualizer
+                                label="Ojo Izquierdo (Ejes con defecto)"
+                                value={form.campimetria_oi || ''}
+                                onChange={(val) => setForm(f => ({ ...f, campimetria_oi: val }))}
+                            />
+                        </div>
+                    </motion.div>
+                )}
+            </div>
+
             <div className="flex gap-3 mt-4">
                 <button onClick={onCerrar} className="px-4 py-2 bg-slate-100/50 rounded-xl text-sm text-slate-600 hover:bg-slate-100 transition-colors">Cancelar</button>
                 <button onClick={handleSubmit} disabled={loading || !form.empresa_id || !form.paciente_id}
@@ -524,6 +558,17 @@ export default function EstudiosVisuales() {
                                             {e.usa_lentes && <span className="flex items-center gap-1 font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100"><Glasses className="w-3.5 h-3.5" /> Usa lentes</span>}
                                             {e.referencia_oftalmologo && <span className="text-amber-600 font-bold">⚠ Referido</span>}
                                         </div>
+                                        {(e.campimetria_od || e.campimetria_oi || e.od_jaeger) && (
+                                            <div className="flex items-center gap-4 text-xs mt-1.5 text-slate-500">
+                                                {e.od_jaeger && <span>Jaeger (Cerca): <b className="text-slate-700">OD: {e.od_jaeger} OI: {e.oi_jaeger}</b></span>}
+                                                {(e.campimetria_od || e.campimetria_oi) && (
+                                                    <span className="flex items-center gap-1">
+                                                        <ScanLine className="w-3.5 h-3.5" /> Campimetría:
+                                                        <b className="text-slate-700">OD: {e.campimetria_od || 'Normal'} | OI: {e.campimetria_oi || 'Normal'}</b>
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                     <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition-all" />
                                 </div>

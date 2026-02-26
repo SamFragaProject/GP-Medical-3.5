@@ -105,6 +105,22 @@ export function ExploracionFisicaForm({ expedienteId, onSuccess, onCancel, initi
         </div>
     );
 
+    const AutoFillField = ({ name, label, placeholder, defaultValue = "Sin alteraciones evidentes." }: any) => (
+        <div className="space-y-2">
+            <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold text-slate-700">{label}</Label>
+                <button
+                    type="button"
+                    className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                    onClick={() => setValue(name, defaultValue, { shouldValidate: true, shouldDirty: true })}
+                >
+                    <Zap className="w-3 h-3" /> Asignar Normal
+                </button>
+            </div>
+            <Textarea {...register(name)} className="h-16 resize-none text-[13px] bg-slate-50 focus:bg-white transition-colors" placeholder={placeholder} />
+        </div>
+    );
+
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 animate-in fade-in duration-500">
             {/* Signos Vitales y Antropometría */}
@@ -187,22 +203,18 @@ export function ExploracionFisicaForm({ expedienteId, onSuccess, onCancel, initi
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-8 space-y-8">
-                    {/* Cabeza y Cuello */}
+                    {/* Aspecto, Cabeza y Cuello */}
                     <div>
-                        <SectionTitle icon={Eye} title="Cabeza y Órganos de los Sentidos" color="bg-blue-100 text-blue-600" />
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="space-y-2">
-                                <Label className="text-xs">Ojos / Visión</Label>
-                                <Textarea {...register('ojos')} className="h-20 resize-none" placeholder="Isocoria, reflejos..." />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs">Oídos / Audición</Label>
-                                <Textarea {...register('oidos')} className="h-20 resize-none" placeholder="Conductos integrados..." />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs">Boca / Garganta</Label>
-                                <Textarea {...register('boca')} className="h-20 resize-none" placeholder="Dentición, orofaringe..." />
-                            </div>
+                        <SectionTitle icon={Eye} title="Aspecto General, Cabeza y Órganos de los Sentidos" color="bg-blue-100 text-blue-600" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <AutoFillField name="aspecto_general" label="Aspecto General" placeholder="Paciente orientado, mesomorfo..." />
+                            <AutoFillField name="piel" label="Piel y Tegumentos" placeholder="Hidratada, sin lesiones..." />
+                            <AutoFillField name="cabeza" label="Cabeza" placeholder="Normocéfala..." />
+                            <AutoFillField name="cuello" label="Cuello" placeholder="Cilíndrico, sin adenomegalias..." />
+                            <AutoFillField name="ojos" label="Ojos / Visión" placeholder="Pupilas isocóricas..." />
+                            <AutoFillField name="oidos" label="Oídos / Audición" placeholder="Conductos permeables..." />
+                            <AutoFillField name="nariz" label="Nariz" placeholder="Narinas permeables..." />
+                            <AutoFillField name="boca" label="Boca / Faringe" placeholder="Mucosa hidratada..." />
                         </div>
                     </div>
 
@@ -211,19 +223,11 @@ export function ExploracionFisicaForm({ expedienteId, onSuccess, onCancel, initi
                     {/* Tórax y Abdomen */}
                     <div>
                         <SectionTitle icon={Wind} title="Cardio-Respiratorio y Abdomen" color="bg-red-100 text-red-600" />
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="space-y-2">
-                                <Label className="text-xs">Tórax / Corazón</Label>
-                                <Textarea {...register('torax')} className="h-20 resize-none" placeholder="Ruidos cardiacos rítmicos..." />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs">Campos Pulmonares</Label>
-                                <Textarea {...register('pulmones')} className="h-20 resize-none" placeholder="Murmullo vesicular..." />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs">Abdomen</Label>
-                                <Textarea {...register('abdomen')} className="h-20 resize-none" placeholder="Blando, depresible..." />
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <AutoFillField name="torax" label="Tórax" placeholder="Movimientos respiratorios normales..." />
+                            <AutoFillField name="pulmones" label="Campos Pulmonares" placeholder="Murmullo vesicular conservado..." />
+                            <AutoFillField name="corazon" label="Corazón" placeholder="Ruidos cardiacos rítmicos..." />
+                            <AutoFillField name="abdomen" label="Abdomen" placeholder="Blando, depresible, peristaltismo presente..." />
                         </div>
                     </div>
 
@@ -232,15 +236,13 @@ export function ExploracionFisicaForm({ expedienteId, onSuccess, onCancel, initi
                     {/* Neurológico y Musculoesquelético */}
                     <div>
                         <SectionTitle icon={Brain} title="Neurológico y Musculoesquelético" color="bg-purple-100 text-purple-600" />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <Label className="text-xs">Sistema Osteomuscular (Extremidades)</Label>
-                                <Textarea {...register('extremidades_superiores')} className="h-24 resize-none" placeholder="Arcos de movilidad, fuerza..." />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs">Neurológico / Reflejos / Marcha</Label>
-                                <Textarea {...register('neurologico')} className="h-24 resize-none" placeholder="Consciente, orientado, reflejos..." />
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <AutoFillField name="extremidades_superiores" label="Extremidades Superiores" placeholder="Integras, arcos de movilidad conservados..." />
+                            <AutoFillField name="extremidades_inferiores" label="Extremidades Inferiores" placeholder="Integras, sin edema..." />
+                            <AutoFillField name="neurologico" label="Neurológico Integral" placeholder="Funciones mentales superiores integras..." />
+                            <AutoFillField name="reflejos" label="Reflejos" placeholder="Osteotendinosos conservados..." />
+                            <AutoFillField name="coordinacion" label="Coordinación" placeholder="Eumetria y diadococinesia conservadas..." />
+                            <AutoFillField name="marcha" label="Marcha" placeholder="Normal, sin alteraciones..." />
                         </div>
                     </div>
 

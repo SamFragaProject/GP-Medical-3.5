@@ -167,13 +167,15 @@ export const reportesAutoService = {
             }
 
             // Registrar envío
-            await supabase.from('registro_envios_reportes').insert({
-                empresa_id: empresaId,
-                tipo_reporte: tipo,
-                fecha_envio: new Date().toISOString(),
-                estado: 'enviado',
-                destinatarios: ['descarga_manual'],
-            }).catch(() => { });
+            try {
+                await supabase.from('registro_envios_reportes').insert({
+                    empresa_id: empresaId,
+                    tipo_reporte: tipo,
+                    fecha_envio: new Date().toISOString(),
+                    estado: 'enviado',
+                    destinatarios: ['descarga_manual'],
+                });
+            } catch (e) { }
 
             return datos;
         } catch (err: any) {

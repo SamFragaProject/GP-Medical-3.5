@@ -28,7 +28,8 @@ const QUERY_KEYS = {
 };
 
 export function useInventario() {
-  const { user, empresaId } = useAuthContext();
+  const { user } = useAuthContext();
+  const empresaId = user?.empresaId as string;
   const queryClient = useQueryClient();
 
   const [filters, setFilters] = useState<InventarioFilters>({});
@@ -133,12 +134,12 @@ export function useInventario() {
     productosBajoStock: bajoStockQuery.data ?? [],
     stats: statsQuery.data,
     filters,
-    
+
     // Loading
     isLoading: productosQuery.isLoading,
     isLoadingBajoStock: bajoStockQuery.isLoading,
     isLoadingStats: statsQuery.isLoading,
-    
+
     // Acciones
     setSearch,
     setTipoFilter,
@@ -147,11 +148,11 @@ export function useInventario() {
     create: createMutation.mutate,
     entradaInventario,
     salidaInventario,
-    
+
     // Loading mutations
     isCreating: createMutation.isPending,
     isUpdatingStock: updateStockMutation.isPending,
-    
+
     // Refetch
     refetch: productosQuery.refetch,
   };

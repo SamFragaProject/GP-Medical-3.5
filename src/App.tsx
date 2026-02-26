@@ -98,6 +98,7 @@ const Campanias = React.lazy(() => import('@/pages/Campanias'))
 const Cotizaciones = React.lazy(() => import('@/pages/Cotizaciones'))
 const CuentasPorCobrar = React.lazy(() => import('@/pages/CuentasPorCobrar'))
 const EspirometriaPage = React.lazy(() => import('@/pages/Espirometria'))
+const ElectrocardiogramaPage = React.lazy(() => import('@/pages/Electrocardiograma'))
 const EstudiosVisualesPage = React.lazy(() => import('@/pages/EstudiosVisuales'))
 const EmpresaDashboardPage = React.lazy(() => import('@/components/dashboard/EmpresaDashboard'))
 const CosteoAnalysis = React.lazy(() => import('@/components/billing/CosteoAnalysis'))
@@ -341,9 +342,10 @@ function App() {
                           <Route path="/cotizaciones" element={<ProtectedRoute resource="cotizaciones"><Cotizaciones /></ProtectedRoute>} />
                           {/* Cuentas por Cobrar */}
                           <Route path="/cxc" element={<ProtectedRoute resource="cxc"><CuentasPorCobrar /></ProtectedRoute>} />
-                          {/* Diagnóstico → redirige a Pacientes (ahora integrado en Expediente Maestro) */}
-                          <Route path="/espirometria" element={<Navigate to="/pacientes" replace />} />
-                          <Route path="/vision" element={<Navigate to="/pacientes" replace />} />
+                          {/* Diagnóstico */}
+                          <Route path="/espirometria" element={<ProtectedRoute resource="estudios_medicos"><EspirometriaPage /></ProtectedRoute>} />
+                          <Route path="/electrocardiograma" element={<ProtectedRoute resource="estudios_medicos"><ElectrocardiogramaPage /></ProtectedRoute>} />
+                          <Route path="/vision" element={<ProtectedRoute resource="estudios_medicos"><EstudiosVisualesPage /></ProtectedRoute>} />
                           {/* Dashboard Empresa */}
                           <Route path="/dashboard-empresa" element={<ProtectedRoute resource="dashboard"><EmpresaDashboardPage /></ProtectedRoute>} />
                           {/* Finanzas: Costeo */}

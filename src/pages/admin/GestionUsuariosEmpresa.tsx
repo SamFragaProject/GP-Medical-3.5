@@ -44,7 +44,9 @@ import {
     MailCheck,
     Fingerprint,
     Zap,
-    Filter
+    Filter,
+    ShieldAlert,
+    Briefcase
 } from 'lucide-react'
 import { AdminLayout, AdminSearchBar, AdminLoadingState } from '@/components/admin/AdminLayout'
 import { Button } from '@/components/ui/button'

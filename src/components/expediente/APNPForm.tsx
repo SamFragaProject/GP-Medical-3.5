@@ -39,9 +39,11 @@ type APNPFormValues = z.infer<typeof apnpSchema>;
 interface APNPFormProps {
     expedienteId: string;
     data: APNP | null;
+    onSuccess?: () => void;
+    onCancel?: () => void;
 }
 
-export function APNPForm({ expedienteId, data }: APNPFormProps) {
+export function APNPForm({ expedienteId, data, onSuccess, onCancel }: APNPFormProps) {
     const { register, handleSubmit, control, watch, formState: { isSubmitting, isDirty } } = useForm<APNPFormValues>({
         resolver: zodResolver(apnpSchema),
         defaultValues: data || {
@@ -61,6 +63,7 @@ export function APNPForm({ expedienteId, data }: APNPFormProps) {
         try {
             await apnpService.createOrUpdate(expedienteId, values);
             toast.success('Antecedentes actualizados correctamente');
+            if (onSuccess) onSuccess();
         } catch (error) {
             toast.error('Error al guardar los antecedentes');
             console.error(error);
@@ -79,18 +82,30 @@ export function APNPForm({ expedienteId, data }: APNPFormProps) {
                         <p className="text-xs text-slate-500">Hábitos, estilo de vida y toxicomanías</p>
                     </div>
                 </div>
-                <Button
-                    type="submit"
-                    disabled={isSubmitting || !isDirty}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                    {isSubmitting ? 'Guardando...' : (
-                        <>
-                            <Save className="w-4 h-4 mr-2" />
-                            Guardar Cambios
-                        </>
+                <div className="flex gap-2">
+                    {onCancel && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onCancel}
+                            disabled={isSubmitting}
+                        >
+                            Cancelar
+                        </Button>
                     )}
-                </Button>
+                    <Button
+                        type="submit"
+                        disabled={isSubmitting || !isDirty}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
+                        {isSubmitting ? 'Guardando...' : (
+                            <>
+                                <Save className="w-4 h-4 mr-2" />
+                                Guardar Cambios
+                            </>
+                        )}
+                    </Button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
