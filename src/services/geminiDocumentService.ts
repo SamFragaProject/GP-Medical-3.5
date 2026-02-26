@@ -10,6 +10,7 @@
  */
 
 import { GoogleGenAI, Type } from '@google/genai';
+import { trackUsage } from './aiUsageTracker';
 
 // Reutilizamos la API key del ERP
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
@@ -272,6 +273,16 @@ export async function analyzeDocument(text: string, imageFiles: File[] = []): Pr
     });
 
     if (response.text) {
+        // Track token usage
+        const usage = (response as any).usageMetadata;
+        if (usage) {
+            trackUsage('gemini-2.0-flash', usage.promptTokenCount || 0, usage.candidatesTokenCount || 0);
+        } else {
+            // Estimate tokens from text length
+            const inputEst = Math.ceil((prompt.length + imageParts.length * 1000) / 4);
+            const outputEst = Math.ceil(response.text.length / 4);
+            trackUsage('gemini-2.0-flash', inputEst, outputEst);
+        }
         return JSON.parse(response.text);
     }
     throw new Error('No se recibió respuesta del modelo de IA');
