@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase'
 import { Loader2, Inbox } from 'lucide-react'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
+import SectionFileUpload from '@/components/expediente/SectionFileUpload'
 
 const CLASIF_STYLES: Record<string, { bg: string; text: string; border: string; label: string }> = {
     normal: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Normal' },
@@ -275,9 +276,12 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                     <Inbox className="w-8 h-8 text-slate-300" />
                 </div>
                 <h3 className="text-slate-800 font-bold">Sin registros de espirometría</h3>
-                <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2">
+                <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2 mb-4">
                     Este paciente aún no cuenta con estudios de espirometría realizados.
                 </p>
+                <div className="max-w-sm mx-auto">
+                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="espirometria" onFileUploaded={() => loadData()} />
+                </div>
             </Card>
         )
     }
@@ -298,7 +302,8 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                             <p className="text-xs text-slate-400 font-medium">{data.tecnico} — {data.equipo}</p>
                         </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3 items-center">
+                        <SectionFileUpload pacienteId={pacienteId} tipoEstudio="espirometria" compact onFileUploaded={() => loadData()} />
                         <div className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-100 text-center">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fecha</p>
                             <p className="text-sm font-bold text-slate-700">

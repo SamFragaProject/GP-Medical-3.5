@@ -49,6 +49,17 @@ const RANGOS_REF: Record<string, { min: number; max: number; unidad: string; lab
     trigliceridos: { min: 0, max: 150, unidad: 'mg/dL', label: 'Triglicéridos', grupo: 'Perfil Lipídico' },
 }
 
+// ================== CATEGORY COLORS ==================
+const GRUPO_COLORS: Record<string, { gradient: string; iconBg: string; iconColor: string; headerBg: string; headerBorder: string }> = {
+    'Biometría Hemática': { gradient: 'from-emerald-500 to-teal-600', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', headerBg: 'bg-gradient-to-r from-emerald-50 to-teal-50', headerBorder: 'border-emerald-200' },
+    'Fórmula Blanca': { gradient: 'from-blue-500 to-indigo-600', iconBg: 'bg-blue-100', iconColor: 'text-blue-600', headerBg: 'bg-gradient-to-r from-blue-50 to-indigo-50', headerBorder: 'border-blue-200' },
+    'Química Sanguínea': { gradient: 'from-amber-500 to-orange-600', iconBg: 'bg-amber-100', iconColor: 'text-amber-600', headerBg: 'bg-gradient-to-r from-amber-50 to-orange-50', headerBorder: 'border-amber-200' },
+    'Perfil Lipídico': { gradient: 'from-rose-500 to-pink-600', iconBg: 'bg-rose-100', iconColor: 'text-rose-600', headerBg: 'bg-gradient-to-r from-rose-50 to-pink-50', headerBorder: 'border-rose-200' },
+    'Examen Orina': { gradient: 'from-violet-500 to-purple-600', iconBg: 'bg-violet-100', iconColor: 'text-violet-600', headerBg: 'bg-gradient-to-r from-violet-50 to-purple-50', headerBorder: 'border-violet-200' },
+    'Otros': { gradient: 'from-slate-500 to-slate-600', iconBg: 'bg-slate-100', iconColor: 'text-slate-600', headerBg: 'bg-gradient-to-r from-slate-50 to-gray-50', headerBorder: 'border-slate-200' },
+}
+const DEFAULT_GRUPO_COLOR = { gradient: 'from-slate-500 to-slate-600', iconBg: 'bg-slate-100', iconColor: 'text-slate-600', headerBg: 'bg-slate-50', headerBorder: 'border-slate-200' }
+
 function convertJsonbToGrupos(lab: Record<string, any>): any[] {
     const gruposMap: Record<string, any[]> = {}
     for (const [key, value] of Object.entries(lab)) {
@@ -61,8 +72,24 @@ function convertJsonbToGrupos(lab: Record<string, any>): any[] {
             if (!gruposMap[ref.grupo]) gruposMap[ref.grupo] = []
             gruposMap[ref.grupo].push({ parametro: ref.label, resultado: String(numVal), unidad: ref.unidad, bandera, valor_referencia: `${ref.min} - ${ref.max}` })
         } else if (typeof value === 'string' && value.length > 0) {
-            if (!gruposMap['Otros']) gruposMap['Otros'] = []
-            gruposMap['Otros'].push({ parametro: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), resultado: value, unidad: '', bandera: 'normal' })
+            // Parse Examen Orina multi-line text into individual fields
+            const orina = key.toLowerCase().includes('examen_orina')
+            if (orina && value.includes('\n')) {
+                const lines = value.split('\n').filter(l => l.trim())
+                for (const line of lines) {
+                    const colonIdx = line.indexOf(':')
+                    if (colonIdx > 0) {
+                        const param = line.substring(0, colonIdx).trim()
+                        const val = line.substring(colonIdx + 1).trim()
+                        if (!gruposMap['Examen Orina']) gruposMap['Examen Orina'] = []
+                        gruposMap['Examen Orina'].push({ parametro: param, resultado: val, unidad: '', bandera: 'normal' })
+                    }
+                }
+            } else {
+                const grupoName = key.toLowerCase().includes('orina') ? 'Examen Orina' : 'Otros'
+                if (!gruposMap[grupoName]) gruposMap[grupoName] = []
+                gruposMap[grupoName].push({ parametro: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), resultado: value, unidad: '', bandera: 'normal' })
+            }
         }
     }
     return Object.entries(gruposMap).map(([grupo, resultados]) => ({ grupo, resultados }))
@@ -125,16 +152,17 @@ function GrupoCard({ grupo, resultados, prevLab, onEdit }: { grupo: string; resu
     const [expanded, setExpanded] = useState(true)
     const abnormalCount = resultados.filter(r => (r.bandera || 'normal') !== 'normal').length
     const total = resultados.length
+    const gc = GRUPO_COLORS[grupo] || DEFAULT_GRUPO_COLOR
 
     return (
-        <Card className="border-slate-100 shadow-sm overflow-hidden">
-            <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors">
+        <Card className="border-0 shadow-md overflow-hidden rounded-xl">
+            <button onClick={() => setExpanded(!expanded)} className={`w-full flex items-center justify-between px-5 py-4 ${gc.headerBg} border-b ${gc.headerBorder} hover:brightness-95 transition-all`}>
                 <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${abnormalCount > 0 ? 'bg-amber-100' : 'bg-emerald-100'}`}>
-                        <FlaskConical className={`w-4 h-4 ${abnormalCount > 0 ? 'text-amber-600' : 'text-emerald-600'}`} />
+                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${gc.gradient} flex items-center justify-center shadow-md`}>
+                        <FlaskConical className="w-4 h-4 text-white" />
                     </div>
                     <div className="text-left">
-                        <h4 className="text-sm font-bold text-slate-800">{grupo}</h4>
+                        <h4 className="text-sm font-black text-slate-800">{grupo}</h4>
                         <p className="text-[10px] text-slate-400 font-medium">{total} parámetros</p>
                     </div>
                 </div>
@@ -153,7 +181,7 @@ function GrupoCard({ grupo, resultados, prevLab, onEdit }: { grupo: string; resu
             </button>
             {expanded && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} transition={{ duration: 0.2 }}>
-                    <div className="flex items-center gap-2 py-1.5 px-3 bg-slate-50 border-y border-slate-100 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                    <div className={`flex items-center gap-2 py-1.5 px-3 ${gc.headerBg} border-b ${gc.headerBorder} text-[9px] font-black uppercase tracking-widest text-slate-400`}>
                         <span className="w-2" /><span className="flex-1">Parámetro</span>
                         <span className="w-16">Resultado</span><span className="w-14 hidden sm:block">Unidad</span>
                         <span className="w-24 text-right hidden sm:block">Ref.</span><span className="w-5" />

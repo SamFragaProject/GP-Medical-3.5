@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { HeartPulse, Loader2, Calendar, FileText, AlertTriangle, Download, Activity, Zap } from 'lucide-react';
 import { printSeccionPDF } from '@/components/expediente/ExportarPDFPaciente';
 import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos';
+import SectionFileUpload from '@/components/expediente/SectionFileUpload';
 
 export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacienteId: string; paciente?: any }) {
     const [estudios, setEstudios] = useState<Electrocardiograma[]>([]);
@@ -15,18 +16,19 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
     useEffect(() => {
         if (!pacienteId) return;
         loadECG();
-        async function loadECG() {
-            setLoading(true);
-            try {
-                const data = await electrocardiogramaService.listar({ paciente_id: pacienteId });
-                setEstudios(data);
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setLoading(false);
-            }
-        }
     }, [pacienteId]);
+
+    async function loadECG() {
+        setLoading(true);
+        try {
+            const data = await electrocardiogramaService.listar({ paciente_id: pacienteId });
+            setEstudios(data);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    }
 
     const handleExportPDF = (ecg: Electrocardiograma) => {
         const contenidoHTML = `
@@ -70,9 +72,12 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                     <HeartPulse className="w-8 h-8 text-slate-300" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-700">Sin electrocardiogramas</h3>
-                <p className="text-sm text-slate-400 mt-2 max-w-sm text-center">
-                    No existen trazados de ECG registrados para este paciente o no aplican a su rol.
+                <p className="text-sm text-slate-400 mt-2 max-w-sm text-center mb-4">
+                    No existen trazados de ECG registrados para este paciente.
                 </p>
+                <div className="max-w-sm mx-auto">
+                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="ecg" onFileUploaded={() => loadECG()} />
+                </div>
             </div>
         );
     }
@@ -101,6 +106,7 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
+                                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="ecg" compact onFileUploaded={() => loadECG()} />
                                     <Badge className={`${colores.bg} ${colores.text} font-bold text-xs px-3 py-1`}>
                                         {ecg.clasificacion.replace(/_/g, ' ').toUpperCase()}
                                     </Badge>
