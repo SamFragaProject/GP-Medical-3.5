@@ -218,7 +218,7 @@ export default function PacientesHub() {
                             className="h-11 px-5 rounded-xl bg-purple-500/20 border-purple-400/30 text-white hover:bg-purple-500/30 font-black text-[10px] uppercase tracking-widest gap-2"
                         >
                             <Brain className="w-4 h-4" />
-                            Analizador IA
+                            MedExtract Pro
                         </Button>
                         <Button
                             onClick={() => setViewMode('wizard')}
@@ -397,7 +397,7 @@ export default function PacientesHub() {
                                     <UserPlus className="w-4 h-4" /> Alta Manual
                                 </Button>
                                 <Button variant="outline" onClick={() => navigate('/herramientas/analizador')} className="gap-2 rounded-xl">
-                                    <Brain className="w-4 h-4" /> Analizador IA
+                                    <Brain className="w-4 h-4" /> MedExtract Pro
                                 </Button>
                             </div>
                         </div>

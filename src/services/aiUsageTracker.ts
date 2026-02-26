@@ -1,12 +1,13 @@
 /**
  * AI Usage Tracker — GP Medical Health
- * Tracks Gemini API token usage and estimated costs
+ * Tracks Gemini + OpenAI API token usage and estimated costs
  */
 
 export interface AIUsageEntry {
     id: string;
     timestamp: string;
     model: string;
+    provider: 'gemini' | 'openai';
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
@@ -22,23 +23,27 @@ export interface AIUsageStats {
     totalTokens: number;
     totalCostUSD: number;
     avgTokensPerCall: number;
+    byProvider: Record<string, { calls: number; tokens: number; cost: number }>;
     history: AIUsageEntry[];
 }
 
-// Gemini 2.0 Flash pricing (per 1M tokens)
-const PRICING = {
-    'gemini-2.0-flash': { input: 0.10, output: 0.40 },
-    'gemini-2.0-flash-lite': { input: 0.025, output: 0.10 },
-    'gemini-1.5-pro': { input: 1.25, output: 5.00 },
-    'gemini-1.5-flash': { input: 0.075, output: 0.30 },
-} as Record<string, { input: number; output: number }>;
+// Pricing per 1M tokens
+const PRICING: Record<string, { input: number; output: number; provider: 'gemini' | 'openai' }> = {
+    'gemini-2.0-flash': { input: 0.10, output: 0.40, provider: 'gemini' },
+    'gemini-2.0-flash-lite': { input: 0.025, output: 0.10, provider: 'gemini' },
+    'gemini-1.5-pro': { input: 1.25, output: 5.00, provider: 'gemini' },
+    'gemini-1.5-flash': { input: 0.075, output: 0.30, provider: 'gemini' },
+    'gpt-4o': { input: 2.50, output: 10.00, provider: 'openai' },
+    'gpt-4o-mini': { input: 0.15, output: 0.60, provider: 'openai' },
+    'gpt-4-turbo': { input: 10.00, output: 30.00, provider: 'openai' },
+    'gpt-3.5-turbo': { input: 0.50, output: 1.50, provider: 'openai' },
+};
 
 const STORAGE_KEY = 'gp_medical_ai_usage';
 
 function getHistory(): AIUsageEntry[] {
-    try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    } catch { return []; }
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    catch { return []; }
 }
 
 function saveHistory(entries: AIUsageEntry[]) {
@@ -52,6 +57,7 @@ export function trackUsage(model: string, inputTokens: number, outputTokens: num
         id: crypto.randomUUID(),
         timestamp: new Date().toISOString(),
         model,
+        provider: pricing.provider,
         inputTokens,
         outputTokens,
         totalTokens: inputTokens + outputTokens,
@@ -71,6 +77,15 @@ export function getUsageStats(): AIUsageStats {
     const totalOutputTokens = history.reduce((s, e) => s + e.outputTokens, 0);
     const totalTokens = totalInputTokens + totalOutputTokens;
     const totalCostUSD = history.reduce((s, e) => s + e.estimatedCostUSD, 0);
+
+    const byProvider: Record<string, { calls: number; tokens: number; cost: number }> = {};
+    history.forEach(e => {
+        if (!byProvider[e.provider]) byProvider[e.provider] = { calls: 0, tokens: 0, cost: 0 };
+        byProvider[e.provider].calls++;
+        byProvider[e.provider].tokens += e.totalTokens;
+        byProvider[e.provider].cost += e.estimatedCostUSD;
+    });
+
     return {
         totalCalls: history.length,
         totalInputTokens,
@@ -78,6 +93,7 @@ export function getUsageStats(): AIUsageStats {
         totalTokens,
         totalCostUSD: Math.round(totalCostUSD * 1_000_000) / 1_000_000,
         avgTokensPerCall: history.length > 0 ? Math.round(totalTokens / history.length) : 0,
+        byProvider,
         history,
     };
 }
@@ -87,13 +103,18 @@ export function clearUsageHistory() {
 }
 
 export function getModelInfo() {
+    const hasGemini = !!import.meta.env.VITE_GOOGLE_API_KEY;
+    const hasOpenAI = !!import.meta.env.VITE_OPENAI_API_KEY;
+
     return {
-        current: 'gemini-2.0-flash',
-        alternatives: [
-            { name: 'Gemini 2.0 Flash', id: 'gemini-2.0-flash', speed: '⚡ Más rápido', cost: '$0.10/$0.40 per 1M tokens', recommended: true },
-            { name: 'Gemini 2.0 Flash Lite', id: 'gemini-2.0-flash-lite', speed: '⚡⚡ Ultra rápido', cost: '$0.025/$0.10 per 1M tokens', recommended: false },
-            { name: 'Gemini 1.5 Pro', id: 'gemini-1.5-pro', speed: '🧠 Más preciso', cost: '$1.25/$5.00 per 1M tokens', recommended: false },
-            { name: 'Gemini 1.5 Flash', id: 'gemini-1.5-flash', speed: '⚡ Rápido', cost: '$0.075/$0.30 per 1M tokens', recommended: false },
+        current: hasGemini ? 'gemini-2.0-flash' : hasOpenAI ? 'gpt-4o-mini' : 'none',
+        hasGemini,
+        hasOpenAI,
+        models: [
+            { name: 'Gemini 2.0 Flash', id: 'gemini-2.0-flash', provider: 'gemini' as const, speed: '⚡ Rápido', cost: '$0.10/$0.40 /1M', vision: true, recommended: true, available: hasGemini },
+            { name: 'Gemini 1.5 Pro', id: 'gemini-1.5-pro', provider: 'gemini' as const, speed: '🧠 Preciso', cost: '$1.25/$5.00 /1M', vision: true, recommended: false, available: hasGemini },
+            { name: 'GPT-4o Mini', id: 'gpt-4o-mini', provider: 'openai' as const, speed: '⚡ Rápido', cost: '$0.15/$0.60 /1M', vision: true, recommended: false, available: hasOpenAI },
+            { name: 'GPT-4o', id: 'gpt-4o', provider: 'openai' as const, speed: '🧠 Preciso', cost: '$2.50/$10.00 /1M', vision: true, recommended: false, available: hasOpenAI },
         ],
         pricing: PRICING,
     };

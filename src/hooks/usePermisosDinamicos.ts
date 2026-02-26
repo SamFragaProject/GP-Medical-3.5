@@ -195,7 +195,7 @@ const ALL_MODULES_CATALOG: PermisoModulo[] = [
     // HERRAMIENTAS
     // ═══════════════════════════════════════════════════
     { modulo_codigo: 'importar_exportar', modulo_nombre: 'Importar / Exportar', modulo_ruta: '/herramientas/importar', modulo_icono: 'Database', modulo_gradiente: 'from-cyan-500 to-blue-600', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true },
-    { modulo_codigo: 'analizador_documentos', modulo_nombre: 'Analizador IA', modulo_ruta: '/herramientas/analizador', modulo_icono: 'Brain', modulo_gradiente: 'from-violet-500 to-fuchsia-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true }
+    { modulo_codigo: 'analizador_documentos', modulo_nombre: 'MedExtract Pro', modulo_ruta: '/herramientas/analizador', modulo_icono: 'Brain', modulo_gradiente: 'from-violet-500 to-fuchsia-500', puede_ver: true, puede_crear: true, puede_editar: true, puede_borrar: true, puede_exportar: true, puede_ver_todos: true, puede_aprobar: true, puede_firmar: true, puede_imprimir: true }
 ];
 
 // ═══════════════════════════════════════════════════

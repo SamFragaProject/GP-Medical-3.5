@@ -1,17 +1,18 @@
 // =====================================================
-// PÁGINA: Analizador de Documentos Médicos con IA v2
-// GPMedical ERP Pro — Herramientas — Wizard Style
+// MedExtract Pro — Motor de Extracción Médica con IA
+// GPMedical ERP Pro — La joya del sistema
 // =====================================================
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     UploadCloud, File as FileIcon, Download, FileText, CheckCircle, AlertCircle,
-    Loader2, Play, Database, Brain, Sparkles, X, Eye,
-    FileSpreadsheet, Image as ImageIcon, FileType, Archive, Trash2,
+    Loader2, Play, Database, Brain, Sparkles, X, Eye, Shield,
+    FileSpreadsheet, Image as ImageIcon, FileType, Trash2,
     ChevronDown, ChevronUp, ZapIcon, BarChart3, PieChart, Activity,
-    DollarSign, Cpu, TrendingUp, Settings2, Plus, Bookmark, BookmarkCheck, Info
+    Cpu, TrendingUp, Bookmark, BookmarkCheck, Info, CheckSquare, Square, Lightbulb, DollarSign
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader';
 import { toast } from 'sonner';
 import Papa from 'papaparse';
@@ -27,14 +28,15 @@ import {
 } from 'recharts';
 
 // ── Wizard Steps ──
-type WizardStep = 'upload' | 'results' | 'charts' | 'usage';
+type WizardStep = 'upload' | 'results' | 'verify' | 'charts' | 'usage';
 
-const STEPS: { id: WizardStep; label: string; icon: any }[] = [
-    { id: 'upload', label: 'Subir Documentos', icon: UploadCloud },
-    { id: 'results', label: 'Resultados', icon: Database },
-    { id: 'charts', label: 'Gráficas', icon: BarChart3 },
-    { id: 'usage', label: 'Uso de IA', icon: Cpu },
-];
+const STEP_INFO: Record<string, { title: string; tip: string }> = {
+    upload: { title: 'Paso 1 — Sube tus documentos', tip: '💡 Sube archivos PDF, imágenes de rayos X, laboratorios escaneados o ZIPs completos. MedExtract Pro los clasificará automáticamente y extraerá cada parámetro médico.' },
+    results: { title: 'Paso 2 — Resultados extraídos', tip: '💡 Aquí ves TODOS los datos que la IA extrajo. Cada parámetro (glucosa, hemoglobina, EI, mAs, etc.) aparece como fila individual. Puedes guardar parámetros favoritos con el bookmark.' },
+    verify: { title: 'Paso 3 — Verificación e integración', tip: '💡 Selecciona qué datos deseas integrar al expediente del paciente. Puedes deseleccionar los que no apliquen. Los datos marcados se vincularán al perfil clínico.' },
+    charts: { title: 'Paso 4 — Visualización', tip: '💡 Gráficas generadas a partir de los datos extraídos: audiogramas, curvas flujo-volumen, distribución de categorías y estado de resultados.' },
+    usage: { title: 'Centro de Control IA', tip: '🔒 Panel exclusivo Super Admin — Monitorea tokens, costos y rendimiento de los modelos IA (Gemini + OpenAI).' },
+};
 
 // ── Colores ──
 const CATEGORY_ICONS: Record<string, any> = {
@@ -52,12 +54,24 @@ const OBS_COLORS: Record<string, string> = {
 const CHART_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 export default function AnalizadorDocumentos() {
+    const { user } = useAuth();
+    const isSuperAdmin = user?.rol === 'super_admin';
+
+    const STEPS: { id: WizardStep; label: string; icon: any; superOnly?: boolean }[] = [
+        { id: 'upload', label: 'Documentos', icon: UploadCloud },
+        { id: 'results', label: 'Extracción', icon: Database },
+        { id: 'verify', label: 'Verificar', icon: CheckSquare },
+        { id: 'charts', label: 'Gráficas', icon: BarChart3 },
+        ...(isSuperAdmin ? [{ id: 'usage' as WizardStep, label: 'Control IA', icon: Shield, superOnly: true }] : []),
+    ];
+
     const [step, setStep] = useState<WizardStep>('upload');
     const [fileItems, setFileItems] = useState<FileItem[]>([]);
     const [isExpandingZip, setIsExpandingZip] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
     const [usageStats, setUsageStats] = useState<AIUsageStats | null>(null);
+    const [selectedForIntegration, setSelectedForIntegration] = useState<Set<string>>(new Set());
     const [savedParams, setSavedParams] = useState<Set<string>>(() => {
         try { return new Set(JSON.parse(localStorage.getItem('gp_saved_params') || '[]')); } catch { return new Set(); }
     });
@@ -544,9 +558,9 @@ export default function AnalizadorDocumentos() {
                     <div className="glass-card rounded-2xl p-5">
                         <h4 className="text-xs font-black text-gray-700 uppercase tracking-wider mb-3">Modelos Disponibles</h4>
                         <div className="space-y-2">
-                            {modelInfo.alternatives.map(m => (
-                                <div key={m.id} className={`flex items-center justify-between p-3 rounded-xl border ${m.recommended ? 'border-emerald-200 bg-emerald-50/50' : 'border-gray-100'}`}>
-                                    <div><p className="text-sm font-bold text-gray-800">{m.name}{m.recommended && <span className="ml-2 text-[10px] bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full font-bold">EN USO</span>}</p><p className="text-[10px] text-gray-400">{m.speed} · {m.cost}</p></div>
+                            {modelInfo.models.map(m => (
+                                <div key={m.id} className={`flex items-center justify-between p-3 rounded-xl border ${m.recommended ? 'border-emerald-200 bg-emerald-50/50' : 'border-gray-100'} ${!m.available ? 'opacity-40' : ''}`}>
+                                    <div><p className="text-sm font-bold text-gray-800">{m.name}{m.recommended && <span className="ml-2 text-[10px] bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full font-bold">EN USO</span>}{!m.available && <span className="ml-2 text-[10px] bg-red-50 text-red-400 px-2 py-0.5 rounded-full font-bold">SIN KEY</span>}</p><p className="text-[10px] text-gray-400">{m.provider.toUpperCase()} · {m.speed} · {m.cost}</p></div>
                                 </div>
                             ))}
                         </div>
@@ -589,14 +603,86 @@ export default function AnalizadorDocumentos() {
         );
     };
 
+    // ── STEP: Verify (selección de datos para integrar) ──
+    const renderVerify = () => {
+        // Auto-select all params on first visit
+        if (selectedForIntegration.size === 0 && allParams.length > 0) {
+            const all = new Set(allParams.map((p, i) => `${i}-${p.parametro}`));
+            setSelectedForIntegration(all);
+        }
+        const toggleParam = (key: string) => setSelectedForIntegration(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+        const selectAll = () => setSelectedForIntegration(new Set(allParams.map((p, i) => `${i}-${p.parametro}`)));
+        const deselectAll = () => setSelectedForIntegration(new Set());
+
+        return (
+            <div className="px-4 space-y-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg"><CheckSquare className="w-5 h-5 text-white" /></div>
+                        <div><h2 className="text-lg font-black text-gray-900">Verificación de Datos</h2><p className="text-xs text-gray-400">{selectedForIntegration.size} de {allParams.length} seleccionados para integrar</p></div>
+                    </div>
+                    <div className="flex gap-3">
+                        <button onClick={selectAll} className="text-xs font-bold text-emerald-600 hover:underline">✓ Todos</button>
+                        <button onClick={deselectAll} className="text-xs font-bold text-gray-400 hover:underline">✗ Ninguno</button>
+                    </div>
+                </div>
+
+                {allParams.length === 0 ? (
+                    <div className="text-center py-12"><p className="text-gray-400">Procesa documentos primero.</p><button onClick={() => setStep('upload')} className="mt-4 text-emerald-600 font-bold text-sm hover:underline">← Subir Documentos</button></div>
+                ) : (
+                    <div className="glass-card rounded-2xl p-5 max-h-[500px] overflow-y-auto custom-scrollbar">
+                        <table className="min-w-full text-sm">
+                            <thead className="bg-gray-50 sticky top-0 z-10">
+                                <tr><th className="px-3 py-2.5 text-left text-[10px] text-gray-500 uppercase w-10">✓</th><th className="px-3 py-2.5 text-left text-[10px] text-gray-500 uppercase">Cat.</th><th className="px-3 py-2.5 text-left text-[10px] text-gray-500 uppercase">Parámetro</th><th className="px-3 py-2.5 text-left text-[10px] text-gray-500 uppercase">Resultado</th><th className="px-3 py-2.5 text-left text-[10px] text-gray-500 uppercase">Unidad</th><th className="px-3 py-2.5 text-left text-[10px] text-gray-500 uppercase">Obs.</th></tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {allParams.map((p, i) => {
+                                    const key = `${i}-${p.parametro}`;
+                                    const sel = selectedForIntegration.has(key);
+                                    const obsClass = OBS_COLORS[(p.observacion || '').trim()] || '';
+                                    return (
+                                        <tr key={key} onClick={() => toggleParam(key)} className={`cursor-pointer transition-all ${sel ? 'bg-emerald-50/50 hover:bg-emerald-50' : 'opacity-40 hover:opacity-70'}`}>
+                                            <td className="px-3 py-2">{sel ? <CheckSquare className="w-4 h-4 text-emerald-500" /> : <Square className="w-4 h-4 text-gray-300" />}</td>
+                                            <td className="px-3 py-2 text-[10px] text-gray-500">{p.categoria || '-'}</td>
+                                            <td className="px-3 py-2 font-semibold text-gray-800 text-xs">{p.parametro}</td>
+                                            <td className="px-3 py-2 font-black text-emerald-600 text-xs">{p.resultado}</td>
+                                            <td className="px-3 py-2 text-xs text-gray-500">{p.unidad || '-'}</td>
+                                            <td className="px-3 py-2"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${obsClass || 'text-gray-400'}`}>{p.observacion || '-'}</span></td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {selectedForIntegration.size > 0 && (
+                    <div className="flex justify-center">
+                        <button onClick={() => { toast.success(`${selectedForIntegration.size} parámetros listos para integrar al expediente`); }} className="btn-premium px-8 py-3 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-xl">
+                            <Sparkles className="w-5 h-5" /> Confirmar Integración ({selectedForIntegration.size} datos)
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className="space-y-6">
-            <PremiumPageHeader title="Analizador IA" subtitle="Extrae, estructura y visualiza datos médicos con inteligencia artificial" icon={Brain} badge="GP MEDICAL HEALTH" actions={
+            <PremiumPageHeader title="MedExtract Pro" subtitle="Motor de extracción médica con inteligencia artificial — Gemini + OpenAI" icon={Brain} badge="GP MEDICAL HEALTH" actions={
                 <div className="flex gap-2">
                     {stats.completed > 0 && <><button onClick={exportToCsv} className="px-4 py-2 bg-white/10 text-white rounded-xl text-xs font-bold hover:bg-white/20 flex items-center gap-2"><Download className="w-3.5 h-3.5" /> CSV</button>
                         <button onClick={exportToMarkdown} className="px-4 py-2 bg-white/10 text-white rounded-xl text-xs font-bold hover:bg-white/20 flex items-center gap-2"><FileText className="w-3.5 h-3.5" /> MD</button></>}
                 </div>
             } />
+
+            {/* Step info banner */}
+            {STEP_INFO[step] && (
+                <div className="mx-4 p-4 bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200/50 rounded-2xl flex items-start gap-3">
+                    <Lightbulb className="w-5 h-5 text-violet-500 mt-0.5 flex-shrink-0" />
+                    <div><p className="font-bold text-violet-800 text-sm">{STEP_INFO[step].title}</p><p className="text-xs text-violet-600 mt-1">{STEP_INFO[step].tip}</p></div>
+                </div>
+            )}
 
             {!geminiReady && (
                 <div className="mx-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
@@ -611,8 +697,9 @@ export default function AnalizadorDocumentos() {
                 <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                     {step === 'upload' && renderUpload()}
                     {step === 'results' && renderResults()}
+                    {step === 'verify' && renderVerify()}
                     {step === 'charts' && renderCharts()}
-                    {step === 'usage' && renderUsage()}
+                    {step === 'usage' && isSuperAdmin && renderUsage()}
                 </motion.div>
             </AnimatePresence>
         </div>
