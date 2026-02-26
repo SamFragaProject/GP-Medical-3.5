@@ -14,6 +14,7 @@ import { Loader2, Inbox, Upload, ScanLine } from 'lucide-react'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 import { SubirRadiografiaModal } from '@/components/ui/SubirRadiografiaModal'
 import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
+import SectionFileUpload from '@/components/expediente/SectionFileUpload'
 
 const RESULTADO_STYLES: Record<string, { bg: string; text: string; border: string; label: string; dot: string }> = {
     normal: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Normal', dot: 'bg-emerald-500' },
@@ -165,9 +166,12 @@ export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
                     <Inbox className="w-8 h-8 text-slate-300" />
                 </div>
                 <h3 className="text-slate-800 font-bold">Sin estudios radiológicos</h3>
-                <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2">
+                <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2 mb-4">
                     Este paciente aún no cuenta con estudios de Rayos X registrados.
                 </p>
+                <div className="max-w-sm mx-auto">
+                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="radiografia" onDataSaved={() => loadData()} />
+                </div>
             </Card>
         )
     }
@@ -298,24 +302,15 @@ export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
                                                 </div>
                                             </div>
 
-                                            {/* Imagen Adjunta */}
+                                            {/* Upload Section with AI Extraction */}
                                             <div className="pt-4 border-t border-slate-100">
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Archivo de Imagen (RX)</p>
-                                                <div className="flex items-center gap-3">
-                                                    <input
-                                                        type="text"
-                                                        value={rx.imagen_url || ''}
-                                                        readOnly
-                                                        placeholder="Ninguna imagen adjunta"
-                                                        className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-600 outline-none"
-                                                    />
-                                                    <button
-                                                        onClick={() => { setActiveRxId(rx.id); setUploadModalOpen(true); }}
-                                                        className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg text-xs font-bold transition-colors flex items-center gap-2"
-                                                    >
-                                                        <Upload className="w-3.5 h-3.5" /> Adjuntar RX (JPG)
-                                                    </button>
-                                                </div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Subir Radiografía + Extracción IA</p>
+                                                <SectionFileUpload
+                                                    pacienteId={pacienteId}
+                                                    tipoEstudio="radiografia"
+                                                    onDataSaved={() => loadData()}
+                                                    onFileUploaded={(url) => setEstudios(prev => prev.map(e => e.id === rx.id ? { ...e, imagen_url: url } : e))}
+                                                />
                                                 {rx.imagen_url && (
                                                     <div className="mt-3 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 relative aspect-video flex items-center justify-center">
                                                         <img src={rx.imagen_url} alt="Radiografía" className="max-w-full max-h-full object-contain" />

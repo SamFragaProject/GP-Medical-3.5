@@ -351,7 +351,7 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
                     Este paciente aún no cuenta con resultados de laboratorio registrados.
                 </p>
                 <div className="max-w-sm mx-auto">
-                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="laboratorio" onFileUploaded={() => loadData()} />
+                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="laboratorio" onDataSaved={() => loadData()} />
                 </div>
             </Card>
         )
@@ -374,7 +374,7 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-3 items-center">
-                        <SectionFileUpload pacienteId={pacienteId} tipoEstudio="laboratorio" compact onFileUploaded={() => loadData()} />
+                        <SectionFileUpload pacienteId={pacienteId} tipoEstudio="laboratorio" compact onDataSaved={() => loadData()} />
                         <div className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-100 text-center">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fecha</p>
                             <p className="text-sm font-bold text-slate-700">
