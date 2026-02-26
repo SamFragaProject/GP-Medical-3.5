@@ -213,7 +213,7 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId: s
                 </TabsList>
 
                 <AnimatePresence mode="wait">
-                    <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }}>
+                    <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
 
                         {/* ═══ RESUMEN ═══ */}
                         <TabsContent value="resumen" className="mt-0 space-y-4">

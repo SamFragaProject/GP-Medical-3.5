@@ -44,7 +44,6 @@ const IncapacidadesTab = React.lazy(() => import('@/components/expediente/Incapa
 const DictamenesTab = React.lazy(() => import('@/components/expediente/DictamenesTab'))
 const DocumentosExpedienteTab = React.lazy(() => import('@/components/expediente/DocumentosExpedienteTab'))
 const PatientDashboardTab = React.lazy(() => import('@/components/expediente/PatientDashboardTab'))
-const EstudiosHub = React.lazy(() => import('@/components/expediente/EstudiosHub'))
 
 // =============================================
 // HELPERS
@@ -75,12 +74,11 @@ interface TabConfig {
 }
 
 const TABS: TabConfig[] = [
-    { value: 'dashboard', label: 'Dashboard', icon: Activity, group: 'clinico', description: 'Semáforo clínico, alertas y resumen ejecutivo' },
+    { value: 'dashboard', label: 'Dashboard', icon: Activity, group: 'clinico', description: 'Semáforo clínico, alertas y análisis ejecutivo' },
     { value: 'general', label: 'General', icon: User, group: 'info' },
     { value: 'laboral', label: 'Laboral', icon: Building2, group: 'info' },
     { value: 'contacto', label: 'Contacto', icon: Phone, group: 'info' },
-    { value: 'estudios', label: 'Estudios', icon: FlaskConical, group: 'clinico', description: 'Labs, Audiometría, Espirometría, ECG, RX, Optometría' },
-    { value: 'expediente', label: 'Expediente', icon: Stethoscope, group: 'clinico', description: 'APNP, AHF, Exploración Física, Notas Médicas' },
+    { value: 'expediente', label: 'Expediente', icon: Stethoscope, group: 'clinico', description: 'APNP, AHF, Labs, Audiometría, Espirometría, ECG, RX, Exploración Física' },
     { value: 'documentos', label: 'Documentos', icon: FolderOpen, group: 'clinico', description: 'Documentos cifrados del paciente' },
     { value: 'recetas', label: 'Recetas', icon: Pill, group: 'diagnostico', description: 'Prescripciones médicas' },
     { value: 'dictamenes', label: 'Dictámenes', icon: FileText, group: 'diagnostico', description: 'Dictámenes de aptitud laboral' },
@@ -556,8 +554,8 @@ export default function PerfilPaciente() {
                 {activeTabConfig?.description && (
                     <motion.div
                         key={activeTab}
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100"
                     >
                         <activeTabConfig.icon className="w-4 h-4 text-slate-400" />
@@ -568,10 +566,11 @@ export default function PerfilPaciente() {
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeTab}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="min-h-[500px]"
                     >
                         {/* ═══ GENERAL TAB ═══ */}
                         <TabsContent value="general" className="space-y-6 mt-0">
@@ -766,12 +765,7 @@ export default function PerfilPaciente() {
                             </Suspense>
                         </TabsContent>
 
-                        {/* ═══ ESTUDIOS TAB ═══ */}
-                        <TabsContent value="estudios" className="mt-0">
-                            <Suspense fallback={<TabLoader label="Cargando estudios..." />}>
-                                <EstudiosHub pacienteId={id!} paciente={paciente} />
-                            </Suspense>
-                        </TabsContent>
+
 
                         {/* ═══ CLINICAL TAB ═══ */}
                         <TabsContent value="expediente" className="mt-0">

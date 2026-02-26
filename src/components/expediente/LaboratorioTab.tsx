@@ -15,6 +15,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
+import SectionFileUpload from '@/components/expediente/SectionFileUpload'
 import {
     type TipoEstudio, type Bandera, type ResultadoEstudio, type EstudioCompleto,
     getUltimoEstudioCompleto, getEstudios, getEstudioCompleto,
@@ -318,9 +319,12 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
                     <Inbox className="w-8 h-8 text-slate-300" />
                 </div>
                 <h3 className="text-slate-800 font-bold">Sin resultados de laboratorio</h3>
-                <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2">
+                <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2 mb-4">
                     Este paciente aún no cuenta con resultados de laboratorio registrados.
                 </p>
+                <div className="max-w-sm mx-auto">
+                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="laboratorio" onFileUploaded={() => loadData()} />
+                </div>
             </Card>
         )
     }
@@ -341,7 +345,8 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
                             </p>
                         </div>
                     </div>
-                    <div className="flex gap-3 items-center">
+                    <div className="flex flex-wrap gap-3 items-center">
+                        <SectionFileUpload pacienteId={pacienteId} tipoEstudio="laboratorio" compact onFileUploaded={() => loadData()} />
                         <div className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-100 text-center">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fecha</p>
                             <p className="text-sm font-bold text-slate-700">

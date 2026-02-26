@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase'
 import { Loader2, Inbox } from 'lucide-react'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
+import SectionFileUpload from '@/components/expediente/SectionFileUpload'
 
 const FREQUENCIES = ['250', '500', '1000', '2000', '3000', '4000', '6000', '8000']
 const FREQ_LABELS = ['250', '500', '1K', '2K', '3K', '4K', '6K', '8K']
@@ -283,9 +284,12 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
                     <Inbox className="w-8 h-8 text-slate-300" />
                 </div>
                 <h3 className="text-slate-800 font-bold">Sin registros de audiometría</h3>
-                <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2">
+                <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2 mb-4">
                     Este paciente aún no cuenta con estudios de audiometría tonal realizados.
                 </p>
+                <div className="max-w-sm mx-auto">
+                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="audiometria" onFileUploaded={() => loadData()} />
+                </div>
             </Card>
         )
     }
@@ -306,7 +310,8 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
                             <p className="text-xs text-slate-400 font-medium">{audio.tecnico} — {audio.equipo}</p>
                         </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3 items-center">
+                        <SectionFileUpload pacienteId={pacienteId} tipoEstudio="audiometria" compact onFileUploaded={() => loadData()} />
                         <div className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-100 text-center">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fecha</p>
                             <p className="text-sm font-bold text-slate-700">
