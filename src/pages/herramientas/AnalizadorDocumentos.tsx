@@ -16,6 +16,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
+import { integrarDatosExtraidos, type IntegrationResult } from '@/services/medExtractIntegrationService';
+import { supabase } from '@/lib/supabase';
 import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader';
 import { toast } from 'sonner';
 import Papa from 'papaparse';
@@ -79,6 +81,30 @@ export default function AnalizadorDocumentos() {
     });
     const fileInputRef = useRef<HTMLInputElement>(null);
     const geminiReady = isGeminiConfigured();
+
+    // ── Patient selection for integration ──
+    const [pacienteId, setPacienteId] = useState<string>('');
+    const [pacienteNombre, setPacienteNombre] = useState<string>('');
+    const [pacienteSearch, setPacienteSearch] = useState('');
+    const [pacienteResults, setPacienteResults] = useState<Array<{ id: string; nombre: string; apellido_paterno: string; empresa_nombre?: string }>>([]);
+    const [isSearchingPaciente, setIsSearchingPaciente] = useState(false);
+    const [isIntegrating, setIsIntegrating] = useState(false);
+    const [integrationResult, setIntegrationResult] = useState<IntegrationResult | null>(null);
+
+    // Search pacientes in Supabase
+    const searchPacientes = useCallback(async (query: string) => {
+        if (query.length < 2) { setPacienteResults([]); return; }
+        setIsSearchingPaciente(true);
+        try {
+            const { data } = await supabase
+                .from('pacientes')
+                .select('id, nombre, apellido_paterno, empresa_nombre')
+                .or(`nombre.ilike.%${query}%,apellido_paterno.ilike.%${query}%`)
+                .limit(8);
+            setPacienteResults(data || []);
+        } catch { setPacienteResults([]); }
+        setIsSearchingPaciente(false);
+    }, []);
 
     // ── ZIP Expansion ──
     const expandZipFiles = async (files: File[]): Promise<File[]> => {
@@ -760,15 +786,66 @@ export default function AnalizadorDocumentos() {
                         Siguiente <ArrowRight className="w-4 h-4" />
                     </Button>
                 ) : (
-                    <Button onClick={() => {
-                        // Collect integration data
-                        const integrationData = allParams.filter((_, i) => selectedForIntegration.has(`${i}-${allParams[i]?.parametro}`));
-                        const patientInfo = completedResults[0]?.structuredData?.paciente || 'Paciente';
-                        console.log('[MedExtract Pro] Integración finalizada:', { paciente: patientInfo, parametros: integrationData.length, graficas: allGraphData.length, archivos: completedResults.length });
-                        toast.success(`✅ ${integrationData.length} parámetros y ${allGraphData.length} gráficas integrados al expediente de ${patientInfo}`);
-                    }} className="h-11 px-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white gap-2 font-black shadow-lg shadow-emerald-500/30">
-                        <Save className="w-4 h-4" /> Finalizar y Guardar
-                    </Button>
+                    <>
+                        {/* Patient selector + Finalizar */}
+                        {!pacienteId ? (
+                            <div className="flex items-center gap-2">
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="🔍 Buscar paciente..."
+                                        value={pacienteSearch}
+                                        onChange={e => { setPacienteSearch(e.target.value); searchPacientes(e.target.value); }}
+                                        className="h-11 px-4 rounded-xl border-2 border-emerald-200 focus:border-emerald-500 outline-none text-sm w-64"
+                                    />
+                                    {pacienteResults.length > 0 && (
+                                        <div className="absolute top-12 left-0 w-full bg-white rounded-xl shadow-2xl border z-50 max-h-48 overflow-y-auto">
+                                            {pacienteResults.map(p => (
+                                                <button key={p.id} onClick={() => { setPacienteId(p.id); setPacienteNombre(`${p.nombre} ${p.apellido_paterno}`); setPacienteSearch(''); setPacienteResults([]); }}
+                                                    className="w-full text-left px-4 py-2.5 hover:bg-emerald-50 text-sm border-b last:border-0 transition-colors">
+                                                    <span className="font-bold text-slate-800">{p.nombre} {p.apellido_paterno}</span>
+                                                    {p.empresa_nombre && <span className="text-xs text-slate-400 ml-2">· {p.empresa_nombre}</span>}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <span className="text-xs text-slate-400">Selecciona paciente para guardar</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                                    <span className="text-sm font-bold text-emerald-800">{pacienteNombre}</span>
+                                    <button onClick={() => { setPacienteId(''); setPacienteNombre(''); }} className="text-slate-400 hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
+                                </div>
+                                <Button onClick={async () => {
+                                    setIsIntegrating(true);
+                                    try {
+                                        const result = await integrarDatosExtraidos({
+                                            pacienteId,
+                                            results: completedResults.map(r => ({ fileName: r.fileName, fileType: r.fileType, structuredData: r.structuredData })),
+                                            selectedParams: selectedForIntegration,
+                                            allParams,
+                                        });
+                                        setIntegrationResult(result);
+                                        if (result.success) {
+                                            toast.success(`✅ ${result.parametrosIntegrados} parámetros y ${result.graficasCreadas} gráficas integrados al expediente de ${pacienteNombre}`);
+                                        } else {
+                                            toast.error(`Integración parcial: ${result.errores.join(', ')}`);
+                                        }
+                                        console.log('[MedExtract Pro] Resultado integración:', result);
+                                    } catch (e: any) {
+                                        toast.error(`Error: ${e.message}`);
+                                    }
+                                    setIsIntegrating(false);
+                                }} disabled={isIntegrating} className="h-11 px-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white gap-2 font-black shadow-lg shadow-emerald-500/30">
+                                    {isIntegrating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                    {isIntegrating ? 'Integrando...' : 'Finalizar y Guardar'}
+                                </Button>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>
