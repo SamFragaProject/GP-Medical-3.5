@@ -176,20 +176,20 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId: s
     const data = expediente
 
     const TABS = [
-        { value: 'resumen', label: 'Resumen', icon: Activity },
-        { value: 'apnp', label: 'APNP', icon: Heart },
-        { value: 'ahf', label: 'AHF', icon: Shield },
-        { value: 'ocupacional', label: 'Ocupacional', icon: Briefcase },
-        { value: 'exploracion', label: 'Exploración Física', icon: Stethoscope },
-        { value: 'audiometria', label: 'Audiometría', icon: Ear },
-        { value: 'espirometria', label: 'Espiometría', icon: Wind },
-        { value: 'electrocardiograma', label: 'ECG', icon: Heart },
-        { value: 'vision', label: 'Visión', icon: EyeIcon },
-        { value: 'laboratorio', label: 'Laboratorio', icon: FlaskConical },
-        { value: 'rayosx', label: 'Rayos X', icon: Bone },
-        { value: 'consentimientos', label: 'Consentimientos', icon: Pen },
-        { value: 'notas', label: 'Notas Médicas', icon: GitBranch },
-        { value: 'timeline', label: 'Línea de Tiempo', icon: Clock },
+        { value: 'resumen', label: 'Resumen', icon: Activity, gradient: 'from-emerald-500 to-teal-600', bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-300' },
+        { value: 'apnp', label: 'APNP', icon: Heart, gradient: 'from-rose-500 to-pink-600', bg: 'bg-rose-50', text: 'text-rose-700', ring: 'ring-rose-300' },
+        { value: 'ahf', label: 'AHF', icon: Shield, gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', text: 'text-violet-700', ring: 'ring-violet-300' },
+        { value: 'ocupacional', label: 'Ocupacional', icon: Briefcase, gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-300' },
+        { value: 'exploracion', label: 'Exploración Física', icon: Stethoscope, gradient: 'from-cyan-500 to-blue-600', bg: 'bg-cyan-50', text: 'text-cyan-700', ring: 'ring-cyan-300' },
+        { value: 'audiometria', label: 'Audiometría', icon: Ear, gradient: 'from-indigo-500 to-blue-600', bg: 'bg-indigo-50', text: 'text-indigo-700', ring: 'ring-indigo-300' },
+        { value: 'espirometria', label: 'Espirometría', icon: Wind, gradient: 'from-sky-500 to-cyan-600', bg: 'bg-sky-50', text: 'text-sky-700', ring: 'ring-sky-300' },
+        { value: 'electrocardiograma', label: 'ECG', icon: Heart, gradient: 'from-red-500 to-rose-600', bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-300' },
+        { value: 'vision', label: 'Visión', icon: EyeIcon, gradient: 'from-teal-500 to-emerald-600', bg: 'bg-teal-50', text: 'text-teal-700', ring: 'ring-teal-300' },
+        { value: 'laboratorio', label: 'Laboratorio', icon: FlaskConical, gradient: 'from-green-500 to-emerald-600', bg: 'bg-green-50', text: 'text-green-700', ring: 'ring-green-300' },
+        { value: 'rayosx', label: 'Rayos X', icon: Bone, gradient: 'from-slate-500 to-gray-600', bg: 'bg-slate-50', text: 'text-slate-700', ring: 'ring-slate-300' },
+        { value: 'consentimientos', label: 'Consentimientos', icon: Pen, gradient: 'from-blue-500 to-indigo-600', bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-300' },
+        { value: 'notas', label: 'Notas Médicas', icon: GitBranch, gradient: 'from-fuchsia-500 to-pink-600', bg: 'bg-fuchsia-50', text: 'text-fuchsia-700', ring: 'ring-fuchsia-300' },
+        { value: 'timeline', label: 'Línea de Tiempo', icon: Clock, gradient: 'from-orange-500 to-amber-600', bg: 'bg-orange-50', text: 'text-orange-700', ring: 'ring-orange-300' },
     ]
 
     return (
@@ -202,13 +202,44 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId: s
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
-                <TabsList className="bg-white/80 backdrop-blur border border-slate-100 p-1.5 rounded-2xl w-full flex-wrap gap-1 h-auto shadow-sm">
+                {/* ═══ CARD GRID NAVIGATION ═══ */}
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-2.5">
+                    {TABS.map(tab => {
+                        const isActive = activeTab === tab.value
+                        return (
+                            <button
+                                key={tab.value}
+                                onClick={() => setActiveTab(tab.value)}
+                                className={`
+                                    relative group flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer
+                                    ${isActive
+                                        ? `${tab.bg} border-transparent ring-2 ${tab.ring} shadow-lg scale-[1.03]`
+                                        : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:scale-[1.02]'
+                                    }
+                                `}
+                            >
+                                <div className={`
+                                    w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 shadow-sm
+                                    ${isActive
+                                        ? `bg-gradient-to-br ${tab.gradient} shadow-md`
+                                        : 'bg-slate-100 group-hover:bg-slate-200'
+                                    }
+                                `}>
+                                    <tab.icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`} />
+                                </div>
+                                <span className={`text-[10px] font-bold leading-tight text-center ${isActive ? tab.text : 'text-slate-500 group-hover:text-slate-700'}`}>
+                                    {tab.label}
+                                </span>
+                                {isActive && (
+                                    <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-1 rounded-full bg-gradient-to-r ${tab.gradient}`} />
+                                )}
+                            </button>
+                        )
+                    })}
+                </div>
+                <TabsList className="hidden">
                     {TABS.map(tab => (
-                        <TabsTrigger key={tab.value} value={tab.value}
-                            className="rounded-xl px-3 py-2 text-xs font-bold data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm gap-1.5">
-                            <tab.icon className="w-3.5 h-3.5" />
-                            <span className="hidden lg:inline">{tab.label}</span>
-                        </TabsTrigger>
+                        <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
                     ))}
                 </TabsList>
 

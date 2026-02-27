@@ -85,6 +85,18 @@ const TABS: TabConfig[] = [
     { value: 'incapacidades', label: 'Incapacidades', icon: FileBarChart, group: 'diagnostico', description: 'Certificados de incapacidad' },
 ]
 
+const TAB_COLORS: Record<string, { gradient: string; bg: string; text: string; ring: string }> = {
+    dashboard: { gradient: 'from-emerald-500 to-teal-600', bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-300' },
+    general: { gradient: 'from-slate-500 to-gray-600', bg: 'bg-slate-50', text: 'text-slate-700', ring: 'ring-slate-300' },
+    laboral: { gradient: 'from-blue-500 to-indigo-600', bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-300' },
+    contacto: { gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', text: 'text-violet-700', ring: 'ring-violet-300' },
+    expediente: { gradient: 'from-teal-500 to-emerald-600', bg: 'bg-teal-50', text: 'text-teal-700', ring: 'ring-teal-300' },
+    documentos: { gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-300' },
+    recetas: { gradient: 'from-pink-500 to-rose-600', bg: 'bg-pink-50', text: 'text-pink-700', ring: 'ring-pink-300' },
+    dictamenes: { gradient: 'from-cyan-500 to-blue-600', bg: 'bg-cyan-50', text: 'text-cyan-700', ring: 'ring-cyan-300' },
+    incapacidades: { gradient: 'from-red-500 to-rose-600', bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-300' },
+}
+
 // =============================================
 // EDITABLE FIELD COMPONENT
 // =============================================
@@ -522,34 +534,77 @@ export default function PerfilPaciente() {
 
             {/* ── UNIFIED TABS ── */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <div className="bg-white shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-100 p-2">
-                    <div className="flex flex-wrap items-center gap-1 mb-1 px-1">
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mr-1">📋 Información</span>
-                        <span className="text-slate-200 mx-1">|</span>
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500 mr-1">🩺 Expediente</span>
-                        <span className="text-slate-200 mx-1">|</span>
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-500">💊 Tratamiento</span>
-                    </div>
-                    <TabsList className="bg-transparent w-full h-auto flex-wrap gap-1 p-0">
-                        {TABS.map(tab => {
-                            const groupStyle = tab.group === 'clinico'
-                                ? 'data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 data-[state=active]:border-emerald-200'
-                                : tab.group === 'diagnostico'
-                                    ? 'data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-blue-200'
-                                    : 'data-[state=active]:bg-slate-50 data-[state=active]:text-slate-800 data-[state=active]:border-slate-200'
+                {/* ═══ CARD GRID NAVIGATION ═══ */}
+                <div className="bg-white shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-100 p-4">
+                    {/* Group: Información */}
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 px-1">📋 Información del Paciente</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-2 mb-3">
+                        {TABS.filter(t => t.group === 'info').map(tab => {
+                            const isActive = activeTab === tab.value
+                            const c = TAB_COLORS[tab.value]
                             return (
-                                <TabsTrigger
-                                    key={tab.value}
-                                    value={tab.value}
-                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border border-transparent data-[state=active]:shadow-sm transition-all ${groupStyle}`}
+                                <button key={tab.value} onClick={() => setActiveTab(tab.value)}
+                                    className={`relative group flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer
+                                        ${isActive ? `${c.bg} border-transparent ring-2 ${c.ring} shadow-lg scale-[1.03]` : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:scale-[1.02]'}`}
                                 >
-                                    <tab.icon className="w-3.5 h-3.5" />
-                                    <span className="hidden sm:inline">{tab.label}</span>
-                                </TabsTrigger>
+                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm
+                                        ${isActive ? `bg-gradient-to-br ${c.gradient} shadow-md` : 'bg-slate-100 group-hover:bg-slate-200'}`}>
+                                        <tab.icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                                    </div>
+                                    <span className={`text-[10px] font-bold leading-tight text-center ${isActive ? c.text : 'text-slate-500'}`}>{tab.label}</span>
+                                    {isActive && <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-1 rounded-full bg-gradient-to-r ${c.gradient}`} />}
+                                </button>
                             )
                         })}
-                    </TabsList>
+                    </div>
+                    {/* Group: Clínico */}
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500 mb-2 px-1">🩺 Expediente Clínico</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-2 mb-3">
+                        {TABS.filter(t => t.group === 'clinico').map(tab => {
+                            const isActive = activeTab === tab.value
+                            const c = TAB_COLORS[tab.value]
+                            return (
+                                <button key={tab.value} onClick={() => setActiveTab(tab.value)}
+                                    className={`relative group flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer
+                                        ${isActive ? `${c.bg} border-transparent ring-2 ${c.ring} shadow-lg scale-[1.03]` : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:scale-[1.02]'}`}
+                                >
+                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm
+                                        ${isActive ? `bg-gradient-to-br ${c.gradient} shadow-md` : 'bg-slate-100 group-hover:bg-slate-200'}`}>
+                                        <tab.icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                                    </div>
+                                    <span className={`text-[10px] font-bold leading-tight text-center ${isActive ? c.text : 'text-slate-500'}`}>{tab.label}</span>
+                                    {isActive && <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-1 rounded-full bg-gradient-to-r ${c.gradient}`} />}
+                                </button>
+                            )
+                        })}
+                    </div>
+                    {/* Group: Tratamiento */}
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-500 mb-2 px-1">💊 Tratamiento y Documentos</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-2">
+                        {TABS.filter(t => t.group === 'diagnostico').map(tab => {
+                            const isActive = activeTab === tab.value
+                            const c = TAB_COLORS[tab.value]
+                            return (
+                                <button key={tab.value} onClick={() => setActiveTab(tab.value)}
+                                    className={`relative group flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer
+                                        ${isActive ? `${c.bg} border-transparent ring-2 ${c.ring} shadow-lg scale-[1.03]` : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:scale-[1.02]'}`}
+                                >
+                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm
+                                        ${isActive ? `bg-gradient-to-br ${c.gradient} shadow-md` : 'bg-slate-100 group-hover:bg-slate-200'}`}>
+                                        <tab.icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                                    </div>
+                                    <span className={`text-[10px] font-bold leading-tight text-center ${isActive ? c.text : 'text-slate-500'}`}>{tab.label}</span>
+                                    {isActive && <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-1 rounded-full bg-gradient-to-r ${c.gradient}`} />}
+                                </button>
+                            )
+                        })}
+                    </div>
                 </div>
+                <TabsList className="hidden">
+                    {TABS.map(tab => (
+                        <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
+                    ))}
+                </TabsList>
 
                 {activeTabConfig?.description && (
                     <motion.div
