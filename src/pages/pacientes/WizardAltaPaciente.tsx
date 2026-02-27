@@ -261,19 +261,16 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
     const handleSubmit = async () => {
         setSaving(true)
         try {
-            // Whitelist of KNOWN columns in the pacientes table
+            // Whitelist of KNOWN columns in the pacientes table (matches Paciente interface)
             const KNOWN_COLUMNS = new Set([
                 'nombre', 'apellido_paterno', 'apellido_materno', 'fecha_nacimiento',
                 'genero', 'curp', 'rfc', 'nss', 'tipo_sangre', 'alergias', 'estatus',
                 'estado_civil', 'numero_empleado', 'empresa_id', 'empresa_nombre',
                 'sede_id', 'sede_nombre', 'puesto', 'area', 'departamento', 'turno',
-                'tipo_contrato', 'fecha_ingreso', 'jornada_horas', 'tipo_examen',
-                'telefono', 'email', 'direccion', 'direccion_calle', 'direccion_ciudad',
-                'direccion_estado', 'direccion_cp', 'contacto_emergencia_nombre',
-                'contacto_emergencia_parentesco', 'contacto_emergencia_telefono',
-                'foto_url', 'notas', 'notas_examenes', 'exploración_fisica_capturada',
-                'laboratorios_registrados', 'riesgos_ocupacionales', 'analisis_puesto_ai',
-                'laboratorio', 'apnp', 'antecedentes_personales_no_patologicos',
+                'tipo_contrato', 'fecha_ingreso', 'jornada_horas', 'supervisor_nombre',
+                'telefono', 'email', 'foto_url', 'firma_url',
+                'contacto_emergencia_nombre', 'contacto_emergencia_parentesco',
+                'contacto_emergencia_telefono', 'riesgos_ocupacionales', 'analisis_puesto_ai',
             ])
 
             const cleanData: any = {}
