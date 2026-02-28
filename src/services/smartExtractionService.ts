@@ -17,14 +17,23 @@ export const readFileAsBase64 = (file: File): Promise<{ mimeType: string; base64
     });
 };
 
-// FIX: Corrected import to use GoogleGenAI from @google/genai.
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+// Lazy-init: only create the client when actually needed, so the app
+// doesn't crash on import if the key isn't set yet.
+let _ai: GoogleGenAI | null = null;
+const getAI = (): GoogleGenAI => {
+    if (!_ai) {
+        const key = import.meta.env.VITE_GEMINI_API_KEY;
+        if (!key) throw new Error('VITE_GEMINI_API_KEY no está configurada. Agrega la variable en .env o en Vercel.');
+        _ai = new GoogleGenAI({ apiKey: key });
+    }
+    return _ai;
+};
 
 const generateContentWithRetry = async (params: any, retries = 3, delay = 2000): Promise<any> => {
     let currentModel = params.model;
     for (let i = 0; i < retries; i++) {
         try {
-            const response = await ai.models.generateContent({
+            const response = await getAI().models.generateContent({
                 ...params,
                 model: currentModel,
             });
