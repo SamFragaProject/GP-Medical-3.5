@@ -44,7 +44,7 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
     const [editingIdx, setEditingIdx] = useState<number | null>(null)
     const [errorMsg, setErrorMsg] = useState('')
     const [fileUrl, setFileUrl] = useState('')
-    const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
+    const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ 'General': true, 'Audiometría Tonal': true, 'Biometría Hemática': true, 'Interpretación': true })
 
     const config = STUDY_CONFIG[tipoEstudio] || STUDY_CONFIG.laboratorio
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -225,7 +225,7 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                                         </div>
                                         {expandedCategories[cat] ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
                                     </button>
-                                    {!expandedCategories[cat] && (
+                                    {expandedCategories[cat] && (
                                         <div className="px-8 pb-6 border-t border-slate-50 animate-in fade-in slide-in-from-top-2 duration-300">
                                             <table className="w-full text-sm">
                                                 <thead className="text-[10px] text-slate-400 font-black uppercase tracking-widest border-b border-slate-50">
@@ -359,5 +359,29 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
         )
     }
 
-    return null
+    if (phase === 'done') {
+        return (
+            <Card className="border-0 shadow-2xl p-16 bg-white rounded-[4rem] text-center space-y-8 animate-in zoom-in-95 duration-500">
+                <div className="w-28 h-28 bg-emerald-500 rounded-[2.5rem] shadow-2xl shadow-emerald-200 flex items-center justify-center mx-auto scale-110">
+                    <CheckCircle className="w-16 h-16 text-white" />
+                </div>
+                <div>
+                    <h3 className="text-4xl font-black text-slate-800 tracking-tighter">¡Éxito!</h3>
+                    <p className="text-slate-400 text-lg font-medium mt-2">Los resultados han sido integrados correctamente al expediente.</p>
+                </div>
+                <button
+                    onClick={() => { setPhase('idle'); setExtractedData(null); }}
+                    className="px-12 py-5 bg-slate-900 text-white rounded-[2rem] font-black text-xs uppercase tracking-widest hover:scale-105 transition-all"
+                >
+                    Siguiente Estudio
+                </button>
+            </Card>
+        )
+    }
+
+    return (
+        <div className="p-4 text-center text-slate-400 text-xs">
+            Motor IA Pro en espera de comandos... (Estado: {phase})
+        </div>
+    )
 }
