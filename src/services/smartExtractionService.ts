@@ -18,7 +18,7 @@ export const readFileAsBase64 = (file: File): Promise<{ mimeType: string; base64
 };
 
 // FIX: Corrected import to use GoogleGenAI from @google/genai.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 const generateContentWithRetry = async (params: any, retries = 3, delay = 2000): Promise<any> => {
     let currentModel = params.model;
