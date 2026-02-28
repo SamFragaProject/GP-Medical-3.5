@@ -787,41 +787,67 @@ export default function AnalizadorDocumentos() {
                     </Button>
                 ) : (
                     <>
-                        {/* Patient selector + Finalizar */}
-                        {!pacienteId ? (
-                            <div className="flex items-center gap-2">
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        placeholder="🔍 Buscar paciente..."
-                                        value={pacienteSearch}
-                                        onChange={e => { setPacienteSearch(e.target.value); searchPacientes(e.target.value); }}
-                                        className="h-11 px-4 rounded-xl border-2 border-emerald-200 focus:border-emerald-500 outline-none text-sm w-64"
-                                    />
-                                    {pacienteResults.length > 0 && (
-                                        <div className="absolute top-12 left-0 w-full bg-white rounded-xl shadow-2xl border z-50 max-h-48 overflow-y-auto">
-                                            {pacienteResults.map(p => (
-                                                <button key={p.id} onClick={() => { setPacienteId(p.id); setPacienteNombre(`${p.nombre} ${p.apellido_paterno}`); setPacienteSearch(''); setPacienteResults([]); }}
-                                                    className="w-full text-left px-4 py-2.5 hover:bg-emerald-50 text-sm border-b last:border-0 transition-colors">
-                                                    <span className="font-bold text-slate-800">{p.nombre} {p.apellido_paterno}</span>
-                                                    {p.empresa_nombre && <span className="text-xs text-slate-400 ml-2">· {p.empresa_nombre}</span>}
-                                                </button>
-                                            ))}
-                                        </div>
+                        {/* Patient selector + Finalizar — ALWAYS visible */}
+                        <div className="flex items-center gap-3 flex-wrap">
+                            {!pacienteId ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="🔍 Buscar paciente..."
+                                            value={pacienteSearch}
+                                            onChange={e => { setPacienteSearch(e.target.value); searchPacientes(e.target.value); }}
+                                            className="h-11 px-4 rounded-xl border-2 border-emerald-200 focus:border-emerald-500 outline-none text-sm w-64"
+                                        />
+                                        {pacienteResults.length > 0 && (
+                                            <div className="absolute top-12 left-0 w-full bg-white rounded-xl shadow-2xl border z-50 max-h-48 overflow-y-auto">
+                                                {pacienteResults.map(p => (
+                                                    <button key={p.id} onClick={() => { setPacienteId(p.id); setPacienteNombre(`${p.nombre} ${p.apellido_paterno}`); setPacienteSearch(''); setPacienteResults([]); }}
+                                                        className="w-full text-left px-4 py-2.5 hover:bg-emerald-50 text-sm border-b last:border-0 transition-colors">
+                                                        <span className="font-bold text-slate-800">{p.nombre} {p.apellido_paterno}</span>
+                                                        {p.empresa_nombre && <span className="text-xs text-slate-400 ml-2">· {p.empresa_nombre}</span>}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    {/* Auto-detect patient from extracted data */}
+                                    {completedResults.some(r => r.structuredData?.paciente) && !pacienteSearch && (
+                                        <button
+                                            onClick={async () => {
+                                                const name = completedResults.find(r => r.structuredData?.paciente)?.structuredData?.paciente || '';
+                                                if (!name) return;
+                                                setPacienteSearch(name);
+                                                await searchPacientes(name);
+                                            }}
+                                            className="text-xs font-bold text-violet-600 bg-violet-50 border border-violet-200 px-3 py-2 rounded-xl hover:bg-violet-100 flex items-center gap-1.5"
+                                            title="Buscar automáticamente el paciente detectado en los documentos"
+                                        >
+                                            <Brain className="w-3.5 h-3.5" />
+                                            Auto-detectar: {completedResults.find(r => r.structuredData?.paciente)?.structuredData?.paciente}
+                                        </button>
                                     )}
                                 </div>
-                                <span className="text-xs text-slate-400">Selecciona paciente para guardar</span>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-3">
+                            ) : (
                                 <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
                                     <CheckCircle className="w-4 h-4 text-emerald-500" />
                                     <span className="text-sm font-bold text-emerald-800">{pacienteNombre}</span>
                                     <button onClick={() => { setPacienteId(''); setPacienteNombre(''); }} className="text-slate-400 hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
                                 </div>
-                                <Button onClick={async () => {
-                                    setIsIntegrating(true);
-                                    try {
+                            )}
+                            <Button onClick={async () => {
+                                // If no patient selected, confirm whether to proceed without patient
+                                if (!pacienteId) {
+                                    const proceed = window.confirm(
+                                        '⚠️ No has seleccionado un paciente.\n\n' +
+                                        'Los datos se guardarán como documentos analizados pero NO se integrarán al expediente de ningún paciente.\n\n' +
+                                        '¿Deseas continuar sin asignar paciente, o cancelar para seleccionar uno?'
+                                    );
+                                    if (!proceed) return;
+                                }
+                                setIsIntegrating(true);
+                                try {
+                                    if (pacienteId) {
                                         const result = await integrarDatosExtraidos({
                                             pacienteId,
                                             results: completedResults.map(r => ({ fileName: r.fileName, fileType: r.fileType, structuredData: r.structuredData })),
@@ -834,17 +860,18 @@ export default function AnalizadorDocumentos() {
                                         } else {
                                             toast.error(`Integración parcial: ${result.errores.join(', ')}`);
                                         }
-                                        console.log('[MedExtract Pro] Resultado integración:', result);
-                                    } catch (e: any) {
-                                        toast.error(`Error: ${e.message}`);
+                                    } else {
+                                        toast.success('Análisis guardado (sin paciente). Puedes asignar estos datos a un paciente posteriormente.');
                                     }
-                                    setIsIntegrating(false);
-                                }} disabled={isIntegrating} className="h-11 px-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white gap-2 font-black shadow-lg shadow-emerald-500/30">
-                                    {isIntegrating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                    {isIntegrating ? 'Integrando...' : 'Finalizar y Guardar'}
-                                </Button>
-                            </div>
-                        )}
+                                } catch (e: any) {
+                                    toast.error(`Error: ${e.message}`);
+                                }
+                                setIsIntegrating(false);
+                            }} disabled={isIntegrating} className="h-11 px-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white gap-2 font-black shadow-lg shadow-emerald-500/30">
+                                {isIntegrating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                {isIntegrating ? 'Integrando...' : pacienteId ? 'Finalizar y Guardar' : 'Guardar sin paciente'}
+                            </Button>
+                        </div>
                     </>
                 )}
             </div>

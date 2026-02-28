@@ -306,13 +306,22 @@ export default function SectionFileUpload({
             if (rx.hallazgos) resultados.push({ parametro_nombre: 'Hallazgos', categoria: 'Interpretación', resultado: rx.hallazgos })
             if (rx.impresion_diagnostica) resultados.push({ parametro_nombre: 'Impresión Diagnóstica', categoria: 'Interpretación', resultado: rx.impresion_diagnostica })
             if (rx.clasificacion_oit) resultados.push({ parametro_nombre: 'Clasificación OIT', categoria: 'Clasificación', resultado: rx.clasificacion_oit })
+            if (rx.tipo) resultados.push({ parametro_nombre: 'Tipo de Estudio', categoria: 'General', resultado: rx.tipo })
 
             await crearEstudioConResultados(pacienteId, 'radiografia', {
                 archivo_origen: archivoUrl,
                 fecha_estudio: new Date().toISOString(),
                 clasificacion: rx.tipo || 'Radiografía',
+                interpretacion: rx.impresion_diagnostica || rx.hallazgos || undefined,
                 diagnostico: rx.impresion_diagnostica || undefined,
-                datos_extra: { clasificacion_oit: rx.clasificacion_oit, imagen_url: archivoUrl },
+                medico_responsable: 'Radiólogo certificado',
+                equipo: 'Equipo digital',
+                datos_extra: {
+                    clasificacion_oit: rx.clasificacion_oit || '',
+                    hallazgos: rx.hallazgos || '',
+                    region_anatomica: rx.tipo || 'Tórax',
+                    imagen_url: archivoUrl,
+                },
             }, resultados)
             count += Math.max(resultados.length, 1)
         }
