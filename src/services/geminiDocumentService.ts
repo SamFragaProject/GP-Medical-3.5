@@ -10,6 +10,36 @@ import { trackUsage } from './aiUsageTracker';
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
+// ── Model Config (Based on working Consolidador Pro) ──
+const MODEL_NAME = 'gemini-3-flash-preview';
+const FALLBACK_MODEL = 'gemini-1.5-flash-latest';
+
+const generateContentWithRetry = async (params: any, retries = 3, delay = 2000): Promise<any> => {
+    let currentModel = params.model || MODEL_NAME;
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await ai.models.generateContent({
+                ...params,
+                model: currentModel,
+            });
+            return response;
+        } catch (error: any) {
+            console.warn(`[AI Attempt ${i + 1}] failed with model ${currentModel}:`, error);
+
+            // If it's a quota error (429) try fallback
+            if (error?.status === 429 || error?.message?.includes('429') || error?.message?.includes('RESOURCE_EXHAUSTED')) {
+                if (currentModel === MODEL_NAME) {
+                    console.log(`Falling back to ${FALLBACK_MODEL} due to quota`);
+                    currentModel = FALLBACK_MODEL;
+                }
+            }
+
+            if (i === retries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+        }
+    }
+};
+
 // ── Tipos de datos — Motor Pro ──
 export interface LabResult {
     name: string;
@@ -250,8 +280,8 @@ export async function analyzeDocument(sectionId: string, text: string, imageFile
 
     const fullPrompt = `${sectionPrompt}\n\nTexto extraído:\n${text || '[Analizar imágenes adjuntas]'}\n\nDevuelve JSON estructurado.`;
 
-    const result = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
+    const response = await generateContentWithRetry({
+        model: MODEL_NAME,
         contents: [{ role: "user", parts: [{ text: fullPrompt }, ...imageParts] }],
         config: {
             responseMimeType: "application/json",
@@ -259,8 +289,8 @@ export async function analyzeDocument(sectionId: string, text: string, imageFile
         }
     });
 
-    const jsonText = result.text.trim();
-    trackUsage('gemini-1.5-flash', jsonText.length / 4, jsonText.length / 4);
+    const jsonText = response.text.trim();
+    trackUsage(MODEL_NAME, jsonText.length / 4, jsonText.length / 4);
 
     const parsed = JSON.parse(jsonText);
 
