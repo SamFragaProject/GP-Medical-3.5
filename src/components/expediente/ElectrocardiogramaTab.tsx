@@ -76,7 +76,7 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                     No existen trazados de ECG registrados para este paciente.
                 </p>
                 <div className="max-w-sm mx-auto">
-                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="ecg" onFileUploaded={() => loadECG()} />
+                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="ecg" onDataSaved={() => loadECG()} />
                 </div>
             </div>
         );
@@ -106,7 +106,7 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="ecg" compact onFileUploaded={() => loadECG()} />
+                                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="ecg" compact onDataSaved={() => loadECG()} />
                                     <Badge className={`${colores.bg} ${colores.text} font-bold text-xs px-3 py-1`}>
                                         {ecg.clasificacion.replace(/_/g, ' ').toUpperCase()}
                                     </Badge>
