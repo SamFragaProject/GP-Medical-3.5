@@ -168,47 +168,47 @@ export default function PacientesHub() {
         }
     }
 
+    const [savedPacienteId, setSavedPacienteId] = useState<string | null>(null)
+    const [savedPacienteObj, setSavedPacienteObj] = useState<any>(null)
+
     const handleWizardComplete = async (formData: any) => {
-        try {
-            const dg = formData.datosGenerales || {};
+        const dg = formData.datosGenerales || {};
 
-            // Map ClinicalHistoryFormData → paciente table
-            const pacienteData: Record<string, any> = {
-                nombre: dg.nombres || '',
-                apellido_paterno: (dg.apellidos || '').split(' ')[0] || '',
-                apellido_materno: (dg.apellidos || '').split(' ').slice(1).join(' ') || '',
-                fecha_nacimiento: dg.fechaNacimiento || null,
-                genero: dg.sexo === 'M' ? 'masculino' : dg.sexo === 'F' ? 'femenino' : null,
-                telefono: dg.telefono || null,
-                lugar_nacimiento: dg.lugarNacimiento || null,
-                empresa_nombre: dg.nombreEmpresa || null,
-                estatus: 'activo',
-                // Store full clinical form data as JSON
-                historia_clinica_json: JSON.stringify(formData),
-            };
+        // Map ClinicalHistoryFormData → paciente table
+        const pacienteData: Record<string, any> = {
+            nombre: dg.nombres || '',
+            apellido_paterno: (dg.apellidos || '').split(' ')[0] || '',
+            apellido_materno: (dg.apellidos || '').split(' ').slice(1).join(' ') || '',
+            fecha_nacimiento: dg.fechaNacimiento || null,
+            genero: dg.sexo === 'M' ? 'masculino' : dg.sexo === 'F' ? 'femenino' : null,
+            telefono: dg.telefono || null,
+            lugar_nacimiento: dg.lugarNacimiento || null,
+            empresa_nombre: dg.nombreEmpresa || null,
+            estatus: 'activo',
+            historia_clinica_json: JSON.stringify(formData),
+        };
 
-            // Determine estado civil
-            const ec = dg.estadoCivil || {};
-            const estadoCivil = ec.casado ? 'Casado(a)' : ec.soltero ? 'Soltero(a)' : ec.viudo ? 'Viudo(a)' : ec.divorciado ? 'Divorciado(a)' : ec.unionLibre ? 'Unión Libre' : null;
-            if (estadoCivil) pacienteData.estado_civil = estadoCivil;
+        const ec = dg.estadoCivil || {};
+        const estadoCivil = ec.casado ? 'Casado(a)' : ec.soltero ? 'Soltero(a)' : ec.viudo ? 'Viudo(a)' : ec.divorciado ? 'Divorciado(a)' : ec.unionLibre ? 'Unión Libre' : null;
+        if (estadoCivil) pacienteData.estado_civil = estadoCivil;
 
-            // Company / occupation
-            const rl = formData.riesgoLaboral || {};
-            if (rl.puesto) pacienteData.puesto_trabajo = rl.puesto;
+        const rl = formData.riesgoLaboral || {};
+        if (rl.puesto) pacienteData.puesto_trabajo = rl.puesto;
 
-            const nuevoPaciente = await createPaciente(pacienteData);
+        const nuevoPaciente = await createPaciente(pacienteData);
+        if (nuevoPaciente && nuevoPaciente.id) {
+            setSavedPacienteId(nuevoPaciente.id);
+            setSavedPacienteObj(nuevoPaciente);
+        } else {
+            throw new Error('No se pudo crear el paciente');
+        }
+    }
 
-            if (nuevoPaciente && nuevoPaciente.id) {
-                toast.success(`Paciente ${dg.nombres} ${dg.apellidos} registrado exitosamente`);
-                // Redirect to the patient's profile
-                navigate(`/pacientes/${nuevoPaciente.id}/perfil`, { state: { paciente: nuevoPaciente } });
-            } else {
-                setViewMode('list');
-                refresh();
-            }
-        } catch (error) {
-            console.error(error);
-            toast.error('Error al completar el alta del paciente');
+    const handleWizardCancel = () => {
+        if (savedPacienteId && savedPacienteObj) {
+            navigate(`/pacientes/${savedPacienteId}/perfil`, { state: { paciente: savedPacienteObj } })
+        } else {
+            setViewMode('list')
         }
     }
 
@@ -226,10 +226,12 @@ export default function PacientesHub() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.98 }}
+                className="h-[calc(100vh-4rem)]"
             >
                 <SmartOnboardingHub
                     onComplete={handleWizardComplete}
-                    onCancel={() => setViewMode('list')}
+                    onCancel={handleWizardCancel}
+                    savedPacienteId={savedPacienteId}
                 />
             </motion.div>
         )
