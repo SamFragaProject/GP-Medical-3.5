@@ -33,7 +33,7 @@ import toast from 'react-hot-toast'
 
 // Componentes internos
 import SmartOnboardingHub from '@/components/pacientes/SmartOnboardingHub'
-import { saveDocumentoExpediente } from '@/services/documentService'
+import { saveMultipleDocuments } from '@/services/documentService'
 
 
 // =============================================
@@ -171,25 +171,28 @@ export default function PacientesHub() {
 
     const handleWizardComplete = async (payload: any) => {
         try {
-            const { paciente, formData, report, files } = payload;
+            const { paciente, formData, report, files, sectionFiles } = payload;
 
             // 1. Crear el Paciente en la tabla principal
             const nuevoPaciente = await createPaciente(paciente)
 
             if (nuevoPaciente && nuevoPaciente.id) {
-                // 2. Si hay documentos extraídos o archivos (Opción 2 JSONB)
-                if ((report && Object.keys(report.sections || {}).length > 0) || files?.length > 0) {
-                    await saveDocumentoExpediente({
+                const pacienteNombre = `${paciente.apellido_paterno || ''} ${paciente.nombre || ''}`;
+
+                // 2. Guardar archivos por sección + historia clínica completa
+                const hasSectionFiles = sectionFiles && Object.keys(sectionFiles).length > 0;
+                const hasReport = report && Object.keys(report.sections || {}).length > 0;
+
+                if (hasSectionFiles || hasReport || formData) {
+                    await saveMultipleDocuments({
                         pacienteId: nuevoPaciente.id,
                         empresaId: paciente.empresa_id,
-                        tipoDocumento: 'Historia Clínica Onboarding',
-                        datosExtraidos: {
-                            formData,
-                            report
-                        },
-                        files
+                        pacienteNombre,
+                        sectionFiles: sectionFiles || {},
+                        report,
+                        formData
                     });
-                    toast.success(`Datos clínicos iniciales registrados en expediente de ${paciente.nombre}`);
+                    toast.success(`Expediente completo registrado para ${paciente.nombre}`);
                 }
             }
 

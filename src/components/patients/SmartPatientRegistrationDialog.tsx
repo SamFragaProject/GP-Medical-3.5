@@ -1,6 +1,6 @@
 import React from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import WizardAltaPaciente from '@/pages/pacientes/WizardAltaPaciente'
+import SmartOnboardingHub from '@/components/pacientes/SmartOnboardingHub'
 
 interface SmartPatientRegistrationDialogProps {
     open: boolean
@@ -18,8 +18,8 @@ export function SmartPatientRegistrationDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-[95vw] w-[1200px] p-0 overflow-hidden border-none bg-transparent shadow-none">
-                <div className="bg-slate-50 rounded-[2.5rem] overflow-hidden h-[90vh] flex flex-col">
-                    <WizardAltaPaciente
+                <div className="bg-slate-50 rounded-[2.5rem] overflow-hidden h-[90vh] flex flex-col overflow-y-auto">
+                    <SmartOnboardingHub
                         onComplete={async () => {
                             onSuccess?.()
                             onOpenChange(false)

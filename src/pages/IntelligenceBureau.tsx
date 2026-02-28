@@ -2,18 +2,12 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Brain,
-    SearchCode,
     MessageSquare,
-    Shield,
     Zap,
-    Database,
-    Layers,
-    Sparkles
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PremiumPageHeader } from '@/components/ui/PremiumPageHeader';
 import { IA } from './IA';
-import ExtractorMedico from './apps/ExtractorMedico';
 
 export function IntelligenceBureau() {
     const [activeTab, setActiveTab] = useState('cortex');
@@ -24,7 +18,7 @@ export function IntelligenceBureau() {
                 title="Intelligence Bureau"
                 subtitle="Núcleo de Inteligencia Artificial y Procesamiento de Datos Médicos"
                 icon={Brain}
-                badge="NEURAL ENGINE v2.0"
+                badge="NEURAL ENGINE v3.0"
                 actions={
                     <div className="flex items-center gap-2">
                         <div className="text-right hidden md:block mr-4">
@@ -48,13 +42,6 @@ export function IntelligenceBureau() {
                         <span>Cortex (Predicciones)</span>
                     </TabsTrigger>
                     <TabsTrigger
-                        value="extractor"
-                        className="flex items-center space-x-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 data-[state=active]:bg-white data-[state=active]:text-cyan-600 data-[state=active]:shadow-lg"
-                    >
-                        <Database className="h-4 w-4" />
-                        <span>Extractor Maestro</span>
-                    </TabsTrigger>
-                    <TabsTrigger
                         value="asistente"
                         className="flex items-center space-x-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 data-[state=active]:bg-white data-[state=active]:text-cyan-600 data-[state=active]:shadow-lg"
                     >
@@ -73,10 +60,6 @@ export function IntelligenceBureau() {
                     >
                         <TabsContent value="cortex" className="mt-0 outline-none">
                             <IA hideHeader />
-                        </TabsContent>
-
-                        <TabsContent value="extractor" className="mt-0 outline-none">
-                            <ExtractorMedico hideHeader={true} />
                         </TabsContent>
 
                         <TabsContent value="asistente" className="mt-0 outline-none">
