@@ -44,6 +44,7 @@ const IncapacidadesTab = React.lazy(() => import('@/components/expediente/Incapa
 const DictamenesTab = React.lazy(() => import('@/components/expediente/DictamenesTab'))
 const DocumentosExpedienteTab = React.lazy(() => import('@/components/expediente/DocumentosExpedienteTab'))
 const PatientDashboardTab = React.lazy(() => import('@/components/expediente/PatientDashboardTab'))
+const TimelineViewerTab = React.lazy(() => import('@/components/expediente/TimelineViewerTab'))
 
 // =============================================
 // HELPERS
@@ -78,6 +79,7 @@ const TABS: TabConfig[] = [
     { value: 'general', label: 'General', icon: User, group: 'info' },
     { value: 'laboral', label: 'Laboral', icon: Building2, group: 'info' },
     { value: 'contacto', label: 'Contacto', icon: Phone, group: 'info' },
+    { value: 'timeline', label: 'Historia Inteligente', icon: Brain, group: 'clinico', description: 'Línea de tiempo cronológica con documentos extraídos por IA' },
     { value: 'expediente', label: 'Expediente', icon: Stethoscope, group: 'clinico', description: 'APNP, AHF, Labs, Audiometría, Espirometría, ECG, RX, Exploración Física' },
     { value: 'documentos', label: 'Documentos', icon: FolderOpen, group: 'clinico', description: 'Documentos cifrados del paciente' },
     { value: 'recetas', label: 'Recetas', icon: Pill, group: 'diagnostico', description: 'Prescripciones médicas' },
@@ -90,6 +92,7 @@ const TAB_COLORS: Record<string, { gradient: string; bg: string; text: string; r
     general: { gradient: 'from-slate-500 to-gray-600', bg: 'bg-slate-50', text: 'text-slate-700', ring: 'ring-slate-300' },
     laboral: { gradient: 'from-blue-500 to-indigo-600', bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-300' },
     contacto: { gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', text: 'text-violet-700', ring: 'ring-violet-300' },
+    timeline: { gradient: 'from-fuchsia-500 to-pink-600', bg: 'bg-fuchsia-50', text: 'text-fuchsia-700', ring: 'ring-fuchsia-300' },
     expediente: { gradient: 'from-teal-500 to-emerald-600', bg: 'bg-teal-50', text: 'text-teal-700', ring: 'ring-teal-300' },
     documentos: { gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-300' },
     recetas: { gradient: 'from-pink-500 to-rose-600', bg: 'bg-pink-50', text: 'text-pink-700', ring: 'ring-pink-300' },
@@ -855,6 +858,12 @@ export default function PerfilPaciente() {
                                     empresaId={user?.empresa_id || ''}
                                     pacienteNombre={`${paciente.nombre} ${paciente.apellido_paterno}`}
                                 />
+                            </Suspense>
+                        </TabsContent>
+
+                        <TabsContent value="timeline" className="mt-0">
+                            <Suspense fallback={<TabLoader label="Cargando línea de tiempo inteligente..." />}>
+                                <TimelineViewerTab pacienteId={id!} />
                             </Suspense>
                         </TabsContent>
                     </motion.div>

@@ -32,7 +32,8 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
 // Componentes internos
-import WizardAltaPaciente from './WizardAltaPaciente'
+import SmartOnboardingHub from '@/components/pacientes/SmartOnboardingHub'
+import { saveDocumentoExpediente } from '@/services/documentService'
 
 
 // =============================================
@@ -168,16 +169,35 @@ export default function PacientesHub() {
         }
     }
 
-    const handleWizardComplete = async (data: any) => {
+    const handleWizardComplete = async (payload: any) => {
         try {
-            await createPaciente({
-                ...data,
-                empresa_id: data.empresa_id || user?.empresa_id,
-            })
-            toast.success('Paciente registrado exitosamente')
+            const { paciente, formData, report, files } = payload;
+
+            // 1. Crear el Paciente en la tabla principal
+            const nuevoPaciente = await createPaciente(paciente)
+
+            if (nuevoPaciente && nuevoPaciente.id) {
+                // 2. Si hay documentos extraídos o archivos (Opción 2 JSONB)
+                if ((report && Object.keys(report.sections || {}).length > 0) || files?.length > 0) {
+                    await saveDocumentoExpediente({
+                        pacienteId: nuevoPaciente.id,
+                        empresaId: paciente.empresa_id,
+                        tipoDocumento: 'Historia Clínica Onboarding',
+                        datosExtraidos: {
+                            formData,
+                            report
+                        },
+                        files
+                    });
+                    toast.success(`Datos clínicos iniciales registrados en expediente de ${paciente.nombre}`);
+                }
+            }
+
             setViewMode('list')
-        } catch {
-            toast.error('Error al registrar paciente')
+            refresh()
+        } catch (error) {
+            console.error(error)
+            toast.error('Error al completar el alta del paciente')
         }
     }
 
@@ -190,11 +210,17 @@ export default function PacientesHub() {
     // =============================================
     if (viewMode === 'wizard') {
         return (
-            <WizardAltaPaciente
-                onComplete={handleWizardComplete}
-                onCancel={() => setViewMode('list')}
-                empresaId={user?.empresa_id}
-            />
+            <motion.div
+                key="wizard"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+            >
+                <SmartOnboardingHub
+                    onComplete={handleWizardComplete}
+                    onCancel={() => setViewMode('list')}
+                />
+            </motion.div>
         )
     }
 
@@ -393,8 +419,12 @@ export default function PacientesHub() {
                                     : 'Comienza registrando pacientes de forma manual o mediante carga masiva'}
                             </p>
                             <div className="flex gap-3 justify-center">
-                                <Button onClick={() => setViewMode('wizard')} className="bg-emerald-500 hover:bg-emerald-600 text-white gap-2 rounded-xl">
-                                    <UserPlus className="w-4 h-4" /> Alta Manual
+                                <Button onClick={() => setViewMode('wizard')} className="bg-emerald-600 hover:bg-emerald-700 font-bold hidden sm:flex">
+                                    <UserPlus className="w-5 h-5 mr-4" /> Smart Onboarding (Alta)
+                                </Button>
+                                {/* Botón flotante para mobile */}
+                                <Button onClick={() => setViewMode('wizard')} className="sm:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl bg-emerald-600 hover:bg-emerald-700 z-50">
+                                    <UserPlus className="w-6 h-6" />
                                 </Button>
                                 <Button variant="outline" onClick={() => navigate('/herramientas/analizador')} className="gap-2 rounded-xl">
                                     <Brain className="w-4 h-4" /> MedExtract Pro

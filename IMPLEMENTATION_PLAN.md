@@ -22,6 +22,83 @@ SUPER ADMIN (Nivel Plataforma)
 
 ---
 
+## Integration of "Smart Onboarding Hub" (MedExtract Pro v2.0)
+
+This plan details the replacing of the current `WizardAltaPaciente` and document extraction tools with the new `erp-consolidador-de-reportes-médicos-ia` app, creating a unified, AI-powered Smart Onboarding Hub.
+
+## Architectural Approach
+
+We will implement the **Opción 2** discussed previously: The data extracted by the new app will be stored in an open `JSONB` format in the `documentos_expediente` table, while the original PDFs/images will be saved in the Supabase Storage bucket.
+
+The new onboarding flow will have two main paths:
+1. **Smart Start (Document Upload):** User uploads previous medical documents. Gemini/OpenAI extracts the data and **pre-fills** the clinical history form.
+2. **Manual Entry:** Direct entry into the new, smart clinical history form with features like auto-completing risks based on job position.
+
+## Proposed Changes
+
+### Database Updates (Supabase)
+Ensure the `documentos_expediente` table exists and is structured to hold open JSONB data.
+
+```sql
+CREATE TABLE IF NOT EXISTS public.documentos_expediente (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    paciente_id UUID REFERENCES public.pacientes(id) ON DELETE CASCADE,
+    categoria TEXT NOT NULL, -- 'radiografia', 'laboratorio', 'espirometria', etc.
+    archivo_url TEXT,
+    archivo_nombre TEXT,
+    tipo_mime TEXT,
+    tamano_bytes BIGINT,
+    datos_extraidos JSONB, -- Open schema for the new app data
+    fecha_documento DATE,
+    notas TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+### Components Merge & Refactoring
+Migrate the code from `document-analyzer/erp-consolidador-de-reportes-médicos-ia` into `erp-medico-frontend`.
+
+#### `src/types/clinicalHistory.ts` [NEW]
+- Move all types from `types.ts` of the new app (like `PatientData`, `VitalSigns`, `ClinicalHistoryFormData`, `LabResult`) here.
+
+#### `src/components/pacientes/SmartOnboardingHub.tsx` [NEW]
+- This will be the new entry point, replacing `WizardAltaPaciente`.
+- It will present the dual choice: Upload Documents or Manual Entry.
+- It will integrate the `FileUpload` logic from the new app.
+
+#### `src/components/pacientes/ClinicalHistoryForm/` [NEW]
+- Move all files from `components/clinical-history-form/` (Section1 to Section12).
+- Update imports and adapt to the ERP's UI components (Tailwind, Lucide icons).
+- Connect the "Analizar puesto" (Risk auto-completion) to our AI services.
+
+#### `src/components/expediente/DynamicDataViewer.tsx` [NEW]
+- A new component that renders the open `JSONB` data gracefully in the patient profile tabs.
+- It will adapt to any data structure coming from the new app (Labs, X-Rays, etc.).
+
+#### `src/services/smartExtractionService.ts` [NEW]
+- The 'Director de Orquesta': Routes extraction tasks to **Gemini 2.0 Flash/Pro** for visual/document parsing, and to **OpenAI GPT-4o / o3-mini** for reasoning and auto-completing the risk fields.
+
+### Modifying Existing Pages
+
+#### `src/pages/pacientes/PacientesHub.tsx` [MODIFY]
+- Replace the call to `WizardAltaPaciente` with the new `SmartOnboardingHub`.
+
+#### Patient Profile Tabs (e.g., `LaboratorioTab.tsx`, `RayosXTab.tsx`) [MODIFY]
+- Update them to read from `documentos_expediente` instead of the rigid old columns.
+- Use `DynamicDataViewer` to display the `datos_extraidos` JSONB.
+- Add the vertical "Timeline" UI to preview the original PDF/images.
+
+## Verification Plan
+
+### Automated / Manual Tests
+1. **Smart Start Flow:** Upload a sample PDF Lab report. Verify that Gemini extracts the data, pre-fills the form, and correctly identifies fields.
+2. **Risk Auto-completion:** Type a job title like "Soldador" and click "Analizar". Verify OpenAI correctly checks the Physical, Chemical, and Ergonomic risks.
+3. **Open JSONB Storage:** Complete the onboarding and verify the data is saved as JSONB in `documentos_expediente` and the file is in Supabase Storage.
+4. **Dynamic Data Viewer:** Open the Patient Profile -> Labs Tab, and ensure the UI renders the JSONB nicely and allows opening the original PDF.
+
+---
+
 ## 🟢 Etapa 1: Panel Super Admin ✅ COMPLETADO
 *Objetivo: El Super Admin puede crear y gestionar empresas y usuarios.*
 
