@@ -33,7 +33,6 @@ import toast from 'react-hot-toast'
 
 // Componentes internos
 import SmartOnboardingHub from '@/components/pacientes/SmartOnboardingHub'
-import { saveMultipleDocuments } from '@/services/documentService'
 
 
 // =============================================
@@ -169,38 +168,47 @@ export default function PacientesHub() {
         }
     }
 
-    const handleWizardComplete = async (payload: any) => {
+    const handleWizardComplete = async (formData: any) => {
         try {
-            const { paciente, formData, report, files, sectionFiles } = payload;
+            const dg = formData.datosGenerales || {};
 
-            // 1. Crear el Paciente en la tabla principal
-            const nuevoPaciente = await createPaciente(paciente)
+            // Map ClinicalHistoryFormData → paciente table
+            const pacienteData: Record<string, any> = {
+                nombre: dg.nombres || '',
+                apellido_paterno: (dg.apellidos || '').split(' ')[0] || '',
+                apellido_materno: (dg.apellidos || '').split(' ').slice(1).join(' ') || '',
+                fecha_nacimiento: dg.fechaNacimiento || null,
+                genero: dg.sexo === 'M' ? 'masculino' : dg.sexo === 'F' ? 'femenino' : null,
+                telefono: dg.telefono || null,
+                lugar_nacimiento: dg.lugarNacimiento || null,
+                empresa_nombre: dg.nombreEmpresa || null,
+                estatus: 'activo',
+                // Store full clinical form data as JSON
+                historia_clinica_json: JSON.stringify(formData),
+            };
+
+            // Determine estado civil
+            const ec = dg.estadoCivil || {};
+            const estadoCivil = ec.casado ? 'Casado(a)' : ec.soltero ? 'Soltero(a)' : ec.viudo ? 'Viudo(a)' : ec.divorciado ? 'Divorciado(a)' : ec.unionLibre ? 'Unión Libre' : null;
+            if (estadoCivil) pacienteData.estado_civil = estadoCivil;
+
+            // Company / occupation
+            const rl = formData.riesgoLaboral || {};
+            if (rl.puesto) pacienteData.puesto_trabajo = rl.puesto;
+
+            const nuevoPaciente = await createPaciente(pacienteData);
 
             if (nuevoPaciente && nuevoPaciente.id) {
-                const pacienteNombre = `${paciente.apellido_paterno || ''} ${paciente.nombre || ''}`;
-
-                // 2. Guardar archivos por sección + historia clínica completa
-                const hasSectionFiles = sectionFiles && Object.keys(sectionFiles).length > 0;
-                const hasReport = report && Object.keys(report.sections || {}).length > 0;
-
-                if (hasSectionFiles || hasReport || formData) {
-                    await saveMultipleDocuments({
-                        pacienteId: nuevoPaciente.id,
-                        empresaId: paciente.empresa_id,
-                        pacienteNombre,
-                        sectionFiles: sectionFiles || {},
-                        report,
-                        formData
-                    });
-                    toast.success(`Expediente completo registrado para ${paciente.nombre}`);
-                }
+                toast.success(`Paciente ${dg.nombres} ${dg.apellidos} registrado exitosamente`);
+                // Redirect to the patient's profile
+                navigate(`/pacientes/${nuevoPaciente.id}/perfil`, { state: { paciente: nuevoPaciente } });
+            } else {
+                setViewMode('list');
+                refresh();
             }
-
-            setViewMode('list')
-            refresh()
         } catch (error) {
-            console.error(error)
-            toast.error('Error al completar el alta del paciente')
+            console.error(error);
+            toast.error('Error al completar el alta del paciente');
         }
     }
 
