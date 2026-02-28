@@ -242,14 +242,6 @@ export default function PacientesHub() {
                 actions={
                     <div className="flex items-center gap-3">
                         <Button
-                            variant="outline"
-                            onClick={() => navigate('/herramientas/analizador')}
-                            className="h-11 px-5 rounded-xl bg-purple-500/20 border-purple-400/30 text-white hover:bg-purple-500/30 font-black text-[10px] uppercase tracking-widest gap-2"
-                        >
-                            <Brain className="w-4 h-4" />
-                            MedExtract Pro
-                        </Button>
-                        <Button
                             onClick={() => setViewMode('wizard')}
                             className="h-11 px-6 rounded-xl bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-500/20 gap-2"
                         >
@@ -429,9 +421,7 @@ export default function PacientesHub() {
                                 <Button onClick={() => setViewMode('wizard')} className="sm:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-xl bg-emerald-600 hover:bg-emerald-700 z-50">
                                     <UserPlus className="w-6 h-6" />
                                 </Button>
-                                <Button variant="outline" onClick={() => navigate('/herramientas/analizador')} className="gap-2 rounded-xl">
-                                    <Brain className="w-4 h-4" /> MedExtract Pro
-                                </Button>
+
                             </div>
                         </div>
                     ) : (
