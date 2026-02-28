@@ -197,11 +197,16 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
 
             if (estudios && estudios.length > 0) {
                 for (let idx = 0; idx < estudios.length; idx++) {
-                    const { data: resultados } = await supabase
-                        .from('resultados_estudio')
-                        .select('*')
-                        .eq('estudio_id', estudios[idx].id)
-                    if (resultados && resultados.length > 0) {
+                    const studyId = estudios[idx].id
+                    const [resRes, graphRes] = await Promise.all([
+                        supabase.from('resultados_estudio').select('*').eq('estudio_id', studyId),
+                        supabase.from('graficas_estudio').select('*').eq('estudio_id', studyId).maybeSingle()
+                    ])
+
+                    const resultados = resRes.data || []
+                    const grafica = graphRes.data
+
+                    if (resultados.length > 0 || grafica) {
                         const flat: Record<string, any> = {
                             fecha_estudio: estudios[idx].fecha_estudio,
                             diagnostico: estudios[idx].diagnostico,
@@ -211,12 +216,18 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                             equipo: estudios[idx].equipo,
                         }
                         resultados.forEach(r => { flat[r.parametro_nombre] = r.resultado_numerico ?? r.resultado })
+
+                        // Add graph points if present
+                        if (grafica && Array.isArray(grafica.puntos)) {
+                            flat._grafica_puntos = grafica.puntos
+                        }
+
                         const transformed = transformSpiroData(flat)
                         if (idx === 0) setData(transformed)
                         else setPrev(transformed)
                     }
                 }
-                return
+                if (data) return
             }
 
             // FUENTE 2: espirometrias (tabla legacy)

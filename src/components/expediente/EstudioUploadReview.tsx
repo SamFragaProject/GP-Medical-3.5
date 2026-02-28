@@ -99,35 +99,72 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
         }
     }
 
+    // ── CONFIRMAR Y GUARDAR (MÁXIMA PRECISIÓN) ──
     const confirmAndSave = async () => {
-        if (!extractedData) return
+        if (!pacienteId || !extractedData) return
         setPhase('saving')
+
         try {
-            await crearEstudioConResultados(
+            // 1. Preparar resultados estándar (strings, números, o JSON serializado)
+            // Los registros con visualizationType 'line_chart' se guardarán en la tabla de gráficas por separado
+            const resultsToSave = extractedData.results
+                .filter(r => r.visualizationType !== 'line_chart')
+                .map(r => ({
+                    parametro_nombre: r.name,
+                    categoria: r.category || 'General',
+                    resultado: typeof r.value === 'object' ? JSON.stringify(r.value) : String(r.value),
+                    resultado_numerico: typeof r.value === 'number' ? r.value : parseFloat(String(r.value)) || null,
+                    unidad: r.unit || '',
+                    observacion: r.description || ''
+                }))
+
+            // 2. Extraer gráficas (Audiogramas, Curvas Espirometría, etc.)
+            const graphsToSave = extractedData.results
+                .filter(r => r.visualizationType === 'line_chart' && typeof r.value === 'object')
+                .map(r => ({
+                    titulo: r.name,
+                    puntos: Array.isArray(r.value) ? r.value : [],
+                    tipo_grafica: 'linea',
+                    eje_x_label: r.name === 'Gráfica Audiométrica' ? 'Frecuencia (Hz)' : 'Volumen (L)',
+                    eje_y_label: r.name === 'Gráfica Audiométrica' ? 'Nivel (dB)' : 'Flujo (L/s)',
+                }))
+
+            // 3. Crear el estudio base y sus resultados
+            const estudio = await crearEstudioConResultados(
                 pacienteId,
                 tipoEstudio,
                 {
-                    fecha_estudio: extractedData.patientData?.reportDate || new Date().toISOString(),
-                    institucion: config.title,
-                    medico_responsable: 'Análisis IA Pro',
-                    interpretacion: extractedData.summary,
+                    fecha_estudio: extractedData.patientData?.reportDate || new Date().toISOString().split('T')[0],
                     archivo_origen: fileUrl,
-                    clasificacion: config.category,
-                    datos_extra: { patientData: extractedData.patientData }
+                    institucion: 'GP Medical Health - Motor IA Pro',
+                    interpretacion: extractedData.summary,
+                    medico_responsable: 'Inteligencia Artificial Pro v3',
+                    datos_extra: {
+                        patientData: extractedData.patientData,
+                        _ai_config: "Google Gemini Flash 2.0"
+                    }
                 },
-                extractedData.results.map(r => ({
-                    parametro_nombre: r.name,
-                    resultado: typeof r.value === 'object' ? JSON.stringify(r.value) : String(r.value),
-                    unidad: r.unit,
-                    rango_ref_texto: r.range,
-                    bandera: (r.description?.toLowerCase().includes('anormal') || r.description?.toLowerCase().includes('alto')) ? 'alto' : 'normal',
-                    categoria: r.category
-                }))
+                resultsToSave
             )
-            setPhase('done'); toast.success('Expediente actualizado')
+
+            if (!estudio) throw new Error('No se pudo crear el registro maestro del estudio')
+
+            // 4. Guardar gráficas si las hay
+            const { agregarGrafica } = await import('@/services/estudiosService')
+            if (graphsToSave.length > 0) {
+                for (const g of graphsToSave) {
+                    await agregarGrafica(estudio.id, g)
+                }
+            }
+
+            setPhase('done')
+            toast.success('Expediente actualizado con precisión clinical')
             if (onSaved) onSaved()
         } catch (err: any) {
-            setErrorMsg(err.message); setPhase('error')
+            console.error('Save error:', err)
+            setErrorMsg(err.message)
+            setPhase('error')
+            toast.error('Error al integrar datos: ' + err.message)
         }
     }
 

@@ -21,10 +21,66 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
     async function loadECG() {
         setLoading(true);
         try {
-            const data = await electrocardiogramaService.listar({ paciente_id: pacienteId });
-            setEstudios(data);
+            // FUENTE 1: Legacy service
+            const legacyData = await electrocardiogramaService.listar({ paciente_id: pacienteId });
+
+            // FUENTE 2: Nueva arquitectura unificada
+            const { getEstudios, getEstudioCompleto } = await import('@/services/estudiosService');
+            const newEstudios = await getEstudios(pacienteId, 'ecg', 5);
+
+            const unifiedData: Electrocardiograma[] = [...legacyData];
+
+            // Transformar nueva arquitectura a formato Electrocardiograma
+            for (const est of newEstudios) {
+                const completo = await getEstudioCompleto(est.id);
+                if (completo) {
+                    const resMap: Record<string, any> = {};
+                    completo.resultados.forEach(r => {
+                        resMap[r.parametro_nombre] = r.resultado_numerico ?? r.resultado;
+                    });
+
+                    // Helper para mapear calidad con tipado estricto
+                    const mapCalidad = (c: string): 'Excelente' | 'Buena' | 'Regular' | 'Mala' => {
+                        const low = c.toLowerCase();
+                        if (low.includes('exce')) return 'Excelente';
+                        if (low.includes('buen')) return 'Buena';
+                        if (low.includes('regu')) return 'Regular';
+                        if (low.includes('mal')) return 'Mala';
+                        return 'Buena';
+                    };
+
+                    unifiedData.push({
+                        id: est.id,
+                        empresa_id: '', // Added to satisfy interface
+                        paciente_id: pacienteId,
+                        fecha_estudio: est.fecha_estudio,
+                        ritmo: resMap.ritmo || 'Sinusal',
+                        frecuencia_cardiaca: Number(resMap.frecuencia_cardiaca) || 0,
+                        eje_qrs: Number(resMap.eje_qrs) || 0,
+                        onda_p: String(resMap.onda_p || ''),
+                        intervalo_pr: Number(resMap.intervalo_pr) || 0,
+                        complejo_qrs: Number(resMap.complejo_qrs) || 0,
+                        intervalo_qt: Number(resMap.intervalo_qt) || 0,
+                        intervalo_qtc: Number(resMap.intervalo_qtc) || 0,
+                        segmento_st: String(resMap.segmento_st || ''),
+                        onda_t: String(resMap.onda_t || ''),
+                        hallazgos: completo.estudio.interpretacion || String(resMap.hallazgos || ''),
+                        interpretacion_medica: completo.estudio.interpretacion || '',
+                        calidad_prueba: mapCalidad(completo.estudio.calidad || 'Buena'),
+                        clasificacion: (completo.estudio.clasificacion?.toLowerCase() as any) || 'normal',
+                        realizado_por: completo.estudio.medico_responsable || 'IA Pro v3',
+                        created_at: est.created_at,
+                        updated_at: est.updated_at
+                    });
+                }
+            }
+
+            // Ordenar por fecha descendente
+            unifiedData.sort((a, b) => new Date(b.fecha_estudio).getTime() - new Date(a.fecha_estudio).getTime());
+
+            setEstudios(unifiedData);
         } catch (e) {
-            console.error(e);
+            console.error('Error loading ECG:', e);
         } finally {
             setLoading(false);
         }

@@ -192,7 +192,7 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
         try {
             setLoading(true)
 
-            // FUENTE 1: Nuevas tablas unificadas (estudios_clinicos + resultados_estudio)
+            // FUENTE 1: Nuevas tablas unificadas (estudios_clinicos + resultados_estudio + graficas_estudio)
             const { data: estudios } = await supabase
                 .from('estudios_clinicos')
                 .select('*')
@@ -203,12 +203,16 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
 
             if (estudios && estudios.length > 0) {
                 for (let idx = 0; idx < estudios.length; idx++) {
-                    const { data: resultados } = await supabase
-                        .from('resultados_estudio')
-                        .select('*')
-                        .eq('estudio_id', estudios[idx].id)
-                    if (resultados && resultados.length > 0) {
-                        // Convert resultados to flat object for transformAudioData
+                    const studyId = estudios[idx].id
+                    const [resRes, graphRes] = await Promise.all([
+                        supabase.from('resultados_estudio').select('*').eq('estudio_id', studyId),
+                        supabase.from('graficas_estudio').select('*').eq('estudio_id', studyId).maybeSingle()
+                    ])
+
+                    const resultados = resRes.data || []
+                    const grafica = graphRes.data
+
+                    if (resultados.length > 0 || grafica) {
                         const flat: Record<string, any> = {
                             fecha_estudio: estudios[idx].fecha_estudio,
                             diagnostico: estudios[idx].diagnostico,
@@ -216,15 +220,28 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
                             medico_responsable: estudios[idx].medico_responsable,
                             equipo: estudios[idx].equipo,
                         }
+
+                        // Map results to flat fields
                         resultados.forEach(r => {
                             flat[r.parametro_nombre] = r.resultado_numerico ?? r.resultado
                         })
+
+                        // Map graph points if available
+                        if (grafica && Array.isArray(grafica.puntos)) {
+                            grafica.puntos.forEach((p: any) => {
+                                if (p.frecuencia) {
+                                    if (p.derecho !== undefined) flat[`od_${p.frecuencia}`] = p.derecho
+                                    if (p.izquierdo !== undefined) flat[`oi_${p.frecuencia}`] = p.izquierdo
+                                }
+                            })
+                        }
+
                         const transformed = transformAudioData(flat)
                         if (idx === 0) setAudio(transformed)
                         else setPrev(transformed)
                     }
                 }
-                if (estudios.length > 0) return
+                if (audio) return
             }
 
             // FUENTE 2: audiometrias (tabla legacy)

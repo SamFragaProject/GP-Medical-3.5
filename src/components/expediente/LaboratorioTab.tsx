@@ -314,7 +314,7 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
         if (!estudioCompleto) return []
         const map: Record<string, ResultadoEstudio[]> = {}
         for (const r of estudioCompleto.resultados) {
-            const cat = r.categoria || 'General'
+            const cat = r.categoria || r.parametro_nombre || 'General' // Fallback to name if cat is missing
             if (!map[cat]) map[cat] = []
             map[cat].push(r)
         }
@@ -329,7 +329,9 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
     const abnormalTotal = allResults.filter((r: any) => (r.bandera || 'normal') !== 'normal').length
 
     const lab = usandoNuevaArquitectura ? estudioCompleto?.estudio : legacyLab
-    const grupos = usandoNuevaArquitectura ? groupedResults : (legacyLab?.grupos || [])
+    const grupos = usandoNuevaArquitectura
+        ? (groupedResults.length > 0 ? groupedResults : [{ grupo: 'Resultados Generales', resultados: estudioCompleto?.resultados || [] }])
+        : (legacyLab?.grupos || [])
 
     if (loading) {
         return (

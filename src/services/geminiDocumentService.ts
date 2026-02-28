@@ -98,48 +98,118 @@ const labResultsSchema = {
     },
 };
 
-// ── Configuración de Prompts por Sección (Copiados del Consolidador Pro) ──
+// ── Configuración de Prompts por Sección (Copiados del Consolidador Pro - MÁXIMA PRECISIÓN) ──
 const getSectionConfig = (sectionId: string) => {
     switch (sectionId) {
         case 'laboratorio':
+        case 'laboratories':
             return {
-                prompt: "**EXPERTO EN LABORATORIOS**: Extrae todos los resultados manteniendo jerarquía. Categoria = Título (ej. Biometría), Subcategory = Subtítulo.",
-                schema: { type: Type.OBJECT, properties: { patientData: patientDataSchema, results: labResultsSchema, summary: { type: Type.STRING } } }
+                prompt: "**CRÍTICO Y OBLIGATORIO**: Eres un experto en análisis de laboratorios. Extrae todos los resultados manteniendo la jerarquía original del documento. Si los resultados están agrupados bajo un título (ej. 'Biometría Hemática', 'Química Sanguínea'), ese título DEBE ser la `category`. Si hay subtítulos (ej. 'Fórmula Roja'), esa DEBE ser la `subCategory`. Es VITAL que NO OMITAS `category` y `subCategory` para cada resultado. Son esenciales para la estructura del reporte. Además, proporciona una descripción concisa para cada métrica.",
+                schema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        patientData: patientDataSchema,
+                        results: labResultsSchema,
+                        summary: { type: Type.STRING, description: "Resumen de un párrafo de los hallazgos clave." },
+                    },
+                },
             };
         case 'audiometria':
+        case 'audiometry':
             return {
-                prompt: `**AUDIOMETRÍA PRO**: Extrae: 
-                1. Gráfica Audiométrica (Via Aérea) como JSON [{"frecuencia": 125, "derecho": 10, "izquierdo": 15}, ...] en 'value'.
-                2. Diagnóstico OD/OI.
-                3. Otoscopia.
-                4. Recomendaciones.
-                Usa visualizationType: 'line_chart' para la gráfica.`,
-                schema: { type: Type.OBJECT, properties: { patientData: patientDataSchema, results: labResultsSchema, summary: { type: Type.STRING } } }
+                prompt: `**CRÍTICO Y OBLIGATORIO**: Extrae TODOS los datos de la audiometría con el máximo nivel de detalle posible. El documento puede contener texto seleccionable e imágenes rasterizadas (gráficas, tablas escaneadas). Analiza exhaustivamente TODO el contenido visual y textual.
+                
+                Debes extraer y estructurar la siguiente información como objetos en el array 'results':
+                1. Gráfica Audiométrica (Vía Aérea): name: "Gráfica Audiométrica", value: [JSON array: [{"frecuencia": 125, "derecho": 10, "izquierdo": 15}, ...]], visualizationType: "line_chart", category: "Audiometría Tonal".
+                2. Diagnóstico / Interpretación: Oído Derecho e Izquierdo por separado. category: "Interpretación".
+                3. Otoscopia: Hallazgos de inspección. category: "Exploración Física".
+                4. Recomendaciones: EPP auditivo, reevaluación. category: "Recomendaciones".
+                5. Datos del Equipo: Audiómetro, calibración. category: "Datos del Estudio".`,
+                schema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        patientData: patientDataSchema,
+                        results: labResultsSchema,
+                        summary: { type: Type.STRING, description: "Resumen clínico completo y detallado." },
+                    },
+                },
             };
         case 'espirometria':
+        case 'spirometry':
             return {
-                prompt: `**ESPIROMETRÍA PRO**: Extrae Parámetros (FVC, etc) y Curvas como JSON {x:[], y:[]}.`,
-                schema: { type: Type.OBJECT, properties: { patientData: patientDataSchema, results: labResultsSchema, summary: { type: Type.STRING } } }
-            };
-        case 'ecg':
-            return {
-                prompt: `**ECG PRO**: Métricas: FC, PR, QRS, QT, QTc, Ejes. Interpretación simplificada.`,
-                schema: { type: Type.OBJECT, properties: { patientData: patientDataSchema, results: labResultsSchema, summary: { type: Type.STRING } } }
+                prompt: `**CRÍTICO Y OBLIGATORIO**: Extrae TODOS los datos de la espirometría. 
+                1. Tabla de Parámetros (FVC, FEV1, etc.): name: Párámetro, value: [JSON object con Pred, LLN, Mejor, %Pred], visualizationType: "table_row", category: "Parámetros Espirométricos".
+                2. Gráficas (Curva Flujo-Volumen): name: "Curva Flujo-Volumen", value: [JSON con arrays x, y, pred_x, pred_y], visualizationType: "line_chart", category: "Gráficas".
+                3. Interpretación y Calidad: category: "Interpretación y Calidad".
+                Analiza tanto texto como gráficas visuales.`,
+                schema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        patientData: patientDataSchema,
+                        results: labResultsSchema,
+                        summary: { type: Type.STRING, description: "Resumen clínico completo y función pulmonar." },
+                    },
+                },
             };
         case 'radiografia':
+        case 'xRays':
             return {
-                prompt: `**RADIOGRAFÍA PRO**: Hallazgos por región, ICT, Conclusión.`,
-                schema: { type: Type.OBJECT, properties: { patientData: patientDataSchema, results: labResultsSchema, summary: { type: Type.STRING } } }
+                prompt: `**CRÍTICO Y OBLIGATORIO**: Analiza exhaustivamente el reporte de Rayos X.
+                1. Hallazgos Específicos: Camptos pulmonares, silueta cardiaca, etc. category: "Hallazgos Radiológicos", visualizationType: "list".
+                2. Mediciones: ICT, etc. category: "Mediciones Radiológicas".
+                3. Conclusión: Diagnóstico central. category: "Conclusión".`,
+                schema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        patientData: patientDataSchema,
+                        results: labResultsSchema,
+                        summary: { type: Type.STRING, description: "Interpretación argumentada de los hallazgos." },
+                    },
+                },
             };
         case 'optometria':
+        case 'optometry':
             return {
-                prompt: `**OPTOMETRÍA PRO**: AV Snellen/Jaeger, Ishihara, Campimetría.`,
-                schema: { type: Type.OBJECT, properties: { patientData: patientDataSchema, results: labResultsSchema, summary: { type: Type.STRING } } }
+                prompt: `**SISTEMA DE DIGITALIZACIÓN MÉDICA DE ALTA PRECISIÓN - OPTOMETRÍA**
+                1. Agudeza Visual Lejana/Cercana: Extrae valores OD/OI y la interpretación ÍNTEGRA. value: JSON con campos individuales e "Interpretación". category: "Agudeza Visual", visualizationType: "table_row".
+                2. Ishihara y Campimetría: category: "Otras Evaluaciones".
+                3. Conclusión General: Párrafo íntegro. category: "Conclusión".`,
+                schema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        patientData: patientDataSchema,
+                        results: labResultsSchema,
+                        summary: { type: Type.STRING, description: "Resumen clínico detallado." },
+                    },
+                },
+            };
+        case 'ecg':
+        case 'electrocardiogram':
+            return {
+                prompt: `**CRÍTICO Y OBLIGATORIO**: Eres un cardiólogo experto. Extrae TODOS los datos del ECG.
+                1. Parámetros Numéricos: FC, PR, QRS, QT, QTc, Ejes. category: "Parámetros Numéricos".
+                2. Interpretación Argumentada: Puntos clave simplificados y justificados. category: "Interpretación", visualizationType: "list".
+                Extrae cada métrica individual del reporte.`,
+                schema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        patientData: patientDataSchema,
+                        results: labResultsSchema,
+                        summary: { type: Type.STRING, description: "Análisis cardiológico estructural." },
+                    },
+                },
             };
         default:
             return {
-                prompt: "Extrae toda la información médica relevante del documento.",
-                schema: { type: Type.OBJECT, properties: { patientData: patientDataSchema, results: labResultsSchema, summary: { type: Type.STRING } } }
+                prompt: "Extrae toda la información médica relevante del documento con precisión quirúrgica.",
+                schema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        patientData: patientDataSchema,
+                        results: labResultsSchema,
+                        summary: { type: Type.STRING }
+                    }
+                }
             };
     }
 };
