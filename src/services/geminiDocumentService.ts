@@ -229,13 +229,21 @@ export async function analyzeDocument(sectionId: string, text: string, imageFile
     const { prompt: sectionPrompt, schema } = getSectionConfig(sectionId);
 
     const fileToPart = async (file: File): Promise<Part> => {
-        const buffer = await file.arrayBuffer();
-        return {
-            inlineData: {
-                data: btoa(new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')),
-                mimeType: file.type
-            }
-        };
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result as string;
+                const base64 = dataUrl.split(',')[1];
+                resolve({
+                    inlineData: {
+                        data: base64,
+                        mimeType: file.type
+                    }
+                });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
     };
 
     const imageParts = await Promise.all(imageFiles.map(fileToPart));

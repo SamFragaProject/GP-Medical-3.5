@@ -328,12 +328,33 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
         )
     }
 
-    if (phase === 'done') {
+    if (phase === 'saving') {
         return (
-            <Card className="border-0 shadow-2xl p-16 bg-white rounded-[4rem] text-center space-y-8 animate-in zoom-in-95 duration-500">
-                <div className="w-28 h-28 bg-emerald-500 rounded-[2.5rem] shadow-2xl shadow-emerald-200 flex items-center justify-center mx-auto scale-110"><CheckCircle className="w-16 h-16 text-white" /></div>
-                <div><h3 className="text-4xl font-black text-slate-800 tracking-tighter">¡Éxito!</h3><p className="text-slate-400 text-lg font-medium mt-2">Los resultados han sido integrados correctamente.</p></div>
-                <button onClick={() => setPhase('idle')} className="px-12 py-5 bg-slate-900 text-white rounded-[2rem] font-black text-xs uppercase tracking-widest hover:scale-105 transition-all">Siguiente Estudio</button>
+            <Card className="border-0 shadow-2xl p-16 bg-white rounded-[3rem] text-center space-y-10 relative overflow-hidden">
+                <div className="w-32 h-32 mx-auto">
+                    <Loader2 className="w-full h-full text-blue-500 animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center"><Database className="w-12 h-12 text-blue-400 animate-pulse" /></div>
+                </div>
+                <div>
+                    <h3 className="text-3xl font-black text-slate-800 tracking-tighter">Integrando al Expediente</h3>
+                    <p className="text-slate-400 font-medium mt-2 max-w-sm mx-auto">Estamos guardando los resultados y configurando las gráficas técnicas...</p>
+                </div>
+            </Card>
+        )
+    }
+
+    if (phase === 'error') {
+        return (
+            <Card className="border-0 shadow-2xl p-16 bg-red-50 rounded-[3rem] text-center space-y-8 border-2 border-red-200">
+                <div className="w-24 h-24 bg-red-100 rounded-[2.5rem] flex items-center justify-center mx-auto"><AlertCircle className="w-12 h-12 text-red-500" /></div>
+                <div>
+                    <h3 className="text-3xl font-black text-red-900 tracking-tighter">Error de Análisis</h3>
+                    <p className="text-red-600 font-medium mt-2 max-w-md mx-auto">{errorMsg || 'Ocurrió un error inesperado al procesar el documento.'}</p>
+                </div>
+                <div className="flex gap-4 justify-center">
+                    <button onClick={() => setPhase('idle')} className="px-10 py-4 bg-white text-red-600 border-2 border-red-200 rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-red-50 transition-all">Cancelar</button>
+                    <button onClick={() => selectedFile && startProcess(selectedFile)} className="px-10 py-4 bg-red-500 text-white rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-red-600 shadow-xl shadow-red-200 transition-all">Reintentar</button>
+                </div>
             </Card>
         )
     }
