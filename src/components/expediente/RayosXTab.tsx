@@ -14,7 +14,7 @@ import { Loader2, Inbox, Upload, ScanLine } from 'lucide-react'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 import { SubirRadiografiaModal } from '@/components/ui/SubirRadiografiaModal'
 import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
-import SectionFileUpload from '@/components/expediente/SectionFileUpload'
+import EstudioUploadReview from '@/components/expediente/EstudioUploadReview'
 
 const RESULTADO_STYLES: Record<string, { bg: string; text: string; border: string; label: string; dot: string }> = {
     normal: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Normal', dot: 'bg-emerald-500' },
@@ -169,8 +169,8 @@ export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
                 <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2 mb-4">
                     Este paciente aún no cuenta con estudios de Rayos X registrados.
                 </p>
-                <div className="max-w-sm mx-auto">
-                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="radiografia" onDataSaved={() => loadData()} />
+                <div className="max-w-lg mx-auto">
+                    <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="radiografia" onSaved={() => loadData()} />
                 </div>
             </Card>
         )
@@ -305,12 +305,7 @@ export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
                                             {/* Upload Section with AI Extraction */}
                                             <div className="pt-4 border-t border-slate-100">
                                                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Subir Radiografía + Extracción IA</p>
-                                                <SectionFileUpload
-                                                    pacienteId={pacienteId}
-                                                    tipoEstudio="radiografia"
-                                                    onDataSaved={() => loadData()}
-                                                    onFileUploaded={(url) => setEstudios(prev => prev.map(e => e.id === rx.id ? { ...e, imagen_url: url } : e))}
-                                                />
+                                                <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="radiografia" onSaved={() => loadData()} />
                                                 {rx.imagen_url && (
                                                     <div className="mt-3 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 relative aspect-video flex items-center justify-center">
                                                         <img src={rx.imagen_url} alt="Radiografía" className="max-w-full max-h-full object-contain" />

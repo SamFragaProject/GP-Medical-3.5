@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { HeartPulse, Loader2, Calendar, FileText, AlertTriangle, Download, Activity, Zap } from 'lucide-react';
 import { printSeccionPDF } from '@/components/expediente/ExportarPDFPaciente';
 import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos';
-import SectionFileUpload from '@/components/expediente/SectionFileUpload';
+import EstudioUploadReview from '@/components/expediente/EstudioUploadReview';
 
 export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacienteId: string; paciente?: any }) {
     const [estudios, setEstudios] = useState<Electrocardiograma[]>([]);
@@ -75,8 +75,8 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                 <p className="text-sm text-slate-400 mt-2 max-w-sm text-center mb-4">
                     No existen trazados de ECG registrados para este paciente.
                 </p>
-                <div className="max-w-sm mx-auto">
-                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="ecg" onDataSaved={() => loadECG()} />
+                <div className="max-w-lg mx-auto">
+                    <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="ecg" onSaved={() => loadECG()} />
                 </div>
             </div>
         );
@@ -106,7 +106,7 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="ecg" compact onDataSaved={() => loadECG()} />
+                                    <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="ecg" onSaved={() => loadECG()} />
                                     <Badge className={`${colores.bg} ${colores.text} font-bold text-xs px-3 py-1`}>
                                         {ecg.clasificacion.replace(/_/g, ' ').toUpperCase()}
                                     </Badge>

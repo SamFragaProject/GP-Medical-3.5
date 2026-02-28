@@ -13,7 +13,7 @@ import { supabase } from '@/lib/supabase'
 import { Loader2, Inbox } from 'lucide-react'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
-import SectionFileUpload from '@/components/expediente/SectionFileUpload'
+import EstudioUploadReview from '@/components/expediente/EstudioUploadReview'
 
 const FREQUENCIES = ['250', '500', '1000', '2000', '3000', '4000', '6000', '8000']
 const FREQ_LABELS = ['250', '500', '1K', '2K', '3K', '4K', '6K', '8K']
@@ -287,8 +287,8 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
                 <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2 mb-4">
                     Este paciente aún no cuenta con estudios de audiometría tonal realizados.
                 </p>
-                <div className="max-w-sm mx-auto">
-                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="audiometria" onDataSaved={() => loadData()} />
+                <div className="max-w-lg mx-auto">
+                    <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="audiometria" onSaved={() => loadData()} />
                 </div>
             </Card>
         )
@@ -311,7 +311,7 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-3 items-center">
-                        <SectionFileUpload pacienteId={pacienteId} tipoEstudio="audiometria" compact onDataSaved={() => loadData()} />
+                        <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="audiometria" onSaved={() => loadData()} />
                         <div className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-100 text-center">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fecha</p>
                             <p className="text-sm font-bold text-slate-700">

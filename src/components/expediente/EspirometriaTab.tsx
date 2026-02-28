@@ -13,7 +13,7 @@ import { supabase } from '@/lib/supabase'
 import { Loader2, Inbox } from 'lucide-react'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
-import SectionFileUpload from '@/components/expediente/SectionFileUpload'
+import EstudioUploadReview from '@/components/expediente/EstudioUploadReview'
 
 const CLASIF_STYLES: Record<string, { bg: string; text: string; border: string; label: string }> = {
     normal: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Normal' },
@@ -279,8 +279,8 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                 <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2 mb-4">
                     Este paciente aún no cuenta con estudios de espirometría realizados.
                 </p>
-                <div className="max-w-sm mx-auto">
-                    <SectionFileUpload pacienteId={pacienteId} tipoEstudio="espirometria" onDataSaved={() => loadData()} />
+                <div className="max-w-lg mx-auto">
+                    <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="espirometria" onSaved={() => loadData()} />
                 </div>
             </Card>
         )
@@ -303,7 +303,7 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                         </div>
                     </div>
                     <div className="flex flex-wrap gap-3 items-center">
-                        <SectionFileUpload pacienteId={pacienteId} tipoEstudio="espirometria" compact onDataSaved={() => loadData()} />
+                        <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="espirometria" onSaved={() => loadData()} />
                         <div className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-100 text-center">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fecha</p>
                             <p className="text-sm font-bold text-slate-700">
