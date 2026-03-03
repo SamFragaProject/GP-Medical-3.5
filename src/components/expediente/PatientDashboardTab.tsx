@@ -155,7 +155,7 @@ function BarIndicator({ value, min, max, unit, label, bandera }: {
 // ══════════════════════════════════════════
 // MAIN COMPONENT
 // ══════════════════════════════════════════
-export default function PatientDashboardTab({ pacienteId }: { pacienteId: string }) {
+export default function PatientDashboardTab({ pacienteId, onNavigate }: { pacienteId: string; onNavigate?: (tab: string) => void }) {
     const [loading, setLoading] = useState(true)
     const [labResults, setLabResults] = useState<any[]>([])
     const [labFecha, setLabFecha] = useState<string | null>(null)
@@ -337,8 +337,53 @@ export default function PatientDashboardTab({ pacienteId }: { pacienteId: string
     const okCount = systems.filter(s => s.status === 'ok').length
     const totalActive = systems.filter(s => s.status !== 'pending').length
 
+    const sv = signosVitales
+    const vitalOrbs = [
+        { label: 'T/A', value: sv?.ta_sistolica && sv?.ta_diastolica ? `${sv.ta_sistolica}/${sv.ta_diastolica}` : sv?.presion_sistolica && sv?.presion_diastolica ? `${sv.presion_sistolica}/${sv.presion_diastolica}` : null, unit: 'mmHg', ok: () => { const sys = Number(sv?.ta_sistolica || sv?.presion_sistolica); return sys < 130; }, pulse: true, gradient: 'from-rose-500 to-pink-600' },
+        { label: 'FC', value: sv?.fc || sv?.frecuencia_cardiaca, unit: 'lpm', ok: () => { const v = Number(sv?.fc || sv?.frecuencia_cardiaca); return v >= 60 && v <= 100; }, pulse: true, gradient: 'from-red-500 to-rose-600' },
+        { label: 'SpO₂', value: sv?.spo2 || sv?.saturacion_o2, unit: '%', ok: () => Number(sv?.spo2 || sv?.saturacion_o2) >= 95, gradient: 'from-cyan-500 to-blue-600' },
+        { label: 'Temp', value: sv?.temperatura, unit: '°C', ok: () => { const v = Number(sv?.temperatura); return v >= 36.5 && v <= 37.5; }, gradient: 'from-amber-500 to-orange-600' },
+        { label: 'Peso', value: sv?.peso_kg || sv?.peso, unit: 'kg', ok: () => true, gradient: 'from-violet-500 to-purple-600' },
+        { label: 'Glucosa', value: sv?.glucosa, unit: 'mg/dL', ok: () => { const v = Number(sv?.glucosa); return v >= 70 && v <= 100; }, gradient: 'from-emerald-500 to-teal-600' },
+    ].filter(o => o.value !== null && o.value !== undefined && o.value !== '' && o.value !== '—')
+
     return (
         <div className="space-y-5">
+
+            {/* ═══ VITALES ANIMADOS ═══ */}
+            {vitalOrbs.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700/50 p-5 shadow-xl">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Activity className="w-4 h-4 text-emerald-400" />
+                        <h3 className="text-xs font-black text-white uppercase tracking-widest">Signos Vitales</h3>
+                        <span className="text-[9px] text-slate-500 ml-auto">Última exploración física</span>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                        {vitalOrbs.map((orb, i) => {
+                            const isOk = orb.ok ? orb.ok() : true
+                            return (
+                                <motion.div key={orb.label} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: i * 0.06 }}
+                                    className="flex flex-col items-center gap-2">
+                                    <div className="relative">
+                                        <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${isOk ? orb.gradient : 'from-amber-500 to-orange-600'} flex flex-col items-center justify-center shadow-lg`}>
+                                            <span className="text-[11px] font-black text-white leading-none">{orb.value}</span>
+                                            <span className="text-[8px] text-white/70 font-medium">{orb.unit}</span>
+                                        </div>
+                                        {orb.pulse && (
+                                            <motion.div className="absolute inset-0 rounded-2xl"
+                                                animate={{ boxShadow: isOk ? ['0 0 0 0 rgba(239,68,68,0)', '0 0 0 6px rgba(239,68,68,0.15)', '0 0 0 0 rgba(239,68,68,0)'] : ['0 0 0 0 rgba(245,158,11,0)', '0 0 0 8px rgba(245,158,11,0.25)', '0 0 0 0 rgba(245,158,11,0)'] }}
+                                                transition={{ duration: 1.2, repeat: Infinity }} />
+                                        )}
+                                        {!isOk && <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full border-2 border-slate-900" />}
+                                    </div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{orb.label}</p>
+                                </motion.div>
+                            )
+                        })}
+                    </div>
+                </motion.div>
+            )}
+
             {/* ═══ SEMÁFORO CLÍNICO — Premium Dark Glass ═══ */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-5 border border-slate-700/50 shadow-2xl shadow-slate-900/50">
                 <div className="flex items-center justify-between mb-4">
@@ -360,8 +405,11 @@ export default function PatientDashboardTab({ pacienteId }: { pacienteId: string
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                     {systems.map((sys) => {
                         const st = STATUS[sys.status]
+                        const tabMap: Record<string, string> = { laboratorio: 'laboratorio', audiometria: 'audiometria', espirometria: 'espirometria', ecg: 'electrocardiograma', radiografia: 'rayosx', optometria: 'vision' }
                         return (
-                            <div key={sys.key} className={`rounded-xl bg-gradient-to-br ${st.bgCard} backdrop-blur-sm border ${st.border} p-3 transition-all hover:scale-[1.02] cursor-pointer`}>
+                            <div key={sys.key}
+                                onClick={() => onNavigate && onNavigate(tabMap[sys.key] || sys.key)}
+                                className={`rounded-xl bg-gradient-to-br ${st.bgCard} backdrop-blur-sm border ${st.border} p-3 transition-all hover:scale-[1.02] ${onNavigate ? 'cursor-pointer' : 'cursor-default'} group`}>
                                 <div className="flex items-center justify-between mb-2">
                                     <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${sys.color} flex items-center justify-center shadow-md`}>
                                         <sys.icon className="w-3.5 h-3.5 text-white" />
@@ -375,6 +423,9 @@ export default function PatientDashboardTab({ pacienteId }: { pacienteId: string
                                         <Clock className="w-2 h-2" />
                                         {new Date(sys.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
                                     </p>
+                                )}
+                                {onNavigate && sys.status !== 'pending' && (
+                                    <p className="text-[8px] text-slate-600 mt-1 group-hover:text-slate-400 transition-colors">→ Ver detalle</p>
                                 )}
                             </div>
                         )

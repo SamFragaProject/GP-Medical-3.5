@@ -35,6 +35,7 @@ import EstudiosVisualesTab from '@/components/expediente/EstudiosVisualesTab'
 import LaboratorioTab from '@/components/expediente/LaboratorioTab'
 import RayosXTab from '@/components/expediente/RayosXTab'
 import OdontogramaTab from '@/components/expediente/OdontogramaTab'
+import PatientDashboardTab from '@/components/expediente/PatientDashboardTab'
 import { printExpedienteCompleto } from '@/components/expediente/ExportarPDFPaciente'
 import { supabase } from '@/lib/supabase'
 import { pacientesService } from '@/services/dataService'
@@ -249,6 +250,7 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId: s
                         {/* ═══ RESUMEN ═══ */}
                         <TabsContent value="resumen" className="mt-0 space-y-4">
                             <ResumenTab data={data} />
+                            <PatientDashboardTab pacienteId={pacienteId} onNavigate={(tab) => setActiveTab(tab)} />
                         </TabsContent>
 
                         {/* ═══ APNP ═══ */}

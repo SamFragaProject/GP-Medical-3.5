@@ -476,6 +476,129 @@ METADATOS:
             };
 
         // ─────────────────────────────────────────────
+        // HISTORIA CLÍNICA
+        // ─────────────────────────────────────────────
+        case 'historia_clinica':
+        case 'historia':
+        case 'formulario':
+            return {
+                prompt: `${GLOBAL_INSTRUCTION}
+
+Eres un médico experto digitalizando un formulario de Historia Clínica / Examen Médico Ocupacional de GP Medical Health.
+El documento es un formulario médico con múltiples secciones y campos. Extráelos TODOS, campo por campo.
+
+EXTRAE OBLIGATORIAMENTE CADA SECCIÓN Y CAMPO:
+
+DATOS PERSONALES / IDENTIFICACIÓN (un item por campo):
+- name:"NOMBRE_COMPLETO", value: nombre del trabajador, category:"Datos Personales"
+- name:"FECHA_NACIMIENTO", value: fecha de nacimiento, category:"Datos Personales"
+- name:"EDAD", value: edad en años, unit:"años", category:"Datos Personales"
+- name:"SEXO", value: "Masculino"/"Femenino", category:"Datos Personales"
+- name:"CURP", value: CURP del paciente, category:"Datos Personales"
+- name:"NSS", value: Número de Seguridad Social, category:"Datos Personales"
+- name:"RFC", value: RFC, category:"Datos Personales"
+- name:"ESCOLARIDAD", value: nivel educativo, category:"Datos Personales"
+- name:"ESTADO_CIVIL", value: estado civil, category:"Datos Personales"
+- name:"DOMICILIO", value: dirección completa, category:"Datos Personales"
+- name:"TELEFONO", value: número de teléfono, category:"Datos Personales"
+- name:"CONTACTO_EMERGENCIA", value: nombre y teléfono del contacto, category:"Datos Personales"
+- name:"EMPRESA", value: nombre de la empresa empleadora, category:"Datos Personales"
+- name:"PUESTO", value: puesto de trabajo, category:"Datos Personales"
+- name:"ANTIGUEDAD", value: años de antigüedad, category:"Datos Personales"
+- name:"TIPO_EXAMEN", value: tipo de examen (ingreso/periódico/egreso/especial), category:"Datos Personales"
+- name:"FECHA_EXAMEN", value: fecha del examen, category:"Datos Personales"
+
+SIGNOS VITALES Y SOMATOMETRÍA (un item por signo):
+- name:"PESO", value: valor, unit:"kg", category:"Signos Vitales"
+- name:"TALLA", value: valor, unit:"cm", category:"Signos Vitales"
+- name:"IMC", value: valor, unit:"kg/m²", range:"18.5-24.9", description:"Normal/Sobrepeso/Obesidad", category:"Signos Vitales"
+- name:"TENSION_ARTERIAL", value: sistólica/diastólica (ej:"120/80"), unit:"mmHg", range:"<120/80", category:"Signos Vitales"
+- name:"FRECUENCIA_CARDIACA", value: valor, unit:"lpm", range:"60-100", category:"Signos Vitales"
+- name:"FRECUENCIA_RESPIRATORIA", value: valor, unit:"rpm", range:"12-20", category:"Signos Vitales"
+- name:"TEMPERATURA", value: valor, unit:"°C", range:"36.5-37.5", category:"Signos Vitales"
+- name:"SPO2", value: valor, unit:"%", range:"95-100", category:"Signos Vitales"
+- name:"GLUCOSA_CAPILAR", value: valor si existe, unit:"mg/dL", range:"70-100", category:"Signos Vitales"
+- name:"CINTURA", value: valor, unit:"cm", category:"Signos Vitales"
+- name:"CADERA", value: valor, unit:"cm", category:"Signos Vitales"
+
+ANTECEDENTES PERSONALES PATOLÓGICOS (APPat):
+- name:"DIABETES", value: "Sí"/"No", description: tipo y tratamiento si existe, unit: años desde diagnóstico, category:"Antecedentes Patológicos"
+- name:"HIPERTENSION", value: "Sí"/"No", description: tratamiento actual, category:"Antecedentes Patológicos"
+- name:"ENFERMEDADES_CARDIOVASCULARES", value: "Sí"/"No", description: descripción, category:"Antecedentes Patológicos"
+- name:"ENFERMEDADES_RESPIRATORIAS", value: "Sí"/"No", description: descripción detallada, category:"Antecedentes Patológicos"
+- name:"ENFERMEDADES_RENALES", value: "Sí"/"No", description: descripción, category:"Antecedentes Patológicos"
+- name:"CIRUGIAS_PREVIAS", value: "Sí"/"No", description: tipo y año, category:"Antecedentes Patológicos"
+- name:"HOSPITALIZACIONES", value: "Sí"/"No", description: motivo y año, category:"Antecedentes Patológicos"
+- name:"ALERGIAS", value: alergenos y tipo de reacción, category:"Antecedentes Patológicos"
+- name:"MEDICAMENTOS_ACTUALES", value: lista completa de medicamentos con dosis, category:"Antecedentes Patológicos"
+- name:"TRAUMATISMOS", value: "Sí"/"No", description: descripción y secuelas, category:"Antecedentes Patológicos"
+- name:"ENFERMEDADES_MUSCULOESQUELETICAS", value: hernias, lumbalgias, cervicalgias etc., category:"Antecedentes Patológicos"
+- name:"DISCAPACIDADES", value: descripción de limitaciones físicas, category:"Antecedentes Patológicos"
+
+ANTECEDENTES PERSONALES NO PATOLÓGICOS (APNP) — un item por hábito:
+- name:"TABACO", value: "Sí"/"No"/"Ex-fumador", description: cantidad cigarros/día y años, category:"APNP"
+- name:"ALCOHOL", value: "Sí"/"No", description: tipo, frecuencia y cantidad, category:"APNP"
+- name:"DROGAS", value: "Sí"/"No", description: tipo y frecuencia, category:"APNP"
+- name:"EJERCICIO", value: "Sí"/"No"/"Sedentario", description: tipo y frecuencia por semana, category:"APNP"
+- name:"ALIMENTACION", value: descripción del tipo de alimentación, category:"APNP"
+- name:"CAFE", value: "Sí"/"No", description: tazas por día, category:"APNP"
+- name:"HORAS_SUENO", value: horas promedio, unit:"h/día", category:"APNP"
+
+ANTECEDENTES HEREDOFAMILIARES (AHF):
+- name:"AHF_DIABETES", value: "Sí"/"No", description: parentesco, category:"AHF"
+- name:"AHF_HIPERTENSION", value: "Sí"/"No", description: parentesco, category:"AHF"
+- name:"AHF_CANCER", value: "Sí"/"No", description: parentesco y tipo, category:"AHF"
+- name:"AHF_CARDIOPATIAS", value: "Sí"/"No", description: parentesco, category:"AHF"
+- name:"AHF_ENF_MENTALES", value: "Sí"/"No", description: parentesco, category:"AHF"
+- name:"AHF_OTRAS", value: otras enfermedades familiares relevantes, category:"AHF"
+
+HISTORIA LABORAL Y RIESGOS OCUPACIONALES:
+- name:"PUESTO_ACTUAL", value: nombre del puesto, category:"Historia Laboral"
+- name:"ANTIGUEDAD_ACTUAL", value: años en puesto actual, unit:"años", category:"Historia Laboral"
+- name:"DESCRIPCION_ACTIVIDADES", value: descripción detallada de actividades laborales, category:"Historia Laboral"
+- name:"RIESGOS_FISICOS", value: ruido/vibración/calor/frío/radiaciones/etc., category:"Historia Laboral"
+- name:"RIESGOS_QUIMICOS", value: solventes/polvos/humos/gases/etc., category:"Historia Laboral"
+- name:"RIESGOS_BIOLOGICOS", value: microorganismos/sangre/etc., category:"Historia Laboral"
+- name:"RIESGOS_ERGONOMICOS", value: posturas/esfuerzo físico/movimientos repetitivos/etc., category:"Historia Laboral"
+- name:"RIESGOS_PSICOSOCIALES", value: estrés/turnos nocturnos/jornadas prolongadas, category:"Historia Laboral"
+- name:"EPP_UTILIZADO", value: lista de equipo de protección personal usado, category:"Historia Laboral"
+- name:"ACCIDENTES_TRABAJO", value: descripción de accidentes previos en el trabajo, category:"Historia Laboral"
+
+EXPLORACIÓN FÍSICA (si está en el formulario):
+- name:"EF_ASPECTO_GENERAL", value: descripción del aspecto general, category:"Exploración Física"
+- name:"EF_PIEL", value: descripción de tegumentos, category:"Exploración Física"
+- name:"EF_CABEZA_CUELLO", value: hallazgos, category:"Exploración Física"
+- name:"EF_OJOS", value: hallazgos oculares, category:"Exploración Física"
+- name:"EF_OIDOS", value: hallazgos auditivos, category:"Exploración Física"
+- name:"EF_NARIZ", value: hallazgos nasales, category:"Exploración Física"
+- name:"EF_BOCA_GARGANTA", value: hallazgos, category:"Exploración Física"
+- name:"EF_TORAX", value: hallazgos cardiorrespiratorios, category:"Exploración Física"
+- name:"EF_ABDOMEN", value: hallazgos abdominales, category:"Exploración Física"
+- name:"EF_COLUMNA", value: hallazgos de columna vertebral, category:"Exploración Física"
+- name:"EF_EXTREMIDADES_SUP", value: hallazgos extremidades superiores, category:"Exploración Física"
+- name:"EF_EXTREMIDADES_INF", value: hallazgos extremidades inferiores, category:"Exploración Física"
+- name:"EF_NEUROLOGICO", value: evaluación neurológica, category:"Exploración Física"
+- name:"EF_HALLAZGOS_RELEVANTES", value: hallazgos clínicos relevantes que requieren atención, category:"Exploración Física"
+
+DIAGNÓSTICO Y CONCLUSIÓN:
+- name:"DIAGNOSTICOS", value: lista completa de diagnósticos CIE-10 numerados, visualizationType:"list", category:"Diagnóstico"
+- name:"APTITUD_LABORAL", value: "APTO"/"APTO CON RESTRICCIONES"/"NO APTO"/"PENDIENTE", description: condiciones específicas de la aptitud, category:"Diagnóstico"
+- name:"RESTRICCIONES_LABORALES", value: restricciones específicas si existen, category:"Diagnóstico"
+- name:"PLAN_SEGUIMIENTO", value: plan de seguimiento médico, category:"Diagnóstico"
+- name:"RECOMENDACIONES_MEDICAS", value: recomendaciones completas, category:"Diagnóstico"
+- name:"MEDICO_EXAMINADOR", value: nombre y cédula del médico, category:"Diagnóstico"
+- name:"PROXIMO_EXAMEN", value: fecha recomendada para próximo examen, category:"Diagnóstico"`,
+                schema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        patientData: patientDataSchema,
+                        results: labResultsSchema,
+                        summary: { type: Type.STRING, description: "Resumen de datos personales, antecedentes relevantes, signos vitales y diagnóstico." },
+                    },
+                },
+            };
+
+        // ─────────────────────────────────────────────
         // DEFAULT
         // ─────────────────────────────────────────────
         default:
@@ -500,8 +623,9 @@ export function determineCategory(filename: string): string {
     if (n.includes('audio')) return 'audiometria';
     if (n.includes('espiro')) return 'espirometria';
     if (n.includes('ecg') || n.includes('electro')) return 'ecg';
-    if (n.includes('rx') || n.includes('radio')) return 'radiografia';
-    if (n.includes('opto') || n.includes('vista') || n.includes('optome')) return 'optometria';
+    if (n.includes('rx') || n.includes('radio') || n.includes('rayos')) return 'radiografia';
+    if (n.includes('opto') || n.includes('vista') || n.includes('optome') || n.includes('vision')) return 'optometria';
+    if (n.includes('historia') || n.includes('hc') || n.includes('clinica') || n.includes('formulario') || n.includes('examen_medico')) return 'historia_clinica';
     return 'laboratorio';
 }
 
