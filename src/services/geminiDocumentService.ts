@@ -7,12 +7,12 @@
 import { GoogleGenAI, Type, Part } from "@google/genai";
 import { trackUsage } from './aiUsageTracker';
 
-const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
-// ── Model Config (Based on working Consolidador Pro) ──
-const MODEL_NAME = 'gemini-3-flash-preview';
-const FALLBACK_MODEL = 'gemini-1.5-flash-latest';
+// ── Model Config — gemini-2.0-flash es el modelo activo y válido ──
+const MODEL_NAME = 'gemini-2.0-flash';
+const FALLBACK_MODEL = 'gemini-2.0-flash-lite';
 
 const generateContentWithRetry = async (params: any, retries = 3, delay = 2000): Promise<any> => {
     let currentModel = params.model || MODEL_NAME;

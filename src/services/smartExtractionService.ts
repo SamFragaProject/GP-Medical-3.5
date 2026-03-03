@@ -22,8 +22,8 @@ export const readFileAsBase64 = (file: File): Promise<{ mimeType: string; base64
 let _ai: GoogleGenAI | null = null;
 const getAI = (): GoogleGenAI => {
     if (!_ai) {
-        const key = import.meta.env.VITE_GEMINI_API_KEY;
-        if (!key) throw new Error('VITE_GEMINI_API_KEY no está configurada. Agrega la variable en .env o en Vercel.');
+        const key = import.meta.env.VITE_GOOGLE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+        if (!key) throw new Error('VITE_GOOGLE_API_KEY no está configurada. Agrega la variable en .env o en Vercel.');
         _ai = new GoogleGenAI({ apiKey: key });
     }
     return _ai;
@@ -41,11 +41,11 @@ const generateContentWithRetry = async (params: any, retries = 3, delay = 2000):
         } catch (error: any) {
             console.warn(`Attempt ${i + 1} failed with model ${currentModel}:`, error);
 
-            // If it's a quota error (429) and we are using pro, try falling back to flash
+            // Fallback a lite si hay quota
             if (error?.status === 429 || error?.message?.includes('429') || error?.message?.includes('RESOURCE_EXHAUSTED')) {
-                if (currentModel === 'gemini-3.1-pro-preview') {
-                    console.log('Falling back to gemini-3-flash-preview due to quota limits');
-                    currentModel = 'gemini-3-flash-preview';
+                if (currentModel === 'gemini-2.0-flash') {
+                    console.log('Falling back to gemini-2.0-flash-lite due to quota limits');
+                    currentModel = 'gemini-2.0-flash-lite';
                 }
             }
 
@@ -461,8 +461,8 @@ export const analyzeMedicalDocument = async (
     const fileDataPromises = fileArray.map(file => readFileAsBase64(file));
     const fileDatas = await Promise.all(fileDataPromises);
 
-    // Use gemini-3-flash-preview for faster analysis of both PDFs and images
-    const modelName = 'gemini-3-flash-preview';
+    // Use gemini-2.0-flash for analysis of both PDFs and images
+    const modelName = 'gemini-2.0-flash';
 
     const { prompt: sectionPrompt, schema, responseKeys } = getSectionConfig(sectionId);
 
@@ -528,7 +528,7 @@ export const analyzeMedicalDocument = async (
 };
 
 export const populateClinicalHistoryForm = async (report: MedicalReport): Promise<Partial<ClinicalHistoryFormData>> => {
-    const model = 'gemini-3.1-pro-preview';
+    const model = 'gemini-2.0-flash';
     const reportText = stringifyMedicalReport(report);
     const prompt = `
         Eres un asistente médico experto. Tu tarea es pre-llenar un formulario de historia clínica en formato JSON a partir de un expediente médico.
@@ -572,7 +572,7 @@ export const generateAptitudeCertificate = async (
     clinicalHistoryData: ClinicalHistoryFormData,
     config: CertificateConfig
 ): Promise<AptitudeCertificateData> => {
-    const model = 'gemini-3.1-pro-preview';
+    const model = 'gemini-2.0-flash';
     const reportText = stringifyMedicalReport(report);
     const historyText = JSON.stringify({
         datosGenerales: clinicalHistoryData.datosGenerales,
@@ -667,7 +667,7 @@ export const generateAptitudeCertificate = async (
 };
 
 export const extractAndGenerateVitalSigns = async (report: MedicalReport): Promise<Partial<VitalSigns>> => {
-    const model = 'gemini-3.1-pro-preview';
+    const model = 'gemini-2.0-flash';
     const reportText = stringifyMedicalReport(report);
 
     const prompt = `
@@ -765,7 +765,7 @@ export const getJobDetails = async (jobTitle: string): Promise<{ descripcionFunc
 };
 
 export const generateDiagnoses = async (report: MedicalReport): Promise<string> => {
-    const model = 'gemini-3.1-pro-preview';
+    const model = 'gemini-2.0-flash';
     const reportText = stringifyMedicalReport(report);
 
     const prompt = `
@@ -795,7 +795,7 @@ export const generateDiagnoses = async (report: MedicalReport): Promise<string> 
 };
 
 export const generateConcept = async (report: MedicalReport): Promise<{ resumen: string, aptitud: string, limitacionesRestricciones: string }> => {
-    const model = 'gemini-3.1-pro-preview';
+    const model = 'gemini-2.0-flash';
     const reportText = stringifyMedicalReport(report);
     const conceptSchema = {
         type: Type.OBJECT,
