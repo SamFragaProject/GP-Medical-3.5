@@ -33,6 +33,8 @@ const STUDY_CONFIG: Record<string, { title: string, icon: any, gradient: string,
     espirometria: { title: 'Espirometría Pro', icon: Activity, gradient: 'from-amber-500 to-orange-600', shadow: 'shadow-amber-200', category: 'Espirometría', sectionId: 'espirometria' },
     ecg: { title: 'Electrocardiograma (ECG)', icon: LucideLineChart, gradient: 'from-rose-500 to-pink-600', shadow: 'shadow-rose-200', category: 'ECG', sectionId: 'ecg' },
     radiografia: { title: 'Radiografía / RX', icon: FileText, gradient: 'from-slate-700 to-slate-900', shadow: 'shadow-slate-300', category: 'Rayos X', sectionId: 'radiografia' },
+    optometria: { title: 'Optometría / Visión', icon: Eye, gradient: 'from-cyan-500 to-sky-600', shadow: 'shadow-cyan-200', category: 'Optometría', sectionId: 'optometria' },
+    historia_clinica: { title: 'Historia Clínica Ocupacional', icon: BarChart3, gradient: 'from-emerald-600 to-teal-700', shadow: 'shadow-emerald-300', category: 'Historia Clínica', sectionId: 'historia_clinica' },
 }
 
 export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteNombre, onSaved }: Props) {

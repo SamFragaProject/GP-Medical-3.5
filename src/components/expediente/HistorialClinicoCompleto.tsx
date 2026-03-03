@@ -36,6 +36,7 @@ import LaboratorioTab from '@/components/expediente/LaboratorioTab'
 import RayosXTab from '@/components/expediente/RayosXTab'
 import OdontogramaTab from '@/components/expediente/OdontogramaTab'
 import PatientDashboardTab from '@/components/expediente/PatientDashboardTab'
+import HistoriaClinicaTab from '@/components/expediente/HistoriaClinicaTab'
 import { printExpedienteCompleto } from '@/components/expediente/ExportarPDFPaciente'
 import { supabase } from '@/lib/supabase'
 import { pacientesService } from '@/services/dataService'
@@ -178,6 +179,7 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId: s
 
     const TABS = [
         { value: 'resumen', label: 'Resumen', icon: Activity, gradient: 'from-emerald-500 to-teal-600', bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-300' },
+        { value: 'historia', label: 'Historia Clínica', icon: FileText, gradient: 'from-teal-500 to-emerald-700', bg: 'bg-teal-50', text: 'text-teal-700', ring: 'ring-teal-300' },
         { value: 'apnp', label: 'APNP', icon: Heart, gradient: 'from-rose-500 to-pink-600', bg: 'bg-rose-50', text: 'text-rose-700', ring: 'ring-rose-300' },
         { value: 'ahf', label: 'AHF', icon: Shield, gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', text: 'text-violet-700', ring: 'ring-violet-300' },
         { value: 'ocupacional', label: 'Ocupacional', icon: Briefcase, gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-300' },
@@ -251,6 +253,11 @@ export default function HistorialClinicoCompleto({ pacienteId }: { pacienteId: s
                         <TabsContent value="resumen" className="mt-0 space-y-4">
                             <ResumenTab data={data} />
                             <PatientDashboardTab pacienteId={pacienteId} onNavigate={(tab) => setActiveTab(tab)} />
+                        </TabsContent>
+
+                        {/* ═══ HISTORIA CLÍNICA ═══ */}
+                        <TabsContent value="historia" className="mt-0">
+                            <HistoriaClinicaTab pacienteId={pacienteId} />
                         </TabsContent>
 
                         {/* ═══ APNP ═══ */}
