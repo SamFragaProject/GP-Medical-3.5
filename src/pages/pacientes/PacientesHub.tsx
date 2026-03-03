@@ -33,12 +33,13 @@ import toast from 'react-hot-toast'
 
 // Componentes internos
 import SmartOnboardingHub from '@/components/pacientes/SmartOnboardingHub'
+import ImportarExpedienteWizard from '@/pages/pacientes/ImportarExpedienteWizard'
 
 
 // =============================================
 // TIPOS Y CONSTANTES
 // =============================================
-type ViewMode = 'list' | 'wizard'
+type ViewMode = 'list' | 'wizard' | 'import'
 type SortField = 'nombre' | 'fecha' | 'empresa' | 'puesto'
 type SortDir = 'asc' | 'desc'
 
@@ -219,6 +220,31 @@ export default function PacientesHub() {
     // =============================================
     // RENDER: WIZARD o IMPORT
     // =============================================
+    if (viewMode === 'import') {
+        return (
+            <motion.div
+                key="import"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                className="py-6"
+            >
+                <ImportarExpedienteWizard
+                    onComplete={(_data, existingId) => {
+                        if (existingId) {
+                            navigate(`/pacientes/${existingId}/perfil`)
+                        } else {
+                            refresh()
+                            setViewMode('list')
+                        }
+                    }}
+                    onCancel={() => setViewMode('list')}
+                    empresaId={user?.empresa_id}
+                />
+            </motion.div>
+        )
+    }
+
     if (viewMode === 'wizard') {
         return (
             <motion.div
@@ -251,6 +277,14 @@ export default function PacientesHub() {
                 badge={`${stats.total} registrados`}
                 actions={
                     <div className="flex items-center gap-3">
+                        <Button
+                            onClick={() => setViewMode('import')}
+                            variant="outline"
+                            className="h-11 px-5 rounded-xl border-white/20 bg-white/10 hover:bg-white/20 text-white font-black text-[10px] uppercase tracking-widest gap-2 backdrop-blur-sm"
+                        >
+                            <Upload className="w-4 h-4" />
+                            Subir Archivos
+                        </Button>
                         <Button
                             onClick={() => setViewMode('wizard')}
                             className="h-11 px-6 rounded-xl bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-500/20 gap-2"
