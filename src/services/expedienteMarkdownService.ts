@@ -287,19 +287,49 @@ export function generarMarkdownExpediente(
 
         if (datos.restricciones?.length) {
             dictParts.push('### Restricciones')
-            datos.restricciones.forEach(r => dictParts.push(`- ⚠️ ${r}`))
+            datos.restricciones.forEach((r: string) => dictParts.push(`- ⚠️ ${r}`))
             dictParts.push('')
         }
 
         if (datos.recomendaciones?.length) {
             dictParts.push('### Recomendaciones')
-            datos.recomendaciones.forEach(r => dictParts.push(`- 💡 ${r}`))
+            datos.recomendaciones.forEach((r: string) => dictParts.push(`- 💡 ${r}`))
             dictParts.push('')
         }
 
         const dictContenido = dictParts.join('\n')
         secciones.push({ titulo: 'Dictamen', icono: '🛡️', contenido: dictContenido, camposEncontrados: 1, camposTotales: 1 })
         mdParts.push(dictContenido)
+    }
+
+    // ═══════════════════════════════════════
+    // 12. RESULTADOS DETALLADOS (RAW IA)
+    // ═══════════════════════════════════════
+    if (datos.results && Array.isArray(datos.results) && datos.results.length > 0) {
+        // Group by category
+        const groups: Record<string, any[]> = {}
+        datos.results.forEach((r: any) => {
+            const cat = r.category || 'General'
+            if (!groups[cat]) groups[cat] = []
+            groups[cat].push(r)
+        })
+
+        const rawParts: string[] = ['## 🧠 Resultados Detallados Extraídos por IA\n']
+
+        for (const [cat, items] of Object.entries(groups)) {
+            rawParts.push(`### ${cat}`)
+            rawParts.push('| Variable | Valor | Unidad | Notas |')
+            rawParts.push('|:---|:---|:---|:---|')
+            items.forEach((item: any) => {
+                const val = typeof item.value === 'object' ? JSON.stringify(item.value) : String(item.value ?? '')
+                rawParts.push(`| ${item.name} | ${val} | ${item.unit || '-'} | ${item.description || '-'} |`)
+            })
+            rawParts.push('')
+        }
+
+        const rawContenido = rawParts.join('\n')
+        secciones.push({ titulo: 'Resultados Detallados', icono: '🧠', contenido: rawContenido, camposEncontrados: datos.results.length, camposTotales: datos.results.length })
+        mdParts.push(rawContenido)
     }
 
     // ═══════════════════════════════════════
