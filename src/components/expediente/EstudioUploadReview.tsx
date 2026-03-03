@@ -152,16 +152,74 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
             if (!estudio) throw new Error('No se pudo crear el registro maestro del estudio')
 
             // 4. Guardar gráficas si las hay
-            const { agregarGrafica } = await import('@/services/estudiosService')
+            const { agregarGrafica, upsertAntecedente } = await import('@/services/estudiosService')
             if (graphsToSave.length > 0) {
                 for (const g of graphsToSave) {
                     await agregarGrafica(estudio.id, g)
                 }
             }
 
+            // 5. Si es historia_clinica → mapear campos extraídos a tablas de antecedentes
+            if (tipoEstudio === 'historia_clinica' && extractedData.results) {
+                const getVal = (name: string) => {
+                    const r = extractedData.results.find(r =>
+                        r.name?.toUpperCase() === name.toUpperCase() ||
+                        r.parametro?.toUpperCase() === name.toUpperCase()
+                    )
+                    return r ? (typeof r.value === 'string' ? r.value : String(r.value ?? '')) : ''
+                }
+
+                // APNP
+                const apnpMap: Record<string, string> = {
+                    tabaquismo: 'TABACO', alcoholismo: 'ALCOHOL', drogadiccion: 'DROGAS',
+                    ejercicio: 'EJERCICIO', alimentacion: 'ALIMENTACION', cafe: 'CAFE', horas_sueno: 'HORAS_SUENO'
+                }
+                for (const [campo, key] of Object.entries(apnpMap)) {
+                    const val = getVal(key)
+                    if (val) {
+                        const esSi = val.toLowerCase().startsWith('sí') || val.toLowerCase().startsWith('si')
+                        await upsertAntecedente(pacienteId, 'APNP', campo, val, esSi)
+                    }
+                }
+
+                // AHF
+                const ahfMap: Record<string, string> = {
+                    diabetes: 'AHF_DIABETES', hipertension: 'AHF_HIPERTENSION',
+                    cancer: 'AHF_CANCER', cardiopatias: 'AHF_CARDIOPATIAS',
+                    enf_mentales: 'AHF_ENF_MENTALES', otras: 'AHF_OTRAS'
+                }
+                for (const [campo, key] of Object.entries(ahfMap)) {
+                    const r = extractedData.results.find(r => r.name?.toUpperCase() === key)
+                    if (r) {
+                        const esSi = String(r.value ?? '').toLowerCase().startsWith('sí') || String(r.value ?? '').toLowerCase().startsWith('si')
+                        await upsertAntecedente(pacienteId, 'AHF', campo, String(r.value ?? ''), esSi, r.description || '')
+                    }
+                }
+
+                // Patológicos
+                const appMap: Record<string, string> = {
+                    diabetes: 'DIABETES', hipertension: 'HIPERTENSION',
+                    enf_cardiovascular: 'ENFERMEDADES_CARDIOVASCULARES',
+                    enf_respiratoria: 'ENFERMEDADES_RESPIRATORIAS',
+                    enf_renal: 'ENFERMEDADES_RENALES',
+                    cirugias: 'CIRUGIAS_PREVIAS',
+                    hospitalizaciones: 'HOSPITALIZACIONES',
+                    alergias: 'ALERGIAS',
+                    traumatismos: 'TRAUMATISMOS',
+                }
+                for (const [campo, key] of Object.entries(appMap)) {
+                    const r = extractedData.results.find(r => r.name?.toUpperCase() === key)
+                    if (r) {
+                        const esSi = String(r.value ?? '').toLowerCase().startsWith('sí') || String(r.value ?? '').toLowerCase().startsWith('si')
+                        await upsertAntecedente(pacienteId, 'APP', campo, String(r.value ?? ''), esSi, undefined, r.description || '')
+                    }
+                }
+            }
+
             setPhase('done')
             toast.success('Expediente actualizado con precisión clinical')
             if (onSaved) onSaved()
+
         } catch (err: any) {
             console.error('Save error:', err)
             setErrorMsg(err.message)
