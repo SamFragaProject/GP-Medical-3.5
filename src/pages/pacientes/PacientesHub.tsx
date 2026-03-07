@@ -231,28 +231,64 @@ export default function PacientesHub() {
             >
                 <ImportarExpedienteWizard
                     onComplete={async (data, existingId) => {
-                        // Si hay datos SpiroClone, guardar como estudio
-                        if (data._spiroclone_raw && existingId) {
+                        const { supabase } = await import('@/lib/supabase')
+
+                        // Determinar el ID del paciente (existente o crear nuevo)
+                        let pacienteId = existingId || null
+
+                        if (!pacienteId) {
+                            // Crear paciente nuevo con los datos extraídos
+                            const { data: newPaciente, error: createErr } = await supabase
+                                .from('pacientes')
+                                .insert({
+                                    nombre: data.nombre || '',
+                                    apellido_paterno: data.apellido_paterno || '',
+                                    apellido_materno: data.apellido_materno || '',
+                                    fecha_nacimiento: data.fecha_nacimiento || null,
+                                    genero: data.genero || null,
+                                    curp: data.curp || null,
+                                    rfc: data.rfc || null,
+                                    nss: data.nss || null,
+                                    numero_empleado: data.numero_empleado || null,
+                                    empresa_nombre: data.empresa_nombre || null,
+                                    empresa_id: user?.empresa_id || null,
+                                    puesto: data.puesto || null,
+                                    estatus: 'activo',
+                                })
+                                .select('id')
+                                .single()
+
+                            if (createErr || !newPaciente?.id) {
+                                console.error('[ImportWizard] Error creando paciente:', createErr)
+                            } else {
+                                pacienteId = newPaciente.id
+                                console.log('[ImportWizard] Paciente creado:', pacienteId)
+                            }
+                        }
+
+                        // Guardar estudio SpiroClone si hay datos
+                        if (data._spiroclone_raw && pacienteId) {
                             try {
-                                const { supabase } = await import('@/lib/supabase');
-                                await supabase.from('estudios_clinicos').insert({
-                                    paciente_id: existingId,
+                                const { error: studyErr } = await supabase.from('estudios_clinicos').insert({
+                                    paciente_id: pacienteId,
                                     tipo_estudio: 'espirometria',
                                     fecha_estudio: new Date().toISOString().split('T')[0],
                                     estado: 'completado',
                                     datos_extra: {
                                         spiroclone_data: data._spiroclone_raw,
-                                        _ai_config: 'SpiroClone Direct Pipeline via ImportarWizard'
+                                        _ai_config: 'SpiroClone Direct Pipeline'
                                     }
-                                });
-                                console.log('[ImportWizard] SpiroClone data guardada como estudio');
+                                })
+                                if (studyErr) console.warn('[ImportWizard] Error guardando estudio:', studyErr)
+                                else console.log('[ImportWizard] ✅ SpiroClone guardado para paciente:', pacienteId)
                             } catch (err) {
-                                console.warn('[ImportWizard] No se pudo guardar estudio SpiroClone:', err);
+                                console.warn('[ImportWizard] Error:', err)
                             }
                         }
 
-                        if (existingId) {
-                            navigate(`/pacientes/${existingId}/perfil`)
+                        // Navegar al perfil
+                        if (pacienteId) {
+                            navigate(`/pacientes/${pacienteId}/perfil`)
                         } else {
                             refresh()
                             setViewMode('list')
@@ -261,6 +297,7 @@ export default function PacientesHub() {
                     onCancel={() => setViewMode('list')}
                     empresaId={user?.empresa_id}
                 />
+
             </motion.div>
         )
     }

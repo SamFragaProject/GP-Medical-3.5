@@ -233,18 +233,40 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
 
         setProcessingProgress(100)
 
-        // Fusionar todos los resultados
-        const { mergedData } = await documentExtractorService.extractFromMultipleFiles(
-            files.filter(f => f.status !== 'error').map(f => f.file)
-        )
-
-        // Si ya procesamos individualmente pero merger falla, usar los individuales
+        // Fusionar resultados YA extraídos (no llamar Gemini de nuevo)
         const successResults = updatedFiles.filter(f => f.result?.success && f.result?.data)
-        if (successResults.length > 0 && !mergedData.nombre) {
-            // Fallback: usar el primer resultado exitoso como base
-            const firstGood = successResults[0].result!.data!
-            Object.assign(mergedData, firstGood)
+
+        const mergedData: any = {
+            _confianza: 95,
+            _campos_encontrados: [],
+            _campos_faltantes: []
         }
+
+        successResults.forEach(f => {
+            const d = f.result!.data!
+                // Campos básicos — primera vez que aparece gana
+                ;['nombre', 'apellido_paterno', 'apellido_materno', 'genero', 'fecha_nacimiento',
+                    'edad', 'curp', 'nss', 'rfc', 'empresa_nombre', 'puesto', 'area', 'departamento',
+                    'turno', 'numero_empleado', 'email', 'telefono',
+                    'contacto_emergencia_nombre', 'contacto_emergencia_parentesco', 'contacto_emergencia_telefono',
+                    'dictamen_aptitud', 'tipo_sangre', 'estado_civil'].forEach(key => {
+                        if (d[key] && !mergedData[key]) mergedData[key] = d[key]
+                    })
+                // Secciones médicas
+                ;['signos_vitales', 'audiometria', 'espirometria', 'laboratorio', 'radiografia', 'exploracion_fisica'].forEach(mod => {
+                    if (d[mod]) mergedData[mod] = { ...(mergedData[mod] || {}), ...d[mod] }
+                })
+            // results array
+            if (d.results) mergedData.results = [...(mergedData.results || []), ...d.results]
+            // SpiroClone raw — CRÍTICO: preservar el raw completo
+            if (d._spiroclone_raw) {
+                mergedData._spiroclone_raw = d._spiroclone_raw
+                console.log('[Wizard] ✅ _spiroclone_raw preservado con', d._spiroclone_raw.results?.length, 'parámetros')
+            }
+            // texto
+            if (d.alergias) mergedData.alergias = (mergedData.alergias ? mergedData.alergias + '\n' : '') + d.alergias
+            if (d.antecedentes_personales) mergedData.antecedentes_personales = (mergedData.antecedentes_personales ? mergedData.antecedentes_personales + '\n' : '') + d.antecedentes_personales
+        })
 
         setExtractedData(mergedData)
         setEditableData(flattenForEditing(mergedData))
