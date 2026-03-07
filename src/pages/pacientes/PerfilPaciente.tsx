@@ -17,7 +17,7 @@ import {
     Users, Clipboard, Eye, Stethoscope, Loader2,
     Wind, Bone, Pill, FileBarChart, ScrollText,
     Plus, FlaskConical, BarChart3, Ear, Printer, FileCheck,
-    FolderOpen, Pencil, X, Zap, Brain
+    FolderOpen, Pencil, X, Zap, Brain, Trash2
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -374,6 +374,49 @@ export default function PerfilPaciente() {
         }
     }
 
+    // ── ELIMINAR PACIENTE (Cascade) ──
+    const [deleting, setDeleting] = useState(false)
+    const handleDeletePatient = async () => {
+        if (!id || !paciente) return
+        const fullName = `${paciente.nombre} ${paciente.apellido_paterno} ${paciente.apellido_materno || ''}`.trim()
+        const confirmed = window.confirm(
+            `¿Estás seguro de eliminar al paciente "${fullName}"?\n\nEsto eliminará TODOS sus estudios, resultados, documentos y registros asociados. Esta acción NO se puede deshacer.`
+        )
+        if (!confirmed) return
+
+        setDeleting(true)
+        try {
+            // 1. Eliminar resultados de estudios
+            const { data: estudios } = await supabase
+                .from('estudios_clinicos').select('id').eq('paciente_id', id)
+            if (estudios && estudios.length > 0) {
+                const estudioIds = estudios.map(e => e.id)
+                await supabase.from('resultados_estudio').delete().in('estudio_id', estudioIds)
+                await supabase.from('graficas_estudio').delete().in('estudio_id', estudioIds)
+            }
+            // 2. Eliminar estudios
+            await supabase.from('estudios_clinicos').delete().eq('paciente_id', id)
+            // 3. Eliminar tablas legacy
+            await supabase.from('espirometrias').delete().eq('paciente_id', id)
+            await supabase.from('examenes').delete().eq('paciente_id', id)
+            await supabase.from('recetas').delete().eq('paciente_id', id)
+            await supabase.from('incapacidades').delete().eq('paciente_id', id)
+            await supabase.from('antecedentes_paciente').delete().eq('paciente_id', id)
+            await supabase.from('documentos_paciente').delete().eq('paciente_id', id)
+            // 4. Eliminar paciente
+            const { error } = await supabase.from('pacientes').delete().eq('id', id)
+            if (error) throw error
+
+            toast.success(`Paciente "${fullName}" eliminado correctamente`)
+            navigate('/pacientes')
+        } catch (err: any) {
+            console.error('Delete error:', err)
+            toast.error('Error al eliminar: ' + (err.message || 'Error desconocido'))
+        } finally {
+            setDeleting(false)
+        }
+    }
+
     if (loading) {
         return (
             <div className="flex items-center justify-center py-40">
@@ -460,6 +503,15 @@ export default function PerfilPaciente() {
                                     </Button>
                                     <Button variant="ghost" onClick={handleExport} className="text-slate-400 hover:text-white hover:bg-white/10 rounded-xl gap-2">
                                         <Download className="w-4 h-4" /> JSON
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={handleDeletePatient}
+                                        disabled={deleting}
+                                        className="text-red-400 hover:text-white hover:bg-red-500/30 rounded-xl gap-2"
+                                    >
+                                        {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                        Eliminar
                                     </Button>
                                 </>
                             )}
