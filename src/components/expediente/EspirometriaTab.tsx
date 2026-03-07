@@ -7,7 +7,8 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Wind, CheckCircle, AlertTriangle, ChevronDown, ChevronUp,
-    ArrowRight, Shield, Clock, Brain, TrendingUp, TrendingDown, Minus, Zap
+    ArrowRight, Shield, Clock, Brain, TrendingUp, TrendingDown, Minus, Zap,
+    Upload, FileJson
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
@@ -371,6 +372,54 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
 
     const [patientData, setPatientData] = useState<any>(null)
     const [directSpiroData, setDirectSpiroData] = useState<any>(null) // SpiroClone direct data
+    const [importing, setImporting] = useState(false)
+
+    // ─── Importar JSON exportado desde SpiroClone ───
+    const handleImportSpiroJson = () => {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = '.json,application/json'
+        input.onchange = async (e: any) => {
+            const file = e.target.files?.[0]
+            if (!file) return
+            setImporting(true)
+            try {
+                const text = await file.text()
+                const json = JSON.parse(text)
+
+                // Validar que es un JSON de SpiroClone (tiene patient y results)
+                if (!json.patient || !json.results) {
+                    alert('❌ El archivo no parece ser un JSON de SpiroClone. Asegúrate de exportarlo desde la app.')
+                    return
+                }
+
+                // Guardar en Supabase como estudio de espirometría
+                const { error } = await supabase.from('estudios_clinicos').insert({
+                    paciente_id: pacienteId,
+                    tipo_estudio: 'espirometria',
+                    fecha_estudio: new Date().toISOString().split('T')[0],
+                    estado: 'completado',
+                    datos_extra: {
+                        spiroclone_data: json,
+                        _source: 'JSON importado de SpiroClone',
+                        _imported_at: new Date().toISOString()
+                    }
+                })
+
+                if (error) throw error
+
+                // Recargar datos
+                await loadData()
+                alert('✅ Espirometría importada correctamente')
+            } catch (err: any) {
+                console.error('[SpiroImport] Error:', err)
+                alert('❌ Error al importar: ' + (err.message || 'JSON inválido'))
+            } finally {
+                setImporting(false)
+            }
+        }
+        input.click()
+    }
 
     useEffect(() => { if (pacienteId) loadData() }, [pacienteId])
 
@@ -481,8 +530,33 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
             </div>
             <h3 className="text-slate-800 font-bold">Sin registros de espirometría</h3>
             <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2 mb-6">
-                Sube el PDF del reporte espirométrico para extracción automática de parámetros y curvas.
+                Importa el JSON desde la app SpiroClone o sube el PDF para extracción automática.
             </p>
+
+            {/* ── OPCIÓN 1: Importar JSON de SpiroClone (RECOMENDADO) ── */}
+            <div className="max-w-sm mx-auto mb-6 p-5 bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-200 rounded-2xl">
+                <div className="flex items-center gap-2 mb-3 justify-center">
+                    <FileJson className="w-5 h-5 text-cyan-600" />
+                    <span className="text-sm font-black text-cyan-800 uppercase tracking-wider">Importar desde SpiroClone</span>
+                </div>
+                <p className="text-xs text-cyan-700 mb-4">
+                    En la app SpiroClone, extrae la espirometría y pulsa <strong>"Descargar JSON"</strong>.
+                    Luego impórtalo aquí:
+                </p>
+                <button
+                    onClick={handleImportSpiroJson}
+                    disabled={importing}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl font-bold text-sm transition-colors disabled:opacity-50"
+                >
+                    {importing ? (
+                        <><Wind className="w-4 h-4 animate-spin" /> Importando...</>
+                    ) : (
+                        <><Upload className="w-4 h-4" /> Seleccionar JSON de SpiroClone</>
+                    )}
+                </button>
+            </div>
+
+            <p className="text-xs text-slate-400 mb-4">— o sube el PDF para extracción con IA —</p>
             <div className="max-w-lg mx-auto">
                 <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="espirometria" onSaved={loadData} />
             </div>
@@ -701,6 +775,17 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                     </div>
                 )}
             </div>
+
+            {/* ── BOTÓN IMPORTAR JSON (cuando ya hay datos) ── */}
+            <button
+                onClick={handleImportSpiroJson}
+                disabled={importing}
+                className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-cyan-700 border border-cyan-200 bg-cyan-50 hover:bg-cyan-100 rounded-lg transition-colors disabled:opacity-50"
+                title="Importar JSON exportado desde SpiroClone"
+            >
+                <FileJson className="w-3.5 h-3.5" />
+                {importing ? 'Importando...' : 'Actualizar desde SpiroClone JSON'}
+            </button>
 
             {/* ── TABS ── */}
             <div className="flex gap-1 p-1 bg-slate-100 rounded-xl w-fit">

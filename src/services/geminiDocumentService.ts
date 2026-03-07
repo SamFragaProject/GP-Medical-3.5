@@ -945,7 +945,8 @@ export async function analyzeSpirometryDirect(_text: string, imageFiles: File[] 
     // MODELO: gemini-2.5-pro (NECESARIO para extraer tablas y gráficas)
     // gemini-2.0-flash NO puede extraer tablas complejas de espirometría
     // ═══════════════════════════════════════════════════════
-    const SPIRO_MODEL = 'gemini-2.5-pro';
+    // Modelo EXACTO de SpiroClone App.tsx línea 143
+    const SPIRO_MODEL = 'gemini-3.1-pro-preview';
 
     const toBase64 = (file: File): Promise<{ data: string; mimeType: string }> => {
         return new Promise((resolve, reject) => {
