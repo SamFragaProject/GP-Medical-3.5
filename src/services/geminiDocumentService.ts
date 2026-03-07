@@ -941,12 +941,17 @@ const SPIROCLONE_PROMPT = `ERES UN EXPERTO EN EXTRACCIÓN DE DATOS MÉDICOS. Ext
 
 export async function analyzeSpirometryDirect(_text: string, imageFiles: File[] = []): Promise<any> {
     // ═══════════════════════════════════════════════════════
-    // RÉPLICA EXACTA de SpiroClone App.tsx
-    // MODELO: gemini-2.5-pro (NECESARIO para extraer tablas y gráficas)
-    // gemini-2.0-flash NO puede extraer tablas complejas de espirometría
+    // RÉPLICA EXACTA de SpiroClone — mismo prompt, misma estructura.
+    // Prueba modelos en cascada hasta que uno funcione.
+    // SIN responseSchema: el schema forzado silencia campos que el modelo
+    // no puede extraer. Pedimos JSON libre y parseamos manualmente.
     // ═══════════════════════════════════════════════════════
-    // Modelo EXACTO de SpiroClone App.tsx línea 143
-    const SPIRO_MODEL = 'gemini-3.1-pro-preview';
+    const MODELS_TO_TRY = [
+        'gemini-3.1-pro-preview',   // Mejor: SpiroClone usa este
+        'gemini-2.5-pro',           // Alternativa pro
+        'gemini-2.0-pro',           // Fallback
+        'gemini-2.0-flash',         // Último recurso
+    ];
 
     const toBase64 = (file: File): Promise<{ data: string; mimeType: string }> => {
         return new Promise((resolve, reject) => {
@@ -965,40 +970,91 @@ export async function analyzeSpirometryDirect(_text: string, imageFiles: File[] 
 
     const imageData = await Promise.all(imageFiles.map(toBase64));
 
-    const contents: any[] = [
-        ...imageData.map(img => ({ inlineData: img })),
-        SPIROCLONE_PROMPT
-    ];
+    // Prompt EXACTO de SpiroClone — sin schema, pedimos JSON directamente
+    const promptText = `ERES UN EXPERTO EN EXTRACCIÓN DE DATOS MÉDICOS. Extrae todos los datos de este reporte de espirometría.
 
-    console.log(`[SpiroClone Direct] Enviando ${imageData.length} imágenes a ${SPIRO_MODEL}...`);
+Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta (sin markdown, sin texto adicional):
+{
+  "patient": { "name": "", "id": "", "age": "", "dob": "", "sex": "", "height": "", "weight": "", "origin": "", "smoker": "", "asthma": "", "copd": "", "bmi": "" },
+  "testDetails": { "date": "", "interpretation": "", "predicted": "", "selection": "", "bestValue": "", "fev1PredPercent": "" },
+  "results": [
+    { "parameter": "FVC [L]", "pred": "", "lln": "", "mejor": "", "prueba2": "", "prueba5": "", "prueba6": "", "percentPred": "", "zScore": "" }
+  ],
+  "session": { "quality": "", "interpretation": "" },
+  "doctor": { "name": "", "date": "", "notes": "" },
+  "graphs": {
+    "flowVolume": [{ "volume": 0, "flowPred": 0, "flowMejor": 0, "flowPrueba2": 0, "flowPrueba5": 0, "flowPrueba6": 0 }],
+    "volumeTime": [{ "time": 0, "volumePred": 0, "volumeMejor": 0, "volumePrueba2": 0, "volumePrueba5": 0, "volumePrueba6": 0 }]
+  }
+}
 
-    // Llamar con gemini-2.5-pro — el único modelo capaz de extraer
-    // tablas de espirometría, gráficas, session y doctor correctamente
-    const response = await ai.models.generateContent({
-        model: SPIRO_MODEL,
-        contents: contents,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: spirocloneSchema,
-            temperature: 0.1,
+INSTRUCCIONES CRÍTICAS:
+- Extrae TODOS los parámetros de la tabla (FVC, FEV1, FEV1/FVC, PEF, FEF25-75, etc.)
+- El campo "mejor" puede tener asterisco (e.g. "3.89*")
+- Extrae 20-25 puntos de cada gráfica leyendo los ejes X e Y visualmente
+- Si un valor no existe, usa null o cadena vacía
+- NO uses el formato \`\`\`json\`\`\`, devuelve SOLO el JSON`;
+
+    let lastError: any = null;
+
+    for (const model of MODELS_TO_TRY) {
+        try {
+            console.log(`[SpiroClone] Probando modelo: ${model}...`);
+
+            const contents: any[] = [
+                ...imageData.map(img => ({ inlineData: img })),
+                promptText
+            ];
+
+            const response = await ai.models.generateContent({
+                model,
+                contents,
+                config: {
+                    responseMimeType: "application/json",
+                    temperature: 0.1,
+                    // SIN responseSchema — evita que Gemini descarte campos
+                }
+            });
+
+            const jsonStr = response.text?.trim();
+            if (!jsonStr) {
+                console.warn(`[SpiroClone] ${model}: respuesta vacía, intentando siguiente...`);
+                continue;
+            }
+
+            // Limpiar posibles backticks del modelo
+            const cleaned = jsonStr.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+            const data = JSON.parse(cleaned);
+
+            // Validar que tiene datos útiles (al menos results)
+            if (!data.results || !Array.isArray(data.results) || data.results.length === 0) {
+                console.warn(`[SpiroClone] ${model}: results vacío, intentando siguiente...`);
+                continue;
+            }
+
+            trackUsage(model, jsonStr.length / 4, jsonStr.length / 4);
+            console.log('[SpiroClone] ✅ Extracción exitosa:', {
+                model,
+                patient: data.patient?.name,
+                resultsCount: data.results?.length,
+                hasSession: !!data.session?.interpretation,
+                hasDoctor: !!data.doctor?.name,
+                hasGraphsFV: data.graphs?.flowVolume?.length || 0,
+                hasGraphsVT: data.graphs?.volumeTime?.length || 0,
+            });
+
+            return data;
+
+        } catch (err: any) {
+            console.warn(`[SpiroClone] ${model} falló:`, err.message || err);
+            lastError = err;
+            // Si es error 403/404 (modelo no disponible), intentar siguiente
+            // Si es error de red, también intentar
+            continue;
         }
-    });
+    }
 
-    const jsonStr = response.text?.trim();
-    if (!jsonStr) throw new Error('Gemini no devolvió datos para la espirometría');
-
-    trackUsage(SPIRO_MODEL, jsonStr.length / 4, jsonStr.length / 4);
-
-    const data = JSON.parse(jsonStr);
-    console.log('[SpiroClone Direct] Extracción exitosa:', {
-        model: SPIRO_MODEL,
-        patient: data.patient?.name,
-        resultsCount: data.results?.length,
-        hasSession: !!data.session,
-        hasDoctor: !!data.doctor,
-        hasGraphs: !!(data.graphs?.flowVolume?.length || data.graphs?.volumeTime?.length)
-    });
-    return data;
+    throw new Error(`SpiroClone: Ningún modelo pudo extraer la espirometría. Último error: ${lastError?.message || 'desconocido'}`);
 }
 
 export function isGeminiConfigured(): boolean {
