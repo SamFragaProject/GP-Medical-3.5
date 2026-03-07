@@ -939,18 +939,21 @@ const spirocloneSchema = {
 
 const SPIROCLONE_PROMPT = `ERES UN EXPERTO EN EXTRACCIÓN DE DATOS MÉDICOS. Extrae todos los datos de este reporte de espirometría. Asegúrate de capturar los datos del paciente, los detalles de la prueba, la tabla de resultados completa (incluyendo asteriscos), la información de la sesión y los datos del doctor. Además, ES CRÍTICO Y OBLIGATORIO que extraigas los puntos (x,y) de las gráficas Flujo-Volumen y Volumen-Tiempo leyendo los ejes visualmente. Extrae unos 20-25 puntos representativos por gráfica que sigan fielmente las curvas (inicio, pico máximo, descenso, fin). Si una línea no existe en un punto, omite ese valor. Devuelve la información estructurada en formato JSON.`;
 
-export async function analyzeSpirometryDirect(text: string, imageFiles: File[] = []): Promise<any> {
-    const fileToPart = async (file: File): Promise<Part> => {
+export async function analyzeSpirometryDirect(_text: string, imageFiles: File[] = []): Promise<any> {
+    // ═══════════════════════════════════════════════════════
+    // RÉPLICA EXACTA de SpiroClone App.tsx líneas 128-158
+    // Llama a la API DIRECTAMENTE, sin wrapper, mismo formato.
+    // ═══════════════════════════════════════════════════════
+
+    // Convertir cada imagen a base64 inline data
+    const toBase64 = (file: File): Promise<{ data: string; mimeType: string }> => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
                 const dataUrl = reader.result as string;
-                const base64 = dataUrl.split(',')[1];
                 resolve({
-                    inlineData: {
-                        data: base64,
-                        mimeType: file.type || 'image/jpeg'
-                    }
+                    data: dataUrl.split(',')[1],
+                    mimeType: file.type || 'image/jpeg'
                 });
             };
             reader.onerror = reject;
@@ -958,29 +961,39 @@ export async function analyzeSpirometryDirect(text: string, imageFiles: File[] =
         });
     };
 
-    const imageParts = await Promise.all(imageFiles.map(fileToPart));
+    const imageData = await Promise.all(imageFiles.map(toBase64));
 
-    const textSection = text
-        ? `TEXTO EXTRAÍDO DEL DOCUMENTO:\n${text}\n\n`
-        : `(El documento es una imagen — analiza visualmente con máximo detalle)\n\n`;
+    // Construir contents IGUAL que SpiroClone:
+    // contents: [ {inlineData: {...}}, {inlineData: {...}}, "texto prompt" ]
+    const contents: any[] = [
+        ...imageData.map(img => ({ inlineData: img })),
+        SPIROCLONE_PROMPT
+    ];
 
-    const fullPrompt = `${SPIROCLONE_PROMPT}\n\n${textSection}`;
+    console.log(`[SpiroClone Direct] Enviando ${imageData.length} imágenes a Gemini...`);
 
-    const response = await generateContentWithRetry({
+    // Llamar directamente a la API (como hace SpiroClone), NO al wrapper
+    const response = await ai.models.generateContent({
         model: MODEL_NAME,
-        contents: [{ role: "user", parts: [{ text: fullPrompt }, ...imageParts] }],
+        contents: contents,
         config: {
             responseMimeType: "application/json",
             responseSchema: spirocloneSchema,
             temperature: 0.1,
-            maxOutputTokens: 65536,
         }
     });
 
     const jsonStr = response.text?.trim();
+    if (!jsonStr) throw new Error('Gemini no devolvió datos para la espirometría');
+
     trackUsage(MODEL_NAME, jsonStr.length / 4, jsonStr.length / 4);
 
     const data = JSON.parse(jsonStr);
+    console.log('[SpiroClone Direct] Extracción exitosa:', {
+        patient: data.patient?.name,
+        resultsCount: data.results?.length,
+        hasGraphs: !!(data.graphs?.flowVolume?.length || data.graphs?.volumeTime?.length)
+    });
     return data;
 }
 
