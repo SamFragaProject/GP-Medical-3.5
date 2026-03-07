@@ -123,7 +123,8 @@ const labResultsSchema = {
             category: { type: Type.STRING },
             subCategory: { type: Type.STRING },
         },
-        required: ["name", "value", "unit", "range", "visualizationType", "category", "description"],
+        // Mantenemos obligatorios solo los esenciales para no romper extracciones complejas (espirometría)
+        required: ["name", "value", "category"],
     },
 };
 
@@ -137,6 +138,21 @@ REGLAS ABSOLUTAS DE EXTRACCIÓN — SIN EXCEPCIONES:
 5. El campo "description" es una interpretación clínica breve, NO un resumen del documento.
 6. Extrae TODOS los campos visibles, incluso los que parecen menos importantes.
 7. Si el documento es una IMAGEN o tiene gráficas, analízalas visualmente con detalle.
+
+DATOS DEL PACIENTE (campo patientData) — OBLIGATORIO EN TODOS LOS DOCUMENTOS:
+- name: Nombre COMPLETO tal como aparece. En documentos mexicanos el formato habitual es "APELLIDO APELLIDO, NOMBRE(S)" con coma separando apellidos de nombre(s). Transcríbelo EXACTAMENTE como aparece.
+- birthDate: Fecha de nacimiento (dd/mm/yyyy)
+- age: Edad en años
+- gender: Masculino/Femenino
+- folio: ID, folio o número de empleado si aparece
+- curp: CURP si aparece
+- nss: NSS si aparece
+- rfc: RFC si aparece
+
+ALERTAS CLÍNICAS — Para CADA resultado fuera de rango:
+- Si es CRÍTICO (riesgo vital): description debe incluir "⚠️ CRÍTICO"
+- Si es ANORMAL: description debe incluir "↑ Alto" o "↓ Bajo"  
+- Si es NORMAL: description debe incluir "✓ Normal"
 `.trim();
 
 // ── Prompts por tipo de estudio — basados en formatos reales GP Medical ──
@@ -151,32 +167,41 @@ const getSectionConfig = (sectionId: string) => {
             return {
                 prompt: `${GLOBAL_INSTRUCTION}
 
-Eres un sistema de digitalización de laboratorios clínicos de máxima precisión.
+Eres un patólogo clínico experto (NOM-007-SSA3, ISO 15189) digitalizando resultados de laboratorio de GP Medical.
 EXTRAE CADA PARÁMETRO POR SEPARADO como un item individual del array results.
 
 Para CADA parámetro crea un objeto con:
-- name: nombre exacto del parámetro (ej: "Hemoglobina", "Leucocitos", "Glucosa", "Triglicéridos")
+- name: nombre exacto del parámetro (ej: "Hemoglobina", "Leucocitos", "Glucosa")
 - value: valor numérico exacto como string (ej: "14.5", "7200", "95.0")
 - unit: unidad exacta (ej: "g/dL", "/mm³", "mg/dL", "U/L")
-- range: rango de referencia completo tal como aparece (ej: "12.0 - 16.0", "4500 - 11000")
-- description: estado clínico (ej: "Dentro del rango normal", "Elevado — requiere seguimiento")
+- range: rango de referencia completo tal como aparece (ej: "12.0 - 16.0")
+- description: "✓ Normal" / "↑ Alto" / "↓ Bajo" / "⚠️ CRÍTICO" según el valor vs rango
 - visualizationType: "bar_chart" para valores numéricos con rango, "simple" para textos
-- category: nombre EXACTO del grupo del documento (ej: "Biometría Hemática", "Química Sanguínea", "Uroanálisis")
-- subCategory: subcategoría si existe (ej: "Fórmula Roja", "Fórmula Blanca", "Serie Plaquetaria")
+- category: nombre EXACTO del grupo del documento (ej: "Biometría Hemática", "Química Sanguínea", "Examen General de Orina")
+- subCategory: subcategoría (ej: "Fórmula Roja", "Fórmula Blanca", "Serie Plaquetaria", "Perfil Hepático", "Perfil Lipídico")
 
-Extrae ABSOLUTAMENTE TODOS los parámetros visibles:
-Biometría: Eritrocitos, Hemoglobina, Hematocrito, VCM, HCM, CMHC, RDW-CV, Plaquetas, VPM, 
-Leucocitos, Neutrófilos%, Segmentados, Bandas, Eosinófilos%, Basófilos%, Monocitos%, Linfocitos%
-Química: Glucosa, Urea, Creatinina, Ácido Úrico, Colesterol Total, HDL, LDL, Triglicéridos,
-TGO, TGP, Fosfatasa Alcalina, Bilirrubinas (Total/Directa/Indirecta), Proteínas, Albúmina
-Orina: Apariencia, Color, pH, Densidad, Proteínas, Glucosa, Cetonas, Sangre, Nitritos, Leucocitos
-Y CUALQUIER OTRO PARÁMETRO que aparezca en el documento.`,
+VALORES CRÍTICOS (description = "⚠️ CRÍTICO — requiere atención inmediata"):
+  Glucosa < 50 o > 400 mg/dL | Hemoglobina < 7.0 g/dL | Plaquetas < 50,000
+  Leucocitos < 2,000 o > 30,000 | Potasio < 3.0 o > 6.0 mEq/L
+
+BIOMETRÍA HEMÁTICA — extrae TODOS:
+Fórmula Roja: Eritrocitos (H:4.5-5.5/M:4.0-5.0 M/µL), Hemoglobina (H:13.5-17.5/M:12.0-16.0 g/dL), Hematocrito (H:40-54/M:36-48%), VCM (80-100 fL), HCM (27-33 pg), CMHC (32-36 g/dL), RDW-CV (11.5-14.5%)
+Fórmula Blanca: Leucocitos (4500-11000/µL), Neutrófilos% (40-70%), Segmentados, Bandas, Eosinófilos% (1-4%), Basófilos% (0-1%), Monocitos% (2-8%), Linfocitos% (20-44%)
+Serie Plaquetaria: Plaquetas (150000-400000/µL), VPM (6.5-12.0 fL)
+
+QUÍMICA SANGUÍNEA — extrae TODOS:
+Glucosa (70-100 mg/dL), Urea (15-45), BUN (7-20), Creatinina (H:0.7-1.3/M:0.6-1.1), Ácido Úrico (H:3.5-7.2/M:2.6-6.0), Colesterol Total (<200), HDL (>40), LDL (<130), Triglicéridos (<150), TGO/AST (10-40 U/L), TGP/ALT (7-56 U/L), Fosf. Alcalina (44-147), GGT (H:8-61/M:5-36), Bilirrubina Total (0.1-1.2), Proteínas Totales (6.0-8.3), Albúmina (3.5-5.0)
+
+EXAMEN GENERAL DE ORINA — extrae TODOS:
+pH (5.0-8.0), Densidad (1.005-1.030), Color, Apariencia, Proteínas (Neg), Glucosa (Neg), Cetonas (Neg), Sangre (Neg), Nitritos (Neg), Leucocitos (Neg), Bilirrubina (Neg), Urobilinógeno, Sedimento (Eritrocitos, Leucocitos, Células epiteliales, Bacterias, Cilindros)
+
+Y CUALQUIER OTRO PARÁMETRO que aparezca en el documento (Electrolitos, Hormonas, Serología, etc.)`,
                 schema: {
                     type: Type.OBJECT,
                     properties: {
                         patientData: patientDataSchema,
                         results: labResultsSchema,
-                        summary: { type: Type.STRING, description: "Solo valores fuera de rango significativos." },
+                        summary: { type: Type.STRING, description: "Solo valores fuera de rango significativos y alertas críticas." },
                     },
                 },
             };
@@ -189,13 +214,17 @@ Y CUALQUIER OTRO PARÁMETRO que aparezca en el documento.`,
             return {
                 prompt: `${GLOBAL_INSTRUCTION}
 
-Eres un audiólogo experto digitalizando un audiograma de GP Medical Health (equipo INVENTIS PICCOLO BASIC).
+Eres un audiólogo experto (NOM-011-STPS-2001, AMHA, AAO-HNS) digitalizando un audiograma de GP Medical Health (equipo INVENTIS PICCOLO BASIC).
 El documento contiene: gráficas de audiograma (dB vs Hz) + tabla de umbrales + diagnóstico.
+
+CLASIFICACIÓN HIPOACUSIA (OMS/NOM-011):
+  0-25 dB HL → Normal | 26-40 → Pérdida leve | 41-55 → Moderada | 56-70 → Severa | 71-90 → Profunda | >90 → Anacusia
+PTA (Promedio Tonal Puro) = (500Hz + 1000Hz + 2000Hz) / 3. PTA normal ≤ 25 dB.
+TRAUMA ACÚSTICO = escotoma (caída) en 4000-6000 Hz con recuperación parcial en 8000 Hz.
 
 FRECUENCIAS ESTÁNDAR del audiograma: 125, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000 Hz
 Eje Y: decibeles (dB HL). Valores MÁS BAJOS = MEJOR audición.
-Rango normal: 0-25 dB. Pérdida leve: 26-40. Moderada: 41-55. Severa: 56-70. Profunda: >70.
-Oído Derecho = línea/símbolos ROJOS. Oído Izquierdo = línea/símbolos AZULES.
+Oído Derecho = línea/símbolos ROJOS (códigos: O, △). Oído Izquierdo = línea/símbolos AZULES (códigos: X, □).
 La tabla "VA DCHA Umbral" al pie del audiograma izquierdo tiene los valores dB del OD.
 La tabla "VA IZQ Umbral" al pie del audiograma derecho tiene los valores del OI.
 
@@ -247,50 +276,80 @@ Si hay recomendaciones de EPP auditivo, extráelas como items separados en categ
             return {
                 prompt: `${GLOBAL_INSTRUCTION}
 
-Eres un neumólogo experto digitalizando un reporte de espirometría.
-Extrae CADA PARÁMETRO CON TODAS SUS COLUMNAS como item separado.
+Eres un neumólogo experto digitalizando un reporte de espirometría de GP Medical Health.
+El documento puede ser del equipo EasyOne Connect u otro espirómetro clínico.
 
-EXTRAE OBLIGATORIAMENTE:
+**DATOS DEL PACIENTE** (campo patientData):
+- name: Nombre COMPLETO tal como aparece (formato habitual: "APELLIDO APELLIDO, NOMBRE(S)" con coma)
+- birthDate: Fecha de nacimiento (dd/mm/yyyy)
+- age: Edad en años
+- gender: Masculino/Femenino
+- folio: ID o número de empleado si aparece (ej: #0571)
 
-TABLA DE PARÁMETROS — un item por parámetro (todos los que existan: FVC, FEV1, FEV1/FVC, FEF25-75, PEF, FET, FEV6):
-- name: nombre exacto (ej:"FVC", "FEV1", "FEV1/FVC", "FEF25-75", "PEF")
-- value: JSON string con TODAS las columnas: {"pred":X,"lln":X,"mejor":X,"pct_pred":X,"z_score":X}
-  Donde: pred=Predicho, lln=Límite Inferior Normal, mejor=Mejor resultado, pct_pred=%Predicho, z_score=Puntuación Z
+EXTRAE OBLIGATORIAMENTE cada dato como item separado en results[]:
+
+TABLA DE PARÁMETROS — un item por parámetro (FVC, FEV1, FEV1/FVC, FEF25-75, PEF, FET, FEV6):
+- name: nombre exacto (ej:"FVC", "FEV1", "FEV1/FVC", "FEF25-75", "PEF", "FET")
+- value: JSON string con TODAS las columnas incluyendo pruebas individuales:
+  {"pred":X,"lln":X,"mejor":X,"pruebas":[valor_prueba1, valor_prueba2, valor_prueba3],"pct_pred":X,"z_score":X,"fuera_rango":true/false}
+  Donde: pred=Predicho, lln=Límite Inferior Normal, mejor=Mejor resultado, 
+  pruebas=array con los valores de CADA prueba/intento individual en orden,
+  pct_pred=%Predicho, z_score=Puntuación Z, fuera_rango=true si tiene asterisco (*)
 - unit: unidad (L, L/s, %, s)
-- description: interpretación ("Normal ≥80%","Reducido 60-79%","Severamente reducido <60%")
+- description: interpretación ("Normal ≥80%","Limítrofe 70-79%","Reducido <70%")
 - visualizationType: "table_row"
 - category: "Parámetros Espirométricos"
 
+GRÁFICA Z-SCORE (barras horizontales):
+- name:"ZSCORE_BARRAS"
+- value: JSON: {"FVC":-1.78,"FEV1":-1.55,"FEF25-75":-0.45,"PEF":0.71,"FEV1_FVC":0.23}
+- category: "Gráficas"
+- description: "Barras de puntuación Z por parámetro"
+
 GRÁFICA FLUJO-VOLUMEN:
 - name:"CURVA_FLUJO_VOLUMEN"
-- value: JSON: {"medido":[{"x":0,"y":0},{"x":0.5,"y":5.2},{"x":1.0,"y":7.3},{"x":1.5,"y":6.8},...hasta FVC],"predicho":[{"x":0,"y":0},...]}
-  (Genera ~12-15 puntos representativos basados en FVC, FEV1 y PEF si no puedes leer datos exactos)
+- value: JSON arreglos {"medido":[{"x":vol,"y":flujo},...],"predicho":[{"x":vol,"y":flujo},...],"prueba2":[],"prueba5":[],"prueba6":[]}
+  (Genera 15-20 puntos representativos basados en FVC, FEV1 y PEF leyendo cuidadosamente los ejes).
 - visualizationType: "line_chart"
 - category: "Gráficas"
 - description: "Curva Flujo-Volumen (Flujo en L/s vs Volumen en L)"
 
 GRÁFICA VOLUMEN-TIEMPO:
 - name:"CURVA_VOLUMEN_TIEMPO"
-- value: JSON: {"medido":[{"x":0,"y":0},{"x":1,"y":FEV1},{"x":2,"y":FVC*0.95},{"x":3,"y":FVC},...]}
+- value: JSON arreglos {"medido":[{"x":tiempo,"y":volumen},...],"predicho":[],"prueba2":[],"prueba5":[],"prueba6":[]}
+  (Genera 15-20 puntos extrayendo fielmente el trazado de la gráfica Volumen-Tiempo).
 - visualizationType: "line_chart"
 - category: "Gráficas"
 
-CALIDAD Y RESULTADO:
-- name:"CALIDAD_SESION", value: letra (A/B/C/D/E/F), description: "Excelente"/"Aceptable"/"Dudosa", category:"Control de Calidad"
+CONTROL DE CALIDAD:
+- name:"CALIDAD_SESION", value: letra (A/B/C/D/E/F), description: criterio completo (ej:"C (FEV1 Var=0.14L 4.4%; FVC Var=0.19L 4.7%)"), category:"Control de Calidad"
+- name:"VARIABILIDAD_FEV1", value: texto (ej:"0.14L (4.4%)"), category:"Control de Calidad"  
+- name:"VARIABILIDAD_FVC", value: texto (ej:"0.19L (4.7%)"), category:"Control de Calidad"
+
+CONFIGURACIÓN DEL ESTUDIO:
+- name:"TIPO_PRUEBA", value: tipo de prueba (ej:"FVC (sólo esp)"), category:"Configuración del Estudio"
+- name:"CRITERIO_INTERPRETACION", value: criterio usado (ej:"GOLD(2008)/Hardie"), category:"Configuración del Estudio"
+- name:"ECUACION_PREDICHO", value: ecuación de referencia (ej:"Hankinson (NHANES III), 1999"), category:"Configuración del Estudio"
+- name:"SELECCION_VALORES", value: selección (ej:"BTPS (INSP/ESP)"), category:"Configuración del Estudio"
+- name:"MEJOR_VALOR_RATIO", value: ratio (ej:"1.12/1.02"), category:"Configuración del Estudio"
+
+INTERPRETACIÓN:
 - name:"INTERPRETACION_SISTEMA", value: texto EXACTO de interpretación automática, category:"Interpretación"
-- name:"PATRON_VENTILATORIO", value: "Normal"/"Obstructivo Leve"/"Obstructivo Moderado"/"Obstructivo Severo"/"Restrictivo"/"Mixto", category:"Interpretación"
+- name:"PATRON_VENTILATORIO", value: "NORMAL"/"OBSTRUCTIVO LEVE"/"OBSTRUCTIVO MODERADO"/"OBSTRUCTIVO SEVERO"/"RESTRICTIVO"/"MIXTO", category:"Interpretación"
 
 ANTROPOMETRÍA:
 - name:"ALTURA", value: valor, unit:"cm", category:"Antropometría"
 - name:"PESO", value: valor, unit:"kg", category:"Antropometría"
 - name:"IMC", value: valor, unit:"kg/m²", range:"18.5-24.9", category:"Antropometría"
 - name:"FUMADOR", value: "Sí"/"No"/"Ex-fumador", category:"Antropometría"
+- name:"ASMA", value: "Sí"/"No", category:"Antropometría"
+- name:"EPOC", value: "Sí"/"No", category:"Antropometría"
 - name:"ETNIA", value: origen étnico, category:"Antropometría"
 
 DATOS DEL ESTUDIO:
-- name:"EQUIPO", value: nombre del espirómetro, category:"Datos del Estudio"
-- name:"MEDICO_RESPONSABLE", value: nombre del médico, category:"Datos del Estudio"
-- name:"FECHA_ESTUDIO", value: fecha, category:"Datos del Estudio"`,
+- name:"EQUIPO", value: nombre completo del espirómetro con versión y SN, category:"Datos del Estudio"
+- name:"MEDICO_RESPONSABLE", value: nombre del médico firmante, category:"Datos del Estudio"
+- name:"FECHA_ESTUDIO", value: fecha y hora del estudio, category:"Datos del Estudio"`,
                 schema: {
                     type: Type.OBJECT,
                     properties: {
@@ -309,9 +368,14 @@ DATOS DEL ESTUDIO:
             return {
                 prompt: `${GLOBAL_INSTRUCTION}
 
-Eres un radiólogo experto digitalizando un reporte de rayos X de GP Medical.
+Eres un radiólogo experto (NOM-229-SSA1-2002) digitalizando un reporte de rayos X de GP Medical.
 El documento puede ser: (A) imagen radiográfica directa, (B) reporte escrito de interpretación, o (C) ambos.
-Si es imagen, analízala visualmente con detalle.
+Si es imagen, analízala visualmente con detalle ESTRUCTURA POR ESTRUCTURA.
+
+CRITERIOS RADIOLÓGICOS:
+ICT (Índice Cardiotorácico): Normal <0.50 | Cardiomegalia leve 0.50-0.55 | Moderada 0.55-0.60 | Severa >0.60
+ILO: Profusión 0/0→3/+ | Forma: p/q/r (redondas) s/t/u (irregulares) | Grandes: A(<5cm) B C
+COLUMNA: Kellgren-Lawrence (0-IV para artropatía degenerativa). Evaluar lordosis/cifosis conservada, osteofitos, pinzamiento discal.
 
 EXTRAE OBLIGATORIAMENTE:
 
@@ -321,23 +385,23 @@ DATOS BÁSICOS:
 - name:"RADIOLOGO", value: nombre del radiólogo firmante, category:"Datos del Estudio"
 - name:"TIENE_IMAGEN_ADJUNTA", value: "true" si el documento ES o INCLUYE la imagen radiográfica, category:"Metadatos"
 
-HALLAZGOS RADIOLÓGICOS — un item por estructura anatómica:
+HALLAZGOS RADIOLÓGICOS — un item por estructura anatómica (evalúa SISTEMÁTICAMENTE):
 Si es TÓRAX evalúa y extrae por separado:
-- name:"CAMPOS_PULMONARES", value: descripción EXACTA Y COMPLETA (ej:"Campos pulmonares de características normales, sin infiltrados, consolidaciones ni derrame"), category:"Hallazgos Radiológicos"
-- name:"SILUETA_CARDIACA", value: descripción completa (ej:"Silueta cardiaca de tamaños normales"), category:"Hallazgos Radiológicos"
-- name:"MEDIASTINO", value: descripción (ej:"Mediastino centrado, de amplitud normal"), category:"Hallazgos Radiológicos"
-- name:"HILIOS_PULMONARES", value: descripción (ej:"Hilios pulmonares de posición y morfología normales"), category:"Hallazgos Radiológicos"
-- name:"SENOS_COSTOFRÉNICOS", value: descripción (ej:"Libres y bien definidos"), category:"Hallazgos Radiológicos"
-- name:"DIAFRAGMA", value: descripción, category:"Hallazgos Radiológicos"
-- name:"PARRILLA_COSTAL", value: descripción, category:"Hallazgos Radiológicos"
-- name:"TEJIDOS_BLANDOS", value: descripción, category:"Hallazgos Radiológicos"
-- name:"TRAQUEA_BRONQUIOS", value: descripción, category:"Hallazgos Radiológicos"
+- name:"CAMPOS_PULMONARES", value: descripción EXACTA Y COMPLETA (infiltrados, consolidaciones, nódulos, masas, fibrosis, atelectasias), description: "✓ Normal" o hallazgo específico, category:"Hallazgos Radiológicos"
+- name:"SILUETA_CARDIACA", value: descripción completa (tamaño, forma, posición), category:"Hallazgos Radiológicos"
+- name:"MEDIASTINO", value: descripción (centrado, amplitud, masas), category:"Hallazgos Radiológicos"
+- name:"HILIOS_PULMONARES", value: descripción (posición, morfología, ganglios), category:"Hallazgos Radiológicos"
+- name:"SENOS_COSTOFRÉNICOS", value: descripción (libres o derrame), category:"Hallazgos Radiológicos"
+- name:"DIAFRAGMA", value: descripción (altura, contorno, hernias), category:"Hallazgos Radiológicos"
+- name:"PARRILLA_COSTAL", value: descripción (fracturas, lesiones óseas), category:"Hallazgos Radiológicos"
+- name:"TEJIDOS_BLANDOS", value: descripción (enfisema, calcificaciones), category:"Hallazgos Radiológicos"
+- name:"TRAQUEA_BRONQUIOS", value: descripción (centrada, calibre), category:"Hallazgos Radiológicos"
 
 Si es COLUMNA:
-- name:"CUERPOS_VERTEBRALES", value: descripción exacta, category:"Hallazgos Radiológicos"
-- name:"DISCOS_INTERVERTEBRALES", value: descripción, category:"Hallazgos Radiológicos"
+- name:"CUERPOS_VERTEBRALES", value: descripción (altura, densidad, osteofitos), category:"Hallazgos Radiológicos"
+- name:"DISCOS_INTERVERTEBRALES", value: descripción (conservados o reducidos, protrusión), category:"Hallazgos Radiológicos"
 - name:"ALINEACION_COLUMNA", value: descripción (ej:"Lordosis lumbar conservada"), category:"Hallazgos Radiológicos"
-- name:"SIGNOS_DEGENERATIVOS", value: descripción de osteofitos, artropatía etc., category:"Hallazgos Radiológicos"
+- name:"SIGNOS_DEGENERATIVOS", value: descripción de osteofitos, artropatía, Kellgren-Lawrence, category:"Hallazgos Radiológicos"
 - name:"PARTES_BLANDAS_COLUMNA", value: descripción, category:"Hallazgos Radiológicos"
 
 MEDIDAS E ÍNDICES:
@@ -364,8 +428,17 @@ CONCLUSIÓN:
             return {
                 prompt: `${GLOBAL_INSTRUCTION}
 
-Eres un optometrista experto digitalizando un examen optométrico de GP Medical.
+Eres un optometrista experto (NOM-007-SSA3-2011) digitalizando un examen optométrico de GP Medical.
 Extrae CADA prueba y CADA ojo como item completamente separado.
+
+CLASIFICACIÓN AGUDEZA VISUAL (Snellen):
+  20/20 Normal | 20/25 Casi normal | 20/30-20/40 Leve | 20/50-20/70 Significativa | 20/100+ Severa | 20/200 Ceguera legal
+ISHIHARA: 14/14 Normal | 11-13/14 Sospecha | <11/14 Discromatopsia confirmada (Protanopia/Deuteranopia/Tritanopia)
+JAEGER: J1 Normal (=20/20) | J2 Casi normal | J3-J5 Presbicia leve-moderada | J7+ Presbicia significativa
+APTITUD VISUAL LABORAL:
+  APTO: AV ≥20/30, Ishihara 14/14, campos normales
+  APTO CON RESTRICCIONES: AV 20/40-20/70 con lentes → no alturas, no conducción nocturna
+  NO APTO: AV <20/70 con corrección, discromatopsia severa
 
 EXTRAE OBLIGATORIAMENTE:
 
@@ -432,6 +505,13 @@ Eres un cardiólogo experto digitalizando un electrocardiograma de GP Medical (e
 El documento puede ser: (A) el trazado ECG con tabla de mediciones, (B) reporte de interpretación narrativa, o (C) ambos.
 Extrae CADA parámetro como item individual.
 
+CRITERIOS DE INTERPRETACIÓN CARDIOLÓGICA:
+RITMOS: Sinusal normal (cada QRS precedido por P, FC 60-100) | Bradicardia sinusal (<60) | Taquicardia sinusal (>100) | FA (ausencia P, RR irregular)
+BLOQUEOS: BAV 1° (PR >200ms constante) | BAV 2° Mobitz I (PR alargamiento progresivo) | BAV 2° Mobitz II (PR fijo, P no conducidas) | BAV 3° (disociación AV)
+BLOQUEO RAMA: BRDHH (QRS >120ms, rSR' en V1-V2) | BRIHH (QRS >120ms, R ancha V5-V6)
+SEGMENTO ST: Elevación >1mm en 2+ derivaciones contiguas = isquemia aguda | Depresión >0.5mm = isquemia subendocárdica
+EJES: Normal -30° a +90° | Izquierdo <-30° (HVI, BRIHH) | Derecho >+90° (HVD, BRDHH)
+
 PARÁMETROS NUMÉRICOS DE LA TABLA DE MEDICIONES (si existe el trazado):
 - name:"FC", value: frecuencia cardiaca en lpm, unit:"lpm", range:"60-100", description:"Normal"/"Bradicardia <60"/"Taquicardia >100", visualizationType:"gauge", category:"Parámetros Numéricos"
 - name:"RR", value: intervalo RR en ms, unit:"ms", range:"600-1000", visualizationType:"gauge", category:"Parámetros Numéricos"
@@ -484,8 +564,17 @@ METADATOS:
             return {
                 prompt: `${GLOBAL_INSTRUCTION}
 
-Eres un médico experto digitalizando un formulario de Historia Clínica / Examen Médico Ocupacional de GP Medical Health.
+Eres un médico del trabajo experto (NOM-030-STPS-2009, NOM-035-STPS-2018, Ley Federal del Trabajo Art. 132-134) digitalizando un formulario de Historia Clínica / Examen Médico Ocupacional de GP Medical Health.
 El documento es un formulario médico con múltiples secciones y campos. Extráelos TODOS, campo por campo.
+
+TIPOS DE EXAMEN: INGRESO (pre-empleo) | PERIÓDICO (vigilancia) | EGRESO (fin relación) | ESPECIAL (post-incapacidad, cambio puesto)
+APTITUD LABORAL:
+  APTO — Sin limitaciones para el puesto
+  APTO CON RESTRICCIONES — Puede trabajar con adecuaciones (no alturas, no cargas >Xkg, EPP específico)
+  APTO CON SEGUIMIENTO — Requiere vigilancia médica periódica
+  NO APTO TEMPORAL — Incapacidad temporal, puede reintegrarse
+  NO APTO DEFINITIVO — Limitación permanente para el puesto
+RIESGOS: Físicos (ruido, vibración, radiaciones, temperaturas) | Químicos (solventes, polvos, humos, gases) | Biológicos (microorganismos, sangre) | Ergonómicos (posturas, cargas, repetitivos) | Psicosociales (estrés, turnos, violencia)
 
 EXTRAE OBLIGATORIAMENTE CADA SECCIÓN Y CAMPO:
 
@@ -658,7 +747,7 @@ export async function analyzeDocument(sectionId: string, text: string, imageFile
         ? `TEXTO EXTRAÍDO DEL DOCUMENTO:\n${text}\n\n`
         : `(El documento es una imagen — analiza visualmente con máximo detalle)\n\n`;
 
-    const fullPrompt = `${sectionPrompt}\n\n${textSection}INSTRUCCIÓN FINAL: Devuelve JSON con TODOS los datos extraídos. NO resumas. Cada campo del documento = un item en results[].`;
+    const fullPrompt = `${sectionPrompt}\n\n${textSection}INSTRUCCIÓN FINAL: Devuelve JSON con TODOS los datos extraídos. NO resumas. Cada campo del documento = un item en results[]. IMPORTANTE: Mantén el JSON conciso — para las curvas usa máximo 10-12 puntos representativos.`;
 
     const response = await generateContentWithRetry({
         model: MODEL_NAME,
@@ -666,35 +755,76 @@ export async function analyzeDocument(sectionId: string, text: string, imageFile
         config: {
             responseMimeType: "application/json",
             responseSchema: schema,
+            maxOutputTokens: 65536,
         }
     });
 
     const jsonText = response.text.trim();
     trackUsage(MODEL_NAME, jsonText.length / 4, jsonText.length / 4);
 
-    const parsed = JSON.parse(jsonText);
+    // Resilient JSON parser — intenta reparar JSON truncado
+    const parseResilientJSON = (text: string): any => {
+        // Intento 1: parse directo
+        try { return JSON.parse(text); } catch { }
+        // Intento 2: cerrar brackets/braces abiertos
+        let repaired = text;
+        // Contar brackets abiertos vs cerrados
+        let openBraces = 0, openBrackets = 0;
+        let inString = false, escaped = false;
+        for (const ch of repaired) {
+            if (escaped) { escaped = false; continue; }
+            if (ch === '\\') { escaped = true; continue; }
+            if (ch === '"') { inString = !inString; continue; }
+            if (inString) continue;
+            if (ch === '{') openBraces++;
+            if (ch === '}') openBraces--;
+            if (ch === '[') openBrackets++;
+            if (ch === ']') openBrackets--;
+        }
+        // Si estamos dentro de un string, cerrarlo
+        if (inString) repaired += '"';
+        // Cerrar brackets/braces faltantes
+        // Primero eliminar trailing comma o string parcial antes de cerrar
+        repaired = repaired.replace(/,\s*$/, '');
+        for (let i = 0; i < openBrackets; i++) repaired += ']';
+        for (let i = 0; i < openBraces; i++) repaired += '}';
+        try { return JSON.parse(repaired); } catch { }
+        // Intento 3: truncar hasta el último item válido en results
+        const lastValidClose = repaired.lastIndexOf('}]');
+        if (lastValidClose > 0) {
+            const truncated = repaired.substring(0, lastValidClose + 2) + '}';
+            try { return JSON.parse(truncated); } catch { }
+        }
+        // Si todo falla, lanzar error original
+        return JSON.parse(text);
+    };
 
-    if (parsed.results) {
-        parsed.results = parsed.results.map((res: any) => {
-            // Rellenar aliases legacy para compatibilidad con todos los tabs
-            res.parametro = res.name;
-            res.resultado = typeof res.value === 'object' ? JSON.stringify(res.value) : String(res.value ?? '');
-            res.unidad = res.unit ?? '';
-            res.rango = res.range ?? '';
-            res.observacion = res.description ?? '';
-            res.categoria = res.category ?? '';
+    const parsed = parseResilientJSON(jsonText);
 
-            // Si value es un string que parece JSON, parsearlo
-            if (typeof res.value === 'string' && (res.value.startsWith('{') || res.value.startsWith('['))) {
-                try { res.value = JSON.parse(res.value); } catch (e) { }
-            }
-            // Si resultado es string JSON, parsearlo también
-            if (typeof res.resultado === 'string' && (res.resultado.startsWith('{') || res.resultado.startsWith('['))) {
-                try { res.resultado = JSON.parse(res.resultado); } catch (e) { }
-            }
-            return res;
-        });
+    // FIX: Garantizar que la estructura base no sea undefined para evitar crashes en UI
+    if (!parsed.results || !Array.isArray(parsed.results)) {
+        parsed.results = [];
     }
+
+    parsed.results = parsed.results.map((res: any) => {
+        // Rellenar aliases legacy para compatibilidad con todos los tabs
+        res.parametro = res.name;
+        res.resultado = typeof res.value === 'object' ? JSON.stringify(res.value) : String(res.value ?? '');
+        res.unidad = res.unit ?? '';
+        res.rango = res.range ?? '';
+        res.observacion = res.description ?? '';
+        res.categoria = res.category ?? '';
+
+        // Si value es un string que parece JSON, parsearlo
+        if (typeof res.value === 'string' && (res.value.startsWith('{') || res.value.startsWith('['))) {
+            try { res.value = JSON.parse(res.value); } catch (e) { }
+        }
+        // Si resultado es string JSON, parsearlo también
+        if (typeof res.resultado === 'string' && (res.resultado.startsWith('{') || res.resultado.startsWith('['))) {
+            try { res.resultado = JSON.parse(res.resultado); } catch (e) { }
+        }
+        return res;
+    });
 
     return parsed;
 }

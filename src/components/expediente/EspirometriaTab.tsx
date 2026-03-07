@@ -15,6 +15,7 @@ import { Loader2, Inbox } from 'lucide-react'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
 import EstudioUploadReview from '@/components/expediente/EstudioUploadReview'
+import { SpirometryReport } from './SpirometryReport'
 
 // ── Clasificación patrón ventilatorio ──
 const PATRON_STYLES: Record<string, { bg: string; text: string; border: string; label: string }> = {
@@ -60,39 +61,61 @@ function buildFromResultados(estudio: any, resultados: any[]): any {
     // Curvas
     const curvaFV = jsonVal('CURVA_FLUJO_VOLUMEN')
     const curvaVT = jsonVal('CURVA_VOLUMEN_TIEMPO')
+    const zscoreBarras = jsonVal('ZSCORE_BARRAS')
 
     const patron_raw = (get('PATRON_VENTILATORIO') || get('PATRON_VENTILATORO') || get('INTERPRETACION_SISTEMA') || estudio.diagnostico || 'normal').toLowerCase()
     let patron = 'normal'
     if (patron_raw.includes('obstruc')) {
         const pct = fev1.pct_pred ?? 80
-        patron = pct >= 70 ? 'obstructivo_leve' : pct >= 50 ? 'obstructivo_moderado' : 'obstructivo_severo'
+        patron = pct >= 70 ? 'obstructivo_leve' : pct >= 50 ? 'obstructivo_moderado' : pct >= 35 ? 'obstructivo_severo' : 'obstructivo_muy_severo'
     } else if (patron_raw.includes('restric')) patron = 'restrictivo'
     else if (patron_raw.includes('mixto')) patron = 'mixto'
+
+    // Helper para construir objeto de parámetro con pruebas individuales
+    const buildParam = (obj: any) => ({
+        pred: obj.pred ?? 0, mejor: obj.mejor ?? 0, pct: obj.pct_pred ?? 0,
+        lln: obj.lln ?? 0, z_score: obj.z_score ?? null,
+        pruebas: obj.pruebas ?? [], fuera_rango: obj.fuera_rango ?? false,
+    })
+
+    // Calidad detallada
+    const calidadDesc = get('CALIDAD_SESION')
+    const calidadObs = resultados.find(r => r.parametro_nombre === 'CALIDAD_SESION')?.observacion || ''
 
     return {
         id: estudio.id,
         fecha: estudio.fecha_estudio,
         patron,
-        calidad: get('CALIDAD_SESION') || estudio.calidad || 'A',
+        calidad: calidadDesc || estudio.calidad || 'A',
+        calidad_detalle: calidadObs, // "C (FEV1 Var=0.14L 4.4%; FVC Var=0.19L 4.7%)"
+        variabilidad_fev1: get('VARIABILIDAD_FEV1'),
+        variabilidad_fvc: get('VARIABILIDAD_FVC'),
         interpretacion_sistema: get('INTERPRETACION_SISTEMA') || estudio.interpretacion || '',
         medico: get('MEDICO_RESPONSABLE') || estudio.medico_responsable || '',
         equipo: get('EQUIPO') || estudio.equipo || '',
-        // Parámetros con columnas pred/lln/mejor/pct
-        fvc: { pred: fvc.pred ?? 0, mejor: fvc.mejor ?? 0, pct: fvc.pct_pred ?? 0, lln: fvc.lln ?? 0 },
-        fev1: { pred: fev1.pred ?? 0, mejor: fev1.mejor ?? 0, pct: fev1.pct_pred ?? 0, lln: fev1.lln ?? 0 },
-        fev1_fvc: { pred: fev1fvc.pred ?? 0, mejor: fev1fvc.mejor ?? 0, pct: fev1fvc.pct_pred ?? 0 },
-        fef: { pred: fef.pred ?? 0, mejor: fef.mejor ?? 0, pct: fef.pct_pred ?? 0 },
-        pef: { pred: pef.pred ?? 0, mejor: pef.mejor ?? 0, pct: pef.pct_pred ?? 0 },
-        fev6: { pred: fev6.pred ?? 0, mejor: fev6.mejor ?? 0, pct: fev6.pct_pred ?? 0 },
-        fet: { pred: fet.pred ?? 0, mejor: fet.mejor ?? 0 },
-        // Curvas
+        // Config del estudio
+        criterio: get('CRITERIO_INTERPRETACION') || estudio.datos_extra?.criterio || '',
+        ecuacion_predicho: get('ECUACION_PREDICHO') || estudio.datos_extra?.ecuacion_predicho || '',
+        tipo_prueba: get('TIPO_PRUEBA') || '',
+        // Parámetros con todas las columnas incluyendo pruebas individuales y Z-score
+        fvc: buildParam(fvc),
+        fev1: buildParam(fev1),
+        fev1_fvc: buildParam(fev1fvc),
+        fef: buildParam(fef),
+        pef: buildParam(pef),
+        fev6: buildParam(fev6),
+        fet: { pred: fet.pred ?? 0, mejor: fet.mejor ?? 0, pruebas: fet.pruebas ?? [] },
+        // Gráficas
         curvaFV,
         curvaVT,
+        zscoreBarras,
         // Antropometría
         altura: num('ALTURA'),
         peso: num('PESO'),
         imc: num('IMC'),
         fumador: get('FUMADOR'),
+        asma: get('ASMA'),
+        epoc: get('EPOC'),
         etnia: get('ETNIA'),
         rawResults: resultados,
     }
@@ -228,6 +251,81 @@ function VolTimeCurve({ curva, fvc, fev1 }: { curva: any; fvc: number; fev1: num
 }
 
 // ─────────────────────────────────────────────
+// COMPONENTE: Gráfica Z-Score barras horizontales
+// ─────────────────────────────────────────────
+function ZScoreChart({ data, zscoreData }: { data: any; zscoreData?: any }) {
+    const W = 340, H = 180, PAD = 80, RPAD = 30
+    const params: { label: string; z: number }[] = []
+
+    // Primero intentar datos directos del JSON de Z-score barras
+    if (zscoreData) {
+        if (zscoreData.FVC != null) params.push({ label: 'FVC', z: zscoreData.FVC })
+        if (zscoreData.FEV1 != null) params.push({ label: 'FEV1', z: zscoreData.FEV1 })
+        if (zscoreData['FEF25-75'] != null) params.push({ label: 'FEF25-75', z: zscoreData['FEF25-75'] })
+        if (zscoreData.PEF != null) params.push({ label: 'PEF', z: zscoreData.PEF })
+        if (zscoreData.FEV1_FVC != null) params.push({ label: 'FEV1/FVC', z: zscoreData.FEV1_FVC })
+    }
+
+    // Fallback: sacar Z-score de los parámetros individuales
+    if (params.length === 0) {
+        if (data.fvc?.z_score != null) params.push({ label: 'FVC', z: data.fvc.z_score })
+        if (data.fev1?.z_score != null) params.push({ label: 'FEV1', z: data.fev1.z_score })
+        if (data.fef?.z_score != null) params.push({ label: 'FEF25-75', z: data.fef.z_score })
+        if (data.pef?.z_score != null) params.push({ label: 'PEF', z: data.pef.z_score })
+        if (data.fev1_fvc?.z_score != null) params.push({ label: 'FEV1/FVC', z: data.fev1_fvc.z_score })
+    }
+
+    if (params.length === 0) return null
+
+    const minZ = -5, maxZ = 3
+    const barH = 18, gap = 6
+    const totalH = params.length * (barH + gap) + 40
+    const xScale = (z: number) => PAD + ((z - minZ) / (maxZ - minZ)) * (W - PAD - RPAD)
+    const zeroX = xScale(0)
+
+    const barColor = (z: number) =>
+        Math.abs(z) <= 1.5 ? '#10b981' : Math.abs(z) <= 2.5 ? '#f59e0b' : '#ef4444'
+
+    return (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-3">
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 text-center">
+                Puntuación Z por Parámetro
+            </p>
+            <svg viewBox={`0 0 ${W} ${totalH}`} className="w-full h-auto">
+                {/* Grid vertical lines */}
+                {[-4, -3, -2, -1, 0, 1, 2, 3].map(z => (
+                    <g key={z}>
+                        <line x1={xScale(z)} y1={10} x2={xScale(z)} y2={totalH - 20} stroke={z === 0 ? '#94a3b8' : '#f1f5f9'} strokeWidth={z === 0 ? 1.5 : 0.8} />
+                        <text x={xScale(z)} y={totalH - 8} textAnchor="middle" fontSize="7" fontWeight="700" fill="#94a3b8">{z}</text>
+                    </g>
+                ))}
+                {/* LLN zone shading */}
+                <rect x={xScale(-1.645)} y={10} width={xScale(0) - xScale(-1.645)} height={totalH - 30} fill="#fef3c7" opacity={0.3} rx={2} />
+                {/* Bars */}
+                {params.map((p, i) => {
+                    const y = 16 + i * (barH + gap)
+                    const bw = Math.abs(xScale(p.z) - zeroX)
+                    const bx = p.z >= 0 ? zeroX : zeroX - bw
+                    return (
+                        <g key={p.label}>
+                            <text x={PAD - 5} y={y + barH / 2 + 3} textAnchor="end" fontSize="8" fontWeight="800" fill="#475569">{p.label}</text>
+                            <motion.rect x={bx} y={y} width={0} height={barH} rx={3} fill={barColor(p.z)}
+                                animate={{ width: bw }} transition={{ duration: 0.8, delay: i * 0.1, ease: 'easeOut' }} />
+                            <text x={xScale(p.z) + (p.z >= 0 ? 4 : -4)} y={y + barH / 2 + 3} textAnchor={p.z >= 0 ? 'start' : 'end'}
+                                fontSize="7" fontWeight="800" fill={barColor(p.z)}>
+                                {p.z > 0 ? '+' : ''}{p.z.toFixed(2)}
+                            </text>
+                        </g>
+                    )
+                })}
+                {/* LLN label */}
+                <text x={xScale(-1.645)} y={8} textAnchor="middle" fontSize="6" fontWeight="700" fill="#f59e0b">LLN</text>
+            </svg>
+        </div>
+    )
+}
+
+// ─────────────────────────────────────────────
 // COMPONENTE: Gauge barra animada por parámetro
 // ─────────────────────────────────────────────
 function ParamGauge({ label, mejor, pred, pct, unit }: {
@@ -271,11 +369,18 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
     const [activeSection, setActiveSection] = useState<'scanner' | 'analisis'>('scanner')
     const [showPrev, setShowPrev] = useState(false)
 
+    const [patientData, setPatientData] = useState<any>(null)
+
     useEffect(() => { if (pacienteId) loadData() }, [pacienteId])
 
     const loadData = async () => {
         try {
             setLoading(true)
+
+            // Obtener info del paciente para el reporte
+            const { data: pData } = await supabase
+                .from('pacientes').select('*').eq('id', pacienteId).single()
+            if (pData) setPatientData(pData)
 
             // FUENTE 1: Nueva arquitectura
             const { data: estudios } = await supabase
@@ -366,6 +471,156 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
     if (data.fev1_fvc?.mejor > 0 && data.fev1_fvc.mejor < 70) alertas.push(`FEV1/FVC ${data.fev1_fvc.mejor}% — Relación disminuida, patrón obstructivo`)
     if (data.fef?.pct > 0 && data.fef?.pct < 60) alertas.push('FEF 25-75% reducido — Obstrucción de vías aéreas pequeñas')
 
+    // Mapper a SpirometryData (para el reporte tipo Clon de PDF)
+    const mapToSpirometryData = (): any => {
+        if (!patientData || !data) return null;
+
+        const age = patientData.fecha_nacimiento
+            ? Math.floor((new Date().getTime() - new Date(patientData.fecha_nacimiento).getTime()) / 31557600000)
+            : 0;
+
+        // Limpiar strings
+        const pName = `${patientData.apellido_paterno || ''} ${patientData.apellido_materno || ''}, ${patientData.nombre || ''}`.replace(/^ , /, '');
+
+        // Generar arreglos de puntos sintéticos si no están completos, o usar los extraídos
+        const flowVolumeCurve = [];
+        if (data.curvaFV && Array.isArray(data.curvaFV.medido)) {
+            let predPts = Array.isArray(data.curvaFV.predicho) ? data.curvaFV.predicho : [];
+            let pr2 = Array.isArray(data.curvaFV.prueba2) ? data.curvaFV.prueba2 : [];
+            let pr5 = Array.isArray(data.curvaFV.prueba5) ? data.curvaFV.prueba5 : [];
+            let pr6 = Array.isArray(data.curvaFV.prueba6) ? data.curvaFV.prueba6 : [];
+
+            // Obtenemos la longitud máxima para iterar y emparejar puntos
+            const len = Math.max(
+                data.curvaFV.medido.length,
+                predPts.length,
+                pr2.length,
+                pr5.length,
+                pr6.length
+            );
+
+            for (let i = 0; i < len; i++) {
+                const med = data.curvaFV.medido[i] || { x: null, y: null };
+                const prd = predPts[i] || { x: null, y: null };
+                const p2 = pr2[i] || { x: null, y: null };
+                const p5 = pr5[i] || { x: null, y: null };
+                const p6 = pr6[i] || { x: null, y: null };
+
+                // Usamos el X dominante para agrupar, típicamente el X medido. Si no, el de otra prueba
+                const domX = med.x ?? prd.x ?? p2.x ?? p5.x ?? p6.x ?? 0;
+
+                flowVolumeCurve.push({
+                    volume: domX,
+                    flowMejor: med.y ?? null,
+                    flowPred: prd.y ?? null,
+                    flowPrueba2: p2.y ?? null,
+                    flowPrueba5: p5.y ?? null,
+                    flowPrueba6: p6.y ?? null,
+                });
+            }
+        } else {
+            // Sintético base de rescate absoluto si falla extracción
+            flowVolumeCurve.push(
+                { volume: 0, flowPred: 0, flowMejor: 0 },
+                { volume: (data.fvc?.mejor || 3.5) * 0.1, flowPred: (data.pef?.pred || 8), flowMejor: (data.pef?.mejor || 7) },
+                { volume: (data.fvc?.mejor || 3.5) * 0.5, flowPred: (data.pef?.pred || 8) * 0.5, flowMejor: (data.pef?.mejor || 7) * 0.4 },
+                { volume: (data.fvc?.mejor || 3.5), flowPred: 0, flowMejor: 0 }
+            );
+        }
+
+        const volumeTimeCurve = [];
+        if (data.curvaVT && Array.isArray(data.curvaVT.medido)) {
+            let predPtsVT = Array.isArray(data.curvaVT.predicho) ? data.curvaVT.predicho : [];
+            let pr2VT = Array.isArray(data.curvaVT.prueba2) ? data.curvaVT.prueba2 : [];
+            let pr5VT = Array.isArray(data.curvaVT.prueba5) ? data.curvaVT.prueba5 : [];
+            let pr6VT = Array.isArray(data.curvaVT.prueba6) ? data.curvaVT.prueba6 : [];
+
+            const lenVT = Math.max(
+                data.curvaVT.medido.length,
+                predPtsVT.length,
+                pr2VT.length,
+                pr5VT.length,
+                pr6VT.length
+            );
+
+            for (let i = 0; i < lenVT; i++) {
+                const med = data.curvaVT.medido[i] || { x: null, y: null };
+                const prd = predPtsVT[i] || { x: null, y: null };
+                const p2 = pr2VT[i] || { x: null, y: null };
+                const p5 = pr5VT[i] || { x: null, y: null };
+                const p6 = pr6VT[i] || { x: null, y: null };
+
+                const domX = med.x ?? med.tiempo ?? prd.x ?? p2.x ?? p5.x ?? p6.x ?? 0;
+
+                volumeTimeCurve.push({
+                    time: domX,
+                    volumeMejor: med.y ?? med.volumen ?? null,
+                    volumePred: prd.y ?? null,
+                    volumePrueba2: p2.y ?? null,
+                    volumePrueba5: p5.y ?? null,
+                    volumePrueba6: p6.y ?? null,
+                });
+            }
+        } else {
+            volumeTimeCurve.push(
+                { time: 0, volumeMejor: 0 },
+                { time: 1, volumeMejor: data.fev1?.mejor || 2.5 },
+                { time: 6, volumeMejor: data.fvc?.mejor || 3.5 }
+            );
+        }
+
+        return {
+            patient: {
+                name: pName,
+                id: patientData.numero_empleado || pacienteId.slice(0, 6).toUpperCase(),
+                age: age.toString(),
+                dob: patientData.fecha_nacimiento || '-',
+                sex: patientData.genero === 'masculino' ? 'Masculino' : patientData.genero === 'femenino' ? 'Femenino' : '-',
+                height: data.altura ? `${data.altura} cm` : '-',
+                weight: data.peso ? `${data.peso} kg` : '-',
+                origin: data.etnia || '-',
+                smoker: data.fumador || 'No',
+                asthma: data.asma || 'No',
+                copd: data.epoc || 'No',
+                bmi: data.imc ? `${data.imc}` : '-',
+            },
+            testDetails: {
+                date: data.fecha || '-',
+                interpretation: data.criterio || '-',
+                predicted: data.ecuacion_predicho || '-',
+                selection: data.tipo_prueba || '-',
+                bestValue: data.variabilidad_fev1 || '-',
+                fev1PredPercent: data.fev1?.pct ? `${Math.round(data.fev1.pct)} %` : '-',
+            },
+            results: [
+                {
+                    parameter: 'FVC [L]', pred: data.fvc?.pred || '', lln: data.fvc?.lln || '', mejor: `${data.fvc?.mejor || ''}${data.fvc?.fuera_rango ? '*' : ''}`, prueba2: data.fvc?.pruebas?.[1] || '', prueba6: data.fvc?.pruebas?.[5] || '', prueba5: data.fvc?.pruebas?.[4] || '', percentPred: data.fvc?.pct
+                        ? Math.round(data.fvc.pct) : '', zScore: data.fvc?.z_score || ''
+                },
+                { parameter: 'FEV1 [L]', pred: data.fev1?.pred || '', lln: data.fev1?.lln || '', mejor: `${data.fev1?.mejor || ''}${data.fev1?.fuera_rango ? '*' : ''}`, prueba2: data.fev1?.pruebas?.[1] || '', prueba6: data.fev1?.pruebas?.[5] || '', prueba5: data.fev1?.pruebas?.[4] || '', percentPred: data.fev1?.pct ? Math.round(data.fev1.pct) : '', zScore: data.fev1?.z_score || '' },
+                { parameter: 'FEV1/FVC', pred: data.fev1_fvc?.pred || '', lln: data.fev1_fvc?.lln || '', mejor: `${data.fev1_fvc?.mejor || ''}${data.fev1_fvc?.fuera_rango ? '*' : ''}`, prueba2: data.fev1_fvc?.pruebas?.[1] || '', prueba6: '', prueba5: '', percentPred: data.fev1_fvc?.pct ? Math.round(data.fev1_fvc.pct) : '', zScore: data.fev1_fvc?.z_score || '' },
+                { parameter: 'FEF25-75 [L/s]', pred: data.fef?.pred || '', lln: data.fef?.lln || '', mejor: `${data.fef?.mejor || ''}${data.fef?.fuera_rango ? '*' : ''}`, prueba2: data.fef?.pruebas?.[1] || '', prueba6: '', prueba5: '', percentPred: data.fef?.pct ? Math.round(data.fef.pct) : '', zScore: data.fef?.z_score || '' },
+                { parameter: 'PEF [L/s]', pred: data.pef?.pred || '', lln: data.pef?.lln || '', mejor: `${data.pef?.mejor || ''}${data.pef?.fuera_rango ? '*' : ''}`, prueba2: data.pef?.pruebas?.[1] || '', prueba6: '', prueba5: '', percentPred: data.pef?.pct ? Math.round(data.pef.pct) : '', zScore: data.pef?.z_score || '' },
+                { parameter: 'FET [s]', pred: data.fet?.pred || '', lln: '', mejor: data.fet?.mejor || '', prueba2: data.fet?.pruebas?.[1] || '', prueba6: '', prueba5: '', percentPred: '', zScore: '' },
+            ],
+            session: {
+                quality: data.calidad_detalle || `Grado ${data.calidad || 'A'}`,
+                interpretation: data.interpretacion_sistema || PATRON_STYLES[data.patron]?.label || '-',
+            },
+            doctor: {
+                name: data.medico || 'GP Medical Health',
+                date: data.fecha?.slice(0, 10) || '',
+                notes: data.interpretacion_sistema || PATRON_STYLES[data.patron]?.label || 'ESPIROMETRÍA',
+            },
+            graphs: {
+                flowVolume: flowVolumeCurve,
+                volumeTime: volumeTimeCurve
+            }
+        };
+    };
+
+    const spiroReportData = mapToSpirometryData();
+
     return (
         <div className="space-y-5">
 
@@ -431,82 +686,23 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
 
             <AnimatePresence mode="wait">
 
-                {/* ══ SECCIÓN 1: ESCÁNER ══ */}
+                {/* ══ SECCIÓN 1: ESCÁNER (CLON DEL PDF) ══ */}
                 {activeSection === 'scanner' && (
                     <motion.div key="scanner" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-5">
-
-                        {/* Tabla de parámetros — igual al formato */}
-                        <Card className="border-slate-100 shadow-sm overflow-hidden">
-                            <div className="bg-slate-50 border-b border-slate-100 px-5 py-3">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                    Tabla de Parámetros Espirométricos
-                                </p>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="border-b border-slate-100">
-                                            <th className="text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400">Parámetro</th>
-                                            <th className="px-3 py-2.5 text-center text-[10px] font-black uppercase text-slate-400">Predicho</th>
-                                            <th className="px-3 py-2.5 text-center text-[10px] font-black uppercase text-slate-400">LLN</th>
-                                            <th className="px-3 py-2.5 text-center text-[10px] font-black uppercase text-slate-400">Mejor</th>
-                                            <th className="px-3 py-2.5 text-center text-[10px] font-black uppercase text-slate-400">% Pred.</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {[
-                                            { name: 'FVC', obj: data.fvc, unit: 'L' },
-                                            { name: 'FEV1', obj: data.fev1, unit: 'L' },
-                                            { name: 'FEV1/FVC', obj: data.fev1_fvc, unit: '%' },
-                                            { name: 'FEF 25-75%', obj: data.fef, unit: 'L/s' },
-                                            { name: 'PEF', obj: data.pef, unit: 'L/s' },
-                                            { name: 'FEV6', obj: data.fev6, unit: 'L' },
-                                            { name: 'FET', obj: data.fet, unit: 's' },
-                                        ].map(({ name, obj, unit }) => {
-                                            if (!obj || (obj.pred === 0 && obj.mejor === 0 && obj.pct === 0)) return null
-                                            const pct = obj.pct || 0
-                                            return (
-                                                <tr key={name} className="border-b border-slate-50 last:border-0">
-                                                    <td className="px-4 py-3 font-black text-xs text-slate-700">{name}</td>
-                                                    <td className="px-3 py-3 text-center text-xs text-slate-500">{obj.pred > 0 ? `${obj.pred} ${unit}` : '—'}</td>
-                                                    <td className="px-3 py-3 text-center text-xs text-slate-400">{obj.lln > 0 ? `${obj.lln} ${unit}` : '—'}</td>
-                                                    <td className="px-3 py-3 text-center text-sm font-bold text-slate-800">{obj.mejor > 0 ? `${obj.mejor} ${unit}` : '—'}</td>
-                                                    <td className={`px-3 py-3 text-center text-sm font-black ${pctColor(pct)}`}>
-                                                        {pct > 0 ? `${Math.round(pct)}%` : '—'}
-                                                    </td>
-                                                </tr>
-                                            )
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </Card>
-
-                        {/* Curvas gráficas en 2 columnas */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FlowVolumeCurve curva={data.curvaFV} fvc={data.fvc?.mejor || 0} pef={data.pef?.mejor || 0} />
-                            <VolTimeCurve curva={data.curvaVT} fvc={data.fvc?.mejor || 0} fev1={data.fev1?.mejor || 0} />
+                        <div className="overflow-x-auto bg-slate-50/50 p-2 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
+                            {spiroReportData ? (
+                                <div className="min-w-[800px]">
+                                    <SpirometryReport data={spiroReportData} />
+                                </div>
+                            ) : (
+                                <div className="p-8 text-center text-slate-500">
+                                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-600" />
+                                    Preparando formato original...
+                                </div>
+                            )}
                         </div>
 
-                        {/* Antropometría */}
-                        {(data.altura || data.peso || data.imc || data.fumador) && (
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                {[
-                                    { label: 'Altura', value: data.altura ? `${data.altura} cm` : '—' },
-                                    { label: 'Peso', value: data.peso ? `${data.peso} kg` : '—' },
-                                    { label: 'IMC', value: data.imc ? `${data.imc} kg/m²` : '—' },
-                                    { label: 'Fumador', value: data.fumador || '—' },
-                                    ...(data.etnia ? [{ label: 'Etnia', value: data.etnia }] : []),
-                                ].map(({ label, value }) => (
-                                    <div key={label} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</p>
-                                        <p className="text-xs font-bold text-slate-700 mt-0.5">{value}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        <DocumentosAdjuntos pacienteId={pacienteId} categoria="espirometria" titulo="Archivo Original Espirometría" collapsedByDefault={false} />
+                        <DocumentosAdjuntos pacienteId={pacienteId} categoria="espirometria" titulo="Reporte Original" collapsedByDefault={false} />
                     </motion.div>
                 )}
 
@@ -685,6 +881,6 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     )
 }
