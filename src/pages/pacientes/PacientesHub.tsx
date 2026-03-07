@@ -230,7 +230,27 @@ export default function PacientesHub() {
                 className="py-6"
             >
                 <ImportarExpedienteWizard
-                    onComplete={(_data, existingId) => {
+                    onComplete={async (data, existingId) => {
+                        // Si hay datos SpiroClone, guardar como estudio
+                        if (data._spiroclone_raw && existingId) {
+                            try {
+                                const { supabase } = await import('@/lib/supabase');
+                                await supabase.from('estudios_clinicos').insert({
+                                    paciente_id: existingId,
+                                    tipo_estudio: 'espirometria',
+                                    fecha_estudio: new Date().toISOString().split('T')[0],
+                                    estado: 'completado',
+                                    datos_extra: {
+                                        spiroclone_data: data._spiroclone_raw,
+                                        _ai_config: 'SpiroClone Direct Pipeline via ImportarWizard'
+                                    }
+                                });
+                                console.log('[ImportWizard] SpiroClone data guardada como estudio');
+                            } catch (err) {
+                                console.warn('[ImportWizard] No se pudo guardar estudio SpiroClone:', err);
+                            }
+                        }
+
                         if (existingId) {
                             navigate(`/pacientes/${existingId}/perfil`)
                         } else {

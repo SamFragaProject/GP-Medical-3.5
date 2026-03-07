@@ -1,7 +1,8 @@
 /**
  * documentExtractorService.ts — Compatibilidad con Motor Pro
+ * Detecta espirometría y usa SpiroClone pipeline automáticamente.
  */
-import { analyzeDocument, determineCategory, type StructuredMedicalData } from './geminiDocumentService'
+import { analyzeDocument, analyzeSpirometryDirect, determineCategory, type StructuredMedicalData } from './geminiDocumentService'
 
 export type DatosExtraidos = any;
 export type ExtractionResult = {
@@ -16,9 +17,20 @@ export const documentExtractorService = {
         const start = Date.now();
         try {
             const category = determineCategory(file.name);
-            const rawData = await analyzeDocument(category as any, '', [file]);
 
-            // Adapt to the legacy structure expected by Wizard & Markdown
+            // ══ ESPIROMETRÍA: Usar SpiroClone pipeline directamente ══
+            if (category === 'espirometria') {
+                const spiroData = await analyzeSpirometryDirect('', [file]);
+                const adaptedData = adaptSpiroCloneToFlat(spiroData);
+                return {
+                    success: true,
+                    data: { ...adaptedData, _spiroclone_raw: spiroData },
+                    processingTimeMs: Date.now() - start
+                };
+            }
+
+            // ══ OTROS ESTUDIOS: Pipeline genérico ══
+            const rawData = await analyzeDocument(category as any, '', [file]);
             const adaptedData = adaptStructuredToFlat(rawData);
 
             return {
@@ -39,7 +51,6 @@ export const documentExtractorService = {
     async extractFromMultipleFiles(files: File[]): Promise<{ mergedData: any }> {
         const results = await Promise.all(files.map(f => this.extractFromFile(f)));
 
-        // Merge the already adapted flat results
         const merged: any = {
             _confianza: 95,
             _campos_encontrados: [],
@@ -48,21 +59,21 @@ export const documentExtractorService = {
 
         results.forEach(r => {
             if (r.success && r.data) {
-                // Merge patient scalars (take first available)
                 ['nombre', 'apellido_paterno', 'apellido_materno', 'genero', 'fecha_nacimiento', 'edad', 'curp', 'nss', 'rfc', 'empresa_nombre', 'puesto'].forEach(key => {
                     if (r.data[key] && !merged[key]) merged[key] = r.data[key];
                 });
 
-                // Merge complex modules
                 ['signos_vitales', 'audiometria', 'espirometria', 'laboratorio', 'radiografia', 'exploracion_fisica'].forEach(mod => {
                     if (r.data[mod]) {
                         merged[mod] = { ...(merged[mod] || {}), ...r.data[mod] };
                     }
                 });
 
-                // Arrays like results might still be useful
                 if (r.data.results) {
                     merged.results = [...(merged.results || []), ...r.data.results];
+                }
+                if (r.data._spiroclone_raw) {
+                    merged._spiroclone_raw = r.data._spiroclone_raw;
                 }
 
                 if (r.data.alergias) merged.alergias = (merged.alergias ? merged.alergias + '\n' : '') + r.data.alergias;
@@ -80,8 +91,96 @@ export const documentExtractorService = {
     }
 }
 
+// ════════════════════════════════════════════════
+// ADAPTER: SpiroClone Data -> Legacy Flat Data
+// ════════════════════════════════════════════════
+function adaptSpiroCloneToFlat(spiro: any): DatosExtraidos {
+    const flat: Record<string, any> = {
+        _confianza: 95,
+        _campos_encontrados: [],
+        _campos_faltantes: [],
+    };
+
+    // Parsear nombre
+    if (spiro.patient?.name) {
+        const parsed = parsePatientName(spiro.patient.name);
+        flat.nombre = parsed.nombre;
+        flat.apellido_paterno = parsed.apellido_paterno;
+        flat.apellido_materno = parsed.apellido_materno;
+    }
+
+    // Datos demográficos
+    if (spiro.patient?.dob) flat.fecha_nacimiento = spiro.patient.dob;
+    if (spiro.patient?.age) flat.edad = spiro.patient.age;
+    if (spiro.patient?.sex) flat.genero = spiro.patient.sex.toLowerCase() === 'masculino' ? 'masculino' : 'femenino';
+    if (spiro.patient?.id) flat.numero_empleado = spiro.patient.id.replace('#', '');
+
+    // Espirometría completa
+    flat.espirometria = {};
+    if (spiro.results?.length > 0) {
+        const getParam = (name: string) => spiro.results.find((r: any) =>
+            r.parameter?.toUpperCase().startsWith(name.toUpperCase())
+        );
+        const fvc = getParam('FVC');
+        const fev1 = getParam('FEV1 ');
+        const ratio = getParam('FEV1/FVC');
+
+        if (fvc?.mejor) flat.espirometria.fvc = parseFloat(String(fvc.mejor).replace('*', '')) || fvc.mejor;
+        if (fev1?.mejor) flat.espirometria.fev1 = parseFloat(String(fev1.mejor).replace('*', '')) || fev1.mejor;
+        if (ratio?.mejor) flat.espirometria.fev1_fvc = parseFloat(String(ratio.mejor).replace('*', '')) || ratio.mejor;
+        if (fvc?.percentPred) flat.espirometria.fvc_porcentaje = fvc.percentPred;
+        if (fev1?.percentPred) flat.espirometria.fev1_porcentaje = fev1.percentPred;
+    }
+
+    if (spiro.session?.interpretation) flat.espirometria.patron = spiro.session.interpretation;
+    if (spiro.doctor?.notes) flat.espirometria.diagnostico = spiro.doctor.notes;
+    if (spiro.doctor?.name) flat.espirometria.medico = spiro.doctor.name;
+
+    // Signos vitales
+    if (spiro.patient?.height || spiro.patient?.weight) {
+        flat.signos_vitales = {};
+        if (spiro.patient.height) flat.signos_vitales.talla_cm = spiro.patient.height.replace(/[^\d.]/g, '');
+        if (spiro.patient.weight) flat.signos_vitales.peso_kg = spiro.patient.weight.replace(/[^\d.]/g, '');
+        if (spiro.patient.bmi) flat.signos_vitales.imc = spiro.patient.bmi;
+    }
+
+    return flat;
+}
+
+// ════════════════════════════════════════════════
+// PARSEO INTELIGENTE DE NOMBRES MEXICANOS
+// Soporta: "APELLIDO APELLIDO, NOMBRE(S)" y "NOMBRE APELLIDO APELLIDO"
+// ════════════════════════════════════════════════
+function parsePatientName(fullName: string): { nombre: string; apellido_paterno: string; apellido_materno: string } {
+    const trimmed = fullName.trim();
+
+    // Formato con coma: "URIBE LOPEZ, FEDERICO" → apellidos antes de coma, nombre después
+    if (trimmed.includes(',')) {
+        const [apellidoPart, nombrePart] = trimmed.split(',').map(s => s.trim());
+        const apellidos = apellidoPart.split(/\s+/);
+        return {
+            nombre: nombrePart || '',
+            apellido_paterno: apellidos[0] || '',
+            apellido_materno: apellidos.slice(1).join(' ') || ''
+        };
+    }
+
+    // Sin coma: "FEDERICO URIBE LOPEZ" → último materno, penúltimo paterno, resto nombre
+    const parts = trimmed.split(/\s+/);
+    if (parts.length >= 3) {
+        return {
+            nombre: parts.slice(0, parts.length - 2).join(' '),
+            apellido_paterno: parts[parts.length - 2],
+            apellido_materno: parts[parts.length - 1]
+        };
+    } else if (parts.length === 2) {
+        return { nombre: parts[0], apellido_paterno: parts[1], apellido_materno: '' };
+    }
+    return { nombre: trimmed, apellido_paterno: '', apellido_materno: '' };
+}
+
 // ============================================
-// ADAPTER: StructuredMedicalData -> Legacy Flat Data
+// ADAPTER: StructuredMedicalData -> Legacy Flat Data (otros estudios)
 // ============================================
 function adaptStructuredToFlat(data: StructuredMedicalData): DatosExtraidos {
     const flat: Record<string, any> = {
@@ -91,33 +190,23 @@ function adaptStructuredToFlat(data: StructuredMedicalData): DatosExtraidos {
         results: data.results || []
     };
 
-    // 1. Patient Data
-    if (data.patientData) {
-        if (data.patientData.name) {
-            const parts = data.patientData.name.trim().split(/\s+/);
-            if (parts.length >= 3) {
-                flat.nombre = parts.slice(0, parts.length - 2).join(' ');
-                flat.apellido_paterno = parts[parts.length - 2];
-                flat.apellido_materno = parts[parts.length - 1];
-            } else if (parts.length === 2) {
-                flat.nombre = parts[0];
-                flat.apellido_paterno = parts[1];
-            } else {
-                flat.nombre = data.patientData.name;
-            }
-        }
-        if (data.patientData.birthDate) flat.fecha_nacimiento = data.patientData.birthDate;
-        if (data.patientData.age) flat.edad = data.patientData.age;
-        if (data.patientData.gender) flat.genero = data.patientData.gender;
+    // 1. Patient Data — usando parser inteligente
+    if (data.patientData?.name) {
+        const parsed = parsePatientName(data.patientData.name);
+        flat.nombre = parsed.nombre;
+        flat.apellido_paterno = parsed.apellido_paterno;
+        flat.apellido_materno = parsed.apellido_materno;
     }
+    if (data.patientData?.birthDate) flat.fecha_nacimiento = data.patientData.birthDate;
+    if (data.patientData?.age) flat.edad = data.patientData.age;
+    if (data.patientData?.gender) flat.genero = data.patientData.gender;
 
-    // Map helpers
     const getVal = (name: string) => {
         const r = data.results.find(r => r.name?.toUpperCase() === name.toUpperCase());
         return r && r.value != null ? r.value : undefined;
     };
 
-    // 2. Personal/Laboral Fields
+    // 2. Personal/Laboral
     const curp = getVal('CURP'); if (curp) flat.curp = curp;
     const nss = getVal('NSS'); if (nss) flat.nss = nss;
     const rfc = getVal('RFC'); if (rfc) flat.rfc = rfc;
@@ -143,7 +232,6 @@ function adaptStructuredToFlat(data: StructuredMedicalData): DatosExtraidos {
         if (svFr) flat.signos_vitales.frecuencia_respiratoria = svFr;
         if (svTemp) flat.signos_vitales.temperatura = svTemp;
         if (svSpo2) flat.signos_vitales.saturacion_o2 = svSpo2;
-
         if (svTa && typeof svTa === 'string' && svTa.includes('/')) {
             const [sys, dia] = svTa.split('/');
             flat.signos_vitales.presion_sistolica = sys.trim();
@@ -156,17 +244,10 @@ function adaptStructuredToFlat(data: StructuredMedicalData): DatosExtraidos {
     if (audResults.length > 0) {
         flat.audiometria = { oido_derecho: {}, oido_izquierdo: {} };
         audResults.forEach(r => {
-            if (r.name.startsWith('UMBRAL_OD_')) {
-                const freq = r.name.replace('UMBRAL_OD_', '');
-                flat.audiometria.oido_derecho[freq] = r.value;
-            } else if (r.name.startsWith('UMBRAL_OI_')) {
-                const freq = r.name.replace('UMBRAL_OI_', '');
-                flat.audiometria.oido_izquierdo[freq] = r.value;
-            } else if (r.name === 'PTA_OD') {
-                flat.audiometria.pta_derecho = r.value;
-            } else if (r.name === 'PTA_OI') {
-                flat.audiometria.pta_izquierdo = r.value;
-            }
+            if (r.name.startsWith('UMBRAL_OD_')) { flat.audiometria.oido_derecho[r.name.replace('UMBRAL_OD_', '')] = r.value; }
+            else if (r.name.startsWith('UMBRAL_OI_')) { flat.audiometria.oido_izquierdo[r.name.replace('UMBRAL_OI_', '')] = r.value; }
+            else if (r.name === 'PTA_OD') { flat.audiometria.pta_derecho = r.value; }
+            else if (r.name === 'PTA_OI') { flat.audiometria.pta_izquierdo = r.value; }
         });
         if (data.summary) flat.audiometria.diagnostico = data.summary;
     }
@@ -177,7 +258,7 @@ function adaptStructuredToFlat(data: StructuredMedicalData): DatosExtraidos {
         flat.espirometria = {};
         const fvc = getVal('FVC') || getVal('FVC_L'); if (fvc) flat.espirometria.fvc = fvc;
         const fev1 = getVal('FEV1') || getVal('FEV1_L'); if (fev1) flat.espirometria.fev1 = fev1;
-        const fev1_fvc = getVal('FEV1_FVC') || getVal('FEV1_FVC_PORC_PRED'); if (fev1_fvc) flat.espirometria.fev1_fvc = fev1_fvc;
+        const fev1_fvc = getVal('FEV1_FVC'); if (fev1_fvc) flat.espirometria.fev1_fvc = fev1_fvc;
         const patron = getVal('PATRON_ESPIROMETRICO') || data.summary;
         if (patron) flat.espirometria.patron = patron;
         if (data.summary) flat.espirometria.diagnostico = data.summary;
@@ -192,7 +273,6 @@ function adaptStructuredToFlat(data: StructuredMedicalData): DatosExtraidos {
         const glu = getVal('GLUCOSA'); if (glu) flat.laboratorio.glucosa = glu;
         const leu = getVal('LEUCOCITOS'); if (leu) flat.laboratorio.leucocitos = leu;
         const plt = getVal('PLAQUETAS'); if (plt) flat.laboratorio.plaquetas = plt;
-
         flat.laboratorio.otros = {};
         labResults.forEach(r => {
             if (!['HEMOGLOBINA', 'HEMATOCRITO', 'GLUCOSA', 'LEUCOCITOS', 'PLAQUETAS'].includes(r.name)) {
@@ -210,7 +290,7 @@ function adaptStructuredToFlat(data: StructuredMedicalData): DatosExtraidos {
         if (data.summary) flat.radiografia.impresion_diagnostica = data.summary;
     }
 
-    // 8. Clínica - Antecedentes / Exploración
+    // 8. Clínica
     const appat = data.results.filter(r => r.category?.toLowerCase() === 'antecedentes patológicos');
     if (appat.length > 0) {
         flat.antecedentes_personales = appat.map(r => `${r.name}: ${r.value}${r.description ? ` (${r.description})` : ''}`).join('\n');
@@ -220,18 +300,12 @@ function adaptStructuredToFlat(data: StructuredMedicalData): DatosExtraidos {
         flat.antecedentes_familiares = ahf.map(r => `${r.name}: ${r.value}${r.description ? ` (${r.description})` : ''}`).join('\n');
     }
 
-    // Dictamen
     const aptitud = getVal('APTITUD_LABORAL');
     if (aptitud) {
-        if (aptitud.toLowerCase().includes('no apto') || aptitud.toLowerCase().includes('no_apto')) {
-            flat.dictamen_aptitud = 'no_apto';
-        } else if (aptitud.toLowerCase().includes('restricci')) {
-            flat.dictamen_aptitud = 'apto_con_restricciones';
-        } else {
-            flat.dictamen_aptitud = 'apto';
-        }
+        if (aptitud.toLowerCase().includes('no apto') || aptitud.toLowerCase().includes('no_apto')) flat.dictamen_aptitud = 'no_apto';
+        else if (aptitud.toLowerCase().includes('restricci')) flat.dictamen_aptitud = 'apto_con_restricciones';
+        else flat.dictamen_aptitud = 'apto';
     }
 
     return flat;
 }
-
