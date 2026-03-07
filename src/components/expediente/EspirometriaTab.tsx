@@ -370,6 +370,7 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
     const [showPrev, setShowPrev] = useState(false)
 
     const [patientData, setPatientData] = useState<any>(null)
+    const [directSpiroData, setDirectSpiroData] = useState<any>(null) // SpiroClone direct data
 
     useEffect(() => { if (pacienteId) loadData() }, [pacienteId])
 
@@ -391,15 +392,42 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
 
             if (estudios && estudios.length > 0) {
                 for (let idx = 0; idx < estudios.length; idx++) {
+                    const est = estudios[idx]
+
+                    // ══ PRIORIDAD: SpiroClone directo (si existe) ══
+                    if (est.datos_extra?.spiroclone_data) {
+                        if (idx === 0) {
+                            setDirectSpiroData(est.datos_extra.spiroclone_data)
+                            // También setear data para que la UI no muestre "Sin registros"
+                            setData({
+                                id: est.id,
+                                fecha: est.fecha_estudio,
+                                patron: 'normal',
+                                medico: est.datos_extra.spiroclone_data?.doctor?.name || '',
+                                equipo: 'EasyOne Connect',
+                                interpretacion_sistema: est.datos_extra.spiroclone_data?.session?.interpretation || est.interpretacion || '',
+                                fvc: { pred: 0, mejor: 0, pct: 0 },
+                                fev1: { pred: 0, mejor: 0, pct: 0 },
+                                fev1_fvc: { pred: 0, mejor: 0, pct: 0 },
+                                fef: { pred: 0, mejor: 0, pct: 0 },
+                                pef: { pred: 0, mejor: 0, pct: 0 },
+                                calidad: est.datos_extra.spiroclone_data?.session?.quality?.charAt(est.datos_extra.spiroclone_data?.session?.quality?.lastIndexOf(' ') + 1) || 'A',
+                            })
+                        }
+                        continue
+                    }
+
+                    // Fallback: Pipeline genérico (legacy)
                     const { data: res } = await supabase
-                        .from('resultados_estudio').select('*').eq('estudio_id', estudios[idx].id)
+                        .from('resultados_estudio').select('*').eq('estudio_id', est.id)
                     if (res && res.length > 0) {
-                        const built = buildFromResultados(estudios[idx], res)
+                        const built = buildFromResultados(est, res)
                         if (idx === 0) setData(built)
                         else setPrev(built)
                     }
                 }
-                if (data) return
+                setLoading(false)
+                return
             }
 
             // FUENTE 2: tabla legacy espirometrias
@@ -690,7 +718,12 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                 {activeSection === 'scanner' && (
                     <motion.div key="scanner" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-5">
                         <div className="overflow-x-auto bg-slate-50/50 p-2 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
-                            {spiroReportData ? (
+                            {/* PRIORIDAD 1: SpiroClone directo (datos perfectos) */}
+                            {directSpiroData ? (
+                                <div className="min-w-[800px]">
+                                    <SpirometryReport data={directSpiroData} />
+                                </div>
+                            ) : spiroReportData ? (
                                 <div className="min-w-[800px]">
                                     <SpirometryReport data={spiroReportData} />
                                 </div>

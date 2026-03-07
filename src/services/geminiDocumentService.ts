@@ -829,6 +829,161 @@ export async function analyzeDocument(sectionId: string, text: string, imageFile
     return parsed;
 }
 
+// ══════════════════════════════════════════════════════════════════
+// SpiroClone — Motor de extracción directo para Espirometría
+// Usa el schema propio de SpiroClone que ya funciona perfectamente.
+// SIN pasar por el pipeline genérico de labResultsSchema.
+// ══════════════════════════════════════════════════════════════════
+
+const spirocloneSchema = {
+    type: Type.OBJECT,
+    properties: {
+        patient: {
+            type: Type.OBJECT,
+            properties: {
+                name: { type: Type.STRING, description: "Nombre completo del paciente" },
+                id: { type: Type.STRING, description: "ID del paciente (ej. #0571)" },
+                age: { type: Type.STRING, description: "Edad del paciente" },
+                dob: { type: Type.STRING, description: "Fecha de nacimiento (ej. 23/07/1986)" },
+                sex: { type: Type.STRING, description: "Sexo (ej. Masculino)" },
+                height: { type: Type.STRING, description: "Altura (ej. 172 cm)" },
+                weight: { type: Type.STRING, description: "Peso (ej. 82 kg)" },
+                origin: { type: Type.STRING, description: "Origen étnico (ej. Hispano)" },
+                smoker: { type: Type.STRING, description: "Fumador (ej. No)" },
+                asthma: { type: Type.STRING, description: "Asma (ej. No)" },
+                copd: { type: Type.STRING, description: "EPOC (ej. No)" },
+                bmi: { type: Type.STRING, description: "IMC (ej. 27.7)" },
+            }
+        },
+        testDetails: {
+            type: Type.OBJECT,
+            properties: {
+                date: { type: Type.STRING, description: "Fecha del test (ej. 28/11/2025 10:06:55 a. m.)" },
+                interpretation: { type: Type.STRING, description: "Interpretación (ej. GOLD(2008)/Hardie)" },
+                predicted: { type: Type.STRING, description: "Predicho (ej. Hankinson (NHANES III), 1999 * 1.00)" },
+                selection: { type: Type.STRING, description: "Selección del valor (ej. BTPS (INSP/ESP))" },
+                bestValue: { type: Type.STRING, description: "Mejor valor (ej. 1.12/1.02)" },
+                fev1PredPercent: { type: Type.STRING, description: "Su FEV1 / Predicho (ej. 83 %)" },
+            }
+        },
+        results: {
+            type: Type.ARRAY,
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    parameter: { type: Type.STRING, description: "Parámetro (ej. FVC [L])" },
+                    pred: { type: Type.STRING, description: "Valor Pred" },
+                    lln: { type: Type.STRING, description: "Valor LLN" },
+                    mejor: { type: Type.STRING, description: "Valor Mejor (puede tener asterisco)" },
+                    prueba2: { type: Type.STRING, description: "Valor Prueba 2" },
+                    prueba6: { type: Type.STRING, description: "Valor Prueba 6" },
+                    prueba5: { type: Type.STRING, description: "Valor Prueba 5" },
+                    percentPred: { type: Type.STRING, description: "Valor %Pred" },
+                    zScore: { type: Type.STRING, description: "Puntuación Z" },
+                }
+            }
+        },
+        session: {
+            type: Type.OBJECT,
+            properties: {
+                quality: { type: Type.STRING, description: "Calidad de la sesión (ej. Previo C (FEV1 Var=...))" },
+                interpretation: { type: Type.STRING, description: "Interpretación del sistema (ej. Previo Espirometría Normal)" },
+            }
+        },
+        doctor: {
+            type: Type.OBJECT,
+            properties: {
+                name: { type: Type.STRING, description: "Nombre del doctor (ej. DR. JOSE CARLOS GUIDO PANCARDO)" },
+                date: { type: Type.STRING, description: "Fecha junto al nombre del doctor (ej. 30/11/2025)" },
+                notes: { type: Type.STRING, description: "Notas o diagnóstico (ej. PATRON RESPIRATORIO NORMAL.)" },
+            }
+        },
+        graphs: {
+            type: Type.OBJECT,
+            description: "ES OBLIGATORIO extraer los puntos de datos de las dos gráficas. Extrae unos 20-25 puntos precisos por gráfica leyendo los ejes X e Y cuidadosamente para recrear la forma exacta de las curvas.",
+            properties: {
+                flowVolume: {
+                    type: Type.ARRAY,
+                    description: "Puntos para Flujo-Volumen (X: Volumen 0 a 8, Y: Flujo 0 a 14). Extrae puntos a lo largo de las curvas. Usa null si una curva no tiene valor en ese X.",
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            volume: { type: Type.NUMBER, description: "Volumen en el eje X (L)" },
+                            flowPred: { type: Type.NUMBER, description: "Flujo Predicho (línea punteada con rombos)" },
+                            flowMejor: { type: Type.NUMBER, description: "Flujo Mejor Prueba (línea sólida azul)" },
+                            flowPrueba2: { type: Type.NUMBER, description: "Flujo Prueba 2 (línea sólida gris)" },
+                            flowPrueba5: { type: Type.NUMBER, description: "Flujo Prueba 5 (línea punteada gris)" },
+                            flowPrueba6: { type: Type.NUMBER, description: "Flujo Prueba 6 (línea discontinua gris)" },
+                        }
+                    }
+                },
+                volumeTime: {
+                    type: Type.ARRAY,
+                    description: "Puntos para Volumen-Tiempo (X: Tiempo -1 a 8, Y: Volumen 0 a 8). Extrae puntos a lo largo de las curvas. Usa null si una curva no tiene valor en ese X.",
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            time: { type: Type.NUMBER, description: "Tiempo en el eje X (s)" },
+                            volumePred: { type: Type.NUMBER, description: "Volumen Predicho (línea punteada con rombos)" },
+                            volumeMejor: { type: Type.NUMBER, description: "Volumen Mejor Prueba (línea sólida azul)" },
+                            volumePrueba2: { type: Type.NUMBER, description: "Volumen Prueba 2 (línea sólida gris)" },
+                            volumePrueba5: { type: Type.NUMBER, description: "Volumen Prueba 5 (línea punteada gris)" },
+                            volumePrueba6: { type: Type.NUMBER, description: "Volumen Prueba 6 (línea discontinua gris)" },
+                        }
+                    }
+                }
+            }
+        }
+    }
+};
+
+const SPIROCLONE_PROMPT = `ERES UN EXPERTO EN EXTRACCIÓN DE DATOS MÉDICOS. Extrae todos los datos de este reporte de espirometría. Asegúrate de capturar los datos del paciente, los detalles de la prueba, la tabla de resultados completa (incluyendo asteriscos), la información de la sesión y los datos del doctor. Además, ES CRÍTICO Y OBLIGATORIO que extraigas los puntos (x,y) de las gráficas Flujo-Volumen y Volumen-Tiempo leyendo los ejes visualmente. Extrae unos 20-25 puntos representativos por gráfica que sigan fielmente las curvas (inicio, pico máximo, descenso, fin). Si una línea no existe en un punto, omite ese valor. Devuelve la información estructurada en formato JSON.`;
+
+export async function analyzeSpirometryDirect(text: string, imageFiles: File[] = []): Promise<any> {
+    const fileToPart = async (file: File): Promise<Part> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result as string;
+                const base64 = dataUrl.split(',')[1];
+                resolve({
+                    inlineData: {
+                        data: base64,
+                        mimeType: file.type || 'image/jpeg'
+                    }
+                });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const imageParts = await Promise.all(imageFiles.map(fileToPart));
+
+    const textSection = text
+        ? `TEXTO EXTRAÍDO DEL DOCUMENTO:\n${text}\n\n`
+        : `(El documento es una imagen — analiza visualmente con máximo detalle)\n\n`;
+
+    const fullPrompt = `${SPIROCLONE_PROMPT}\n\n${textSection}`;
+
+    const response = await generateContentWithRetry({
+        model: MODEL_NAME,
+        contents: [{ role: "user", parts: [{ text: fullPrompt }, ...imageParts] }],
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: spirocloneSchema,
+            temperature: 0.1,
+            maxOutputTokens: 65536,
+        }
+    });
+
+    const jsonStr = response.text?.trim();
+    trackUsage(MODEL_NAME, jsonStr.length / 4, jsonStr.length / 4);
+
+    const data = JSON.parse(jsonStr);
+    return data;
+}
+
 export function isGeminiConfigured(): boolean {
     return !!API_KEY;
 }

@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import {
-    analyzeDocument, type StructuredMedicalData, type LabResult
+    analyzeDocument, analyzeSpirometryDirect, type StructuredMedicalData, type LabResult
 } from '@/services/geminiDocumentService'
 import { crearEstudioConResultados, type TipoEstudio } from '@/services/estudiosService'
 
@@ -43,6 +43,7 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
     const [progress, setProgress] = useState(0)
     const [isDragging, setIsDragging] = useState(false)
     const [extractedData, setExtractedData] = useState<StructuredMedicalData | null>(null)
+    const [spirocloneData, setSpirocloneData] = useState<any>(null) // SpiroClone direct data
     const [editingIdx, setEditingIdx] = useState<number | null>(null)
     const [errorMsg, setErrorMsg] = useState('')
     const [fileUrl, setFileUrl] = useState('')
@@ -93,6 +94,27 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
             const { rawText, images } = await prepareFilesForAnalysis(file)
             setProgress(50)
 
+            // ── ESPIROMETRÍA: usar motor SpiroClone directo ──
+            if (tipoEstudio === 'espirometria') {
+                const spiroData = await analyzeSpirometryDirect(rawText, images)
+                setSpirocloneData(spiroData)
+                // Crear un extractedData mínimo para la UI de review
+                setExtractedData({
+                    patientData: { name: spiroData.patient?.name || 'Paciente' },
+                    results: (spiroData.results || []).map((r: any) => ({
+                        name: r.parameter, value: r.mejor || '', unit: '', range: '',
+                        description: `Pred: ${r.pred} | LLN: ${r.lln} | %Pred: ${r.percentPred} | Z: ${r.zScore}`,
+                        visualizationType: 'simple' as any, category: 'Parámetros Espirométricos',
+                        parametro: r.parameter, resultado: r.mejor || '', unidad: '', rango: '',
+                        observacion: '', categoria: 'Parámetros Espirométricos'
+                    })),
+                    summary: spiroData.session?.interpretation || spiroData.doctor?.notes || 'Espirometría procesada'
+                })
+                setProgress(100); setPhase('review')
+                toast.success('SpiroClone: Extracción completa con gráficas')
+                return
+            }
+
             const analysis = await analyzeDocument(config.sectionId, rawText, images)
             setExtractedData(analysis); setProgress(100); setPhase('review')
             toast.success('Extracción de alta precisión completada')
@@ -107,6 +129,45 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
         setPhase('saving')
 
         try {
+            // ═══════════════════════════════════════════════
+            // ESPIROMETRÍA: Guardar datos de SpiroClone directo
+            // ═══════════════════════════════════════════════
+            if (tipoEstudio === 'espirometria' && spirocloneData) {
+                const minimalResults = (spirocloneData.results || []).map((r: any) => ({
+                    parametro_nombre: r.parameter || '',
+                    categoria: 'Parámetros Espirométricos',
+                    resultado: r.mejor || '',
+                    resultado_numerico: parseFloat(String(r.mejor).replace('*', '')) || null,
+                    unidad: r.parameter?.match(/\[(.+?)\]/)?.[1] || '',
+                    observacion: `Pred:${r.pred} LLN:${r.lln} %Pred:${r.percentPred} Z:${r.zScore}`
+                }))
+
+                const estudio = await crearEstudioConResultados(
+                    pacienteId,
+                    tipoEstudio,
+                    {
+                        fecha_estudio: spirocloneData.testDetails?.date?.slice(0, 10) || new Date().toISOString().split('T')[0],
+                        archivo_origen: fileUrl,
+                        institucion: 'GP Medical Health - SpiroClone Pro',
+                        interpretacion: spirocloneData.session?.interpretation || spirocloneData.doctor?.notes || '',
+                        medico_responsable: spirocloneData.doctor?.name || 'Motor SpiroClone IA',
+                        datos_extra: {
+                            spiroclone_data: spirocloneData,
+                            _ai_config: 'SpiroClone Direct Pipeline'
+                        }
+                    },
+                    minimalResults
+                )
+                if (!estudio) throw new Error('No se pudo crear el registro del estudio')
+                setPhase('done')
+                toast.success('Espirometría integrada con SpiroClone')
+                if (onSaved) onSaved()
+                return
+            }
+
+            // ═══════════════════════════════════════════════
+            // OTROS ESTUDIOS: Pipeline genérico normal
+            // ═══════════════════════════════════════════════
             // 1. Preparar resultados estándar (strings, números, o JSON serializado)
             // Los registros con visualizationType 'line_chart' se guardarán en la tabla de gráficas por separado
             const resultsToSave = extractedData.results
