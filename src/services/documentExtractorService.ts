@@ -95,6 +95,17 @@ export const documentExtractorService = {
 // ADAPTER: SpiroClone Data -> Legacy Flat Data
 // ════════════════════════════════════════════════
 function adaptSpiroCloneToFlat(spiro: any): DatosExtraidos {
+    // ══ DEBUG: Ver EXACTAMENTE qué devuelve SpiroClone ══
+    console.log('═══ [SpiroClone → Flat] DEBUG COMPLETO ═══');
+    console.log('[SpiroClone] patient:', JSON.stringify(spiro.patient, null, 2));
+    console.log('[SpiroClone] testDetails:', JSON.stringify(spiro.testDetails, null, 2));
+    console.log('[SpiroClone] results:', JSON.stringify(spiro.results, null, 2));
+    console.log('[SpiroClone] results count:', spiro.results?.length || 0);
+    console.log('[SpiroClone] session:', JSON.stringify(spiro.session, null, 2));
+    console.log('[SpiroClone] doctor:', JSON.stringify(spiro.doctor, null, 2));
+    console.log('[SpiroClone] graphs keys:', spiro.graphs ? Object.keys(spiro.graphs) : 'NO GRAPHS');
+    console.log('═══════════════════════════════════════════');
+
     const flat: Record<string, any> = {
         _confianza: 95,
         _campos_encontrados: [],
@@ -107,6 +118,7 @@ function adaptSpiroCloneToFlat(spiro: any): DatosExtraidos {
         flat.nombre = parsed.nombre;
         flat.apellido_paterno = parsed.apellido_paterno;
         flat.apellido_materno = parsed.apellido_materno;
+        console.log('[Flat] Nombre parseado:', parsed);
     }
 
     // Datos demográficos
@@ -114,27 +126,46 @@ function adaptSpiroCloneToFlat(spiro: any): DatosExtraidos {
     if (spiro.patient?.age) flat.edad = spiro.patient.age;
     if (spiro.patient?.sex) flat.genero = spiro.patient.sex.toLowerCase() === 'masculino' ? 'masculino' : 'femenino';
     if (spiro.patient?.id) flat.numero_empleado = spiro.patient.id.replace('#', '');
+    console.log('[Flat] Demográficos:', { dob: flat.fecha_nacimiento, edad: flat.edad, genero: flat.genero, empleado: flat.numero_empleado });
 
     // Espirometría completa
     flat.espirometria = {};
-    if (spiro.results?.length > 0) {
-        const getParam = (name: string) => spiro.results.find((r: any) =>
-            r.parameter?.toUpperCase().startsWith(name.toUpperCase())
-        );
+    if (spiro.results && Array.isArray(spiro.results) && spiro.results.length > 0) {
+        console.log('[Flat] Procesando', spiro.results.length, 'resultados de espirometría');
+        spiro.results.forEach((r: any, i: number) => {
+            console.log(`[Flat] Result[${i}]:`, r.parameter, '→ mejor:', r.mejor, '| pred:', r.pred, '| %pred:', r.percentPred);
+        });
+
+        const getParam = (name: string) => {
+            const found = spiro.results.find((r: any) =>
+                r.parameter?.toUpperCase().includes(name.toUpperCase())
+            );
+            console.log(`[Flat] getParam('${name}'):`, found ? `FOUND → mejor=${found.mejor}` : 'NOT FOUND');
+            return found;
+        };
+
         const fvc = getParam('FVC');
-        const fev1 = getParam('FEV1 ');
+        const fev1Result = spiro.results.find((r: any) => {
+            const p = r.parameter?.toUpperCase() || '';
+            return p.startsWith('FEV1') && !p.includes('FVC');
+        });
+        console.log('[Flat] FEV1 direct search:', fev1Result ? `FOUND → mejor=${fev1Result.mejor}` : 'NOT FOUND');
         const ratio = getParam('FEV1/FVC');
 
-        if (fvc?.mejor) flat.espirometria.fvc = parseFloat(String(fvc.mejor).replace('*', '')) || fvc.mejor;
-        if (fev1?.mejor) flat.espirometria.fev1 = parseFloat(String(fev1.mejor).replace('*', '')) || fev1.mejor;
-        if (ratio?.mejor) flat.espirometria.fev1_fvc = parseFloat(String(ratio.mejor).replace('*', '')) || ratio.mejor;
+        if (fvc?.mejor) flat.espirometria.fvc = parseFloat(String(fvc.mejor).replace(/\*/g, '')) || fvc.mejor;
+        if (fev1Result?.mejor) flat.espirometria.fev1 = parseFloat(String(fev1Result.mejor).replace(/\*/g, '')) || fev1Result.mejor;
+        if (ratio?.mejor) flat.espirometria.fev1_fvc = parseFloat(String(ratio.mejor).replace(/\*/g, '')) || ratio.mejor;
         if (fvc?.percentPred) flat.espirometria.fvc_porcentaje = fvc.percentPred;
-        if (fev1?.percentPred) flat.espirometria.fev1_porcentaje = fev1.percentPred;
+        if (fev1Result?.percentPred) flat.espirometria.fev1_porcentaje = fev1Result.percentPred;
+    } else {
+        console.warn('[Flat] ⚠️ spiro.results VACÍO o NO es array:', typeof spiro.results, spiro.results);
     }
 
     if (spiro.session?.interpretation) flat.espirometria.patron = spiro.session.interpretation;
     if (spiro.doctor?.notes) flat.espirometria.diagnostico = spiro.doctor.notes;
     if (spiro.doctor?.name) flat.espirometria.medico = spiro.doctor.name;
+
+    console.log('[Flat] Espirometría final:', JSON.stringify(flat.espirometria));
 
     // Signos vitales
     if (spiro.patient?.height || spiro.patient?.weight) {
@@ -142,8 +173,10 @@ function adaptSpiroCloneToFlat(spiro: any): DatosExtraidos {
         if (spiro.patient.height) flat.signos_vitales.talla_cm = spiro.patient.height.replace(/[^\d.]/g, '');
         if (spiro.patient.weight) flat.signos_vitales.peso_kg = spiro.patient.weight.replace(/[^\d.]/g, '');
         if (spiro.patient.bmi) flat.signos_vitales.imc = spiro.patient.bmi;
+        console.log('[Flat] Signos vitales:', flat.signos_vitales);
     }
 
+    console.log('[Flat] ══ RESULTADO FINAL ══', JSON.stringify(flat, null, 2));
     return flat;
 }
 
