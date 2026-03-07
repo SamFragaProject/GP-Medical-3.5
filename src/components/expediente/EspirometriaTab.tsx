@@ -446,21 +446,37 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                     // ══ PRIORIDAD: SpiroClone directo (si existe) ══
                     if (est.datos_extra?.spiroclone_data) {
                         if (idx === 0) {
-                            setDirectSpiroData(est.datos_extra.spiroclone_data)
-                            // También setear data para que la UI no muestre "Sin registros"
+                            const sc = est.datos_extra.spiroclone_data
+                            setDirectSpiroData(sc)
+
+                            // Extraer valores reales de results[]
+                            const getParam = (keyword: string) => {
+                                const r = sc.results?.find((r: any) => r.parameter?.toLowerCase().includes(keyword))
+                                if (!r) return { pred: 0, mejor: 0, pct: 0 }
+                                return {
+                                    pred: parseFloat(r.pred) || 0,
+                                    mejor: parseFloat(String(r.mejor).replace('*', '')) || 0,
+                                    pct: parseFloat(r.percentPred) || 0,
+                                }
+                            }
+
+                            const patron = sc.session?.interpretation?.toLowerCase().includes('normal') ? 'normal'
+                                : sc.session?.interpretation?.toLowerCase().includes('obstructi') ? 'obstructivo'
+                                    : sc.session?.interpretation?.toLowerCase().includes('restricti') ? 'restrictivo' : 'normal'
+
                             setData({
                                 id: est.id,
                                 fecha: est.fecha_estudio,
-                                patron: 'normal',
-                                medico: est.datos_extra.spiroclone_data?.doctor?.name || '',
+                                patron,
+                                medico: sc.doctor?.name || '',
                                 equipo: 'EasyOne Connect',
-                                interpretacion_sistema: est.datos_extra.spiroclone_data?.session?.interpretation || est.interpretacion || '',
-                                fvc: { pred: 0, mejor: 0, pct: 0 },
-                                fev1: { pred: 0, mejor: 0, pct: 0 },
-                                fev1_fvc: { pred: 0, mejor: 0, pct: 0 },
-                                fef: { pred: 0, mejor: 0, pct: 0 },
-                                pef: { pred: 0, mejor: 0, pct: 0 },
-                                calidad: est.datos_extra.spiroclone_data?.session?.quality?.charAt(est.datos_extra.spiroclone_data?.session?.quality?.lastIndexOf(' ') + 1) || 'A',
+                                interpretacion_sistema: sc.session?.interpretation || sc.doctor?.notes || est.interpretacion || '',
+                                fvc: getParam('fvc'),
+                                fev1: getParam('fev1'),
+                                fev1_fvc: getParam('fev1/fvc'),
+                                fef: getParam('fef'),
+                                pef: getParam('pef'),
+                                calidad: sc.session?.quality?.match(/[A-F]/)?.[0] || 'A',
                             })
                         }
                         continue
