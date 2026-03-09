@@ -175,6 +175,7 @@ export default function PerfilPaciente() {
     )
     const [loading, setLoading] = useState(!paciente)
     const [activeTab, setActiveTab] = useState('dashboard')
+    const [activeCategory, setActiveCategory] = useState<'info' | 'clinico' | 'diagnostico' | null>(null)
     const [editing, setEditing] = useState(false)
     const [saving, setSaving] = useState(false)
     const [editData, setEditData] = useState<Partial<Paciente>>({})
@@ -570,100 +571,121 @@ export default function PerfilPaciente() {
             </div>
 
             {/* ── UNIFIED TABS ── */}
+            {/* ── UNIFIED TABS ── */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                 {/* ═══ CARD GRID NAVIGATION ═══ */}
-                <div className="bg-white shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-100 p-4">
-                    {/* Group: Información */}
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 px-1">📋 Información del Paciente</p>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-2 mb-3">
-                        {TABS.filter(t => t.group === 'info').map(tab => {
-                            const isActive = activeTab === tab.value
-                            const c = TAB_COLORS[tab.value]
-                            return (
-                                <button key={tab.value} onClick={() => setActiveTab(tab.value)}
-                                    className={`relative group flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer
-                                        ${isActive ? `${c.bg} border-transparent ring-2 ${c.ring} shadow-lg scale-[1.03]` : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:scale-[1.02]'}`}
+                <div className="bg-white shadow-xl shadow-slate-200/50 rounded-3xl border border-slate-100 p-4 sm:p-6 mb-6">
+                    {!activeCategory ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <button
+                                onClick={() => { setActiveCategory('info'); setActiveTab('general'); }}
+                                className="group flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-slate-100 hover:border-blue-400 hover:shadow-lg transition-all bg-gradient-to-b from-white to-slate-50/50 text-left sm:text-center"
+                            >
+                                <div className="w-16 h-16 rounded-2xl bg-blue-50 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
+                                    <User className="w-8 h-8 text-blue-600" />
+                                </div>
+                                <div>
+                                    <p className="font-black text-slate-800 text-lg mb-1">Información del Paciente</p>
+                                    <p className="text-xs text-slate-500 font-medium">Datos personales, laborales y de contacto</p>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => { setActiveCategory('clinico'); setActiveTab('dashboard'); }}
+                                className="group flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-emerald-100 hover:border-emerald-400 hover:shadow-lg transition-all bg-gradient-to-b from-white to-emerald-50/30 text-left sm:text-center"
+                            >
+                                <div className="w-16 h-16 rounded-2xl bg-emerald-50 group-hover:bg-emerald-100 flex items-center justify-center transition-colors">
+                                    <Stethoscope className="w-8 h-8 text-emerald-600" />
+                                </div>
+                                <div>
+                                    <p className="font-black text-emerald-800 text-lg mb-1">Expediente Clínico</p>
+                                    <p className="text-xs text-emerald-600/70 font-medium">Dashboard, historia inteligente, documentos</p>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => { setActiveCategory('diagnostico'); setActiveTab('recetas'); }}
+                                className="group flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-violet-100 hover:border-violet-400 hover:shadow-lg transition-all bg-gradient-to-b from-white to-violet-50/30 text-left sm:text-center"
+                            >
+                                <div className="w-16 h-16 rounded-2xl bg-violet-50 group-hover:bg-violet-100 flex items-center justify-center transition-colors">
+                                    <FileText className="w-8 h-8 text-violet-600" />
+                                </div>
+                                <div>
+                                    <p className="font-black text-violet-800 text-lg mb-1">Tratamiento y Documentos</p>
+                                    <p className="text-xs text-violet-600/70 font-medium">Recetas, dictámenes e incapacidades</p>
+                                </div>
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            {/* Navigation Header */}
+                            <div className="flex items-center gap-4 mb-6 border-b border-slate-100 pb-4">
+                                <button
+                                    onClick={() => setActiveCategory(null)}
+                                    className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
                                 >
-                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm
-                                        ${isActive ? `bg-gradient-to-br ${c.gradient} shadow-md` : 'bg-slate-100 group-hover:bg-slate-200'}`}>
-                                        <tab.icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                                    </div>
-                                    <span className={`text-[10px] font-bold leading-tight text-center ${isActive ? c.text : 'text-slate-500'}`}>{tab.label}</span>
-                                    {isActive && <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-1 rounded-full bg-gradient-to-r ${c.gradient}`} />}
+                                    <ArrowLeft className="w-5 h-5" />
                                 </button>
-                            )
-                        })}
-                    </div>
-                    {/* Group: Clínico */}
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500 mb-2 px-1">🩺 Expediente Clínico</p>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-2 mb-3">
-                        {TABS.filter(t => t.group === 'clinico').map(tab => {
-                            const isActive = activeTab === tab.value
-                            const c = TAB_COLORS[tab.value]
-                            return (
-                                <button key={tab.value} onClick={() => setActiveTab(tab.value)}
-                                    className={`relative group flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer
-                                        ${isActive ? `${c.bg} border-transparent ring-2 ${c.ring} shadow-lg scale-[1.03]` : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:scale-[1.02]'}`}
-                                >
-                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm
-                                        ${isActive ? `bg-gradient-to-br ${c.gradient} shadow-md` : 'bg-slate-100 group-hover:bg-slate-200'}`}>
-                                        <tab.icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                                    </div>
-                                    <span className={`text-[10px] font-bold leading-tight text-center ${isActive ? c.text : 'text-slate-500'}`}>{tab.label}</span>
-                                    {isActive && <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-1 rounded-full bg-gradient-to-r ${c.gradient}`} />}
-                                </button>
-                            )
-                        })}
-                    </div>
-                    {/* Group: Tratamiento */}
-                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-500 mb-2 px-1">💊 Tratamiento y Documentos</p>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-2">
-                        {TABS.filter(t => t.group === 'diagnostico').map(tab => {
-                            const isActive = activeTab === tab.value
-                            const c = TAB_COLORS[tab.value]
-                            return (
-                                <button key={tab.value} onClick={() => setActiveTab(tab.value)}
-                                    className={`relative group flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer
-                                        ${isActive ? `${c.bg} border-transparent ring-2 ${c.ring} shadow-lg scale-[1.03]` : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:scale-[1.02]'}`}
-                                >
-                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm
-                                        ${isActive ? `bg-gradient-to-br ${c.gradient} shadow-md` : 'bg-slate-100 group-hover:bg-slate-200'}`}>
-                                        <tab.icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                                    </div>
-                                    <span className={`text-[10px] font-bold leading-tight text-center ${isActive ? c.text : 'text-slate-500'}`}>{tab.label}</span>
-                                    {isActive && <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-1 rounded-full bg-gradient-to-r ${c.gradient}`} />}
-                                </button>
-                            )
-                        })}
-                    </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5">Volver a Categorías</p>
+                                    <p className={`text-lg font-black ${activeCategory === 'info' ? 'text-slate-700' : activeCategory === 'clinico' ? 'text-emerald-700' : 'text-violet-700'}`}>
+                                        {activeCategory === 'info' ? 'Información del Paciente' : activeCategory === 'clinico' ? 'Expediente Clínico' : 'Tratamiento y Documentos'}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            {/* Sub-tabs Grid */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+                                {TABS.filter(t => t.group === activeCategory).map(tab => {
+                                    const isActive = activeTab === tab.value
+                                    const c = TAB_COLORS[tab.value]
+                                    return (
+                                        <button key={tab.value} onClick={() => setActiveTab(tab.value)}
+                                            className={`relative group flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer
+                                                ${isActive ? `${c.bg} border-transparent ring-2 ${c.ring} shadow-lg scale-[1.03]` : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:scale-[1.02]'}`}
+                                        >
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-sm
+                                                ${isActive ? `bg-gradient-to-br ${c.gradient} shadow-md` : 'bg-slate-100 group-hover:bg-slate-200'}`}>
+                                                <tab.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                                            </div>
+                                            <span className={`text-xs font-bold leading-tight text-center ${isActive ? c.text : 'text-slate-500'}`}>{tab.label}</span>
+                                            {isActive && <div className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-6 h-1.5 rounded-full bg-gradient-to-r ${c.gradient}`} />}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>
+                
                 <TabsList className="hidden">
                     {TABS.map(tab => (
                         <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
                     ))}
                 </TabsList>
 
-                {activeTabConfig?.description && (
+                {activeCategory && activeTabConfig?.description && (
                     <motion.div
                         key={activeTab}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100"
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 mb-6"
                     >
                         <activeTabConfig.icon className="w-4 h-4 text-slate-400" />
                         <span className="text-xs font-semibold text-slate-500">{activeTabConfig.description}</span>
                     </motion.div>
                 )}
 
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={activeTab}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                        className="min-h-[500px]"
-                    >
+                {activeCategory && (
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeTab}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            className="min-h-[500px]"
+                        >
                         {/* ═══ GENERAL TAB ═══ */}
                         <TabsContent value="general" className="space-y-6 mt-0">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -902,6 +924,7 @@ export default function PerfilPaciente() {
                         </TabsContent>
                     </motion.div>
                 </AnimatePresence>
+                )}
             </Tabs>
         </div>
     )

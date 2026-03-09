@@ -636,6 +636,7 @@ function SpirometryAnalytics({ data }: { data: any }) {
 export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) {
     const { user } = useAuth()
     const { data, loading, reload } = useSpirometry(pacienteId)
+    const [activeView, setActiveView] = useState<'espirografia' | 'analisis'>('espirografia')
     const upload = useSpirometryUpload(
         pacienteId,
         user?.empresa_id || '',
@@ -833,29 +834,50 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
             </div>
 
             {/* ═══════════════════════════════════════════════════════════ */}
-            {/* SECCIÓN 1: ESPIROGRAFÍA EXTRAÍDA                           */}
+            {/* SELECTION TABS                                            */}
             {/* ═══════════════════════════════════════════════════════════ */}
-            <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-200/40">
-                        <Wind className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-black text-slate-800">Espirografía Extraída</h3>
-                        <p className="text-xs text-slate-400 font-medium">Réplica digital completa del reporte original</p>
-                    </div>
-                </div>
-                <div className="overflow-x-auto bg-gradient-to-br from-slate-50 to-slate-100/50 p-3 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
-                    <div className="min-w-[800px]">
-                        <SpirometryReport data={data} />
-                    </div>
-                </div>
+            <div className="flex bg-slate-100 p-1.5 rounded-xl w-fit">
+                <button
+                    onClick={() => setActiveView('espirografia')}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${
+                        activeView === 'espirografia' 
+                        ? 'bg-white text-blue-700 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                    }`}
+                >
+                    <Wind className="w-4 h-4" />
+                    Espirografía Extraída
+                </button>
+                <button
+                    onClick={() => setActiveView('analisis')}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${
+                        activeView === 'analisis' 
+                        ? 'bg-white text-emerald-700 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                    }`}
+                >
+                    <Activity className="w-4 h-4" />
+                    Análisis Clínico
+                </button>
             </div>
 
-            {/* ═══════════════════════════════════════════════════════════ */}
-            {/* SECCIÓN 2: ANÁLISIS CLÍNICO                                */}
-            {/* ═══════════════════════════════════════════════════════════ */}
-            <SpirometryAnalytics data={data} />
+            {/* SECTIONS */}
+            {activeView === 'espirografia' && (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <p className="text-xs text-slate-400 font-medium mb-3 ml-1">Réplica digital completa del reporte original de espirometría</p>
+                    <div className="overflow-x-auto bg-gradient-to-br from-slate-50 to-slate-100/50 p-2 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
+                        <div className="w-full min-w-[800px]">
+                            <SpirometryReport data={data} />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {activeView === 'analisis' && (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <SpirometryAnalytics data={data} />
+                </div>
+            )}
 
             {/* Documentos adjuntos */}
             <DocumentosAdjuntos
