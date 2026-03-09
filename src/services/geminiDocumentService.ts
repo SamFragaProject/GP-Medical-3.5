@@ -1057,6 +1057,121 @@ INSTRUCCIONES CRÍTICAS:
     throw new Error(`SpiroClone: Ningún modelo pudo extraer la espirometría. Último error: ${lastError?.message || 'desconocido'}`);
 }
 
+// ══════════════════════════════════════════════════════════════════
+// LabClone — Motor de extracción directa para Laboratorios
+// Replica la lógica de lab-extract-pro (standalone Vite app)
+// ══════════════════════════════════════════════════════════════════
+
+const LAB_PROMPT = `Eres un sistema de extracción de datos médicos de alta precisión.
+Tu objetivo es leer el PDF adjunto (que contiene resultados de laboratorio de múltiples páginas) y extraer ABSOLUTAMENTE TODOS los datos en formato JSON.
+
+INSTRUCCIONES CRÍTICAS:
+1. EXTRAE TODAS LAS PÁGINAS: El documento tiene varias páginas (ej. Biometría, Química, Orina, Antidoping). Debes procesar y extraer los exámenes de TODAS las páginas. No te detengas en la primera.
+2. DATOS DEL PACIENTE: Extrae Nombre, Edad, Fecha de Nacimiento, Sexo, Médico, Fecha de registro y Folio. No dejes ninguno vacío si está en el documento.
+3. EXÁMENES Y RESULTADOS: Para cada examen, extrae TODAS las filas de resultados. No omitas ningún parámetro, valor, unidad ni valor de referencia.
+4. SECCIONES (groupName): Si un examen tiene subtítulos (ej. "Fórmula Roja", "Examen Macroscópico"), pon ese subtítulo en el campo 'groupName' de los resultados que le pertenecen.
+5. FIRMAS: Extrae el nombre y cédula/título de la persona que firma al final.
+6. VALORES ANORMALES: Marca isAbnormal como true si el valor está fuera de los rangos de referencia.
+
+Devuelve ÚNICAMENTE un JSON válido con esta estructura (sin markdown, sin texto adicional):
+{
+  "patientInfo": {
+    "laboratoryName": "", "name": "", "age": "", "dob": "", "gender": "",
+    "doctor": "", "registrationDate": "", "folio": "", "printDate": ""
+  },
+  "exams": [
+    {
+      "examName": "", "method": "", "sampleType": "",
+      "results": [
+        { "groupName": "", "parameter": "", "value": "", "unit": "", "referenceValue": "", "absolutes": "", "isAbnormal": false }
+      ]
+    }
+  ],
+  "signatures": [
+    { "name": "", "title": "", "id": "" }
+  ]
+}`;
+
+export async function analyzeLabDirect(_text: string, imageFiles: File[] = []): Promise<any> {
+    const MODELS_TO_TRY = [
+        'gemini-3.1-pro-preview',
+        'gemini-2.5-pro',
+        'gemini-2.0-pro',
+        'gemini-2.0-flash',
+    ];
+
+    const toBase64 = (file: File): Promise<{ data: string; mimeType: string }> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result as string;
+                resolve({
+                    data: dataUrl.split(',')[1],
+                    mimeType: file.type || 'application/pdf'
+                });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const imageData = await Promise.all(imageFiles.map(toBase64));
+
+    let lastError: any = null;
+
+    for (const model of MODELS_TO_TRY) {
+        try {
+            console.log(`[LabClone] Probando modelo: ${model}...`);
+
+            const contents: any[] = [
+                ...imageData.map(img => ({ inlineData: img })),
+                LAB_PROMPT
+            ];
+
+            const response = await ai.models.generateContent({
+                model,
+                contents,
+                config: {
+                    responseMimeType: "application/json",
+                    temperature: 0,
+                }
+            });
+
+            const jsonStr = response.text?.trim();
+            if (!jsonStr) {
+                console.warn(`[LabClone] ${model}: respuesta vacía, intentando siguiente...`);
+                continue;
+            }
+
+            const cleaned = jsonStr.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+            const data = JSON.parse(cleaned);
+
+            if (!data.exams || !Array.isArray(data.exams) || data.exams.length === 0) {
+                console.warn(`[LabClone] ${model}: exams vacío, intentando siguiente...`);
+                continue;
+            }
+
+            trackUsage(model, jsonStr.length / 4, jsonStr.length / 4);
+            const totalParams = data.exams.reduce((acc: number, e: any) => acc + (e.results?.length || 0), 0);
+            console.log('[LabClone] ✅ Extracción exitosa:', {
+                model,
+                patient: data.patientInfo?.name,
+                examsCount: data.exams?.length,
+                totalParams,
+            });
+
+            return data;
+
+        } catch (err: any) {
+            console.warn(`[LabClone] ${model} falló:`, err.message || err);
+            lastError = err;
+            continue;
+        }
+    }
+
+    throw new Error(`LabClone: Ningún modelo pudo extraer los laboratorios. Último error: ${lastError?.message || 'desconocido'}`);
+}
+
 export function isGeminiConfigured(): boolean {
     return !!API_KEY;
 }
