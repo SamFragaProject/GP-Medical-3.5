@@ -13,17 +13,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     Wind, Upload, Loader2, CheckCircle, AlertTriangle, RefreshCw,
     Save, X, Activity, TrendingUp, Heart, Shield, BarChart3,
-    Gauge, Cigarette, Scale, Brain
+    Brain, FileCheck, Zap, Target, Table2, History
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 import { SpirometryReport } from './SpirometryReport'
 import { analyzeSpirometryDirect } from '@/services/geminiDocumentService'
 import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
+import { secureStorageService } from '@/services/secureStorageService'
+import { useAuth } from '@/contexts/AuthContext'
 import {
     BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    Cell, ReferenceLine
+    Cell, ReferenceLine, ScatterChart, Scatter, ZAxis
 } from 'recharts'
 
 // ─── Hook: cargar espirometría desde Supabase ───
@@ -60,11 +62,12 @@ const useSpirometry = (pacienteId: string) => {
 }
 
 // ─── Hook: upload + extracción IA (con preview antes de guardar) ───
-const useSpirometryUpload = (pacienteId: string, onComplete: () => void) => {
+const useSpirometryUpload = (pacienteId: string, empresaId: string, userId: string | undefined, userName: string | undefined, userRol: string | undefined, onComplete: () => void) => {
     const [uploading, setUploading] = useState(false)
     const [progress, setProgress] = useState('')
     const [error, setError] = useState<string | null>(null)
-    const [previewData, setPreviewData] = useState<any>(null) // Datos extraídos pendientes de confirmar
+    const [previewData, setPreviewData] = useState<any>(null)
+    const [originalFile, setOriginalFile] = useState<File | null>(null) // Guardar archivo original
     const [saving, setSaving] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -72,6 +75,7 @@ const useSpirometryUpload = (pacienteId: string, onComplete: () => void) => {
         setUploading(true)
         setError(null)
         setPreviewData(null)
+        setOriginalFile(file)
         setProgress('Analizando documento con IA...')
 
         try {
@@ -86,16 +90,18 @@ const useSpirometryUpload = (pacienteId: string, onComplete: () => void) => {
         } catch (err: any) {
             console.error('[SpiroUpload] Error:', err)
             setError(err.message || 'Error al procesar el documento')
+            setOriginalFile(null)
         } finally {
             setUploading(false)
         }
     }
 
-    // Confirmar y guardar en BD
+    // Confirmar y guardar en BD + archivo
     const confirmSave = async () => {
         if (!previewData) return
         setSaving(true)
         try {
+            // 1. Guardar datos extraídos en estudios_clinicos
             const { error: dbErr } = await supabase.from('estudios_clinicos').insert({
                 paciente_id: pacienteId,
                 tipo_estudio: 'espirometria',
@@ -107,7 +113,37 @@ const useSpirometryUpload = (pacienteId: string, onComplete: () => void) => {
                 }
             })
             if (dbErr) throw dbErr
+
+            // 2. Guardar archivo original en Storage (renombrado)
+            if (originalFile && empresaId) {
+                try {
+                    const patientName = previewData.patient?.name || 'Paciente'
+                    const fecha = new Date().toISOString().split('T')[0]
+                    const ext = originalFile.name.split('.').pop() || 'pdf'
+                    const renamedFile = new File(
+                        [originalFile],
+                        `Espirometria_${patientName.replace(/\s+/g, '_')}_${fecha}.${ext}`,
+                        { type: originalFile.type }
+                    )
+                    await secureStorageService.upload(renamedFile, {
+                        pacienteId,
+                        empresaId,
+                        categoria: 'espirometria',
+                        subcategoria: 'reporte_original',
+                        descripcion: `Espirometría de ${patientName} — ${fecha}`,
+                        userId,
+                        userNombre: userName,
+                        userRol: userRol,
+                    })
+                    console.log('📎 Archivo original guardado en Storage')
+                } catch (storageErr) {
+                    console.warn('⚠️ No se pudo guardar el archivo original:', storageErr)
+                    // No bloquear si falla el storage — los datos ya se guardaron
+                }
+            }
+
             setPreviewData(null)
+            setOriginalFile(null)
             onComplete()
         } catch (err: any) {
             setError(err.message || 'Error al guardar en base de datos')
@@ -116,9 +152,9 @@ const useSpirometryUpload = (pacienteId: string, onComplete: () => void) => {
         }
     }
 
-    // Cancelar preview
     const cancelPreview = () => {
         setPreviewData(null)
+        setOriginalFile(null)
         setProgress('')
         setError(null)
     }
@@ -128,7 +164,7 @@ const useSpirometryUpload = (pacienteId: string, onComplete: () => void) => {
     const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (file) handleUpload(file)
-        if (e.target) e.target.value = '' // Reset input
+        if (e.target) e.target.value = ''
     }
 
     return { uploading, saving, progress, error, previewData, fileInputRef, triggerUpload, onFileSelected, confirmSave, cancelPreview }
@@ -231,15 +267,64 @@ function SpirometryAnalytics({ data }: { data: any }) {
             { param: 'FEV1/FVC', value: ratio !== null ? ratio * 100 : 0, fullMark: 150 },
         ]
 
+        // Z-Score scatter data
+        const zScoreData = results.map((r: any) => {
+            const zVal = parseNum(r.zScore)
+            const shortName = (r.parameter || '').split(' ')[0].replace('[', '').replace(']', '')
+            return {
+                name: shortName,
+                z: zVal ?? 0,
+                fill: zVal !== null && zVal >= -1.64 ? '#10b981' : '#ef4444',
+            }
+        }).filter((d: any) => d.name && d.z !== 0)
+
+        // Variability between trials (ATS criterion: best 2 FVC within 150ml, best 2 FEV1 within 150ml)
+        const fvcRow = results.find((r: any) => r.parameter?.includes('FVC') && !r.parameter?.includes('FEV1'))
+        const fev1Row = results.find((r: any) => r.parameter?.includes('FEV1') && !r.parameter?.includes('FVC'))
+        const getTrialValues = (row: any) => {
+            if (!row) return []
+            return [parseNum(row.mejor), parseNum(row.prueba2), parseNum(row.prueba5), parseNum(row.prueba6)].filter(v => v !== null) as number[]
+        }
+        const fvcTrials = getTrialValues(fvcRow)
+        const fev1Trials = getTrialValues(fev1Row)
+        const calcVariability = (trials: number[]) => {
+            if (trials.length < 2) return null
+            const sorted = [...trials].sort((a, b) => b - a)
+            return Math.round((sorted[0] - sorted[1]) * 1000) // ml
+        }
+        const fvcVariability = calcVariability(fvcTrials)
+        const fev1Variability = calcVariability(fev1Trials)
+
+        // ATS Quality Grade
+        const getATSGrade = (fvcVar: number | null, fev1Var: number | null): { grade: string; color: string; desc: string } => {
+            if (fvcVar === null || fev1Var === null) return { grade: '—', color: 'text-slate-400', desc: 'Datos insuficientes' }
+            if (fvcVar <= 150 && fev1Var <= 150) return { grade: 'A', color: 'text-emerald-600', desc: 'Excelente reproducibilidad' }
+            if (fvcVar <= 200 && fev1Var <= 200) return { grade: 'B', color: 'text-blue-600', desc: 'Buena reproducibilidad' }
+            if (fvcVar <= 250 && fev1Var <= 250) return { grade: 'C', color: 'text-amber-600', desc: 'Aceptable' }
+            return { grade: 'D', color: 'text-red-600', desc: 'Reproducibilidad deficiente' }
+        }
+        const atsGrade = getATSGrade(fvcVariability, fev1Variability)
+
+        // Small airways
+        const fef2575ZScore = getParamValue(results, 'FEF25-75', 'zScore')
+        const smallAirways = {
+            affected: fef2575Pct !== null && fef2575Pct < 65,
+            pct: fef2575Pct,
+            zScore: fef2575ZScore,
+        }
+
         return {
             fvcPct, fev1Pct, pefPct, fef2575Pct, ratio, bmi,
             gold, pattern, bmiClass, barData, radarData,
+            zScoreData, fvcVariability, fev1Variability, atsGrade, smallAirways,
+            results,
         }
     }, [data])
 
     if (!analytics) return null
 
-    const { gold, pattern, bmiClass, barData, radarData, fvcPct, fev1Pct, ratio } = analytics
+    const { gold, pattern, bmiClass, barData, radarData, fvcPct, fev1Pct, ratio,
+        zScoreData, fvcVariability, fev1Variability, atsGrade, smallAirways, results } = analytics
 
     return (
         <div className="space-y-6">
@@ -406,6 +491,133 @@ function SpirometryAnalytics({ data }: { data: any }) {
                 </div>
             </div>
 
+            {/* ── Z-Score Scatter ── */}
+            {zScoreData.length > 0 && (
+                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                    <h4 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2">
+                        <Target className="w-4 h-4 text-rose-500" />
+                        Puntuaciones Z por Parámetro
+                    </h4>
+                    <div className="h-48">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={zScoreData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                <XAxis type="number" domain={[-5, 3]} tick={{ fontSize: 10 }} />
+                                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} />
+                                <Tooltip formatter={(v: any) => `Z: ${v}`} contentStyle={{ fontSize: 12, borderRadius: 12 }} />
+                                <ReferenceLine x={-1.64} stroke="#ef4444" strokeDasharray="3 3" strokeWidth={2} label={{ value: 'LLN (-1.64)', position: 'top', fontSize: 9 }} />
+                                <ReferenceLine x={0} stroke="#64748b" strokeWidth={1} />
+                                <Bar dataKey="z" radius={[0, 6, 6, 0]} barSize={18}>
+                                    {zScoreData.map((entry: any, idx: number) => (
+                                        <Cell key={idx} fill={entry.fill} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-2">Valores por debajo de -1.64 (LLN) se consideran fuera del rango normal</p>
+                </div>
+            )}
+
+            {/* ── Variabilidad + Calidad ATS/ERS + Vía Aérea Pequeña ── */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Calidad ATS/ERS */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                        <FileCheck className="w-5 h-5 text-slate-600" />
+                        <p className="text-xs font-black uppercase tracking-widest text-slate-500">Calidad ATS/ERS</p>
+                    </div>
+                    <div className="flex items-end gap-3">
+                        <span className={`text-5xl font-black ${atsGrade.color}`}>{atsGrade.grade}</span>
+                        <span className="text-xs text-slate-500 pb-2">{atsGrade.desc}</span>
+                    </div>
+                </div>
+
+                {/* Variabilidad entre pruebas */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Zap className="w-5 h-5 text-slate-600" />
+                        <p className="text-xs font-black uppercase tracking-widest text-slate-500">Variabilidad</p>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-slate-600">FVC (2 mejores)</span>
+                            <span className={`text-sm font-black ${fvcVariability !== null && fvcVariability <= 150 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                {fvcVariability !== null ? `${fvcVariability} ml` : '—'}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-slate-600">FEV1 (2 mejores)</span>
+                            <span className={`text-sm font-black ${fev1Variability !== null && fev1Variability <= 150 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                {fev1Variability !== null ? `${fev1Variability} ml` : '—'}
+                            </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400">Criterio ATS: ≤150 ml entre las 2 mejores</p>
+                    </div>
+                </div>
+
+                {/* Vía aérea pequeña */}
+                <div className={`rounded-2xl border p-5 shadow-sm ${smallAirways.affected ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-100'}`}>
+                    <div className="flex items-center gap-2 mb-3">
+                        <Wind className="w-5 h-5 text-slate-600" />
+                        <p className="text-xs font-black uppercase tracking-widest text-slate-500">Vía Aérea Pequeña</p>
+                    </div>
+                    <p className={`text-lg font-black ${smallAirways.affected ? 'text-amber-700' : 'text-emerald-600'}`}>
+                        {smallAirways.affected ? '⚠️ Posible afectación' : '✅ Sin afectación'}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                        FEF25-75: {smallAirways.pct !== null ? `${smallAirways.pct.toFixed(0)}% pred` : '—'}
+                        {smallAirways.zScore !== null && ` (Z: ${smallAirways.zScore.toFixed(2)})`}
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-1">Indicador temprano de enfermedad obstructiva</p>
+                </div>
+            </div>
+
+            {/* ── Tabla detallada de parámetros ── */}
+            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm overflow-x-auto">
+                <h4 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2">
+                    <Table2 className="w-4 h-4 text-slate-500" />
+                    Tabla Detallada de Parámetros
+                </h4>
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="border-b-2 border-slate-200">
+                            <th className="text-left py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Parámetro</th>
+                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Predicho</th>
+                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-500">LLN</th>
+                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-blue-600">Mejor</th>
+                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-blue-600">%Pred</th>
+                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Z-Score</th>
+                            <th className="text-center py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {results.map((row: any, idx: number) => {
+                            const pct = parseNum(row.percentPred)
+                            const z = parseNum(row.zScore)
+                            const isLow = (pct !== null && pct < 80) || (z !== null && z < -1.64)
+                            return (
+                                <tr key={idx} className={`border-b border-slate-100 ${isLow ? 'bg-red-50/50' : 'hover:bg-slate-50'}`}>
+                                    <td className="py-2 px-2 font-semibold text-slate-700">{row.parameter}</td>
+                                    <td className="py-2 px-2 text-right text-slate-500">{row.pred || '—'}</td>
+                                    <td className="py-2 px-2 text-right text-slate-500">{row.lln || '—'}</td>
+                                    <td className="py-2 px-2 text-right font-bold text-blue-700">{row.mejor || '—'}</td>
+                                    <td className={`py-2 px-2 text-right font-bold ${isLow ? 'text-red-600' : 'text-emerald-600'}`}>{row.percentPred || '—'}</td>
+                                    <td className={`py-2 px-2 text-right font-medium ${z !== null && z < -1.64 ? 'text-red-600' : 'text-slate-600'}`}>{row.zScore || '—'}</td>
+                                    <td className="py-2 px-2 text-center">
+                                        {isLow ? (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">⚠️ Bajo</span>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">✅ Normal</span>
+                                        )}
+                                    </td>
+                                </tr>
+                            )
+                        })}
+                    </tbody>
+                </table>
+            </div>
+
             {/* AI Interpretation */}
             {data.doctor?.notes && (
                 <div className="bg-gradient-to-r from-indigo-50 to-violet-50 rounded-2xl border border-indigo-200 p-5">
@@ -422,8 +634,16 @@ function SpirometryAnalytics({ data }: { data: any }) {
 
 // ─── Componente principal ───
 export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) {
+    const { user } = useAuth()
     const { data, loading, reload } = useSpirometry(pacienteId)
-    const upload = useSpirometryUpload(pacienteId, reload)
+    const upload = useSpirometryUpload(
+        pacienteId,
+        user?.empresa_id || '',
+        user?.id,
+        user?.nombre ? `${user.nombre} ${user.apellido_paterno || ''}`.trim() : undefined,
+        user?.rol,
+        reload
+    )
 
     // ── Loading ──
     if (loading) return (
