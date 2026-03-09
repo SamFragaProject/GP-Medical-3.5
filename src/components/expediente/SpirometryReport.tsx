@@ -47,7 +47,7 @@ const isPctLow = (val: string | undefined) => {
 
 export function SpirometryReport({ data }: Props) {
   return (
-    <div className="bg-white text-slate-800 max-w-4xl mx-auto rounded-2xl overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div className="bg-white text-slate-800 w-full rounded-2xl overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
 
       {/* ══ HEADER ══ */}
       <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 px-8 py-6">
