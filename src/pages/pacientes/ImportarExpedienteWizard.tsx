@@ -132,34 +132,26 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
         try {
             let pacienteId = selectedPatientId
 
-            // If new patient, extract name from spirometry data or ask
+            // If new patient, extract name from spirometry data
             if (patientMode === 'new') {
                 const spiroData = studies.espirometria.extractedData
                 const patientInfo = spiroData?.patient || {}
 
-                // Parse name from SpiroClone format
-                let nombre = '', ap = '', am = ''
-                if (patientInfo.name?.includes(',')) {
-                    const [apsPart, nomPart] = patientInfo.name.split(',').map((s: string) => s.trim())
-                    const aps = apsPart.split(/\s+/)
-                    nombre = nomPart || ''
-                    ap = aps[0] || ''
-                    am = aps.slice(1).join(' ') || ''
-                } else if (patientInfo.name) {
-                    const parts = patientInfo.name.split(/\s+/)
-                    nombre = parts[0] || ''
-                    ap = parts[1] || ''
-                    am = parts.slice(2).join(' ') || ''
-                }
+                // Parse name from SpiroClone format (URIBE LOPEZ, FEDERICO → ap: Uribe, am: Lopez, nombre: Federico)
+                const parsed = parsePatientName(patientInfo.name || '')
+
+                // Extract additional patient data
+                const heightStr = patientInfo.height?.replace(/[^\d.]/g, '') || null
+                const weightStr = patientInfo.weight?.replace(/[^\d.]/g, '') || null
 
                 const { data: newP, error: createErr } = await supabase
                     .from('pacientes')
                     .insert({
-                        nombre: nombre || 'Sin Nombre',
-                        apellido_paterno: ap || '',
-                        apellido_materno: am || '',
+                        nombre: parsed.nombre || 'Sin Nombre',
+                        apellido_paterno: parsed.apellido_paterno || '',
+                        apellido_materno: parsed.apellido_materno || '',
                         fecha_nacimiento: patientInfo.dob ? convertDate(patientInfo.dob) : null,
-                        genero: patientInfo.sex?.toLowerCase().includes('masc') ? 'masculino' : patientInfo.sex?.toLowerCase().includes('fem') ? 'femenino' : null,
+                        genero: detectGender(patientInfo.sex),
                         empresa_id: empresaId || null,
                         estatus: 'activo',
                     })
@@ -168,7 +160,7 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
 
                 if (createErr || !newP) throw new Error('Error al crear paciente: ' + (createErr?.message || ''))
                 pacienteId = newP.id
-                toast.success(`Paciente ${nombre} ${ap} creado`)
+                toast.success(`Paciente ${parsed.nombre} ${parsed.apellido_paterno} creado`)
             }
 
             if (!pacienteId) throw new Error('No se seleccionó un paciente')
@@ -191,7 +183,6 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
                         }
                     })
                 }
-                // Other exam types will be handled when their extraction is implemented
             }
 
             toast.success('Estudios guardados correctamente')
@@ -323,9 +314,22 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
         )
     }
 
+    // ─── Color map ───
+    const colorMap: Record<string, string> = {
+        cyan: 'from-cyan-500 to-blue-600',
+        indigo: 'from-indigo-500 to-blue-600',
+        amber: 'from-amber-500 to-orange-600',
+        rose: 'from-rose-500 to-pink-600',
+        violet: 'from-violet-500 to-purple-600',
+        orange: 'from-orange-500 to-red-600',
+    }
+
+    const spiroStudy = studies.espirometria
+    const spiroRef = fileRefs
+
     // ─── STEP 2: Upload by exam type ───
     return (
-        <div className="max-w-5xl mx-auto space-y-6">
+        <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -335,7 +339,9 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
                     <div>
                         <h2 className="text-xl font-black text-slate-800">Subir Estudios</h2>
                         <p className="text-sm text-slate-500">
-                            {patientMode === 'existing' ? `Paciente: ${selectedPatientName}` : 'Paciente nuevo — se creará automáticamente'}
+                            {patientMode === 'existing'
+                                ? <span>Paciente: <strong className="text-slate-700">{selectedPatientName}</strong></span>
+                                : 'Paciente nuevo — se creará automáticamente con los datos extraídos'}
                         </p>
                     </div>
                 </div>
@@ -344,117 +350,139 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
                 </Button>
             </div>
 
-            {/* Exam sections */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {EXAM_SECTIONS.map(section => {
-                    const study = studies[section.key]
-                    const Icon = section.icon
-                    const isActive = section.key === 'espirometria' // Only spirometry is active for now
-                    const colorMap: Record<string, string> = {
-                        cyan: 'from-cyan-500 to-blue-600',
-                        indigo: 'from-indigo-500 to-blue-600',
-                        amber: 'from-amber-500 to-orange-600',
-                        rose: 'from-rose-500 to-pink-600',
-                        violet: 'from-violet-500 to-purple-600',
-                        orange: 'from-orange-500 to-red-600',
-                    }
+            {/* ═══ ESPIROMETRÍA — Full width, primary section ═══ */}
+            <Card className="border-0 shadow-lg overflow-hidden">
+                <CardContent className="p-0">
+                    {/* Section header */}
+                    <div className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                                <Wind className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <p className="font-black text-white text-sm">Espirometría</p>
+                                <p className="text-[10px] text-white/70">Sube el PDF para extracción completa con IA</p>
+                            </div>
+                        </div>
+                        {spiroStudy.status === 'done' && (
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/20 rounded-lg">
+                                <CheckCircle className="w-4 h-4 text-emerald-300" />
+                                <span className="text-xs font-bold text-white">{spiroStudy.progress}</span>
+                            </div>
+                        )}
+                    </div>
 
-                    return (
-                        <Card key={section.key} className={`border-0 shadow-sm overflow-hidden ${!isActive ? 'opacity-50' : ''}`}>
-                            <CardContent className="p-5">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colorMap[section.color]} flex items-center justify-center shadow-md`}>
-                                        <Icon className="w-5 h-5 text-white" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="font-bold text-sm text-slate-800">{section.label}</p>
-                                        <p className="text-[10px] text-slate-400">
-                                            {isActive ? 'Sube el PDF para extracción automática' : 'Próximamente'}
-                                        </p>
-                                    </div>
-                                    {study.status === 'done' && <CheckCircle className="w-5 h-5 text-emerald-500" />}
+                    {/* Upload content */}
+                    <div className="p-6">
+                        <input
+                            ref={el => { fileRefs.current['espirometria'] = el }}
+                            type="file"
+                            accept=".pdf,application/pdf,image/*"
+                            className="hidden"
+                            onChange={e => {
+                                const f = e.target.files?.[0]
+                                if (f) handleFileUpload('espirometria', f)
+                            }}
+                        />
+
+                        {spiroStudy.status === 'idle' && (
+                            <button
+                                onClick={() => fileRefs.current['espirometria']?.click()}
+                                className="w-full py-12 border-2 border-dashed border-cyan-200 rounded-2xl hover:border-cyan-400 hover:bg-cyan-50/50 transition-all flex flex-col items-center gap-3 group"
+                            >
+                                <div className="w-16 h-16 rounded-2xl bg-cyan-50 group-hover:bg-cyan-100 flex items-center justify-center transition-colors">
+                                    <Upload className="w-8 h-8 text-cyan-400 group-hover:text-cyan-600 transition-colors" />
                                 </div>
+                                <div className="text-center">
+                                    <p className="text-sm font-bold text-slate-700">Click para subir PDF o imagen</p>
+                                    <p className="text-xs text-slate-400 mt-1">La IA extraerá tabla de parámetros, gráficas, datos del paciente y diagnóstico</p>
+                                </div>
+                            </button>
+                        )}
 
-                                {/* Upload area */}
-                                {isActive && (
-                                    <>
-                                        <input
-                                            ref={el => { fileRefs.current[section.key] = el }}
-                                            type="file"
-                                            accept=".pdf,application/pdf,image/*"
-                                            className="hidden"
-                                            onChange={e => {
-                                                const f = e.target.files?.[0]
-                                                if (f) handleFileUpload(section.key, f)
-                                            }}
-                                        />
+                        {spiroStudy.status === 'uploading' && (
+                            <div className="flex flex-col items-center gap-4 py-12">
+                                <div className="relative">
+                                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-200 animate-pulse">
+                                        <Wind className="w-10 h-10 text-white" />
+                                    </div>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-sm font-bold text-cyan-800">{spiroStudy.progress}</p>
+                                    <p className="text-xs text-slate-400 mt-1">Esto puede tomar 15-30 segundos...</p>
+                                </div>
+                            </div>
+                        )}
 
-                                        {study.status === 'idle' && (
-                                            <button
-                                                onClick={() => fileRefs.current[section.key]?.click()}
-                                                className="w-full py-6 border-2 border-dashed border-slate-200 rounded-xl hover:border-cyan-300 hover:bg-cyan-50/50 transition-all flex flex-col items-center gap-2"
-                                            >
-                                                <Upload className="w-6 h-6 text-slate-400" />
-                                                <p className="text-xs font-medium text-slate-500">Click para subir PDF</p>
-                                            </button>
-                                        )}
-
-                                        {study.status === 'uploading' && (
-                                            <div className="flex items-center gap-3 p-4 bg-cyan-50 rounded-xl border border-cyan-200">
-                                                <Loader2 className="w-5 h-5 text-cyan-600 animate-spin" />
-                                                <p className="text-sm font-medium text-cyan-800">{study.progress}</p>
-                                            </div>
-                                        )}
-
-                                        {study.status === 'done' && (
-                                            <div className="space-y-3">
-                                                <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl border border-emerald-200">
-                                                    <p className="text-sm font-medium text-emerald-800">{study.progress}</p>
-                                                    <button
-                                                        onClick={() => fileRefs.current[section.key]?.click()}
-                                                        className="text-xs font-bold text-emerald-600 hover:text-emerald-800"
-                                                    >
-                                                        Cambiar
-                                                    </button>
-                                                </div>
-
-                                                {/* SpirometryReport preview */}
-                                                {section.key === 'espirometria' && study.extractedData && (
-                                                    <div className="overflow-x-auto bg-slate-50/50 p-2 rounded-xl border border-slate-200 shadow-inner max-h-[500px] overflow-y-auto">
-                                                        <div className="min-w-[700px]">
-                                                            <SpirometryReport data={study.extractedData} />
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {study.status === 'error' && (
-                                            <div className="flex items-start gap-3 p-3 bg-red-50 rounded-xl border border-red-200">
-                                                <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                                                <div>
-                                                    <p className="text-sm text-red-700">{study.error}</p>
-                                                    <button
-                                                        onClick={() => fileRefs.current[section.key]?.click()}
-                                                        className="text-xs font-bold text-red-600 mt-1 hover:underline"
-                                                    >
-                                                        Intentar de nuevo
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </>
+                        {spiroStudy.status === 'done' && spiroStudy.extractedData && (
+                            <div className="space-y-4">
+                                {/* Patient info extracted */}
+                                {spiroStudy.extractedData.patient && (
+                                    <div className="flex flex-wrap gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                        <div className="text-xs"><span className="font-bold text-slate-500">Paciente:</span> <span className="font-black text-slate-800">{spiroStudy.extractedData.patient.name}</span></div>
+                                        {spiroStudy.extractedData.patient.age && <div className="text-xs"><span className="font-bold text-slate-500">Edad:</span> <span className="text-slate-700">{spiroStudy.extractedData.patient.age}</span></div>}
+                                        {spiroStudy.extractedData.patient.sex && <div className="text-xs"><span className="font-bold text-slate-500">Sexo:</span> <span className="text-slate-700">{spiroStudy.extractedData.patient.sex}</span></div>}
+                                        {spiroStudy.extractedData.patient.height && <div className="text-xs"><span className="font-bold text-slate-500">Talla:</span> <span className="text-slate-700">{spiroStudy.extractedData.patient.height}</span></div>}
+                                        {spiroStudy.extractedData.patient.weight && <div className="text-xs"><span className="font-bold text-slate-500">Peso:</span> <span className="text-slate-700">{spiroStudy.extractedData.patient.weight}</span></div>}
+                                        <button
+                                            onClick={() => fileRefs.current['espirometria']?.click()}
+                                            className="ml-auto text-xs font-bold text-cyan-600 hover:text-cyan-800 transition-colors"
+                                        >
+                                            ↻ Cambiar archivo
+                                        </button>
+                                    </div>
                                 )}
-                            </CardContent>
-                        </Card>
-                    )
-                })}
+
+                                {/* SpirometryReport — FULL preview */}
+                                <div className="overflow-x-auto bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm">
+                                    <div className="min-w-[800px]">
+                                        <SpirometryReport data={spiroStudy.extractedData} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {spiroStudy.status === 'error' && (
+                            <div className="flex items-start gap-4 p-5 bg-red-50 rounded-xl border border-red-200">
+                                <AlertTriangle className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-sm font-bold text-red-800">Error al procesar</p>
+                                    <p className="text-xs text-red-600 mt-1">{spiroStudy.error}</p>
+                                    <button
+                                        onClick={() => fileRefs.current['espirometria']?.click()}
+                                        className="text-xs font-bold text-red-700 mt-2 hover:underline"
+                                    >
+                                        Intentar de nuevo
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* ═══ Other exam types — compact pills ═══ */}
+            <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Otros estudios (próximamente)</p>
+                <div className="flex flex-wrap gap-2">
+                    {EXAM_SECTIONS.filter(s => s.key !== 'espirometria').map(section => {
+                        const Icon = section.icon
+                        return (
+                            <div key={section.key} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 border border-slate-200 opacity-50">
+                                <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${colorMap[section.color]} flex items-center justify-center`}>
+                                    <Icon className="w-3.5 h-3.5 text-white" />
+                                </div>
+                                <span className="text-xs font-bold text-slate-600">{section.label}</span>
+                            </div>
+                        )
+                    })}
+                </div>
             </div>
 
             {/* Save */}
             <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                 <p className="text-sm text-slate-500">
-                    {completedCount > 0 ? `${completedCount} estudio${completedCount > 1 ? 's' : ''} listo${completedCount > 1 ? 's' : ''}` : 'Sube al menos un archivo'}
+                    {completedCount > 0 ? `${completedCount} estudio${completedCount > 1 ? 's' : ''} listo${completedCount > 1 ? 's' : ''}` : 'Sube al menos un archivo para continuar'}
                 </p>
                 <div className="flex gap-3">
                     <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl px-6">
@@ -463,7 +491,7 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
                     <Button
                         onClick={handleSave}
                         disabled={!hasAnyStudy || saving}
-                        className="rounded-xl px-8 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold disabled:opacity-50"
+                        className="rounded-xl px-8 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold shadow-lg shadow-emerald-200 disabled:opacity-50 disabled:shadow-none"
                     >
                         {saving ? (
                             <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Guardando...</>
@@ -483,4 +511,53 @@ function convertDate(dateStr: string): string | null {
     const parts = dateStr.split('/')
     if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
     return dateStr
+}
+
+// ─── Helper: ROBUST name parsing for Mexican names ───
+// Handles: "URIBE LOPEZ, FEDERICO" → ap: Uribe, am: Lopez, nombre: Federico
+// Handles: "FEDERICO URIBE LOPEZ" → nombre: Federico, ap: Uribe, am: Lopez
+function parsePatientName(fullName: string): { nombre: string; apellido_paterno: string; apellido_materno: string } {
+    const trimmed = fullName.trim()
+    if (!trimmed) return { nombre: '', apellido_paterno: '', apellido_materno: '' }
+
+    // Format: "APELLIDO APELLIDO, NOMBRE(S)"
+    if (trimmed.includes(',')) {
+        const [apellidoPart, nombrePart] = trimmed.split(',').map(s => s.trim())
+        const apellidos = apellidoPart.split(/\s+/)
+        return {
+            nombre: toTitleCase(nombrePart || ''),
+            apellido_paterno: toTitleCase(apellidos[0] || ''),
+            apellido_materno: toTitleCase(apellidos.slice(1).join(' ') || '')
+        }
+    }
+
+    // Format: "NOMBRE APELLIDO APELLIDO"
+    const words = trimmed.split(/\s+/)
+    if (words.length >= 3) {
+        // Last 2 words are apellidos, rest is nombre
+        return {
+            nombre: toTitleCase(words.slice(0, -2).join(' ')),
+            apellido_paterno: toTitleCase(words[words.length - 2]),
+            apellido_materno: toTitleCase(words[words.length - 1])
+        }
+    }
+    if (words.length === 2) {
+        return { nombre: toTitleCase(words[0]), apellido_paterno: toTitleCase(words[1]), apellido_materno: '' }
+    }
+    return { nombre: toTitleCase(words[0] || ''), apellido_paterno: '', apellido_materno: '' }
+}
+
+// ─── Helper: Title Case (FEDERICO → Federico, URIBE → Uribe) ───
+function toTitleCase(str: string): string {
+    if (!str) return ''
+    return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+}
+
+// ─── Helper: detect gender from various formats ───
+function detectGender(sex: string | undefined): string | null {
+    if (!sex) return null
+    const s = sex.toLowerCase().trim()
+    if (s.includes('masc') || s === 'male' || s === 'm' || s === 'hombre') return 'masculino'
+    if (s.includes('fem') || s === 'female' || s === 'f' || s === 'mujer') return 'femenino'
+    return null
 }
