@@ -95,7 +95,7 @@ const getSemaforClinico = (paciente: any): { nivel: string; color: string; bgCol
 export default function PacientesHub() {
     const { user } = useAuth()
     const navigate = useNavigate()
-    const { pacientes, loading, createPaciente, refresh } = usePacientes()
+    const { pacientes, loading, createPaciente, refresh, deletePaciente } = usePacientes()
 
     // Estado
     const [viewMode, setViewMode] = useState<ViewMode>('list')
@@ -644,10 +644,31 @@ export default function PacientesHub() {
                                                             variant="ghost"
                                                             size="sm"
                                                             className="h-8 w-8 p-0 rounded-lg hover:bg-blue-50 hover:text-blue-600"
-                                                            onClick={() => navigate(`/pacientes/${paciente.id}/expediente`, { state: { paciente } })}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                navigate(`/pacientes/${paciente.id}/expediente`, { state: { paciente } });
+                                                            }}
                                                             title="Expediente clínico"
                                                         >
                                                             <FileText className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0 rounded-lg hover:bg-red-50 hover:text-red-600"
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation()
+                                                                if (window.confirm(`¿Estás seguro de que deseas eliminar permanentemente a ${paciente.nombre} ${paciente.apellido_paterno}?`)) {
+                                                                    try {
+                                                                        await deletePaciente(paciente.id)
+                                                                    } catch (err) {
+                                                                        console.error("Error al eliminar", err)
+                                                                    }
+                                                                }
+                                                            }}
+                                                            title="Eliminar paciente"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
                                                         </Button>
                                                     </div>
                                                 </td>

@@ -77,7 +77,6 @@ const useSpirometryUpload = (pacienteId: string, onComplete: () => void) => {
                 paciente_id: pacienteId,
                 tipo_estudio: 'espirometria',
                 fecha_estudio: new Date().toISOString().split('T')[0],
-                estado: 'completado',
                 datos_extra: {
                     spiroclone_data: spiroData,
                     _source: 'SpiroClone Pipeline',

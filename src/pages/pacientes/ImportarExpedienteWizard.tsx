@@ -171,17 +171,17 @@ export default function ImportarExpedienteWizard({ onComplete, onCancel, empresa
                 if (study.status !== 'done') continue
 
                 if (section.key === 'espirometria' && study.extractedData) {
-                    await supabase.from('estudios_clinicos').insert({
+                    const { error: insertErr } = await supabase.from('estudios_clinicos').insert({
                         paciente_id: pacienteId,
                         tipo_estudio: 'espirometria',
                         fecha_estudio: new Date().toISOString().split('T')[0],
-                        estado: 'completado',
                         datos_extra: {
                             spiroclone_data: study.extractedData,
                             _source: 'SpiroClone Pipeline',
                             _extracted_at: new Date().toISOString(),
                         }
                     })
+                    if (insertErr) throw new Error(`Error al guardar espirometría: ${insertErr.message}`)
                 }
             }
 

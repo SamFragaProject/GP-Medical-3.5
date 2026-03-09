@@ -336,6 +336,43 @@ export const pacientesService = {
 
     // Eliminar paciente
     async delete(id: string) {
+        // Helper: delete from table, ignore if table doesn't exist
+        const safeDelete = async (table: string, column: string, value: string | string[]) => {
+            try {
+                if (Array.isArray(value)) {
+                    await supabase.from(table).delete().in(column, value)
+                } else {
+                    await supabase.from(table).delete().eq(column, value)
+                }
+            } catch (e: any) {
+                console.warn(`[Delete cascade] Tabla "${table}" no encontrada o error:`, e.message)
+            }
+        }
+
+        // 1. Eliminar sub-registros de estudios clínicos
+        const { data: estudios } = await supabase
+            .from('estudios_clinicos').select('id').eq('paciente_id', id)
+        if (estudios && estudios.length > 0) {
+            const estudioIds = estudios.map(e => e.id)
+            await safeDelete('resultados_estudio', 'estudio_id', estudioIds)
+            await safeDelete('graficas_estudio', 'estudio_id', estudioIds)
+        }
+
+        // 2. Eliminar estudios clínicos y citas
+        await safeDelete('estudios_clinicos', 'paciente_id', id)
+        await safeDelete('citas', 'paciente_id', id)
+
+        // 3. Eliminar tablas potenciales del paciente
+        const tablasHijas = [
+            'espirometrias', 'examenes', 'recetas', 'incapacidades',
+            'antecedentes_paciente', 'documentos_paciente', 'notas_medicas',
+            'legal_consents', 'dictamenes', 'ordenes_estudio'
+        ]
+        for (const tabla of tablasHijas) {
+            await safeDelete(tabla, tabla === 'legal_consents' ? 'patient_id' : 'paciente_id', id)
+        }
+
+        // 4. Eliminar finalmente el paciente
         const { error } = await supabase
             .from('pacientes')
             .delete()
