@@ -832,15 +832,30 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                 )}
             </div>
 
-            {/* ── ANÁLISIS CLÍNICO ── */}
-            <SpirometryAnalytics data={data} />
-
-            {/* SpirometryReport — réplica digital completa del PDF */}
-            <div className="overflow-x-auto bg-slate-50/50 p-2 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
-                <div className="min-w-[800px]">
-                    <SpirometryReport data={data} />
+            {/* ═══════════════════════════════════════════════════════════ */}
+            {/* SECCIÓN 1: ESPIROGRAFÍA EXTRAÍDA                           */}
+            {/* ═══════════════════════════════════════════════════════════ */}
+            <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-200/40">
+                        <Wind className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-black text-slate-800">Espirografía Extraída</h3>
+                        <p className="text-xs text-slate-400 font-medium">Réplica digital completa del reporte original</p>
+                    </div>
+                </div>
+                <div className="overflow-x-auto bg-gradient-to-br from-slate-50 to-slate-100/50 p-3 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
+                    <div className="min-w-[800px]">
+                        <SpirometryReport data={data} />
+                    </div>
                 </div>
             </div>
+
+            {/* ═══════════════════════════════════════════════════════════ */}
+            {/* SECCIÓN 2: ANÁLISIS CLÍNICO                                */}
+            {/* ═══════════════════════════════════════════════════════════ */}
+            <SpirometryAnalytics data={data} />
 
             {/* Documentos adjuntos */}
             <DocumentosAdjuntos
