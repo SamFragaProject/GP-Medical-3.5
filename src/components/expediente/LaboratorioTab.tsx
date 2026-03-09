@@ -29,7 +29,83 @@ import {
     Cell, ReferenceLine, PieChart, Pie
 } from 'recharts'
 
-// ─── Hook: cargar laboratorio desde Supabase (datos extraídos por LabClone) ───
+// ─── CLINICAL KNOWLEDGE BASE — interpretations per parameter ───
+const CLINICAL_KNOWLEDGE: Record<string, { high?: string; low?: string; area: string }> = {
+    'glucosa': { high: 'Hiperglucemia. Evaluar diabetes mellitus (DM2) o prediabetes. Confirmar con HbA1c ≥6.5% o glucosa en ayuno ≥126 mg/dL en dos ocasiones.', low: 'Hipoglucemia. Posible ayuno prolongado, exceso de insulina o tumor productor de insulina. Evaluar sintomatología asociada.', area: 'metabolico' },
+    'glucose': { high: 'Hyperglycemia. Evaluate for diabetes.', low: 'Hypoglycemia.', area: 'metabolico' },
+    'hemoglobina': { high: 'Poliglobulia o deshidratación. Evaluar policitemia vera o hipoxia crónica.', low: 'Anemia. Clasificar por VCM: microcítica (ferropénica), normocítica (crónica) o macrocítica (B12/folato).', area: 'hematologico' },
+    'hematocrito': { high: 'Hemoconcentración o policitemia. Considerar deshidratación severa.', low: 'Hemodilución o anemia. Correlacionar con hemoglobina y reticulocitos.', area: 'hematologico' },
+    'leucocitos': { high: 'Leucocitosis. Evaluar infección bacteriana, estrés, inflamación o neoplasia mieloproliferativa.', low: 'Leucopenia. Considerar viral, autoinmune, mielodepresión o medicamentos.', area: 'hematologico' },
+    'eritrocitos': { high: 'Policitemia. Evaluar hipoxia crónica, tabaquismo o policitemia vera.', low: 'Eritropenia. Orientar por índices eritrocitarios (VCM, HCM, CHCM).', area: 'hematologico' },
+    'plaquetas': { high: 'Trombocitosis. Puede ser reactiva (infección/inflamación) o primaria. Riesgo trombótico.', low: 'Trombocitopenia. Riesgo hemorrágico. Evaluar causa (inmune, viral, hepática, medicamentosa).', area: 'hematologico' },
+    'colesterol': { high: 'Hipercolesterolemia. Riesgo cardiovascular aumentado. Evaluar perfil lipídico completo y score Framingham.', low: 'Hipocolesterolemia. Raro. Evaluar malabsorción o enfermedad hepática.', area: 'lipidos' },
+    'colesterol total': { high: 'Hipercolesterolemia. Riesgo cardiovascular. Meta <200 mg/dL. Evaluar dieta, ejercicio y factores de riesgo.', area: 'lipidos' },
+    'trigliceridos': { high: 'Hipertrigliceridemia. >500 mg/dL riesgo de pancreatitis. Evaluar dieta, DM, hipotiroidismo y consumo de alcohol.', area: 'lipidos' },
+    'triglycerides': { high: 'Hypertriglyceridemia. Pancreatitis risk >500mg/dL.', area: 'lipidos' },
+    'hdl': { low: 'HDL bajo. Factor de riesgo cardiovascular independiente. Recomendar ejercicio aeróbico y dieta mediterránea.', area: 'lipidos' },
+    'ldl': { high: 'LDL elevado. Principal factor modificable de enfermedad ateroesclerótica cardiovascular.', area: 'lipidos' },
+    'creatinina': { high: 'Creatinina elevada. Evaluar función renal (TFG). Posible insuficiencia renal aguda o crónica.', low: 'Creatinina baja. Masa muscular reducida o desnutrición.', area: 'renal' },
+    'urea': { high: 'Azotemia. Evaluar causas prerrenales (deshidratación), renales o posrenales (obstructivas).', area: 'renal' },
+    'bun': { high: 'BUN elevado. Insuficiencia renal, deshidratación o hemorragia digestiva alta.', area: 'renal' },
+    'acido urico': { high: 'Hiperuricemia. Riesgo de gota y nefrolitiasis. Evaluar dieta, medicamentos y función renal.', area: 'renal' },
+    'tgo': { high: 'Elevación de AST/TGO. Daño hepático, muscular o cardiaco. Relación AST/ALT >2 sugiere daño alcohólico.', area: 'hepatico' },
+    'tgp': { high: 'Elevación de ALT/TGP. Más específica de daño hepático. Evaluar hepatitis viral, esteatosis, medicamentos.', area: 'hepatico' },
+    'ast': { high: 'AST elevada. Daño hepatocelular. Correlacionar con ALT y GGT.', area: 'hepatico' },
+    'alt': { high: 'ALT elevada. Daño hepático. Causa más frecuente: esteatosis hepática no alcohólica (EHGNA).', area: 'hepatico' },
+    'ggt': { high: 'GGT elevada. Colestasis, consumo de alcohol o medicamentos. Marcador sensible de ingesta etílica.', area: 'hepatico' },
+    'bilirrubina': { high: 'Hiperbilirrubinemia. Evaluar ictericia: prehepática (hemólisis), hepática o poshepática (obstructiva).', area: 'hepatico' },
+    'bilirrubina total': { high: 'Bilirrubina total elevada. Clasificar en directa vs indirecta para orientar diagnóstico.', area: 'hepatico' },
+    'fosfatasa alcalina': { high: 'FA elevada. Colestasis, enfermedad ósea o embarazo. Correlacionar con GGT para confirmar origen hepático.', area: 'hepatico' },
+    'albumina': { low: 'Hipoalbuminemia. Desnutrición, enfermedad hepática crónica o síndrome nefrótico. Marcador pronóstico.', area: 'hepatico' },
+    'proteinas totales': { low: 'Proteínas totales bajas. Desnutrición proteica o pérdida renal/gastrointestinal.', high: 'Proteínas elevadas. Evaluar deshidratación, mieloma múltiple o infección crónica.', area: 'metabolico' },
+    'sodio': { high: 'Hipernatremia. Deshidratación, diabetes insípida. Riesgo de encefalopatía.', low: 'Hiponatremia. Causa más frecuente: SIADH. Evaluar osmolaridad sérica.', area: 'metabolico' },
+    'potasio': { high: 'Hiperpotasemia. Riesgo de arritmias cardiacas mortales. Descartar pseudohiperpotasemia (hemólisis de muestra).', low: 'Hipopotasemia. Debilidad muscular, arritmias. Evaluar pérdidas GI o renales.', area: 'metabolico' },
+    'calcio': { high: 'Hipercalcemia. Hiperparatiroidismo o malignidad. Evaluar PTH y vitamina D.', low: 'Hipocalcemia. Riesgo de tetania. Evaluar vitamina D, PTH y magnesio.', area: 'metabolico' },
+    'hierro': { low: 'Ferropenia. Causa más frecuente de anemia microcítica. Evaluar pérdidas hemáticas y absorción.', high: 'Sobrecarga de hierro. Evaluar hemocromatosis hereditaria.', area: 'hematologico' },
+    'ferritina': { low: 'Ferritina baja. Confirmación de ferropenia. Indicar suplementación con hierro.', high: 'Ferritina elevada. Fase aguda, hemocromatosis o hepatopatía. Evaluar saturación de transferrina.', area: 'hematologico' },
+    'vsg': { high: 'VSG elevada. Marcador inespecífico de inflamación, infección o neoplasia.', area: 'hematologico' },
+    'pcr': { high: 'PCR elevada. Inflamación aguda o infección. Más específica que VSG para respuesta inflamatoria.', area: 'hematologico' },
+    'hemoglobina glucosilada': { high: 'HbA1c elevada. ≥6.5% = diagnóstico de diabetes. 5.7-6.4% = prediabetes. Refleja control glucémico de 2-3 meses.', area: 'metabolico' },
+    'hba1c': { high: 'HbA1c elevada. Diagnóstico de diabetes ≥6.5%. Meta de control <7% en la mayoría de pacientes.', area: 'metabolico' },
+    'tsh': { high: 'TSH elevada. Hipotiroidismo. Evaluar T4 libre para confirmar (primario vs subclínico).', low: 'TSH suprimida. Hipertiroidismo. Evaluar T3 y T4 libres y anticuerpos antitiroideos.', area: 'metabolico' },
+    't4 libre': { high: 'T4L elevada. Hipertiroidismo. Gravedad por tormenta tiroidea si >5ng/dL.', low: 'T4L baja. Hipotiroidismo confirmado. Iniciar levotiroxina según peso y edad.', area: 'metabolico' },
+    'neutrofilos': { high: 'Neutrofilia. Infección bacteriana aguda, estrés o uso de corticoides.', low: 'Neutropenia. <500/µL = riesgo severo de infección. Evaluar quimioterapia, viral o autoinmune.', area: 'hematologico' },
+    'linfocitos': { high: 'Linfocitosis. Infección viral aguda, leucemia linfocítica crónica.', low: 'Linfopenia. VIH, corticoides, quimioterapia o inmunosupresión.', area: 'hematologico' },
+    'eosinofilos': { high: 'Eosinofilia. Alergia, parasitosis o vasculitis eosinofílica. Evaluar IgE total.', area: 'hematologico' },
+    'monocitos': { high: 'Monocitosis. Infección crónica (TB, endocarditis), recuperación de neutropenia.', area: 'hematologico' },
+}
+
+// Clinical area labels
+const AREA_LABELS: Record<string, { name: string; icon: string; gradient: string; bg: string; border: string; text: string }> = {
+    metabolico: { name: 'Perfil Metabólico', icon: '🔬', gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700' },
+    hematologico: { name: 'Perfil Hematológico', icon: '🩸', gradient: 'from-red-500 to-rose-600', bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700' },
+    renal: { name: 'Función Renal', icon: '💧', gradient: 'from-cyan-500 to-sky-600', bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-700' },
+    hepatico: { name: 'Función Hepática', icon: '🫁', gradient: 'from-yellow-500 to-amber-600', bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700' },
+    lipidos: { name: 'Perfil Lipídico', icon: '❤️', gradient: 'from-rose-500 to-pink-600', bg: 'bg-pink-50', border: 'border-pink-200', text: 'text-pink-700' },
+}
+
+// Helper: find clinical interpretation for a parameter
+const getClinicalInterpretation = (param: string, isHigh: boolean): string | null => {
+    const key = param.toLowerCase().trim()
+    for (const [pattern, info] of Object.entries(CLINICAL_KNOWLEDGE)) {
+        if (key.includes(pattern) || pattern.includes(key)) {
+            return isHigh ? (info.high || null) : (info.low || null)
+        }
+    }
+    return null
+}
+
+const getClinicalArea = (param: string): string => {
+    const key = param.toLowerCase().trim()
+    for (const [pattern, info] of Object.entries(CLINICAL_KNOWLEDGE)) {
+        if (key.includes(pattern) || pattern.includes(key)) {
+            return info.area
+        }
+    }
+    return 'otro'
+}
+
+// ─── Hook: cargar laboratorio desde Supabase (universal para todos los pacientes) ───
 const useLaboratorio = (pacienteId: string) => {
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(true)
@@ -37,6 +113,7 @@ const useLaboratorio = (pacienteId: string) => {
     const load = async () => {
         setLoading(true)
         try {
+            // 1. Buscar en estudios_clinicos (LabClone directo o importado)
             const { data: estudios } = await supabase
                 .from('estudios_clinicos')
                 .select('*')
@@ -45,11 +122,61 @@ const useLaboratorio = (pacienteId: string) => {
                 .order('fecha_estudio', { ascending: false })
                 .limit(1)
 
+            // Opción A: datos LabClone directos
             if (estudios?.[0]?.datos_extra?.labclone_data) {
                 setData(estudios[0].datos_extra.labclone_data)
-            } else {
-                setData(null)
+                return
             }
+
+            // Opción B: datos del pipeline genérico (ImportarExpediente wizard)
+            if (estudios?.[0]?.datos_extra) {
+                const extra = estudios[0].datos_extra
+                // Intentar convertir del formato genérico con results[]
+                if (extra.results && Array.isArray(extra.results)) {
+                    const converted = convertGenericToLabClone(extra)
+                    if (converted) { setData(converted); return }
+                }
+            }
+
+            // 2. Fallback: buscar en la tabla laboratorios (legacy)
+            const { data: labRecords } = await supabase
+                .from('laboratorios')
+                .select('*')
+                .eq('paciente_id', pacienteId)
+                .order('fecha_resultados', { ascending: false })
+                .limit(1)
+
+            if (labRecords?.[0]) {
+                const record = labRecords[0]
+                let grupos: any[] = []
+                try {
+                    grupos = typeof record.resultados === 'string'
+                        ? JSON.parse(record.resultados)
+                        : (Array.isArray(record.resultados) ? record.resultados : [])
+                } catch { }
+                if (grupos.length > 0) {
+                    const converted = convertLegacyToLabClone(record, grupos)
+                    if (converted) { setData(converted); return }
+                }
+            }
+
+            // 3. Fallback: buscar en pacientes.laboratorio (JSONB)
+            const { data: pac } = await supabase
+                .from('pacientes')
+                .select('laboratorio, nombre, apellido_paterno')
+                .eq('id', pacienteId)
+                .single()
+
+            if (pac?.laboratorio && typeof pac.laboratorio === 'object') {
+                const lab = pac.laboratorio as Record<string, any>
+                const hasValues = Object.values(lab).some(v => v !== null && v !== undefined && v !== '' && v !== 0)
+                if (hasValues) {
+                    const converted = convertJsonbToLabClone(lab, pac.nombre, pac.apellido_paterno)
+                    if (converted) { setData(converted); return }
+                }
+            }
+
+            setData(null)
         } catch (err) {
             console.error('[Laboratorio] Error cargando:', err)
         } finally {
@@ -59,6 +186,90 @@ const useLaboratorio = (pacienteId: string) => {
 
     useEffect(() => { if (pacienteId) load() }, [pacienteId])
     return { data, loading, reload: load }
+}
+
+// ─── Converters for universal patient support ───
+function convertGenericToLabClone(extra: any): any | null {
+    try {
+        const results = extra.results || []
+        const grouped: Record<string, any[]> = {}
+        for (const r of results) {
+            const cat = r.category || r.categoria || 'General'
+            if (!grouped[cat]) grouped[cat] = []
+            grouped[cat].push({
+                parameter: r.name || r.parametro || '',
+                value: String(r.value ?? r.resultado ?? ''),
+                unit: r.unit || r.unidad || '',
+                referenceValue: r.range || r.rango || '',
+                isAbnormal: false,
+            })
+        }
+        return {
+            patientInfo: {
+                name: extra.patientData?.name || extra.patientData?.nombre || '',
+                registrationDate: '',
+            },
+            exams: Object.entries(grouped).map(([name, results]) => ({ examName: name, results })),
+            signatures: [],
+        }
+    } catch { return null }
+}
+
+function convertLegacyToLabClone(record: any, grupos: any[]): any | null {
+    try {
+        return {
+            patientInfo: { name: '', registrationDate: record.fecha_resultados || '' },
+            exams: grupos.map((g: any) => ({
+                examName: g.grupo || 'General',
+                results: (g.resultados || []).map((r: any) => ({
+                    parameter: r.parametro || r.nombre_display || '',
+                    value: String(r.resultado ?? r.resultado_numerico ?? ''),
+                    unit: r.unidad || '',
+                    referenceValue: r.valor_referencia || (r.rango_ref_min != null ? `${r.rango_ref_min} - ${r.rango_ref_max}` : ''),
+                    isAbnormal: (r.bandera || 'normal') !== 'normal',
+                }))
+            })),
+            signatures: [],
+        }
+    } catch { return null }
+}
+
+function convertJsonbToLabClone(lab: Record<string, any>, nombre?: string, apellido?: string): any | null {
+    const RANGOS: Record<string, { min: number; max: number; unit: string; group: string }> = {
+        hemoglobina: { min: 13, max: 17.5, unit: 'g/dL', group: 'Biometría Hemática' },
+        hematocrito: { min: 38, max: 52, unit: '%', group: 'Biometría Hemática' },
+        leucocitos: { min: 4500, max: 11000, unit: '/µL', group: 'Biometría Hemática' },
+        eritrocitos: { min: 4.2, max: 5.8, unit: 'M/µL', group: 'Biometría Hemática' },
+        plaquetas: { min: 150000, max: 400000, unit: '/µL', group: 'Biometría Hemática' },
+        glucosa: { min: 70, max: 100, unit: 'mg/dL', group: 'Química Sanguínea' },
+        creatinina: { min: 0.7, max: 1.3, unit: 'mg/dL', group: 'Química Sanguínea' },
+        colesterol_total: { min: 0, max: 200, unit: 'mg/dL', group: 'Perfil Lipídico' },
+        trigliceridos: { min: 0, max: 150, unit: 'mg/dL', group: 'Perfil Lipídico' },
+    }
+    try {
+        const groups: Record<string, any[]> = {}
+        for (const [key, value] of Object.entries(lab)) {
+            if (value === null || value === undefined || value === '' || value === 0) continue
+            const ref = RANGOS[key]
+            if (ref) {
+                const n = parseFloat(String(value))
+                if (isNaN(n)) continue
+                if (!groups[ref.group]) groups[ref.group] = []
+                groups[ref.group].push({
+                    parameter: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    value: String(n), unit: ref.unit,
+                    referenceValue: `${ref.min} - ${ref.max}`,
+                    isAbnormal: n < ref.min || n > ref.max,
+                })
+            }
+        }
+        if (Object.keys(groups).length === 0) return null
+        return {
+            patientInfo: { name: [nombre, apellido].filter(Boolean).join(' '), registrationDate: '' },
+            exams: Object.entries(groups).map(([name, results]) => ({ examName: name, results })),
+            signatures: [],
+        }
+    } catch { return null }
 }
 
 // ─── Hook: upload + IA extraction (con preview) ───
@@ -535,31 +746,142 @@ function LabAnalytics({ data }: { data: any }) {
                 </div>
             )}
 
-            {/* Per-Exam Summary */}
+            {/* ══ CLINICAL RISK PROFILES ══ */}
+            {(() => {
+                // Compute risk profiles from abnormal results
+                const riskAreas: Record<string, { params: any[]; area: string }> = {}
+                abnormalResults.forEach((r: any) => {
+                    const area = getClinicalArea(r.parameter || '')
+                    if (area === 'otro') return
+                    if (!riskAreas[area]) riskAreas[area] = { params: [], area }
+                    riskAreas[area].params.push(r)
+                })
+                const activeRisks = Object.values(riskAreas).filter(r => r.params.length > 0)
+                if (activeRisks.length === 0) return null
+                return (
+                    <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Target className="w-5 h-5 text-purple-600" />
+                            <p className="text-xs font-black uppercase tracking-widest text-slate-500">Perfil de Riesgo Clínico</p>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {activeRisks.map(({ params, area }) => {
+                                const info = AREA_LABELS[area]
+                                if (!info) return null
+                                return (
+                                    <div key={area} className={`p-4 rounded-xl border ${info.border} ${info.bg}`}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-lg">{info.icon}</span>
+                                            <p className={`text-xs font-black ${info.text}`}>{info.name}</p>
+                                        </div>
+                                        <p className="text-2xl font-black text-slate-800 mb-1">{params.length}</p>
+                                        <p className="text-[10px] text-slate-500 font-medium">parámetros alterados</p>
+                                        <div className="mt-2 space-y-1">
+                                            {params.slice(0, 3).map((p: any, i: number) => (
+                                                <p key={i} className="text-[10px] text-slate-600 truncate">• {p.parameter}: <span className="font-bold">{p.value} {p.unit}</span></p>
+                                            ))}
+                                            {params.length > 3 && <p className="text-[10px] text-slate-400">+{params.length - 3} más</p>}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )
+            })()}
+
+            {/* ══ CLINICAL INTERPRETATIONS PER PARAMETER ══ */}
+            {abnormalResults.length > 0 && (() => {
+                const withInterpretation = abnormalResults.filter((r: any) => {
+                    const val = parseFloat(String(r.value || '').replace(/[<>,]/g, ''))
+                    const refStr = String(r.referenceValue || '')
+                    const parts = refStr.replace(/–/g, '-').split('-').map((s: string) => parseFloat(s.trim()))
+                    const isHigh = parts.length === 2 && !isNaN(val) && !isNaN(parts[1]) ? val > parts[1] : r.isAbnormal
+                    return getClinicalInterpretation(r.parameter || '', isHigh) !== null
+                })
+                if (withInterpretation.length === 0) return null
+                return (
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50/30 rounded-2xl border border-blue-100 p-5 shadow-sm">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Brain className="w-5 h-5 text-blue-600" />
+                            <p className="text-xs font-black uppercase tracking-widest text-blue-700">Interpretación Clínica por Parámetro</p>
+                            <Badge className="bg-blue-100 text-blue-700 border-0 text-[9px] font-black ml-auto">{withInterpretation.length} hallazgos</Badge>
+                        </div>
+                        <div className="space-y-3">
+                            {withInterpretation.map((r: any, i: number) => {
+                                const val = parseFloat(String(r.value || '').replace(/[<>,]/g, ''))
+                                const refStr = String(r.referenceValue || '')
+                                const parts = refStr.replace(/–/g, '-').split('-').map((s: string) => parseFloat(s.trim()))
+                                const isHigh = parts.length === 2 && !isNaN(val) && !isNaN(parts[1]) ? val > parts[1] : true
+                                const interpretation = getClinicalInterpretation(r.parameter || '', isHigh)
+                                const area = getClinicalArea(r.parameter || '')
+                                const areaInfo = AREA_LABELS[area]
+                                return (
+                                    <motion.div key={i}
+                                        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: i * 0.06 }}
+                                        className="p-4 bg-white rounded-xl border border-blue-100">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                {areaInfo && <span className="text-sm">{areaInfo.icon}</span>}
+                                                <p className="text-sm font-black text-slate-800">{r.parameter}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-sm font-black tabular-nums ${isHigh ? 'text-red-600' : 'text-blue-600'}`}>{r.value} {r.unit}</span>
+                                                <Badge className={`border-0 text-[9px] font-black ${isHigh ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{isHigh ? '↑ ALTO' : '↓ BAJO'}</Badge>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-slate-600 leading-relaxed">
+                                            {interpretation}
+                                        </p>
+                                        {r.referenceValue && <p className="text-[10px] text-slate-400 mt-1.5">Ref: {r.referenceValue} {r.unit}</p>}
+                                    </motion.div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )
+            })()}
+
+            {/* ══ PER-EXAM SUMMARY ══ */}
             <div className="bg-gradient-to-br from-emerald-50 to-white rounded-2xl border border-emerald-100 p-5 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                     <FileCheck className="w-5 h-5 text-emerald-600" />
                     <p className="text-xs font-black uppercase tracking-widest text-slate-500">Interpretación por Examen</p>
                 </div>
-                <div className="space-y-2">
-                    {examGroups.map((g, i) => (
-                        <div key={i} className={`p-3 bg-white rounded-xl border ${g.abnormal > 0 ? 'border-amber-100' : 'border-emerald-100'}`}>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Beaker className="w-4 h-4 text-emerald-500" />
-                                    <p className="text-xs font-black text-slate-700">{g.fullName}</p>
+                <div className="space-y-3">
+                    {examGroups.map((g, i) => {
+                        // Find abnormal params with interpretation for this exam
+                        const examAbnormals = allResults.filter((r: any) => (r.examName || 'Otros') === g.fullName && r.isAbnormal)
+                        return (
+                            <div key={i} className={`p-4 bg-white rounded-xl border ${g.abnormal > 0 ? 'border-amber-100' : 'border-emerald-100'}`}>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Beaker className="w-4 h-4 text-emerald-500" />
+                                        <p className="text-xs font-black text-slate-700">{g.fullName}</p>
+                                    </div>
+                                    {g.abnormal > 0
+                                        ? <Badge className="bg-amber-100 text-amber-700 border-0 text-[9px] font-black">{g.abnormal} alterado{g.abnormal > 1 ? 's' : ''}</Badge>
+                                        : <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[9px] font-black">✓ Normal</Badge>}
                                 </div>
-                                {g.abnormal > 0
-                                    ? <Badge className="bg-amber-100 text-amber-700 border-0 text-[9px] font-black">{g.abnormal} alterado{g.abnormal > 1 ? 's' : ''}</Badge>
-                                    : <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[9px] font-black">✓ Normal</Badge>}
+                                <p className="text-xs text-slate-600 mt-1.5 pl-6 leading-relaxed">
+                                    {g.abnormal === 0
+                                        ? `Todos los ${g.total} parámetros dentro de rangos de referencia establecidos. Sin hallazgos que ameriten seguimiento.`
+                                        : `${g.abnormal} de ${g.total} parámetros fuera de rango.`}
+                                </p>
+                                {examAbnormals.length > 0 && (
+                                    <div className="mt-2 pl-6 space-y-1">
+                                        {examAbnormals.slice(0, 4).map((r: any, ri: number) => (
+                                            <p key={ri} className="text-[10px] text-amber-700">
+                                                • <span className="font-bold">{r.parameter}</span>: {r.value} {r.unit}
+                                                {r.referenceValue && <span className="text-slate-400"> (ref: {r.referenceValue})</span>}
+                                            </p>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                            <p className="text-xs text-slate-600 mt-1 pl-6">
-                                {g.abnormal === 0
-                                    ? `${g.total} parámetros dentro de rangos de referencia.`
-                                    : `${g.abnormal} de ${g.total} parámetros fuera de rango. Requiere correlación clínica.`}
-                            </p>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
 
                 {/* Global conclusion */}
@@ -567,13 +889,13 @@ function LabAnalytics({ data }: { data: any }) {
                     <p className={`font-black text-xs uppercase tracking-widest mb-2 ${abnormalCount === 0 ? 'text-emerald-700' : 'text-amber-700'}`}>Conclusión Global</p>
                     <p className="text-sm text-slate-700 leading-relaxed">
                         {abnormalCount === 0
-                            ? `Panel de ${totalParams} parámetros dentro de límites normales. Sin alteraciones clínicamente significativas.`
-                            : `Se identificaron ${abnormalCount} parámetros fuera de rango en un panel de ${totalParams} determinaciones de ${data.exams?.length || 0} exámenes. Se recomienda correlación clínica y seguimiento.`}
+                            ? `Panel completo de ${totalParams} determinaciones analíticas en ${data.exams?.length || 0} exámenes. Todos los parámetros dentro de intervalos de referencia. Sin evidencia de alteraciones metabólicas, hematológicas, hepáticas, renales ni lipídicas que requieran intervención.`
+                            : `Estudio de ${totalParams} parámetros distribuidos en ${data.exams?.length || 0} exámenes. Se identificaron ${abnormalCount} resultado${abnormalCount > 1 ? 's' : ''} fuera de los rangos establecidos (${Math.round(abnormalCount / totalParams * 100)}% del panel). Los hallazgos deben correlacionarse con la clínica, antecedentes del paciente y, de ser necesario, repetirse para confirmar tendencias.`}
                     </p>
                 </div>
             </div>
 
-            {/* Occupational Health */}
+            {/* ══ OCCUPATIONAL HEALTH ══ */}
             <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
                     <Shield className="w-5 h-5 text-emerald-500" />
@@ -582,8 +904,12 @@ function LabAnalytics({ data }: { data: any }) {
                 <div className={`p-4 rounded-xl ${abnormalCount === 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}`}>
                     <p className="text-sm text-slate-700 leading-relaxed">
                         {abnormalCount === 0
-                            ? 'Perfil hematológico y bioquímico dentro de parámetros normales. Sin restricción laboral de origen metabólico o hematológico.'
-                            : 'Parámetros laboratoriales alterados. Se recomienda seguimiento médico y ajuste del programa de vigilancia epidemiológica según resultados.'}
+                            ? 'Perfil hematológico y bioquímico dentro de parámetros normales. El trabajador no presenta alteraciones laboratoriales que limiten su actividad laboral actual. Sin restricción laboral de origen metabólico, hematológico, hepático, renal ni lipídico.'
+                            : (() => {
+                                const areas = new Set(abnormalResults.map((r: any) => getClinicalArea(r.parameter || '')).filter(a => a !== 'otro'))
+                                const areaNames = [...areas].map(a => AREA_LABELS[a]?.name || a).join(', ')
+                                return `Se identificaron alteraciones en: ${areaNames || 'parámetros laboratoriales'}. Se recomienda: 1) Correlación clínica con sintomatología actual. 2) Control laboratorial de seguimiento en 3-6 meses. 3) Referencia a especialista si los valores persisten o se agravan. 4) Ajuste del programa de vigilancia epidemiológica según hallazgos.`
+                            })()}
                     </p>
                 </div>
             </div>
