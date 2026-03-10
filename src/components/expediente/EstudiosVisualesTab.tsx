@@ -221,42 +221,92 @@ const useOptometryUpload = (pacienteId: string, empresaId: string, userId: strin
         if (!previewData) return
         setSaving(true)
         try {
+            // 1. Guardar datos extraídos en estudios_clinicos
+            console.log('[OptoClone] 📝 Guardando datos en estudios_clinicos...')
             const { error: dbErr } = await supabase.from('estudios_clinicos').insert({
-                paciente_id: pacienteId, tipo_estudio: 'optometria',
+                paciente_id: pacienteId,
+                tipo_estudio: 'optometria',
                 fecha_estudio: new Date().toISOString().split('T')[0],
-                datos_extra: { optoclone_data: previewData, _source: 'OptoClone Pipeline', _extracted_at: new Date().toISOString() }
+                datos_extra: {
+                    optoclone_data: previewData,
+                    _source: 'OptoClone Pipeline',
+                    _extracted_at: new Date().toISOString(),
+                }
             })
-            if (dbErr) throw dbErr
-            // Archivo: obtener empresaId del usuario o del paciente como fallback
+            if (dbErr) {
+                console.error('[OptoClone] ❌ Error BD:', dbErr)
+                throw dbErr
+            }
+            console.log('[OptoClone] ✅ Datos guardados en BD')
+
+            // 2. Guardar archivo original en Storage (renombrado)
             if (originalFile) {
+                console.log('[OptoClone] 📎 Intentando guardar archivo original...')
                 try {
                     let eid = empresaId
                     if (!eid) {
+                        console.log('[OptoClone] 🔍 empresaId vacío, buscando en paciente...')
                         const { data: pac } = await supabase.from('pacientes').select('empresa_id').eq('id', pacienteId).single()
                         eid = pac?.empresa_id || ''
+                        console.log('[OptoClone] 🔍 empresa_id del paciente:', eid)
                     }
-                    // Ultimate fallback: usar empresa principal si no se encontró
-                    if (!eid) eid = EMPRESA_PRINCIPAL_ID
-                    if (eid) {
-                        const name = previewData.patient?.name || 'Paciente'
-                        const fecha = new Date().toISOString().split('T')[0]
-                        const ext = originalFile.name.split('.').pop() || 'pdf'
-                        const renamedFile = new File([originalFile], `Optometria_${name.replace(/\s+/g, '_')}_${fecha}.${ext}`, { type: originalFile.type })
-                        await secureStorageService.upload(renamedFile, { pacienteId, empresaId: eid, categoria: 'optometria', subcategoria: 'reporte_original', descripcion: `Optometría de ${name} — ${fecha}`, userId, userNombre: userName, userRol })
-                        console.log('📎 Archivo original guardado en Storage')
-                    } else {
-                        console.warn('⚠️ No se encontró empresa_id — archivo no guardado')
+                    if (!eid) {
+                        eid = EMPRESA_PRINCIPAL_ID
+                        console.log('[OptoClone] 🔍 Usando EMPRESA_PRINCIPAL_ID:', eid)
                     }
-                } catch (e) { console.warn('⚠️ No se pudo guardar archivo:', e) }
+
+                    const patientName = previewData.patient?.name || 'Paciente'
+                    const fecha = new Date().toISOString().split('T')[0]
+                    const ext = originalFile.name.split('.').pop() || 'pdf'
+                    const renamedFile = new File(
+                        [originalFile],
+                        `Optometria_${patientName.replace(/\s+/g, '_')}_${fecha}.${ext}`,
+                        { type: originalFile.type }
+                    )
+
+                    console.log('[OptoClone] 📤 Subiendo archivo:', renamedFile.name, 'empresaId:', eid)
+                    await secureStorageService.upload(renamedFile, {
+                        pacienteId,
+                        empresaId: eid,
+                        categoria: 'optometria',
+                        subcategoria: 'reporte_original',
+                        descripcion: `Optometría de ${patientName} — ${fecha}`,
+                        userId,
+                        userNombre: userName,
+                        userRol: userRol,
+                    })
+                    console.log('[OptoClone] ✅ Archivo guardado en Storage')
+                } catch (storageErr) {
+                    console.error('[OptoClone] ⚠️ Error guardando archivo:', storageErr)
+                    // No bloquear si falla el storage — los datos ya se guardaron
+                }
+            } else {
+                console.warn('[OptoClone] ⚠️ No hay originalFile, no se puede guardar archivo')
             }
-            setPreviewData(null); setOriginalFile(null); onComplete()
-        } catch (err: any) { setError(err.message || 'Error al guardar') }
-        finally { setSaving(false) }
+
+            setPreviewData(null)
+            setOriginalFile(null)
+            onComplete()
+        } catch (err: any) {
+            console.error('[OptoClone] ❌ Error general:', err)
+            setError(err.message || 'Error al guardar en base de datos')
+        } finally {
+            setSaving(false)
+        }
     }
 
-    const cancelPreview = () => { setPreviewData(null); setOriginalFile(null); setProgress(''); setError(null) }
+    const cancelPreview = () => {
+        setPreviewData(null)
+        setOriginalFile(null)
+        setProgress('')
+        setError(null)
+    }
     const triggerUpload = () => fileInputRef.current?.click()
-    const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if (f) handleUpload(f); if (e.target) e.target.value = '' }
+    const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) handleUpload(file)
+        if (e.target) e.target.value = ''
+    }
 
     return { uploading, saving, progress, error, previewData, fileInputRef, triggerUpload, onFileSelected, confirmSave, cancelPreview }
 }
