@@ -446,7 +446,7 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
         try {
             setLoading(true)
 
-            // FUENTE 1: Nueva arquitectura unificada
+            // FUENTE 1: datos_extra.audioclone_data (nuevo pipeline — idéntico a espirometría)
             const { data: estudios } = await supabase
                 .from('estudios_clinicos')
                 .select('*')
@@ -457,15 +457,61 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
 
             if (estudios && estudios.length > 0) {
                 for (let idx = 0; idx < estudios.length; idx++) {
+                    const est = estudios[idx]
+                    const clone = est.datos_extra?.audioclone_data
+
+                    // ─── Ruta A: AudioClone JSONB (nuevo) ───
+                    if (clone?.thresholds) {
+                        const od: Record<string, number> = {}
+                        const oi: Record<string, number> = {}
+                        ;(clone.thresholds.right || []).forEach((t: any) => {
+                            if (t.value !== null && t.value !== undefined) od[String(t.frequency)] = Number(t.value)
+                        })
+                        ;(clone.thresholds.left || []).forEach((t: any) => {
+                            if (t.value !== null && t.value !== undefined) oi[String(t.frequency)] = Number(t.value)
+                        })
+                        const ptaOd = FREQS_PTA.some(f => od[f] !== undefined)
+                            ? Math.round(FREQS_PTA.reduce((s, f) => s + (od[f] || 0), 0) / FREQS_PTA.length) : 0
+                        const ptaOi = FREQS_PTA.some(f => oi[f] !== undefined)
+                            ? Math.round(FREQS_PTA.reduce((s, f) => s + (oi[f] || 0), 0) / FREQS_PTA.length) : 0
+
+                        const built = {
+                            id: est.id,
+                            fecha: est.fecha_estudio,
+                            diagnostico: clone.diagnosis?.general || est.diagnostico || '',
+                            diagnostico_od: clone.diagnosis?.rightEar || '',
+                            diagnostico_oi: clone.diagnosis?.leftEar || '',
+                            medico: clone.testDetails?.doctor || est.medico_responsable || '',
+                            equipo: clone.equipment?.device || est.equipo || '',
+                            archivo_url: est.archivo_origen || null,
+                            oido_derecho: od,
+                            oido_izquierdo: oi,
+                            pta_od: ptaOd,
+                            pta_oi: ptaOi,
+                            semaforo_od: getSemaforo(ptaOd),
+                            semaforo_oi: getSemaforo(ptaOi),
+                            semaforo_general: getSemaforo(Math.max(ptaOd, ptaOi)),
+                            resumen: est.interpretacion || clone.diagnosis?.general || '',
+                            requiere_reevaluacion: ptaOd > 25 || ptaOi > 25,
+                            rawClone: clone,
+                        }
+                        if (idx === 0) setAudio(built)
+                        else setPrev(built)
+                        continue
+                    }
+
+                    // ─── Ruta B: resultados_estudio (legacy) ───
                     const { data: resultados } = await supabase
-                        .from('resultados_estudio').select('*').eq('estudio_id', estudios[idx].id)
+                        .from('resultados_estudio').select('*').eq('estudio_id', est.id)
                     if (resultados && resultados.length > 0) {
-                        const built = buildFromResultados(estudios[idx], resultados)
+                        const built = buildFromResultados(est, resultados)
                         if (idx === 0) setAudio(built)
                         else setPrev(built)
                     }
                 }
-                if (audio) return
+                // Si ya tenemos datos, no seguir buscando
+                setLoading(false)
+                return
             }
 
             // FUENTE 2: tabla audiometrias legacy
