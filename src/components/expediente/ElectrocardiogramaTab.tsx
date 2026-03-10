@@ -83,6 +83,15 @@ function buildFromResultados(estudio: any, resultados: any[]): any {
         tiene_trazado: get('TIENE_TRAZADO_IMAGEN') === 'true' || get('TIENE_TRAZADO_IMAGEN') === true,
         clasificacion: estudio.clasificacion ||
             ((get('RESULTADO_GLOBAL') || '').toLowerCase().includes('normal') ? 'normal' : 'con_hallazgos'),
+        // Waveform data (pixel-digitized leads)
+        waveformData: (() => {
+            const wfRow = resultados.find(r => r.parametro_nombre === 'WAVEFORM_DATA')
+            if (!wfRow?.resultado) return null
+            try {
+                const parsed = typeof wfRow.resultado === 'string' ? JSON.parse(wfRow.resultado) : wfRow.resultado
+                return Array.isArray(parsed) ? parsed : null
+            } catch { return null }
+        })(),
         rawResults: resultados,
     }
 }
@@ -505,8 +514,64 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                         animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                         className="space-y-5">
 
-                        {/* Trazado ECG — si hay imagen se muestra, si no un aviso */}
-                        {ecg.tiene_trazado ? (
+                        {/* Trazado ECG — si hay waveform digitalizado, renderizar; si no, aviso */}
+                        {ecg.waveformData && ecg.waveformData.length > 0 ? (
+                            <Card className="border-slate-100 shadow-sm overflow-hidden">
+                                <div className="bg-slate-50 border-b border-slate-100 px-5 py-3 flex items-center justify-between">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                        Trazado ECG Digitalizado — {ecg.waveformData.length} derivaciones
+                                    </p>
+                                    <Badge className="bg-emerald-100 text-emerald-700 text-[9px] border-0">TRAZO REAL</Badge>
+                                </div>
+                                <div className="relative bg-white" style={{ aspectRatio: '2 / 1.2' }}>
+                                    {/* Red ECG grid background */}
+                                    <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                                        <defs>
+                                            <pattern id="ecgSmallGrid" width="4" height="4" patternUnits="userSpaceOnUse">
+                                                <path d="M 4 0 L 0 0 0 4" fill="none" stroke="#ffdbdb" strokeWidth="0.5" />
+                                            </pattern>
+                                            <pattern id="ecgLargeGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                                                <rect width="20" height="20" fill="url(#ecgSmallGrid)" />
+                                                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#ffb3b3" strokeWidth="1" />
+                                            </pattern>
+                                        </defs>
+                                        <rect width="100%" height="100%" fill="url(#ecgLargeGrid)" />
+                                    </svg>
+                                    {/* 12-lead waveforms in 2 columns */}
+                                    <div className="relative z-10 grid grid-cols-2 h-full">
+                                        {['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'].map(leadName => {
+                                            const leadData = ecg.waveformData.find((w: any) => w.lead === leadName)
+                                            const points = leadData?.points || []
+                                            const hasData = points.length > 0 && (Math.max(...points) - Math.min(...points)) > 0.05
+                                            return (
+                                                <div key={leadName} className="relative border-b border-r border-slate-100/30" style={{ minHeight: '40px' }}>
+                                                    <span className={`absolute left-1 top-0.5 text-[9px] font-black z-20 px-0.5 ${hasData ? 'text-emerald-700 bg-emerald-50/80' : 'text-slate-400 bg-white/60'}`}>
+                                                        {leadName}
+                                                    </span>
+                                                    {hasData && (
+                                                        <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 300 40">
+                                                            <path
+                                                                d={points.map((p: number, i: number) => {
+                                                                    const x = (i / points.length) * 300
+                                                                    const y = 20 - p * 18
+                                                                    return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`
+                                                                }).join(' ')}
+                                                                fill="none" stroke="#000" strokeWidth="1" strokeLinejoin="round" strokeLinecap="round"
+                                                            />
+                                                        </svg>
+                                                    )}
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                    {/* Calibration footer */}
+                                    <div className="absolute bottom-0 left-0 right-0 bg-white/60 px-2 py-0.5 flex justify-between text-[8px] text-slate-500 z-20">
+                                        <span>10.0 mm/mV — 25.00 mm/sec</span>
+                                        <span>Filtro: 0.07 Spline - 90 Adapt, ~50 Hz</span>
+                                    </div>
+                                </div>
+                            </Card>
+                        ) : ecg.tiene_trazado ? (
                             <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-200 p-8 text-center">
                                 <ImageIcon className="w-10 h-10 text-slate-300 mx-auto mb-3" />
                                 <p className="text-sm font-bold text-slate-500">Trazado ECG — Ver archivo adjunto</p>

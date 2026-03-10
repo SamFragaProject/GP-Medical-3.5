@@ -14,10 +14,12 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import {
-    analyzeDocument, analyzeSpirometryDirect, analyzeAudiometryDirect, type StructuredMedicalData, type LabResult
+    analyzeDocument, analyzeSpirometryDirect, analyzeAudiometryDirect, analyzeEcgDirect, type StructuredMedicalData, type LabResult
 } from '@/services/geminiDocumentService'
 import { crearEstudioConResultados, type TipoEstudio } from '@/services/estudiosService'
 import AudiometryReviewClone from '@/components/expediente/AudiometryReviewClone'
+import EcgReviewClone from '@/components/expediente/EcgReviewClone'
+import { extractWaveforms, type ExtractedWaveforms } from '@/services/ecgWaveformExtractor'
 
 type Phase = 'idle' | 'uploading' | 'extracting' | 'review' | 'saving' | 'done' | 'error'
 
@@ -46,6 +48,8 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
     const [extractedData, setExtractedData] = useState<StructuredMedicalData | null>(null)
     const [spirocloneData, setSpirocloneData] = useState<any>(null) // SpiroClone direct data
     const [audiocloneData, setAudiocloneData] = useState<any>(null) // AudioClone direct data
+    const [ecgCloneData, setEcgCloneData] = useState<any>(null) // EcgClone direct data
+    const [ecgWaveformData, setEcgWaveformData] = useState<ExtractedWaveforms | null>(null) // ECG waveform data
     const [editingIdx, setEditingIdx] = useState<number | null>(null)
     const [errorMsg, setErrorMsg] = useState('')
     const [fileUrl, setFileUrl] = useState('')
@@ -123,38 +127,38 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                 setAudiocloneData(audioData)
                 // Construir resultados para la UI de review
                 const allResults: any[] = []
-                // Umbrales OD
-                ;(audioData.thresholds?.right || []).forEach((t: any) => {
-                    if (t.value !== null && t.value !== undefined) {
-                        allResults.push({
-                            name: `OD ${t.frequency} Hz`, value: `${t.value} dB`, unit: 'dB HL', range: '≤25 normal',
-                            description: '', visualizationType: 'simple' as any, category: 'Oído Derecho',
-                            parametro: `OD_${t.frequency}Hz`, resultado: String(t.value), unidad: 'dB HL', rango: '≤25',
-                            observacion: '', categoria: 'Oído Derecho'
-                        })
-                    }
-                })
-                // Umbrales OI
-                ;(audioData.thresholds?.left || []).forEach((t: any) => {
-                    if (t.value !== null && t.value !== undefined) {
-                        allResults.push({
-                            name: `OI ${t.frequency} Hz`, value: `${t.value} dB`, unit: 'dB HL', range: '≤25 normal',
-                            description: '', visualizationType: 'simple' as any, category: 'Oído Izquierdo',
-                            parametro: `OI_${t.frequency}Hz`, resultado: String(t.value), unidad: 'dB HL', rango: '≤25',
-                            observacion: '', categoria: 'Oído Izquierdo'
-                        })
-                    }
-                })
+                    // Umbrales OD
+                    ; (audioData.thresholds?.right || []).forEach((t: any) => {
+                        if (t.value !== null && t.value !== undefined) {
+                            allResults.push({
+                                name: `OD ${t.frequency} Hz`, value: `${t.value} dB`, unit: 'dB HL', range: '≤25 normal',
+                                description: '', visualizationType: 'simple' as any, category: 'Oído Derecho',
+                                parametro: `OD_${t.frequency}Hz`, resultado: String(t.value), unidad: 'dB HL', rango: '≤25',
+                                observacion: '', categoria: 'Oído Derecho'
+                            })
+                        }
+                    })
+                    // Umbrales OI
+                    ; (audioData.thresholds?.left || []).forEach((t: any) => {
+                        if (t.value !== null && t.value !== undefined) {
+                            allResults.push({
+                                name: `OI ${t.frequency} Hz`, value: `${t.value} dB`, unit: 'dB HL', range: '≤25 normal',
+                                description: '', visualizationType: 'simple' as any, category: 'Oído Izquierdo',
+                                parametro: `OI_${t.frequency}Hz`, resultado: String(t.value), unidad: 'dB HL', rango: '≤25',
+                                observacion: '', categoria: 'Oído Izquierdo'
+                            })
+                        }
+                    })
                 // Audiograma completo (JSON blob para reconstrucción)
                 const audiogramData = [
                     ...(audioData.thresholds?.right || []).filter((t: any) => t.value !== null).map((t: any) => ({ frecuencia: t.frequency, od: t.value })),
                 ]
-                ;(audioData.thresholds?.left || []).forEach((t: any) => {
-                    if (t.value === null) return
-                    const existing = audiogramData.find(a => a.frecuencia === t.frequency)
-                    if (existing) existing.oi = t.value
-                    else audiogramData.push({ frecuencia: t.frequency, oi: t.value })
-                })
+                    ; (audioData.thresholds?.left || []).forEach((t: any) => {
+                        if (t.value === null) return
+                        const existing = audiogramData.find(a => a.frecuencia === t.frequency)
+                        if (existing) existing.oi = t.value
+                        else audiogramData.push({ frecuencia: t.frequency, oi: t.value })
+                    })
                 allResults.push({
                     name: 'AUDIOGRAMA_DATOS', value: JSON.stringify(audiogramData), unit: '', range: '',
                     description: 'Datos del audiograma completo', visualizationType: 'simple' as any,
@@ -186,6 +190,93 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                 })
                 setProgress(100); setPhase('review')
                 toast.success(`AudioClone: ${allResults.length} parámetros extraídos con precisión`)
+                return
+            }
+
+            // ── ECG: motor EcgClone dedicado — igual que SpiroClone/AudioClone ──
+            if (tipoEstudio === 'ecg') {
+                // Paralelo: EcgClone (Gemini) + Waveform Digitizer
+                const [ecgResult, waveformResult] = await Promise.allSettled([
+                    analyzeEcgDirect(rawText, images),
+                    extractWaveforms(file)
+                ])
+
+                const ecgData = ecgResult.status === 'fulfilled' ? ecgResult.value : null
+                const waveforms = waveformResult.status === 'fulfilled' ? waveformResult.value : null
+
+                if (waveforms?.success) setEcgWaveformData(waveforms)
+
+                if (!ecgData) {
+                    throw new Error('EcgClone: No se pudo extraer datos del ECG')
+                }
+
+                // Guardar datos raw de EcgClone (como SpiroClone/AudioClone)
+                setEcgCloneData(ecgData)
+
+                // Construir results[] con el mismo patrón de AudioClone
+                const allResults: any[] = []
+                const ep = ecgData.electricalParameters || {}
+                const paramMap: Record<string, { label: string; unit: string; category: string }> = {
+                    heartRate: { label: 'FC', unit: 'lpm', category: 'Parámetros Eléctricos' },
+                    rrInterval: { label: 'RR', unit: 'ms', category: 'Parámetros Eléctricos' },
+                    pWave: { label: 'ONDA_P', unit: 'ms', category: 'Parámetros Eléctricos' },
+                    prInterval: { label: 'INTERVALO_PR', unit: 'ms', category: 'Parámetros Eléctricos' },
+                    qrsComplex: { label: 'COMPLEJO_QRS', unit: 'ms', category: 'Parámetros Eléctricos' },
+                    qtInterval: { label: 'INTERVALO_QT', unit: 'ms', category: 'Parámetros Eléctricos' },
+                    qtc: { label: 'INTERVALO_QTC', unit: 'ms', category: 'Parámetros Eléctricos' },
+                    pAxis: { label: 'EJE_P', unit: '°', category: 'Ejes Eléctricos' },
+                    qrsAxis: { label: 'EJE_QRS', unit: '°', category: 'Ejes Eléctricos' },
+                    tAxis: { label: 'EJE_T', unit: '°', category: 'Ejes Eléctricos' },
+                }
+
+                for (const [key, meta] of Object.entries(paramMap)) {
+                    const rawVal = ep[key]
+                    if (rawVal) {
+                        const numVal = parseFloat(String(rawVal).replace(/[^\d.-]/g, ''))
+                        allResults.push({
+                            name: meta.label, value: rawVal, unit: meta.unit, range: '',
+                            description: '', visualizationType: 'simple' as any, category: meta.category,
+                            parametro: meta.label, resultado: String(rawVal),
+                            resultado_numerico: isNaN(numVal) ? null : numVal,
+                            unidad: meta.unit, rango: '', observacion: '', categoria: meta.category
+                        })
+                    }
+                }
+
+                // Ritmo cardiaco
+                const cr = ecgData.cardiacRhythm || {}
+                if (cr.rhythm) allResults.push({ name: 'RITMO', value: cr.rhythm, unit: '', range: '', description: cr.characteristics || '', visualizationType: 'simple' as any, category: 'Ritmo Cardiaco', parametro: 'RITMO', resultado: cr.rhythm, unidad: '', rango: '', observacion: cr.characteristics || '', categoria: 'Ritmo Cardiaco' })
+                if (cr.conduction) allResults.push({ name: 'CONDUCCION', value: cr.conduction, unit: '', range: '', description: '', visualizationType: 'simple' as any, category: 'Ritmo Cardiaco', parametro: 'CONDUCCION', resultado: cr.conduction, unidad: '', rango: '', observacion: '', categoria: 'Ritmo Cardiaco' })
+                if (cr.morphology) allResults.push({ name: 'MORFOLOGIA', value: cr.morphology, unit: '', range: '', description: '', visualizationType: 'simple' as any, category: 'Ritmo Cardiaco', parametro: 'MORFOLOGIA', resultado: cr.morphology, unidad: '', rango: '', observacion: '', categoria: 'Ritmo Cardiaco' })
+
+                // Interpretación + Conclusión
+                if (ecgData.globalInterpretation) allResults.push({ name: 'RESULTADO_GLOBAL', value: ecgData.globalInterpretation, unit: '', range: '', description: '', visualizationType: 'simple' as any, category: 'Interpretación', parametro: 'RESULTADO_GLOBAL', resultado: ecgData.globalInterpretation, unidad: '', rango: '', observacion: '', categoria: 'Interpretación' })
+                if (ecgData.conclusion) allResults.push({ name: 'CONCLUSION_ECG', value: ecgData.conclusion, unit: '', range: '', description: '', visualizationType: 'simple' as any, category: 'Interpretación', parametro: 'CONCLUSION_ECG', resultado: ecgData.conclusion, unidad: '', rango: '', observacion: '', categoria: 'Interpretación' })
+
+                // Análisis morfológico
+                if (ecgData.morphologicalAnalysis?.length) {
+                    allResults.push({ name: 'ANALISIS_MORFOLOGICO', value: ecgData.morphologicalAnalysis.join('; '), unit: '', range: '', description: '', visualizationType: 'simple' as any, category: 'Interpretación', parametro: 'ANALISIS_MORFOLOGICO', resultado: ecgData.morphologicalAnalysis.join('; '), unidad: '', rango: '', observacion: '', categoria: 'Interpretación' })
+                }
+
+                // Metadatos
+                if (ecgData.doctor?.name) allResults.push({ name: 'MEDICO_RESPONSABLE', value: ecgData.doctor.name, unit: '', range: '', description: ecgData.doctor.credentials || '', visualizationType: 'simple' as any, category: 'Datos del Estudio', parametro: 'MEDICO_RESPONSABLE', resultado: ecgData.doctor.name, unidad: '', rango: '', observacion: '', categoria: 'Datos del Estudio' })
+                if (ecgData.studyDetails?.type) allResults.push({ name: 'TIPO_ESTUDIO', value: ecgData.studyDetails.type, unit: '', range: '', description: '', visualizationType: 'simple' as any, category: 'Datos del Estudio', parametro: 'TIPO_ESTUDIO', resultado: ecgData.studyDetails.type, unidad: '', rango: '', observacion: '', categoria: 'Datos del Estudio' })
+
+                // Waveform data badge
+                const waveformMsg = waveforms?.success ? ` + ${waveforms.leads.length} derivaciones digitalizadas` : ''
+
+                setExtractedData({
+                    patientData: {
+                        name: ecgData.patient?.name || 'Paciente',
+                        age: ecgData.patient?.age,
+                        gender: ecgData.patient?.sex,
+                        reportDate: ecgData.studyDetails?.date
+                    },
+                    results: allResults,
+                    summary: ecgData.conclusion || ecgData.globalInterpretation || `ECG: ${cr.rhythm || 'Analizado'}. FC: ${ep.heartRate || '—'}`
+                })
+                setProgress(100); setPhase('review')
+                toast.success(`EcgClone: ${allResults.length} parámetros extraídos${waveformMsg}`)
                 return
             }
 
@@ -244,41 +335,41 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
             // ═══════════════════════════════════════════════
             if (tipoEstudio === 'audiometria' && audiocloneData) {
                 const audioResults: any[] = []
-                // Umbrales por frecuencia - formato que AudiometriaTab puede leer
-                ;(audiocloneData.thresholds?.right || []).forEach((t: any) => {
-                    if (t.value !== null && t.value !== undefined) {
-                        audioResults.push({
-                            parametro_nombre: `OD_${t.frequency}Hz`,
-                            categoria: 'Oído Derecho',
-                            resultado: String(t.value),
-                            resultado_numerico: Number(t.value),
-                            unidad: 'dB HL',
-                            observacion: ''
-                        })
-                    }
-                })
-                ;(audiocloneData.thresholds?.left || []).forEach((t: any) => {
-                    if (t.value !== null && t.value !== undefined) {
-                        audioResults.push({
-                            parametro_nombre: `OI_${t.frequency}Hz`,
-                            categoria: 'Oído Izquierdo',
-                            resultado: String(t.value),
-                            resultado_numerico: Number(t.value),
-                            unidad: 'dB HL',
-                            observacion: ''
-                        })
-                    }
-                })
+                    // Umbrales por frecuencia - formato que AudiometriaTab puede leer
+                    ; (audiocloneData.thresholds?.right || []).forEach((t: any) => {
+                        if (t.value !== null && t.value !== undefined) {
+                            audioResults.push({
+                                parametro_nombre: `OD_${t.frequency}Hz`,
+                                categoria: 'Oído Derecho',
+                                resultado: String(t.value),
+                                resultado_numerico: Number(t.value),
+                                unidad: 'dB HL',
+                                observacion: ''
+                            })
+                        }
+                    })
+                    ; (audiocloneData.thresholds?.left || []).forEach((t: any) => {
+                        if (t.value !== null && t.value !== undefined) {
+                            audioResults.push({
+                                parametro_nombre: `OI_${t.frequency}Hz`,
+                                categoria: 'Oído Izquierdo',
+                                resultado: String(t.value),
+                                resultado_numerico: Number(t.value),
+                                unidad: 'dB HL',
+                                observacion: ''
+                            })
+                        }
+                    })
                 // AUDIOGRAMA_DATOS blob para renderizado de gráfica
                 const audioBlobData = [
                     ...(audiocloneData.thresholds?.right || []).filter((t: any) => t.value !== null).map((t: any) => ({ frecuencia: t.frequency, od: t.value })),
                 ]
-                ;(audiocloneData.thresholds?.left || []).forEach((t: any) => {
-                    if (t.value === null) return
-                    const existing = audioBlobData.find(a => a.frecuencia === t.frequency)
-                    if (existing) (existing as any).oi = t.value
-                    else audioBlobData.push({ frecuencia: t.frequency, oi: t.value } as any)
-                })
+                    ; (audiocloneData.thresholds?.left || []).forEach((t: any) => {
+                        if (t.value === null) return
+                        const existing = audioBlobData.find(a => a.frecuencia === t.frequency)
+                        if (existing) (existing as any).oi = t.value
+                        else audioBlobData.push({ frecuencia: t.frequency, oi: t.value } as any)
+                    })
                 audioResults.push({
                     parametro_nombre: 'AUDIOGRAMA_DATOS',
                     categoria: 'Audiograma',
@@ -335,6 +426,56 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                 if (!estudio) throw new Error('No se pudo crear el registro del estudio')
                 setPhase('done')
                 toast.success('Audiometría integrada con AudioClone')
+                if (onSaved) onSaved()
+                return
+            }
+
+            // ═══════════════════════════════════════════════
+            // ECG: Guardar datos de Gemini + Waveform Digitizer
+            // ═══════════════════════════════════════════════
+            if (tipoEstudio === 'ecg') {
+                const ecgResults = extractedData.results.map(r => ({
+                    parametro_nombre: r.name,
+                    categoria: r.category || 'General',
+                    resultado: typeof r.value === 'object' ? JSON.stringify(r.value) : String(r.value ?? ''),
+                    resultado_numerico: typeof r.value === 'number' ? r.value : parseFloat(String(r.value)) || null,
+                    unidad: r.unit || '',
+                    observacion: r.description || ''
+                }))
+
+                // Add waveform data as a special JSON blob result
+                if (ecgWaveformData?.success) {
+                    ecgResults.push({
+                        parametro_nombre: 'WAVEFORM_DATA',
+                        categoria: 'Trazado Digital',
+                        resultado: JSON.stringify(ecgWaveformData.leads),
+                        resultado_numerico: null,
+                        unidad: '',
+                        observacion: `${ecgWaveformData.leads.length} derivaciones digitalizadas (${ecgWaveformData.sourceWidth}x${ecgWaveformData.sourceHeight}px)`
+                    })
+                }
+
+                const estudio = await crearEstudioConResultados(
+                    pacienteId,
+                    tipoEstudio,
+                    {
+                        fecha_estudio: extractedData.patientData?.reportDate || new Date().toISOString().split('T')[0],
+                        archivo_origen: fileUrl,
+                        institucion: 'GP Medical Health - ECG Engine Pro',
+                        interpretacion: extractedData.summary,
+                        medico_responsable: extractedData.results.find(r => r.name === 'MEDICO_RESPONSABLE')?.value as string || 'Motor ECG IA',
+                        datos_extra: {
+                            patientData: extractedData.patientData,
+                            hasWaveformData: ecgWaveformData?.success ?? false,
+                            waveformLeadCount: ecgWaveformData?.leads.length ?? 0,
+                            _ai_config: 'Gemini Flash 2.0 + Waveform Digitizer'
+                        }
+                    },
+                    ecgResults
+                )
+                if (!estudio) throw new Error('No se pudo crear el registro del estudio')
+                setPhase('done')
+                toast.success(`ECG integrado${ecgWaveformData?.success ? ' con trazado digitalizado' : ''}`)
                 if (onSaved) onSaved()
                 return
             }
@@ -518,6 +659,62 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                     <div className="overflow-x-auto bg-slate-50/50 p-2 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
                         <div className="min-w-[800px]">
                             <AudiometryReviewClone data={audiocloneData} />
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
+        // ═══ ECG: Layout dedicado estilo EcgClone (igual que AudioClone) ═══
+        if (tipoEstudio === 'ecg' && ecgCloneData) {
+            return (
+                <div className="space-y-5">
+                    {/* Banner de confirmación */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-2xl border-2 border-rose-300 p-5 shadow-lg"
+                    >
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center">
+                                    <Edit3 className="w-5 h-5 text-rose-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-rose-900">Vista previa — EcgClone Digital</h3>
+                                    <p className="text-xs text-rose-700">
+                                        Réplica digital del electrocardiograma. <strong>{extractedData.results.length} parámetros</strong> extraídos.
+                                        {ecgWaveformData?.success && <> + <strong>{ecgWaveformData.leads.length} derivaciones</strong> digitalizadas.</>}
+                                        {' '}Verifica y confirma.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setPhase('idle')}
+                                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 rounded-xl transition-colors"
+                                >
+                                    Descartar
+                                </button>
+                                <a href={fileUrl} target="_blank" rel="noreferrer"
+                                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+                                >
+                                    <Eye className="w-4 h-4" /> Original
+                                </a>
+                                <button
+                                    onClick={confirmAndSave}
+                                    className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 rounded-xl shadow-lg shadow-rose-200/50 transition-all"
+                                >
+                                    <Save className="w-4 h-4" /> Confirmar y Guardar
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* Clon visual a ancho completo */}
+                    <div className="overflow-x-auto bg-slate-50/50 p-2 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
+                        <div className="min-w-[800px]">
+                            <EcgReviewClone data={ecgCloneData} waveforms={ecgWaveformData?.leads} />
                         </div>
                     </div>
                 </div>

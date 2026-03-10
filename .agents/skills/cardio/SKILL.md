@@ -65,7 +65,25 @@ Cada parámetro numérico como item con gauge visualization.
 Ejes como items separados. Interpretación automática del equipo.
 Si hay trazado: marcar `TIENE_TRAZADO_IMAGEN: true`.
 
-### Componente
-- `ElectrocardiogramaTab.tsx` — Parámetros numéricos con gauges
-- Interpretación del ritmo con código de colores
-- Ejes eléctricos con representación visual circular
+**Para el flujo completo de extracción → guardado → visualización,
+usa el skill `ecg-extraction`** (`.agents/skills/ecg-extraction/SKILL.md`).
+
+### Componentes React (ERP Frontend)
+- `ElectrocardiogramaTab.tsx` — Tab principal con "Vista Escáner" + "Análisis IA"
+  - `buildFromResultados()` — Transformer DB → UI state
+  - `RhythmVisualizer` — Simulación visual del ritmo en SVG animado
+  - `ECGParamGauge` — Gauge circular animado por parámetro
+  - `EjesElectricos` — SVG circular de ejes eléctricos con vectores P/QRS/T
+- `EstudioUploadReview.tsx` — Motor universal de upload + extracción IA + guardado a DB
+
+### App Standalone (document-analyzer/ecg-extract)
+- `App.tsx` — Upload + Gemini text extraction + waveform pixel digitization
+- `ecgWaveformExtractor.ts` — Motor Canvas: PDF → Canvas → pixel trace → waveform data
+- `EcgVisualReport.tsx` — Clon visual BTL CardioPoint con datos reales/simulados
+- `EcgReport.tsx` — Reporte textual estructurado
+
+### Pipeline Gemini
+El prompt de ECG está en `geminiDocumentService.ts` case 'ecg'.
+Pide: patientData, parámetros numéricos (FC/RR/P/PR/QRS/QT/QTc/SpO2/PA),
+ejes eléctricos, interpretación automática y médica, metadatos del estudio.
+

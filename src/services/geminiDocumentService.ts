@@ -1475,6 +1475,149 @@ export async function analyzeOptometryDirect(_text: string, imageFiles: File[] =
     throw new Error(`OptoClone: Ningún modelo pudo extraer la optometría. Último error: ${lastError?.message || 'desconocido'}`);
 }
 
+// ══════════════════════════════════════════════════════════════════
+// EcgClone — Motor de extracción directa para Electrocardiograma
+// Replica EXACTA de la app standalone ecg-extract
+// ══════════════════════════════════════════════════════════════════
+
+const ECG_PROMPT = `ERES UN EXPERTO EN EXTRACCIÓN DE DATOS MÉDICOS. Analiza exhaustivamente estos documentos que pueden contener un electrocardiograma (ECG), su reporte de interpretación, o ambos.
+
+Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta (sin markdown, sin texto adicional):
+{
+  "patient": {
+    "name": "",
+    "dob": "",
+    "age": "",
+    "sex": ""
+  },
+  "studyDetails": {
+    "date": "",
+    "type": "",
+    "provider": ""
+  },
+  "electricalParameters": {
+    "heartRate": "",
+    "rrInterval": "",
+    "pWave": "",
+    "prInterval": "",
+    "qrsComplex": "",
+    "qtInterval": "",
+    "qtc": "",
+    "pAxis": "",
+    "qrsAxis": "",
+    "tAxis": ""
+  },
+  "cardiacRhythm": {
+    "rhythm": "",
+    "characteristics": "",
+    "conduction": "",
+    "morphology": ""
+  },
+  "morphologicalAnalysis": [],
+  "globalInterpretation": "",
+  "conclusion": "",
+  "doctor": {
+    "name": "",
+    "credentials": ""
+  }
+}
+
+INSTRUCCIONES CRÍTICAS:
+1. Extrae TODOS los parámetros eléctricos con su valor numérico y unidad (ej. "75 lpm", "846 ms", "120°")
+2. Los parámetros están en la tabla de la parte superior del ECG: FC, RR, P, PQ(PR), QRS, QT, QTc(Baz), Eje P, Eje QRS, Eje T
+3. Extrae el ritmo cardiaco, características de conducción y morfología
+4. Extrae la interpretación automática del equipo Y la interpretación del médico (la escrita a mano o impresa aparte)
+5. Extrae el análisis morfológico como array de strings
+6. Extrae nombre del paciente, fecha de nacimiento, sexo, edad
+7. Extrae datos del médico si aparecen
+8. Si algún dato no está presente, déjalo vacío
+9. Asegúrate de replicar al 100% la información encontrada
+10. NO uses formato \`\`\`json\`\`\`, devuelve SOLO el JSON`;
+
+export async function analyzeEcgDirect(_text: string, imageFiles: File[] = []): Promise<any> {
+    const MODELS_TO_TRY = [
+        'gemini-3.1-pro-preview',
+        'gemini-2.5-pro',
+        'gemini-2.0-pro',
+        'gemini-2.0-flash',
+    ];
+
+    const toBase64 = (file: File): Promise<{ data: string; mimeType: string }> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result as string;
+                resolve({
+                    data: dataUrl.split(',')[1],
+                    mimeType: file.type || 'image/jpeg'
+                });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const imageData = await Promise.all(imageFiles.map(toBase64));
+
+    let lastError: any = null;
+
+    for (const model of MODELS_TO_TRY) {
+        try {
+            console.log(`[EcgClone] Probando modelo: ${model}...`);
+
+            const contents: any[] = [
+                ...imageData.map(img => ({ inlineData: img })),
+                ECG_PROMPT
+            ];
+
+            const response = await ai.models.generateContent({
+                model,
+                contents,
+                config: {
+                    responseMimeType: "application/json",
+                    temperature: 0.1,
+                }
+            });
+
+            const jsonStr = response.text?.trim();
+            if (!jsonStr) {
+                console.warn(`[EcgClone] ${model}: respuesta vacía, intentando siguiente...`);
+                continue;
+            }
+
+            const cleaned = jsonStr.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+            const data = JSON.parse(cleaned);
+
+            // Validar que tiene datos mínimos (FC o interpretación)
+            const hasParams = data.electricalParameters?.heartRate || data.electricalParameters?.qrsComplex;
+            const hasInterpretation = data.globalInterpretation || data.conclusion;
+            if (!hasParams && !hasInterpretation) {
+                console.warn(`[EcgClone] ${model}: sin parámetros ni interpretación, intentando siguiente...`);
+                continue;
+            }
+
+            trackUsage(model, jsonStr.length / 4, jsonStr.length / 4);
+            console.log('[EcgClone] ✅ Extracción exitosa:', {
+                model,
+                patient: data.patient?.name,
+                fc: data.electricalParameters?.heartRate,
+                qrs: data.electricalParameters?.qrsComplex,
+                rhythm: data.cardiacRhythm?.rhythm,
+                conclusion: data.conclusion?.substring(0, 60),
+            });
+
+            return data;
+
+        } catch (err: any) {
+            console.warn(`[EcgClone] ${model} falló:`, err.message || err);
+            lastError = err;
+            continue;
+        }
+    }
+
+    throw new Error(`EcgClone: Ningún modelo pudo extraer el ECG. Último error: ${lastError?.message || 'desconocido'}`);
+}
+
 export function isGeminiConfigured(): boolean {
     return !!API_KEY;
 }
