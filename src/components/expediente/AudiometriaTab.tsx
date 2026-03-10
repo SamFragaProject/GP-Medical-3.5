@@ -398,7 +398,7 @@ const useAudiometryUpload = (pacienteId: string, empresaId: string, userId: stri
             const { data: estudio, error: dbErr } = await supabase.from('estudios_clinicos').insert({
                 paciente_id: pacienteId,
                 tipo_estudio: 'audiometria',
-                fecha_estudio: previewData.testDetails?.audiometryDate || new Date().toISOString().split('T')[0],
+                fecha_estudio: new Date().toISOString().split('T')[0],
                 medico_responsable: previewData.testDetails?.doctor || '',
                 equipo: previewData.equipment?.device || '',
                 diagnostico: previewData.diagnosis?.general || `OD: ${previewData.diagnosis?.rightEar || '—'} | OI: ${previewData.diagnosis?.leftEar || '—'}`,
