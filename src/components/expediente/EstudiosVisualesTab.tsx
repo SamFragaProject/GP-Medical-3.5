@@ -278,13 +278,16 @@ const useOptometryUpload = (pacienteId: string, empresaId: string, userId: strin
                     })
                     console.log('[OptoClone] ✅ Archivo guardado en Storage')
                     toast.success('📎 Archivo original guardado correctamente')
+                    window.alert('✅ ARCHIVO GUARDADO — Refresca para ver en Documentos Adjuntos')
                 } catch (storageErr) {
                     console.error('[OptoClone] ⚠️ Error guardando archivo:', storageErr)
                     toast.error('No se pudo guardar el archivo original')
+                    window.alert('❌ ERROR guardando archivo: ' + (storageErr as any)?.message)
                     // No bloquear si falla el storage — los datos ya se guardaron
                 }
             } else {
                 console.warn('[OptoClone] ⚠️ No hay originalFile, no se puede guardar archivo')
+                window.alert('⚠️ DEBUG: originalFile es null — el archivo se perdió')
             }
 
             setPreviewData(null)
