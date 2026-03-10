@@ -18,7 +18,7 @@ import { analyzeOptometryDirect } from '@/services/geminiDocumentService'
 import { secureStorageService } from '@/services/secureStorageService'
 import { useAuth } from '@/contexts/AuthContext'
 import { EMPRESA_PRINCIPAL_ID } from '@/config/empresa'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
 
 // ── Tabla Snellen ──
 const SNELLEN_SCORE: Record<string, number> = {
