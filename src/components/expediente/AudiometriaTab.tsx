@@ -367,53 +367,19 @@ const useAudiometryUpload = (pacienteId: string, empresaId: string, userId: stri
         if (!previewData) return
         setSaving(true)
         try {
-            const resultados: any[] = []
-            const od = previewData.thresholds?.right || []
-            const oi = previewData.thresholds?.left || []
-
-            od.forEach((t: any) => {
-                if (t.value !== null && t.value !== undefined) {
-                    resultados.push({ parametro_nombre: `OD_${t.frequency}Hz`, resultado_numerico: t.value, resultado: String(t.value), unidad: 'dB HL', categoria: 'Oído Derecho' })
-                }
-            })
-            oi.forEach((t: any) => {
-                if (t.value !== null && t.value !== undefined) {
-                    resultados.push({ parametro_nombre: `OI_${t.frequency}Hz`, resultado_numerico: t.value, resultado: String(t.value), unidad: 'dB HL', categoria: 'Oído Izquierdo' })
-                }
-            })
-
-            const audiogramBlob = FREQS_ALL.map(f => {
-                const odVal = od.find((t: any) => t.frequency === f)?.value
-                const oiVal = oi.find((t: any) => t.frequency === f)?.value
-                return { frecuencia: f, od: odVal ?? null, oi: oiVal ?? null }
-            })
-            resultados.push({ parametro_nombre: 'AUDIOGRAMA_DATOS', resultado: JSON.stringify(audiogramBlob), categoria: 'Audiograma' })
-
-            if (previewData.diagnosis?.rightEar) resultados.push({ parametro_nombre: 'DIAGNOSTICO_OD', resultado: previewData.diagnosis.rightEar, categoria: 'Diagnóstico' })
-            if (previewData.diagnosis?.leftEar) resultados.push({ parametro_nombre: 'DIAGNOSTICO_OI', resultado: previewData.diagnosis.leftEar, categoria: 'Diagnóstico' })
-            if (previewData.diagnosis?.general) resultados.push({ parametro_nombre: 'DIAGNOSTICO_GENERAL', resultado: previewData.diagnosis.general, categoria: 'Diagnóstico' })
-            if (previewData.equipment?.device) resultados.push({ parametro_nombre: 'EQUIPO', resultado: previewData.equipment.device, categoria: 'Datos del Estudio' })
-            if (previewData.testDetails?.doctor) resultados.push({ parametro_nombre: 'MEDICO_RESPONSABLE', resultado: previewData.testDetails.doctor, categoria: 'Datos del Estudio' })
-
-            const { data: estudio, error: dbErr } = await supabase.from('estudios_clinicos').insert({
+            // 1. Guardar datos extraídos en estudios_clinicos
+            // ⚡ /midu — Patrón IDÉNTICO a EspirometriaTab: todo en datos_extra JSONB
+            const { error: dbErr } = await supabase.from('estudios_clinicos').insert({
                 paciente_id: pacienteId,
                 tipo_estudio: 'audiometria',
                 fecha_estudio: new Date().toISOString().split('T')[0],
-                medico_responsable: previewData.testDetails?.doctor || '',
-                equipo: previewData.equipment?.device || '',
-                diagnostico: previewData.diagnosis?.general || `OD: ${previewData.diagnosis?.rightEar || '—'} | OI: ${previewData.diagnosis?.leftEar || '—'}`,
                 datos_extra: {
                     audioclone_data: previewData,
                     _source: 'AudioClone Pipeline',
                     _extracted_at: new Date().toISOString(),
                 }
-            }).select('id').single()
+            })
             if (dbErr) throw dbErr
-
-            if (estudio?.id && resultados.length > 0) {
-                const rows = resultados.map(r => ({ estudio_id: estudio.id, ...r }))
-                await supabase.from('resultados_estudio').insert(rows)
-            }
 
             if (originalFile && empresaId) {
                 try {
