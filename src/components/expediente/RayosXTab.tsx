@@ -193,7 +193,7 @@ export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
             <p className="text-slate-500 text-sm max-w-sm mx-auto mt-2 mb-6">
                 Sube la imagen de la radiografía y/o su reporte de interpretación. El sistema extrae todos los datos disponibles.
             </p>
-            <div className="max-w-lg mx-auto">
+            <div className="w-full">
                 <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="radiografia" onSaved={loadData} />
             </div>
         </Card>
@@ -224,7 +224,7 @@ export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                        <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="radiografia" onSaved={loadData} />
+                        <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="radiografia" onSaved={loadData} isCompact />
                         <div className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-100">
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Fecha</p>
                             <p className="text-sm font-bold text-slate-700">

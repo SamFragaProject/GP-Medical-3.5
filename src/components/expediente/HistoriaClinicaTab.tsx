@@ -183,7 +183,7 @@ export default function HistoriaClinicaTab({ pacienteId }: { pacienteId: string 
             <p className="text-slate-500 text-sm max-w-sm mx-auto mt-2 mb-6">
                 Sube el formulario de Historia Clínica / Examen Médico Ocupacional. El sistema extraerá todos los campos automáticamente.
             </p>
-            <div className="max-w-lg mx-auto">
+            <div className="w-full">
                 <EstudioUploadReview pacienteId={pacienteId} tipoEstudio={'historia_clinica' as any} onSaved={loadData} />
             </div>
         </Card>
@@ -235,7 +235,7 @@ export default function HistoriaClinicaTab({ pacienteId }: { pacienteId: string 
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                        <EstudioUploadReview pacienteId={pacienteId} tipoEstudio={'historia_clinica' as any} onSaved={loadData} />
+                        <EstudioUploadReview pacienteId={pacienteId} tipoEstudio={'historia_clinica' as any} onSaved={loadData} isCompact />
                         {aptitud && (
                             <div className={`px-4 py-2 rounded-xl border ${aptitudOk ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
                                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Aptitud Laboral</p>

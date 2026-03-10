@@ -28,53 +28,77 @@ interface Props {
     waveforms?: LeadWaveform[]
 }
 
-// ── SVG Grid Pattern (papel milimétrico ECG rojo) ──
+// ── SVG Grid Pattern (Papel de ECG Médico Estándar - 1mm y 5mm) ──
 const GridPattern = () => (
-    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 pointer-events-none">
+    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 pointer-events-none z-0">
         <defs>
-            <pattern id="ecgSmallGridR" width="4" height="4" patternUnits="userSpaceOnUse">
-                <path d="M 4 0 L 0 0 0 4" fill="none" stroke="#ffdbdb" strokeWidth="0.5" />
+            {/* Cuadro Pequeño (1mm) */}
+            <pattern id="ecgSmallGrid" width="4" height="4" patternUnits="userSpaceOnUse">
+                <path d="M 4 0 L 0 0 0 4" fill="none" stroke="#ffcccc" strokeWidth="0.5" />
             </pattern>
-            <pattern id="ecgLargeGridR" width="20" height="20" patternUnits="userSpaceOnUse">
-                <rect width="20" height="20" fill="url(#ecgSmallGridR)" />
-                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#ffb3b3" strokeWidth="1" />
+            {/* Cuadro Grande (5mm = 5 pequeñas = 20px) */}
+            <pattern id="ecgLargeGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <rect width="20" height="20" fill="url(#ecgSmallGrid)" />
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#ff9999" strokeWidth="1" />
             </pattern>
         </defs>
-        <rect width="100%" height="100%" fill="url(#ecgLargeGridR)" />
+        {/* Fondo blanco puro primero, luego la cuadrícula encima */}
+        <rect width="100%" height="100%" fill="#ffffff" />
+        <rect width="100%" height="100%" fill="url(#ecgLargeGrid)" />
     </svg>
 )
 
-// ── Render waveform path from points ──
+// ── Renderización de Waveforms extraídas reales ──
 const renderWaveformPath = (points: number[], width: number, height: number) => {
+    if (!points || points.length === 0) return null
     const baseline = height / 2
     const amplitude = height * 0.45
-    const d = points.map((p, i) => {
-        const x = (i / points.length) * width
+    // Simple line generator for extracted points (real ECG data needs sharp lines, no smoothing)
+    const pointsStr = points.map((p, i) => {
+        const x = (i / (points.length - 1)) * width
         const y = baseline - (p * amplitude)
-        return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`
+        return `${x.toFixed(1)},${y.toFixed(1)}`
     }).join(' ')
-    return <path d={d} fill="none" stroke="#000" strokeWidth="1.2" strokeLinejoin="round" strokeLinecap="round" />
+
+    return <polyline points={pointsStr} fill="none" stroke="#000000" strokeWidth="1.2" strokeLinejoin="miter" strokeLinecap="square" />
 }
 
-// ── Simulated ECG beat ──
+// ── Simulación Hiperrealista de Onda ECG ──
+// Genera una onda P-QRS-T suave e interconectada en lugar de ángulos rectos
 const renderSimulatedBeat = (width: number, height: number, segments: number) => {
     let d = `M 0 ${height / 2} `
     const segW = width / segments
+    const b = height / 2 // baseline
+
     for (let i = 0; i < segments; i++) {
         const sx = i * segW
-        const mid = height / 2
-        d += `L ${sx + segW * 0.1} ${mid} `
-        d += `Q ${sx + segW * 0.15} ${mid - 4} ${sx + segW * 0.2} ${mid} `
-        d += `L ${sx + segW * 0.3} ${mid} `
-        d += `L ${sx + segW * 0.35} ${mid + 2} `
-        d += `L ${sx + segW * 0.4} ${mid - 20} `
-        d += `L ${sx + segW * 0.45} ${mid + 6} `
-        d += `L ${sx + segW * 0.5} ${mid} `
-        d += `L ${sx + segW * 0.65} ${mid} `
-        d += `Q ${sx + segW * 0.75} ${mid - 8} ${sx + segW * 0.85} ${mid} `
-        d += `L ${sx + segW} ${mid} `
+
+        // Línea isoeléctrica
+        d += `L ${sx + segW * 0.1} ${b} `
+
+        // Onda P (Suave curva)
+        d += `C ${sx + segW * 0.15} ${b - 5}, ${sx + segW * 0.2} ${b - 5}, ${sx + segW * 0.25} ${b} `
+
+        // Segmento PR
+        d += `L ${sx + segW * 0.3} ${b} `
+
+        // Complejo QRS (Sharp)
+        d += `L ${sx + segW * 0.35} ${b + 3} ` // Q
+        d += `L ${sx + segW * 0.4} ${b - 25} ` // R (Alta)
+        d += `L ${sx + segW * 0.45} ${b + 6} ` // S (Profunda)
+        d += `L ${sx + segW * 0.48} ${b} `     // Regreso a base
+
+        // Segmento ST
+        d += `L ${sx + segW * 0.6} ${b} `
+
+        // Onda T (Ligeramente asimétrica y suave)
+        d += `C ${sx + segW * 0.68} ${b - 8}, ${sx + segW * 0.78} ${b - 12}, ${sx + segW * 0.85} ${b} `
+
+        // Segmento TP
+        d += `L ${sx + segW} ${b} `
     }
-    return <path d={d} fill="none" stroke="#000" strokeWidth="1" strokeLinejoin="round" />
+
+    return <path d={d} fill="none" stroke="#222222" strokeWidth="1.2" strokeLinejoin="round" strokeLinecap="round" />
 }
 
 export default function EcgReviewClone({ data, waveforms }: Props) {

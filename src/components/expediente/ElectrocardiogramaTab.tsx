@@ -377,18 +377,9 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
     )
 
     if (estudios.length === 0) return (
-        <Card className="border-0 shadow-sm p-12 text-center">
-            <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <HeartPulse className="w-8 h-8 text-rose-300" />
-            </div>
-            <h3 className="text-slate-800 font-bold">Sin electrocardiogramas</h3>
-            <p className="text-slate-500 text-sm max-w-sm mx-auto mt-2 mb-6">
-                Sube el trazado ECG (PDF) o el reporte de interpretación para análisis automático.
-            </p>
-            <div className="max-w-lg mx-auto">
-                <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="ecg" onSaved={loadECG} />
-            </div>
-        </Card>
+        <div className="w-full">
+            <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="ecg" onSaved={loadECG} />
+        </div>
     )
 
     const ecg = estudios[selectedIdx] || estudios[0]
@@ -429,7 +420,7 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                        <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="ecg" onSaved={loadECG} />
+                        <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="ecg" onSaved={loadECG} isCompact />
                         <div className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-100">
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Fecha</p>
                             <p className="text-sm font-bold text-slate-700">
