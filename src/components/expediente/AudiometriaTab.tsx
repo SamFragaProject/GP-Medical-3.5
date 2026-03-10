@@ -23,6 +23,7 @@ import AudiometryReviewClone from '@/components/expediente/AudiometryReviewClone
 import { analyzeAudiometryDirect } from '@/services/geminiDocumentService'
 import { secureStorageService } from '@/services/secureStorageService'
 import { useAuth } from '@/contexts/AuthContext'
+import { EMPRESA_PRINCIPAL_ID } from '@/config/empresa'
 
 // ── Frecuencias estándar audiograma ──
 const FREQS_ALL = ['125', '250', '500', '750', '1000', '1500', '2000', '3000', '4000', '6000', '8000']
@@ -388,6 +389,7 @@ const useAudiometryUpload = (pacienteId: string, empresaId: string, userId: stri
                         const { data: pac } = await supabase.from('pacientes').select('empresa_id').eq('id', pacienteId).single()
                         eid = pac?.empresa_id || ''
                     }
+                    if (!eid) eid = EMPRESA_PRINCIPAL_ID
                     if (eid) {
                         const patientName = previewData.patient?.name || 'Paciente'
                         const fecha = new Date().toISOString().split('T')[0]

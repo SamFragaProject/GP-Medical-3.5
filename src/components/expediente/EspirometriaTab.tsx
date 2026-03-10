@@ -22,6 +22,7 @@ import { analyzeSpirometryDirect } from '@/services/geminiDocumentService'
 import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
 import { secureStorageService } from '@/services/secureStorageService'
 import { useAuth } from '@/contexts/AuthContext'
+import { EMPRESA_PRINCIPAL_ID } from '@/config/empresa'
 import {
     BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -122,6 +123,7 @@ const useSpirometryUpload = (pacienteId: string, empresaId: string, userId: stri
                         const { data: pac } = await supabase.from('pacientes').select('empresa_id').eq('id', pacienteId).single()
                         eid = pac?.empresa_id || ''
                     }
+                    if (!eid) eid = EMPRESA_PRINCIPAL_ID
                     if (eid) {
                         const patientName = previewData.patient?.name || 'Paciente'
                         const fecha = new Date().toISOString().split('T')[0]
@@ -846,8 +848,8 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                 <button
                     onClick={() => setActiveView('espirografia')}
                     className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${activeView === 'espirografia'
-                            ? 'bg-white text-blue-700 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                        ? 'bg-white text-blue-700 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
                         }`}
                 >
                     <Wind className="w-4 h-4" />
@@ -856,8 +858,8 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                 <button
                     onClick={() => setActiveView('analisis')}
                     className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${activeView === 'analisis'
-                            ? 'bg-white text-emerald-700 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                        ? 'bg-white text-emerald-700 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
                         }`}
                 >
                     <Activity className="w-4 h-4" />

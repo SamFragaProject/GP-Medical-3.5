@@ -24,6 +24,7 @@ import { type DocumentoExpediente, isViewable } from '@/services/secureStorageSe
 import { formatFileSize } from '@/services/cryptoService'
 import { useAuth } from '@/contexts/AuthContext'
 import DocumentoViewerModal from '@/components/ui/DocumentoViewerModal'
+import { EMPRESA_PRINCIPAL_ID } from '@/config/empresa'
 
 // ── Props ──
 interface DocumentosAdjuntosProps {
@@ -53,7 +54,7 @@ export default function DocumentosAdjuntos({
     collapsedByDefault = true,
 }: DocumentosAdjuntosProps) {
     const { user } = useAuth()
-    const resolvedEmpresaId = empresaIdProp || user?.empresa_id || ''
+    const resolvedEmpresaId = empresaIdProp || user?.empresa_id || EMPRESA_PRINCIPAL_ID
     const { documentos, loading, refresh, totalCount } = useDocumentosPaciente(pacienteId, categoria)
     const [collapsed, setCollapsed] = useState(collapsedByDefault)
     const [selectedDoc, setSelectedDoc] = useState<DocumentoExpediente | null>(null)

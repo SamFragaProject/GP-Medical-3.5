@@ -17,6 +17,7 @@ import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
 import { analyzeOptometryDirect } from '@/services/geminiDocumentService'
 import { secureStorageService } from '@/services/secureStorageService'
 import { useAuth } from '@/contexts/AuthContext'
+import { EMPRESA_PRINCIPAL_ID } from '@/config/empresa'
 
 // ── Tabla Snellen ──
 const SNELLEN_SCORE: Record<string, number> = {
@@ -234,6 +235,8 @@ const useOptometryUpload = (pacienteId: string, empresaId: string, userId: strin
                         const { data: pac } = await supabase.from('pacientes').select('empresa_id').eq('id', pacienteId).single()
                         eid = pac?.empresa_id || ''
                     }
+                    // Ultimate fallback: usar empresa principal si no se encontró
+                    if (!eid) eid = EMPRESA_PRINCIPAL_ID
                     if (eid) {
                         const name = previewData.patient?.name || 'Paciente'
                         const fecha = new Date().toISOString().split('T')[0]
