@@ -381,23 +381,31 @@ const useAudiometryUpload = (pacienteId: string, empresaId: string, userId: stri
             })
             if (dbErr) throw dbErr
 
-            if (originalFile && empresaId) {
+            if (originalFile) {
                 try {
-                    const patientName = previewData.patient?.name || 'Paciente'
-                    const fecha = new Date().toISOString().split('T')[0]
-                    const ext = originalFile.name.split('.').pop() || 'pdf'
-                    const renamedFile = new File(
-                        [originalFile],
-                        `Audiometria_${patientName.replace(/\s+/g, '_')}_${fecha}.${ext}`,
-                        { type: originalFile.type }
-                    )
-                    await secureStorageService.upload(renamedFile, {
-                        pacienteId, empresaId,
-                        categoria: 'audiometria',
-                        subcategoria: 'reporte_original',
-                        descripcion: `Audiometría de ${patientName} — ${fecha}`,
-                        userId, userNombre: userName, userRol: userRol,
-                    })
+                    let eid = empresaId
+                    if (!eid) {
+                        const { data: pac } = await supabase.from('pacientes').select('empresa_id').eq('id', pacienteId).single()
+                        eid = pac?.empresa_id || ''
+                    }
+                    if (eid) {
+                        const patientName = previewData.patient?.name || 'Paciente'
+                        const fecha = new Date().toISOString().split('T')[0]
+                        const ext = originalFile.name.split('.').pop() || 'pdf'
+                        const renamedFile = new File(
+                            [originalFile],
+                            `Audiometria_${patientName.replace(/\s+/g, '_')}_${fecha}.${ext}`,
+                            { type: originalFile.type }
+                        )
+                        await secureStorageService.upload(renamedFile, {
+                            pacienteId, empresaId: eid,
+                            categoria: 'audiometria',
+                            subcategoria: 'reporte_original',
+                            descripcion: `Audiometría de ${patientName} — ${fecha}`,
+                            userId, userNombre: userName, userRol: userRol,
+                        })
+                        console.log('📎 Archivo audiometría guardado en Storage')
+                    }
                 } catch (storageErr) {
                     console.warn('⚠️ No se pudo guardar el archivo original:', storageErr)
                 }
@@ -464,12 +472,12 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
                     if (clone?.thresholds) {
                         const od: Record<string, number> = {}
                         const oi: Record<string, number> = {}
-                        ;(clone.thresholds.right || []).forEach((t: any) => {
-                            if (t.value !== null && t.value !== undefined) od[String(t.frequency)] = Number(t.value)
-                        })
-                        ;(clone.thresholds.left || []).forEach((t: any) => {
-                            if (t.value !== null && t.value !== undefined) oi[String(t.frequency)] = Number(t.value)
-                        })
+                            ; (clone.thresholds.right || []).forEach((t: any) => {
+                                if (t.value !== null && t.value !== undefined) od[String(t.frequency)] = Number(t.value)
+                            })
+                            ; (clone.thresholds.left || []).forEach((t: any) => {
+                                if (t.value !== null && t.value !== undefined) oi[String(t.frequency)] = Number(t.value)
+                            })
                         const ptaOd = FREQS_PTA.some(f => od[f] !== undefined)
                             ? Math.round(FREQS_PTA.reduce((s, f) => s + (od[f] || 0), 0) / FREQS_PTA.length) : 0
                         const ptaOi = FREQS_PTA.some(f => oi[f] !== undefined)
@@ -972,316 +980,316 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
                                 : { bg: 'bg-red-500', text: 'text-red-700', light: 'bg-red-50', border: 'border-red-200' }
 
                     return (
-                    <motion.div key="analisis"
-                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }} className="space-y-5">
+                        <motion.div key="analisis"
+                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }} className="space-y-5">
 
-                        {/* Header IA */}
-                        <div className="bg-gradient-to-br from-violet-900 via-purple-900 to-indigo-900 rounded-2xl p-5 text-white relative overflow-hidden">
-                            <div className="absolute inset-0 opacity-10">
-                                {Array.from({ length: 20 }).map((_, i) => (
-                                    <motion.div key={i}
-                                        className="absolute w-1 rounded-full bg-white"
-                                        style={{ left: `${i * 5 + 2}%`, bottom: 0, height: `${20 + Math.random() * 60}%` }}
-                                        animate={{ height: [`${20 + Math.random() * 60}%`, `${20 + Math.random() * 60}%`], opacity: [0.3, 0.8, 0.3] }}
-                                        transition={{ duration: 1.5 + Math.random(), repeat: Infinity, delay: Math.random() * 2 }}
-                                    />
-                                ))}
-                            </div>
-                            <div className="relative">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                                        <Brain className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <p className="font-black text-sm">Análisis Audiológico IA Avanzado</p>
-                                        <p className="text-violet-200 text-xs">8 módulos de inteligencia clínica — NOM-011 · OMS · AMA</p>
-                                    </div>
-                                </div>
-                                <p className="text-sm text-violet-100 leading-relaxed">
-                                    {audio.resumen || `Audiometría tonal de vía aérea. PTA OD: ${audio.pta_od} dB — PTA OI: ${audio.pta_oi} dB. ${audio.diagnostico || 'Resultado registrado.'}`}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* ── 1. RIESGO GLOBAL ── */}
-                        <Card className={`${riskColors.light} ${riskColors.border} border shadow-sm`}>
-                            <CardContent className="p-5">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <Target className="w-4 h-4 text-slate-600" />
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Nivel de Riesgo Auditivo</p>
-                                    </div>
-                                    <Badge className={`${riskColors.bg} text-white text-xs font-black px-3 py-1`}>{riskLabel} — {riskScore}%</Badge>
-                                </div>
-                                <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${riskScore}%` }}
-                                        transition={{ duration: 1.2, ease: 'easeOut' }}
-                                        className={`h-full rounded-full ${riskColors.bg}`}
-                                    />
-                                </div>
-                                <div className="grid grid-cols-4 gap-1 mt-3">
-                                    {[{ l: 'Bajo', r: '0-20%' }, { l: 'Moderado', r: '21-50%' }, { l: 'Alto', r: '51-75%' }, { l: 'Crítico', r: '76-100%' }].map(({ l, r }) => (
-                                        <div key={l} className="text-center">
-                                            <p className="text-[8px] font-bold text-slate-400">{l}</p>
-                                            <p className="text-[8px] text-slate-300">{r}</p>
-                                        </div>
+                            {/* Header IA */}
+                            <div className="bg-gradient-to-br from-violet-900 via-purple-900 to-indigo-900 rounded-2xl p-5 text-white relative overflow-hidden">
+                                <div className="absolute inset-0 opacity-10">
+                                    {Array.from({ length: 20 }).map((_, i) => (
+                                        <motion.div key={i}
+                                            className="absolute w-1 rounded-full bg-white"
+                                            style={{ left: `${i * 5 + 2}%`, bottom: 0, height: `${20 + Math.random() * 60}%` }}
+                                            animate={{ height: [`${20 + Math.random() * 60}%`, `${20 + Math.random() * 60}%`], opacity: [0.3, 0.8, 0.3] }}
+                                            transition={{ duration: 1.5 + Math.random(), repeat: Infinity, delay: Math.random() * 2 }}
+                                        />
                                     ))}
                                 </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* ── 2. GAUGES PTA ── */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <PTAGauge value={audio.pta_od || 0} label="PTA Oído Derecho" color="red" />
-                            <PTAGauge value={audio.pta_oi || 0} label="PTA Oído Izquierdo" color="blue" />
-                        </div>
-
-                        {/* ── 3. KPIs CLÍNICOS ── */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <Card className={`shadow-sm ${hasDPN ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50'}`}>
-                                <CardContent className="p-4 text-center">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">DPN (Daño Ruido)</p>
-                                    <p className={`text-lg font-black mt-1 ${hasDPN ? 'text-red-600' : 'text-emerald-600'}`}>
-                                        {hasDPN ? '⚠️ Detectado' : '✅ No'}
+                                <div className="relative">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                                            <Brain className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="font-black text-sm">Análisis Audiológico IA Avanzado</p>
+                                            <p className="text-violet-200 text-xs">8 módulos de inteligencia clínica — NOM-011 · OMS · AMA</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-violet-100 leading-relaxed">
+                                        {audio.resumen || `Audiometría tonal de vía aérea. PTA OD: ${audio.pta_od} dB — PTA OI: ${audio.pta_oi} dB. ${audio.diagnostico || 'Resultado registrado.'}`}
                                     </p>
-                                    <p className="text-[9px] text-slate-500 mt-1">{hasDPN ? `Muesca 4kHz ${dpnOd ? 'OD' : ''}${dpnOd && dpnOi ? '+' : ''}${dpnOi ? 'OI' : ''}` : 'Sin patrón de ruido'}</p>
-                                </CardContent>
-                            </Card>
-                            <Card className={`shadow-sm ${disabilityPct > 0 ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}>
-                                <CardContent className="p-4 text-center">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Discapacidad AMA</p>
-                                    <p className={`text-lg font-black mt-1 ${disabilityPct > 0 ? 'text-amber-700' : 'text-emerald-600'}`}>{disabilityPct}%</p>
-                                    <p className="text-[9px] text-slate-500 mt-1">PTA binaural: {binaural} dB</p>
-                                </CardContent>
-                            </Card>
-                            <Card className="shadow-sm border-slate-200">
-                                <CardContent className="p-4 text-center">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Habla OD / OI</p>
-                                    <p className="text-lg font-black mt-1">
-                                        <span className={siiColor(siiOd)}>{siiOd}</span>
-                                        <span className="text-slate-300 mx-1">/</span>
-                                        <span className={siiColor(siiOi)}>{siiOi}</span>
-                                        <span className="text-xs text-slate-400"> dB</span>
-                                    </p>
-                                    <p className="text-[9px] text-slate-500 mt-1">{siiLabel(Math.max(siiOd, siiOi))}</p>
-                                </CardContent>
-                            </Card>
-                            <Card className={`shadow-sm ${asymmetry > 15 ? 'border-red-200 bg-red-50' : 'border-slate-200'}`}>
-                                <CardContent className="p-4 text-center">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Simetría</p>
-                                    <p className={`text-lg font-black mt-1 ${asymColor}`}>Δ {asymmetry} dB</p>
-                                    <p className="text-[9px] text-slate-500 mt-1">{asymLabel}</p>
-                                </CardContent>
-                            </Card>
-                        </div>
+                                </div>
+                            </div>
 
-                        {/* ── 4. PERFIL DE CURVA + BANDAS ── */}
-                        <Card className="border-slate-100 shadow-sm">
-                            <CardContent className="p-5">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Perfil Audiométrico y Bandas de Frecuencia</p>
-                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                    {[{ label: 'Oído Derecho', profile: profileOd, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' },
-                                      { label: 'Oído Izquierdo', profile: profileOi, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' }].map(({ label, profile, color, bg, border }) => (
-                                        <div key={label} className={`p-3 rounded-xl ${bg} border ${border}`}>
-                                            <p className="text-[9px] font-bold text-slate-400 uppercase">{label}</p>
-                                            <p className={`text-sm font-black ${color} mt-1`}>{profile}</p>
-                                            <p className="text-[9px] text-slate-500 mt-0.5">
-                                                {profile === 'Descendente' ? 'Típico de presbiacusia o exposición crónica'
-                                                    : profile === 'Muesca (Notch)' ? 'Patrón de trauma acústico (4kHz)'
-                                                    : profile === 'Plano' ? 'Curva uniforme — puede ser conductiva'
-                                                    : profile === 'Ascendente' ? 'Pérdida en graves — evaluar patología media'
-                                                    : 'Patrón no uniforme'}
+                            {/* ── 1. RIESGO GLOBAL ── */}
+                            <Card className={`${riskColors.light} ${riskColors.border} border shadow-sm`}>
+                                <CardContent className="p-5">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-2">
+                                            <Target className="w-4 h-4 text-slate-600" />
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Nivel de Riesgo Auditivo</p>
+                                        </div>
+                                        <Badge className={`${riskColors.bg} text-white text-xs font-black px-3 py-1`}>{riskLabel} — {riskScore}%</Badge>
+                                    </div>
+                                    <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${riskScore}%` }}
+                                            transition={{ duration: 1.2, ease: 'easeOut' }}
+                                            className={`h-full rounded-full ${riskColors.bg}`}
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-1 mt-3">
+                                        {[{ l: 'Bajo', r: '0-20%' }, { l: 'Moderado', r: '21-50%' }, { l: 'Alto', r: '51-75%' }, { l: 'Crítico', r: '76-100%' }].map(({ l, r }) => (
+                                            <div key={l} className="text-center">
+                                                <p className="text-[8px] font-bold text-slate-400">{l}</p>
+                                                <p className="text-[8px] text-slate-300">{r}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* ── 2. GAUGES PTA ── */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <PTAGauge value={audio.pta_od || 0} label="PTA Oído Derecho" color="red" />
+                                <PTAGauge value={audio.pta_oi || 0} label="PTA Oído Izquierdo" color="blue" />
+                            </div>
+
+                            {/* ── 3. KPIs CLÍNICOS ── */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                <Card className={`shadow-sm ${hasDPN ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50'}`}>
+                                    <CardContent className="p-4 text-center">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">DPN (Daño Ruido)</p>
+                                        <p className={`text-lg font-black mt-1 ${hasDPN ? 'text-red-600' : 'text-emerald-600'}`}>
+                                            {hasDPN ? '⚠️ Detectado' : '✅ No'}
+                                        </p>
+                                        <p className="text-[9px] text-slate-500 mt-1">{hasDPN ? `Muesca 4kHz ${dpnOd ? 'OD' : ''}${dpnOd && dpnOi ? '+' : ''}${dpnOi ? 'OI' : ''}` : 'Sin patrón de ruido'}</p>
+                                    </CardContent>
+                                </Card>
+                                <Card className={`shadow-sm ${disabilityPct > 0 ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}>
+                                    <CardContent className="p-4 text-center">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Discapacidad AMA</p>
+                                        <p className={`text-lg font-black mt-1 ${disabilityPct > 0 ? 'text-amber-700' : 'text-emerald-600'}`}>{disabilityPct}%</p>
+                                        <p className="text-[9px] text-slate-500 mt-1">PTA binaural: {binaural} dB</p>
+                                    </CardContent>
+                                </Card>
+                                <Card className="shadow-sm border-slate-200">
+                                    <CardContent className="p-4 text-center">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Habla OD / OI</p>
+                                        <p className="text-lg font-black mt-1">
+                                            <span className={siiColor(siiOd)}>{siiOd}</span>
+                                            <span className="text-slate-300 mx-1">/</span>
+                                            <span className={siiColor(siiOi)}>{siiOi}</span>
+                                            <span className="text-xs text-slate-400"> dB</span>
+                                        </p>
+                                        <p className="text-[9px] text-slate-500 mt-1">{siiLabel(Math.max(siiOd, siiOi))}</p>
+                                    </CardContent>
+                                </Card>
+                                <Card className={`shadow-sm ${asymmetry > 15 ? 'border-red-200 bg-red-50' : 'border-slate-200'}`}>
+                                    <CardContent className="p-4 text-center">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Simetría</p>
+                                        <p className={`text-lg font-black mt-1 ${asymColor}`}>Δ {asymmetry} dB</p>
+                                        <p className="text-[9px] text-slate-500 mt-1">{asymLabel}</p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* ── 4. PERFIL DE CURVA + BANDAS ── */}
+                            <Card className="border-slate-100 shadow-sm">
+                                <CardContent className="p-5">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Perfil Audiométrico y Bandas de Frecuencia</p>
+                                    <div className="grid grid-cols-2 gap-4 mb-4">
+                                        {[{ label: 'Oído Derecho', profile: profileOd, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100' },
+                                        { label: 'Oído Izquierdo', profile: profileOi, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' }].map(({ label, profile, color, bg, border }) => (
+                                            <div key={label} className={`p-3 rounded-xl ${bg} border ${border}`}>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">{label}</p>
+                                                <p className={`text-sm font-black ${color} mt-1`}>{profile}</p>
+                                                <p className="text-[9px] text-slate-500 mt-0.5">
+                                                    {profile === 'Descendente' ? 'Típico de presbiacusia o exposición crónica'
+                                                        : profile === 'Muesca (Notch)' ? 'Patrón de trauma acústico (4kHz)'
+                                                            : profile === 'Plano' ? 'Curva uniforme — puede ser conductiva'
+                                                                : profile === 'Ascendente' ? 'Pérdida en graves — evaluar patología media'
+                                                                    : 'Patrón no uniforme'}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {[{ ear: 'OD', speech: speechOd, high: highOd, dotColor: 'bg-red-500' },
+                                        { ear: 'OI', speech: speechOi, high: highOi, dotColor: 'bg-blue-500' }].map(({ ear, speech, high, dotColor }) => (
+                                            <div key={ear} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                                <div className="flex items-center gap-1.5 mb-2">
+                                                    <div className={`w-2.5 h-2.5 rounded-full ${dotColor}`} />
+                                                    <p className="text-[9px] font-black text-slate-500 uppercase">{ear}</p>
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-[10px] text-slate-500">Habla (0.5-2k)</span>
+                                                        <span className={`text-xs font-black ${speech <= 25 ? 'text-emerald-600' : 'text-amber-600'}`}>{speech} dB</span>
+                                                    </div>
+                                                    <div className="h-1.5 bg-slate-200 rounded-full">
+                                                        <div className={`h-full rounded-full ${speech <= 25 ? 'bg-emerald-400' : 'bg-amber-400'}`} style={{ width: `${Math.min(speech / 90 * 100, 100)}%` }} />
+                                                    </div>
+                                                    <div className="flex justify-between items-center mt-1">
+                                                        <span className="text-[10px] text-slate-500">Altas (3-6k)</span>
+                                                        <span className={`text-xs font-black ${high <= 25 ? 'text-emerald-600' : high <= 40 ? 'text-amber-600' : 'text-red-600'}`}>{high} dB</span>
+                                                    </div>
+                                                    <div className="h-1.5 bg-slate-200 rounded-full">
+                                                        <div className={`h-full rounded-full ${high <= 25 ? 'bg-emerald-400' : high <= 40 ? 'bg-amber-400' : 'bg-red-400'}`} style={{ width: `${Math.min(high / 90 * 100, 100)}%` }} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* ── 5. ESPECTRO COMPLETO ── */}
+                            <Card className="border-slate-100 shadow-sm">
+                                <CardContent className="p-5">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Espectro Completo — dB por Frecuencia</p>
+                                    <div className="flex justify-between items-end gap-1 overflow-x-auto pb-2">
+                                        {FREQS_ALL.map((f, i) => (
+                                            <FreqBar key={f} freq={f} od={odData[f] ?? 0} oi={oiData[f] ?? 0} delay={i * 0.05} />
+                                        ))}
+                                    </div>
+                                    <div className="flex gap-4 mt-3 justify-center">
+                                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-red-500" /><span className="text-[10px] font-bold text-slate-500">OD (Derecho)</span></div>
+                                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-500" /><span className="text-[10px] font-bold text-slate-500">OI (Izquierdo)</span></div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* ── 6. CLASIFICACIÓN POR FRECUENCIA (NOM-011) ── */}
+                            <Card className="border-slate-100 shadow-sm">
+                                <CardContent className="p-5">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Clasificación Clínica por Frecuencia (NOM-011-STPS)</p>
+                                    <div className="space-y-2">
+                                        {FREQS_ALL.map((f) => {
+                                            const od = odData[f], oi = oiData[f]
+                                            if (od === undefined && oi === undefined) return null
+                                            const odCls = od !== undefined ? classifyDb(od) : null
+                                            const oiCls = oi !== undefined ? classifyDb(oi) : null
+                                            const worst = Math.max(od ?? 0, oi ?? 0)
+                                            const wCls = classifyDb(worst)
+                                            return (
+                                                <div key={f} className={`flex items-center gap-3 p-3 rounded-xl ${wCls.bg} border ${wCls.border}`}>
+                                                    <div className="w-16 text-center"><p className="text-xs font-black text-slate-600">{FREQ_LABELS[f]} Hz</p></div>
+                                                    <div className="flex-1 grid grid-cols-2 gap-2">
+                                                        <div><p className="text-[9px] text-slate-400 font-bold uppercase">OD</p><p className={`text-sm font-black ${odCls?.color || 'text-slate-300'}`}>{od !== undefined ? `${od} dB` : '—'}</p></div>
+                                                        <div><p className="text-[9px] text-slate-400 font-bold uppercase">OI</p><p className={`text-sm font-black ${oiCls?.color || 'text-slate-300'}`}>{oi !== undefined ? `${oi} dB` : '—'}</p></div>
+                                                    </div>
+                                                    <div className="text-right w-36"><p className={`text-xs font-black ${wCls.color}`}>{wCls.label}</p></div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* ── 7. INTERPRETACIÓN INTEGRAL ── */}
+                            <Card className="border-violet-100 shadow-sm bg-gradient-to-br from-violet-50 to-white">
+                                <CardContent className="p-5">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Brain className="w-4 h-4 text-violet-600" />
+                                        <p className="text-sm font-black text-slate-800 uppercase tracking-wide">Interpretación Audiológica Integral</p>
+                                    </div>
+                                    <div className="space-y-3 text-sm text-slate-700">
+                                        <div className="p-3 bg-white rounded-xl border border-violet-100">
+                                            <p className="font-black text-violet-700 text-xs uppercase tracking-widest mb-1">Perfil de Umbral</p>
+                                            <p className="leading-relaxed">
+                                                PTA bilateral: OD <strong>{audio.pta_od} dB</strong> — OI <strong>{audio.pta_oi} dB</strong>.
+                                                PTA binaural ponderado: <strong>{binaural} dB</strong>.
+                                                {' '}{classifyDb(Math.max(audio.pta_od || 0, audio.pta_oi || 0)).label}.
+                                                {' '}{audio.diagnostico || ''}
                                             </p>
                                         </div>
-                                    ))}
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    {[{ ear: 'OD', speech: speechOd, high: highOd, dotColor: 'bg-red-500' },
-                                      { ear: 'OI', speech: speechOi, high: highOi, dotColor: 'bg-blue-500' }].map(({ ear, speech, high, dotColor }) => (
-                                        <div key={ear} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                            <div className="flex items-center gap-1.5 mb-2">
-                                                <div className={`w-2.5 h-2.5 rounded-full ${dotColor}`} />
-                                                <p className="text-[9px] font-black text-slate-500 uppercase">{ear}</p>
+                                        {hasDPN && (
+                                            <div className="p-3 bg-red-50 rounded-xl border border-red-200">
+                                                <p className="font-black text-red-700 text-xs uppercase tracking-widest mb-1">🔴 Daño por Ruido (DPN)</p>
+                                                <p className="leading-relaxed text-red-800">
+                                                    Se detecta muesca audiométrica en 4000 Hz ({dpnOd ? `OD: ${od4k}dB` : ''}{dpnOd && dpnOi ? ' / ' : ''}{dpnOi ? `OI: ${oi4k}dB` : ''}).
+                                                    Patrón compatible con trauma acústico crónico por exposición a ruido laboral.
+                                                    Se recomienda audiometría de control en 3 meses y estudio de logoaudiometría.
+                                                </p>
                                             </div>
-                                            <div className="space-y-1.5">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-[10px] text-slate-500">Habla (0.5-2k)</span>
-                                                    <span className={`text-xs font-black ${speech <= 25 ? 'text-emerald-600' : 'text-amber-600'}`}>{speech} dB</span>
-                                                </div>
-                                                <div className="h-1.5 bg-slate-200 rounded-full">
-                                                    <div className={`h-full rounded-full ${speech <= 25 ? 'bg-emerald-400' : 'bg-amber-400'}`} style={{ width: `${Math.min(speech / 90 * 100, 100)}%` }} />
-                                                </div>
-                                                <div className="flex justify-between items-center mt-1">
-                                                    <span className="text-[10px] text-slate-500">Altas (3-6k)</span>
-                                                    <span className={`text-xs font-black ${high <= 25 ? 'text-emerald-600' : high <= 40 ? 'text-amber-600' : 'text-red-600'}`}>{high} dB</span>
-                                                </div>
-                                                <div className="h-1.5 bg-slate-200 rounded-full">
-                                                    <div className={`h-full rounded-full ${high <= 25 ? 'bg-emerald-400' : high <= 40 ? 'bg-amber-400' : 'bg-red-400'}`} style={{ width: `${Math.min(high / 90 * 100, 100)}%` }} />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* ── 5. ESPECTRO COMPLETO ── */}
-                        <Card className="border-slate-100 shadow-sm">
-                            <CardContent className="p-5">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Espectro Completo — dB por Frecuencia</p>
-                                <div className="flex justify-between items-end gap-1 overflow-x-auto pb-2">
-                                    {FREQS_ALL.map((f, i) => (
-                                        <FreqBar key={f} freq={f} od={odData[f] ?? 0} oi={oiData[f] ?? 0} delay={i * 0.05} />
-                                    ))}
-                                </div>
-                                <div className="flex gap-4 mt-3 justify-center">
-                                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-red-500" /><span className="text-[10px] font-bold text-slate-500">OD (Derecho)</span></div>
-                                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-blue-500" /><span className="text-[10px] font-bold text-slate-500">OI (Izquierdo)</span></div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* ── 6. CLASIFICACIÓN POR FRECUENCIA (NOM-011) ── */}
-                        <Card className="border-slate-100 shadow-sm">
-                            <CardContent className="p-5">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Clasificación Clínica por Frecuencia (NOM-011-STPS)</p>
-                                <div className="space-y-2">
-                                    {FREQS_ALL.map((f) => {
-                                        const od = odData[f], oi = oiData[f]
-                                        if (od === undefined && oi === undefined) return null
-                                        const odCls = od !== undefined ? classifyDb(od) : null
-                                        const oiCls = oi !== undefined ? classifyDb(oi) : null
-                                        const worst = Math.max(od ?? 0, oi ?? 0)
-                                        const wCls = classifyDb(worst)
-                                        return (
-                                            <div key={f} className={`flex items-center gap-3 p-3 rounded-xl ${wCls.bg} border ${wCls.border}`}>
-                                                <div className="w-16 text-center"><p className="text-xs font-black text-slate-600">{FREQ_LABELS[f]} Hz</p></div>
-                                                <div className="flex-1 grid grid-cols-2 gap-2">
-                                                    <div><p className="text-[9px] text-slate-400 font-bold uppercase">OD</p><p className={`text-sm font-black ${odCls?.color || 'text-slate-300'}`}>{od !== undefined ? `${od} dB` : '—'}</p></div>
-                                                    <div><p className="text-[9px] text-slate-400 font-bold uppercase">OI</p><p className={`text-sm font-black ${oiCls?.color || 'text-slate-300'}`}>{oi !== undefined ? `${oi} dB` : '—'}</p></div>
-                                                </div>
-                                                <div className="text-right w-36"><p className={`text-xs font-black ${wCls.color}`}>{wCls.label}</p></div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* ── 7. INTERPRETACIÓN INTEGRAL ── */}
-                        <Card className="border-violet-100 shadow-sm bg-gradient-to-br from-violet-50 to-white">
-                            <CardContent className="p-5">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Brain className="w-4 h-4 text-violet-600" />
-                                    <p className="text-sm font-black text-slate-800 uppercase tracking-wide">Interpretación Audiológica Integral</p>
-                                </div>
-                                <div className="space-y-3 text-sm text-slate-700">
-                                    <div className="p-3 bg-white rounded-xl border border-violet-100">
-                                        <p className="font-black text-violet-700 text-xs uppercase tracking-widest mb-1">Perfil de Umbral</p>
-                                        <p className="leading-relaxed">
-                                            PTA bilateral: OD <strong>{audio.pta_od} dB</strong> — OI <strong>{audio.pta_oi} dB</strong>.
-                                            PTA binaural ponderado: <strong>{binaural} dB</strong>.
-                                            {' '}{classifyDb(Math.max(audio.pta_od || 0, audio.pta_oi || 0)).label}.
-                                            {' '}{audio.diagnostico || ''}
-                                        </p>
-                                    </div>
-                                    {hasDPN && (
-                                        <div className="p-3 bg-red-50 rounded-xl border border-red-200">
-                                            <p className="font-black text-red-700 text-xs uppercase tracking-widest mb-1">🔴 Daño por Ruido (DPN)</p>
-                                            <p className="leading-relaxed text-red-800">
-                                                Se detecta muesca audiométrica en 4000 Hz ({dpnOd ? `OD: ${od4k}dB` : ''}{dpnOd && dpnOi ? ' / ' : ''}{dpnOi ? `OI: ${oi4k}dB` : ''}).
-                                                Patrón compatible con trauma acústico crónico por exposición a ruido laboral.
-                                                Se recomienda audiometría de control en 3 meses y estudio de logoaudiometría.
+                                        )}
+                                        <div className="p-3 bg-white rounded-xl border border-violet-100">
+                                            <p className="font-black text-violet-700 text-xs uppercase tracking-widest mb-1">Relevancia Laboral (NOM-011-STPS)</p>
+                                            <p className="leading-relaxed">
+                                                {audio.pta_od <= 25 && audio.pta_oi <= 25
+                                                    ? 'Audición dentro de límites normales (≤25 dB). Apto para cualquier puesto sin restricción auditiva.'
+                                                    : audio.pta_od > 40 || audio.pta_oi > 40
+                                                        ? `Hipoacusia ${classifyDb(worsePTA).label.toLowerCase()} (PTA peor oído: ${worsePTA}dB). Restricción laboral en puestos con exposición a ruido >85dB. Requiere EPP auditivo NRR≥25dB.`
+                                                        : `Umbral en zona de vigilancia (PTA mejor: ${betterPTA}dB, peor: ${worsePTA}dB). Uso obligatorio de EPP auditivo en áreas >80dB. Monitoreo audiométrico semestral.`}
                                             </p>
                                         </div>
-                                    )}
-                                    <div className="p-3 bg-white rounded-xl border border-violet-100">
-                                        <p className="font-black text-violet-700 text-xs uppercase tracking-widest mb-1">Relevancia Laboral (NOM-011-STPS)</p>
-                                        <p className="leading-relaxed">
-                                            {audio.pta_od <= 25 && audio.pta_oi <= 25
-                                                ? 'Audición dentro de límites normales (≤25 dB). Apto para cualquier puesto sin restricción auditiva.'
-                                                : audio.pta_od > 40 || audio.pta_oi > 40
-                                                    ? `Hipoacusia ${classifyDb(worsePTA).label.toLowerCase()} (PTA peor oído: ${worsePTA}dB). Restricción laboral en puestos con exposición a ruido >85dB. Requiere EPP auditivo NRR≥25dB.`
-                                                    : `Umbral en zona de vigilancia (PTA mejor: ${betterPTA}dB, peor: ${worsePTA}dB). Uso obligatorio de EPP auditivo en áreas >80dB. Monitoreo audiométrico semestral.`}
-                                        </p>
-                                    </div>
-                                    {alertas.length > 0 && (
-                                        <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
-                                            <p className="font-black text-amber-700 text-xs uppercase tracking-widest mb-2">Hallazgos Clínicos Automáticos</p>
-                                            <ul className="space-y-1">
-                                                {alertas.map((a, i) => (
-                                                    <li key={i} className="flex items-start gap-2">
-                                                        <Zap className="w-3 h-3 text-amber-500 flex-shrink-0 mt-0.5" />
-                                                        <span className="text-xs text-amber-700">{a}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
-                                    {prev && (
-                                        <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
-                                            <p className="font-black text-blue-700 text-xs uppercase tracking-widest mb-1">Evolución vs Estudio Previo</p>
-                                            <div className="grid grid-cols-2 gap-3 mt-2">
-                                                {[
-                                                    { label: 'PTA OD', curr: audio.pta_od, prev: prev.pta_od },
-                                                    { label: 'PTA OI', curr: audio.pta_oi, prev: prev.pta_oi },
-                                                ].map(({ label, curr, prev: p }) => {
-                                                    const diff = (curr || 0) - (p || 0)
-                                                    return (
-                                                        <div key={label}>
-                                                            <p className="text-[9px] font-bold text-slate-400 uppercase">{label}</p>
-                                                            <div className="flex items-center gap-1">
-                                                                <span className="text-sm font-black text-slate-700">{p} → {curr}</span>
-                                                                <span className={`text-xs font-bold ${diff > 5 ? 'text-red-600' : diff < -5 ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                                                    {diff > 0 ? <TrendingUp className="w-3 h-3 inline" /> : diff < 0 ? <TrendingDown className="w-3 h-3 inline" /> : <Minus className="w-3 h-3 inline" />}
-                                                                    {' '}{diff > 0 ? '+' : ''}{diff} dB
-                                                                </span>
+                                        {alertas.length > 0 && (
+                                            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                                                <p className="font-black text-amber-700 text-xs uppercase tracking-widest mb-2">Hallazgos Clínicos Automáticos</p>
+                                                <ul className="space-y-1">
+                                                    {alertas.map((a, i) => (
+                                                        <li key={i} className="flex items-start gap-2">
+                                                            <Zap className="w-3 h-3 text-amber-500 flex-shrink-0 mt-0.5" />
+                                                            <span className="text-xs text-amber-700">{a}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {prev && (
+                                            <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                                                <p className="font-black text-blue-700 text-xs uppercase tracking-widest mb-1">Evolución vs Estudio Previo</p>
+                                                <div className="grid grid-cols-2 gap-3 mt-2">
+                                                    {[
+                                                        { label: 'PTA OD', curr: audio.pta_od, prev: prev.pta_od },
+                                                        { label: 'PTA OI', curr: audio.pta_oi, prev: prev.pta_oi },
+                                                    ].map(({ label, curr, prev: p }) => {
+                                                        const diff = (curr || 0) - (p || 0)
+                                                        return (
+                                                            <div key={label}>
+                                                                <p className="text-[9px] font-bold text-slate-400 uppercase">{label}</p>
+                                                                <div className="flex items-center gap-1">
+                                                                    <span className="text-sm font-black text-slate-700">{p} → {curr}</span>
+                                                                    <span className={`text-xs font-bold ${diff > 5 ? 'text-red-600' : diff < -5 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                                                        {diff > 0 ? <TrendingUp className="w-3 h-3 inline" /> : diff < 0 ? <TrendingDown className="w-3 h-3 inline" /> : <Minus className="w-3 h-3 inline" />}
+                                                                        {' '}{diff > 0 ? '+' : ''}{diff} dB
+                                                                    </span>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    )
-                                                })}
+                                                        )
+                                                    })}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
 
-                        {/* ── 8. RECOMENDACIONES DETALLADAS ── */}
-                        <Card className="border-emerald-100 shadow-sm">
-                            <CardContent className="p-5">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <Shield className="w-4 h-4 text-emerald-500" />
-                                    <p className="text-sm font-black text-slate-800 uppercase tracking-wide">Recomendaciones Clínicas</p>
-                                </div>
-                                <ul className="space-y-2">
-                                    {[
-                                        audio.pta_od > 25 || audio.pta_oi > 25
-                                            ? 'Reevaluación audiométrica en 6 meses con audiometría de alta frecuencia'
-                                            : 'Control audiométrico anual preventivo conforme NOM-011-STPS',
-                                        (audio.pta_od > 25 || audio.pta_oi > 25) && 'Uso obligatorio de EPP auditivo certificado (NRR ≥ 25 dB) en áreas de riesgo',
-                                        hasDPN && 'Incluir logoaudiometría y timpanometría para estudio complementario',
-                                        hasDPN && 'Evaluar rotación de puesto a área con < 80 dB (NOM-011-STPS)',
-                                        audio.pta_od > 40 || audio.pta_oi > 40 ? 'Referir a otorrinolaringólogo para valoración completa y posible auxiliar auditivo' : null,
-                                        asymmetry > 15 && `Asimetría significativa (Δ${asymmetry}dB) — Descartar patología retrococlear o neurinoma`,
-                                        disabilityPct > 0 && `Porcentaje de discapacidad AMA: ${disabilityPct}% — Documentar para dictamen ocupacional`,
-                                        (siiOd > 40 || siiOi > 40) ? 'Umbral de habla reducido — Evaluar capacidad de comunicación para puesto actual' : null,
-                                        'Verificar calibración del audiómetro (certificado vigente)',
-                                        'Registrar en expediente ocupacional conforme NOM-030-STPS',
-                                    ].filter(Boolean).map((r, i) => (
-                                        <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
-                                            <ArrowRight className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                                            <span>{r as string}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </CardContent>
-                        </Card>
+                            {/* ── 8. RECOMENDACIONES DETALLADAS ── */}
+                            <Card className="border-emerald-100 shadow-sm">
+                                <CardContent className="p-5">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Shield className="w-4 h-4 text-emerald-500" />
+                                        <p className="text-sm font-black text-slate-800 uppercase tracking-wide">Recomendaciones Clínicas</p>
+                                    </div>
+                                    <ul className="space-y-2">
+                                        {[
+                                            audio.pta_od > 25 || audio.pta_oi > 25
+                                                ? 'Reevaluación audiométrica en 6 meses con audiometría de alta frecuencia'
+                                                : 'Control audiométrico anual preventivo conforme NOM-011-STPS',
+                                            (audio.pta_od > 25 || audio.pta_oi > 25) && 'Uso obligatorio de EPP auditivo certificado (NRR ≥ 25 dB) en áreas de riesgo',
+                                            hasDPN && 'Incluir logoaudiometría y timpanometría para estudio complementario',
+                                            hasDPN && 'Evaluar rotación de puesto a área con < 80 dB (NOM-011-STPS)',
+                                            audio.pta_od > 40 || audio.pta_oi > 40 ? 'Referir a otorrinolaringólogo para valoración completa y posible auxiliar auditivo' : null,
+                                            asymmetry > 15 && `Asimetría significativa (Δ${asymmetry}dB) — Descartar patología retrococlear o neurinoma`,
+                                            disabilityPct > 0 && `Porcentaje de discapacidad AMA: ${disabilityPct}% — Documentar para dictamen ocupacional`,
+                                            (siiOd > 40 || siiOi > 40) ? 'Umbral de habla reducido — Evaluar capacidad de comunicación para puesto actual' : null,
+                                            'Verificar calibración del audiómetro (certificado vigente)',
+                                            'Registrar en expediente ocupacional conforme NOM-030-STPS',
+                                        ].filter(Boolean).map((r, i) => (
+                                            <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
+                                                <ArrowRight className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                                                <span>{r as string}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
 
-                    </motion.div>
+                        </motion.div>
                     )
                 })()}
             </AnimatePresence>

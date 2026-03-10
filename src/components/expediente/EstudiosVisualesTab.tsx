@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    Eye, CheckCircle, AlertTriangle, Shield, Brain, Zap, Target,
+    Eye, CheckCircle, AlertTriangle, Shield, Brain, Zap, Target, Trash2,
     ArrowRight, Glasses, Loader2, Inbox, Upload, Save, X, Clock,
     ChevronDown, ChevronUp, Activity, TrendingUp, TrendingDown, Minus
 } from 'lucide-react'
@@ -226,13 +226,24 @@ const useOptometryUpload = (pacienteId: string, empresaId: string, userId: strin
                 datos_extra: { optoclone_data: previewData, _source: 'OptoClone Pipeline', _extracted_at: new Date().toISOString() }
             })
             if (dbErr) throw dbErr
-            if (originalFile && empresaId) {
+            // Archivo: obtener empresaId del usuario o del paciente como fallback
+            if (originalFile) {
                 try {
-                    const name = previewData.patient?.name || 'Paciente'
-                    const fecha = new Date().toISOString().split('T')[0]
-                    const ext = originalFile.name.split('.').pop() || 'pdf'
-                    const renamedFile = new File([originalFile], `Optometria_${name.replace(/\s+/g, '_')}_${fecha}.${ext}`, { type: originalFile.type })
-                    await secureStorageService.upload(renamedFile, { pacienteId, empresaId, categoria: 'optometria', subcategoria: 'reporte_original', descripcion: `Optometría de ${name} — ${fecha}`, userId, userNombre: userName, userRol })
+                    let eid = empresaId
+                    if (!eid) {
+                        const { data: pac } = await supabase.from('pacientes').select('empresa_id').eq('id', pacienteId).single()
+                        eid = pac?.empresa_id || ''
+                    }
+                    if (eid) {
+                        const name = previewData.patient?.name || 'Paciente'
+                        const fecha = new Date().toISOString().split('T')[0]
+                        const ext = originalFile.name.split('.').pop() || 'pdf'
+                        const renamedFile = new File([originalFile], `Optometria_${name.replace(/\s+/g, '_')}_${fecha}.${ext}`, { type: originalFile.type })
+                        await secureStorageService.upload(renamedFile, { pacienteId, empresaId: eid, categoria: 'optometria', subcategoria: 'reporte_original', descripcion: `Optometría de ${name} — ${fecha}`, userId, userNombre: userName, userRol })
+                        console.log('📎 Archivo original guardado en Storage')
+                    } else {
+                        console.warn('⚠️ No se encontró empresa_id — archivo no guardado')
+                    }
                 } catch (e) { console.warn('⚠️ No se pudo guardar archivo:', e) }
             }
             setPreviewData(null); setOriginalFile(null); onComplete()
@@ -256,6 +267,7 @@ export default function EstudiosVisualesTab({ pacienteId }: { pacienteId: string
     const [data, setData] = useState<any>(null)
     const [prev, setPrev] = useState<any>(null)
     const [activeSection, setActiveSection] = useState<'scanner' | 'analisis'>('scanner')
+    const [deleting, setDeleting] = useState(false)
 
     const loadData = async () => {
         try {
@@ -324,6 +336,18 @@ export default function EstudiosVisualesTab({ pacienteId }: { pacienteId: string
     useEffect(() => { if (pacienteId) loadData() }, [pacienteId])
     const reload = () => { setData(null); setPrev(null); loadData() }
     const upload = useOptometryUpload(pacienteId, user?.empresa_id || '', user?.id, user?.nombre ? `${user.nombre} ${user.apellido_paterno || ''}`.trim() : undefined, user?.rol, reload)
+
+    const deleteEstudio = async () => {
+        if (!data?.id || data.id === 'legacy') return
+        if (!confirm('¿Eliminar este examen de optometría? Esta acción no se puede deshacer.')) return
+        setDeleting(true)
+        try {
+            await supabase.from('resultados_estudio').delete().eq('estudio_id', data.id)
+            await supabase.from('estudios_clinicos').delete().eq('id', data.id)
+            setData(null); setPrev(null); reload()
+        } catch (e) { console.error('Error eliminando:', e) }
+        finally { setDeleting(false) }
+    }
 
     // Loading
     if (loading) return (
@@ -433,6 +457,12 @@ export default function EstudiosVisualesTab({ pacienteId }: { pacienteId: string
                             className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 flex items-center gap-1.5">
                             {upload.uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />} Nuevo Estudio
                         </button>
+                        {data?.id && data.id !== 'legacy' && (
+                            <button onClick={deleteEstudio} disabled={deleting}
+                                className="px-3 py-2 rounded-xl border border-red-200 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-1.5 transition-colors">
+                                {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />} Eliminar
+                            </button>
+                        )}
                         <div className={`px-4 py-2 rounded-xl border ${allOk ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Resultado</p>
                             <div className="flex items-center gap-1.5">
@@ -599,7 +629,91 @@ export default function EstudiosVisualesTab({ pacienteId }: { pacienteId: string
                             </Card>
                         </div>
 
-                        {/* 4. Interpretation */}
+                        {/* 4. Snellen Comparison Bar Chart */}
+                        <Card className="border-slate-100 shadow-sm overflow-hidden">
+                            <CardContent className="p-5">
+                                <div className="flex items-center gap-2 mb-4"><Activity className="w-4 h-4 text-cyan-600" /><p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Comparativa AV — Escala Snellen</p></div>
+                                <div className="bg-slate-50 rounded-xl p-4">
+                                    <svg viewBox="0 0 460 200" className="w-full h-auto">
+                                        {/* Background and grid */}
+                                        {[0, 25, 50, 75, 100].map(v => (
+                                            <g key={v}>
+                                                <line x1="80" y1={170 - v * 1.5} x2="440" y2={170 - v * 1.5} stroke="#e2e8f0" strokeWidth="0.5" />
+                                                <text x="75" y={174 - v * 1.5} textAnchor="end" fontSize="8" fill="#94a3b8">{v}%</text>
+                                            </g>
+                                        ))}
+                                        {/* Bars */}
+                                        {(() => {
+                                            const bars = [
+                                                { label: 'OD SC', score: avOdScore, color: '#3b82f6' },
+                                                { label: 'OI SC', score: avOiScore, color: '#10b981' },
+                                                ...(data.av_od_cc && data.av_od_cc !== '-' ? [{ label: 'OD CC', score: snellenScore(data.av_od_cc), color: '#60a5fa' }] : []),
+                                                ...(data.av_oi_cc && data.av_oi_cc !== '-' ? [{ label: 'OI CC', score: snellenScore(data.av_oi_cc), color: '#34d399' }] : []),
+                                            ]
+                                            const barW = Math.min(60, 320 / bars.length - 10)
+                                            const gap = (360 - barW * bars.length) / (bars.length + 1)
+                                            return bars.map((b, i) => {
+                                                const x = 80 + gap + i * (barW + gap)
+                                                const h = b.score * 1.5
+                                                return (
+                                                    <g key={i}>
+                                                        <motion.rect x={x} y={170 - h} width={barW} height={h} rx="4" fill={b.color}
+                                                            initial={{ height: 0, y: 170 }} animate={{ height: h, y: 170 - h }}
+                                                            transition={{ duration: 0.8, delay: i * 0.15, ease: 'easeOut' }} />
+                                                        <text x={x + barW / 2} y={185} textAnchor="middle" fontSize="9" fontWeight="700" fill="#64748b">{b.label}</text>
+                                                        <motion.text x={x + barW / 2} y={165 - h} textAnchor="middle" fontSize="10" fontWeight="800" fill={b.color}
+                                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 + i * 0.15 }}>
+                                                            {b.score}%
+                                                        </motion.text>
+                                                    </g>
+                                                )
+                                            })
+                                        })()}
+                                        {/* 80% threshold line */}
+                                        <line x1="80" y1={170 - 80 * 1.5} x2="440" y2={170 - 80 * 1.5} stroke="#f59e0b" strokeWidth="1" strokeDasharray="4,3" />
+                                        <text x="442" y={174 - 80 * 1.5} fontSize="7" fill="#f59e0b" fontWeight="700">Mín. aceptable</text>
+                                    </svg>
+                                </div>
+                                {/* Snellen scale reference */}
+                                <div className="mt-4 flex flex-wrap gap-2 justify-center">
+                                    {['20/20', '20/25', '20/30', '20/40', '20/50', '20/70', '20/100', '20/200'].map(v => {
+                                        const info = snellenInfo(v)
+                                        const isOD = v === data.av_od_sc, isOI = v === data.av_oi_sc
+                                        return (
+                                            <div key={v} className={`px-2 py-1 rounded-lg text-[9px] font-bold border ${isOD ? 'bg-blue-100 border-blue-300 ring-2 ring-blue-400' : isOI ? 'bg-emerald-100 border-emerald-300 ring-2 ring-emerald-400' : `${info.bg} ${info.border}`}`}>
+                                                <span className={isOD ? 'text-blue-700' : isOI ? 'text-emerald-700' : info.color}>{v}</span>
+                                                <span className="text-slate-400 ml-1">{info.label}</span>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* 5. Occupational Risk Matrix */}
+                        <Card className="border-slate-100 shadow-sm">
+                            <CardContent className="p-5">
+                                <div className="flex items-center gap-2 mb-4"><Shield className="w-4 h-4 text-cyan-600" /><p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Matriz de Riesgo por Actividad</p></div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                    {[
+                                        { act: 'Conducción', icon: '🚗', min: 85, risk: avOdScore >= 85 && avOiScore >= 85 && colorOk },
+                                        { act: 'Trabajo en Alturas', icon: '🏗️', min: 80, risk: avOdScore >= 80 && avOiScore >= 80 },
+                                        { act: 'Operación Maquinaria', icon: '⚙️', min: 75, risk: avOdScore >= 75 && avOiScore >= 75 },
+                                        { act: 'Manejo de Químicos', icon: '🧪', min: 70, risk: colorOk },
+                                        { act: 'Trabajo de Oficina', icon: '💻', min: 60, risk: avOdScore >= 60 && avOiScore >= 60 },
+                                        { act: 'Electricidad', icon: '⚡', min: 80, risk: avOdScore >= 80 && avOiScore >= 80 && colorOk },
+                                    ].map(({ act, icon, risk }) => (
+                                        <div key={act} className={`p-3 rounded-xl border text-center ${risk ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+                                            <p className="text-lg mb-1">{icon}</p>
+                                            <p className="text-[10px] font-bold text-slate-600">{act}</p>
+                                            <p className={`text-[9px] font-black mt-1 ${risk ? 'text-emerald-600' : 'text-red-600'}`}>{risk ? '✅ APTO' : '⚠️ RESTRINGIDO'}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* 6. Interpretation */}
                         <Card className="border-cyan-100 shadow-sm bg-gradient-to-br from-cyan-50 to-white">
                             <CardContent className="p-5">
                                 <div className="flex items-center gap-2 mb-4"><Brain className="w-4 h-4 text-cyan-600" /><p className="text-sm font-black text-slate-800 uppercase">Interpretación Oftalmológica</p></div>
@@ -632,6 +746,38 @@ export default function EstudiosVisualesTab({ pacienteId }: { pacienteId: string
                                                     : 'APTO CON RESTRICCIONES — Se recomienda corrección óptica. Restricciones: no alturas sin lentes, no conducción nocturna.'}
                                         </p>
                                     </div>
+                                    {/* Correction benefit */}
+                                    {(data.av_od_cc && data.av_od_cc !== '-') || (data.av_oi_cc && data.av_oi_cc !== '-') ? (
+                                        <div className="p-3 bg-white rounded-xl border border-cyan-100">
+                                            <p className="font-black text-cyan-700 text-xs uppercase mb-1">Beneficio de Corrección Óptica</p>
+                                            <p className="text-sm text-slate-700 leading-relaxed">
+                                                {(() => {
+                                                    const ccOdScore = data.av_od_cc ? snellenScore(data.av_od_cc) : avOdScore
+                                                    const ccOiScore = data.av_oi_cc ? snellenScore(data.av_oi_cc) : avOiScore
+                                                    const benefitOD = ccOdScore - avOdScore
+                                                    const benefitOI = ccOiScore - avOiScore
+                                                    const maxBenefit = Math.max(benefitOD, benefitOI)
+                                                    if (maxBenefit <= 0) return 'Sin mejoría significativa con corrección óptica. La AV natural es cercana a la corregida.'
+                                                    return `Mejoría con corrección: OD +${benefitOD} pts (${data.av_od_sc}→${data.av_od_cc || 'N/A'}), OI +${benefitOI} pts (${data.av_oi_sc}→${data.av_oi_cc || 'N/A'}). ${maxBenefit >= 20 ? 'Beneficio significativo — uso obligatorio de lentes.' : 'Beneficio moderado — lentes recomendados para labores de precisión.'}`
+                                                })()}
+                                            </p>
+                                        </div>
+                                    ) : null}
+                                    {/* Binocular dominance */}
+                                    {asymmetry > 0 && (
+                                        <div className="p-3 bg-white rounded-xl border border-cyan-100">
+                                            <p className="font-black text-cyan-700 text-xs uppercase mb-1">Análisis de Dominancia Ocular</p>
+                                            <p className="text-sm text-slate-700">
+                                                {avOdScore > avOiScore
+                                                    ? `Predominio del ojo derecho (OD ${data.av_od_sc} vs OI ${data.av_oi_sc}). Diferencia: ${asymmetry} puntos.`
+                                                    : avOiScore > avOdScore
+                                                        ? `Predominio del ojo izquierdo (OI ${data.av_oi_sc} vs OD ${data.av_od_sc}). Diferencia: ${asymmetry} puntos.`
+                                                        : 'Visión simétrica bilateral — sin dominancia patológica.'
+                                                }
+                                                {asymmetry > 20 ? ' Asimetría clínicamente significativa — evaluar ambliopía o patología unilateral.' : asymmetry > 10 ? ' Asimetría leve. Monitorear evolución.' : ''}
+                                            </p>
+                                        </div>
+                                    )}
                                     {alertas.length > 0 && (
                                         <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
                                             <p className="font-black text-amber-700 text-xs uppercase mb-2">Hallazgos</p>
@@ -642,7 +788,7 @@ export default function EstudiosVisualesTab({ pacienteId }: { pacienteId: string
                             </CardContent>
                         </Card>
 
-                        {/* 5. Recommendations */}
+                        {/* 7. Recommendations */}
                         <Card className="border-emerald-100 shadow-sm">
                             <CardContent className="p-5">
                                 <div className="flex items-center gap-2 mb-3"><Shield className="w-4 h-4 text-emerald-500" /><p className="text-sm font-black text-slate-800 uppercase">Recomendaciones Clínicas</p></div>
@@ -650,11 +796,14 @@ export default function EstudiosVisualesTab({ pacienteId }: { pacienteId: string
                                     {[
                                         !avOdOk || !avOiOk ? 'Valoración por oftalmólogo para prescripción de corrección óptica' : 'Control visual anual preventivo (NOM-007-SSA3)',
                                         (!avOdOk || !avOiOk) && 'Uso obligatorio de corrección óptica en puesto de trabajo',
-                                        pioAlta && 'Evaluación urgente por glaucomatólogo — PIO elevada detectada',
-                                        !colorOk && 'Restricción laboral: no asignar tareas que requieran discriminación cromática',
-                                        asymmetry > 20 && 'Evaluación por oftalmólogo — asimetría visual significativa entre ojos',
-                                        data.near_od_sc && (JAEGER_SCORE[data.near_od_sc?.toUpperCase()] || 100) < 80 && 'Evaluación de presbicia — visión cercana reducida',
-                                        'Registrar en expediente ocupacional conforme NOM-030-STPS',
+                                        pioAlta && 'URGENTE: Evaluación por glaucomatólogo — PIO elevada detectada. Solicitar paquimetría y campimetría',
+                                        !colorOk && 'Restricción laboral: no asignar tareas que requieran discriminación cromática (cables eléctricos, señalización, CQ)',
+                                        asymmetry > 20 && 'Evaluación por oftalmólogo — descartar ambliopía, lesión retiniana o neuropatía óptica unilateral',
+                                        data.near_od_sc && (JAEGER_SCORE[data.near_od_sc?.toUpperCase()] || 100) < 80 && 'Evaluación de presbicia — considerar lentes progresivos o bifocales para trabajo de precisión',
+                                        avOdScore < 60 || avOiScore < 60 ? 'Restricción: no conducción vehicular sin corrección óptica vigente' : null,
+                                        (data.av_od_cc && snellenScore(data.av_od_cc) > avOdScore + 15) && 'Prescripción óptica actualizada requerida — beneficio demostrado con corrección',
+                                        'Registrar en expediente ocupacional conforme NOM-030-STPS-2009',
+                                        'Programar siguiente evaluación optométrica en 12 meses (o 6 meses si hay hallazgos)',
                                     ].filter(Boolean).map((r, i) => (
                                         <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
                                             <ArrowRight className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" /><span>{r as string}</span>
@@ -669,3 +818,4 @@ export default function EstudiosVisualesTab({ pacienteId }: { pacienteId: string
         </div>
     )
 }
+

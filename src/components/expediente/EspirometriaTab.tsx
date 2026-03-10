@@ -115,30 +115,36 @@ const useSpirometryUpload = (pacienteId: string, empresaId: string, userId: stri
             if (dbErr) throw dbErr
 
             // 2. Guardar archivo original en Storage (renombrado)
-            if (originalFile && empresaId) {
+            if (originalFile) {
                 try {
-                    const patientName = previewData.patient?.name || 'Paciente'
-                    const fecha = new Date().toISOString().split('T')[0]
-                    const ext = originalFile.name.split('.').pop() || 'pdf'
-                    const renamedFile = new File(
-                        [originalFile],
-                        `Espirometria_${patientName.replace(/\s+/g, '_')}_${fecha}.${ext}`,
-                        { type: originalFile.type }
-                    )
-                    await secureStorageService.upload(renamedFile, {
-                        pacienteId,
-                        empresaId,
-                        categoria: 'espirometria',
-                        subcategoria: 'reporte_original',
-                        descripcion: `Espirometría de ${patientName} — ${fecha}`,
-                        userId,
-                        userNombre: userName,
-                        userRol: userRol,
-                    })
-                    console.log('📎 Archivo original guardado en Storage')
+                    let eid = empresaId
+                    if (!eid) {
+                        const { data: pac } = await supabase.from('pacientes').select('empresa_id').eq('id', pacienteId).single()
+                        eid = pac?.empresa_id || ''
+                    }
+                    if (eid) {
+                        const patientName = previewData.patient?.name || 'Paciente'
+                        const fecha = new Date().toISOString().split('T')[0]
+                        const ext = originalFile.name.split('.').pop() || 'pdf'
+                        const renamedFile = new File(
+                            [originalFile],
+                            `Espirometria_${patientName.replace(/\s+/g, '_')}_${fecha}.${ext}`,
+                            { type: originalFile.type }
+                        )
+                        await secureStorageService.upload(renamedFile, {
+                            pacienteId,
+                            empresaId: eid,
+                            categoria: 'espirometria',
+                            subcategoria: 'reporte_original',
+                            descripcion: `Espirometría de ${patientName} — ${fecha}`,
+                            userId,
+                            userNombre: userName,
+                            userRol: userRol,
+                        })
+                        console.log('📎 Archivo espirometría guardado en Storage')
+                    }
                 } catch (storageErr) {
                     console.warn('⚠️ No se pudo guardar el archivo original:', storageErr)
-                    // No bloquear si falla el storage — los datos ya se guardaron
                 }
             }
 
@@ -839,22 +845,20 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
             <div className="flex bg-slate-100 p-1.5 rounded-xl w-fit">
                 <button
                     onClick={() => setActiveView('espirografia')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${
-                        activeView === 'espirografia' 
-                        ? 'bg-white text-blue-700 shadow-sm' 
-                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
-                    }`}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${activeView === 'espirografia'
+                            ? 'bg-white text-blue-700 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                        }`}
                 >
                     <Wind className="w-4 h-4" />
                     Espirografía Extraída
                 </button>
                 <button
                     onClick={() => setActiveView('analisis')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${
-                        activeView === 'analisis' 
-                        ? 'bg-white text-emerald-700 shadow-sm' 
-                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
-                    }`}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${activeView === 'analisis'
+                            ? 'bg-white text-emerald-700 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                        }`}
                 >
                     <Activity className="w-4 h-4" />
                     Análisis Clínico
