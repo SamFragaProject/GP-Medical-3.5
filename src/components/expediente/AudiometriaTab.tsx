@@ -2,21 +2,27 @@
  * AudiometriaTab — Scanner fiel + Análisis IA de máxima representación
  * Sección 1: Replica exacta del formato GP Medical (audiograma, tabla, equipo)
  * Sección 2: Análisis clínico sin límite — gráficas animadas, alertas, interpretación
+ *
+ * ⚡ /midu — Upload flow unificado con EspirometriaTab:
+ * Upload → AudioClone preview → Confirmar → Guardar datos + archivo → Tabs
  */
 import React, { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence, useSpring, useMotionValue, useTransform } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
     Ear, AlertTriangle, CheckCircle, Clock, Shield, RefreshCw,
     ArrowRight, ChevronDown, ChevronUp, Brain, Activity, TrendingUp,
-    TrendingDown, Minus, FileText, Zap, Volume2, VolumeX, Info, Download
+    TrendingDown, Minus, FileText, Zap, Volume2, VolumeX, Info, Download,
+    Upload, Loader2, Inbox, X, Save, Eye
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase'
-import { Loader2, Inbox } from 'lucide-react'
 import { getExpedienteDemoCompleto } from '@/data/demoPacienteCompleto'
 import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
-import EstudioUploadReview from '@/components/expediente/EstudioUploadReview'
+import AudiometryReviewClone from '@/components/expediente/AudiometryReviewClone'
+import { analyzeAudiometryDirect } from '@/services/geminiDocumentService'
+import { secureStorageService } from '@/services/secureStorageService'
+import { useAuth } from '@/contexts/AuthContext'
 
 // ── Frecuencias estándar audiograma ──
 const FREQS_ALL = ['125', '250', '500', '750', '1000', '1500', '2000', '3000', '4000', '6000', '8000']
@@ -323,17 +329,152 @@ function buildFromResultados(estudio: any, resultados: any[]): any {
     }
 }
 
+// ─── Hook: upload + extracción AudioClone (con preview antes de guardar) ───
+// ⚡ /midu — Patrón idéntico a useSpirometryUpload de EspirometriaTab
+const useAudiometryUpload = (pacienteId: string, empresaId: string, userId: string | undefined, userName: string | undefined, userRol: string | undefined, onComplete: () => void) => {
+    const [uploading, setUploading] = useState(false)
+    const [progress, setProgress] = useState('')
+    const [error, setError] = useState<string | null>(null)
+    const [previewData, setPreviewData] = useState<any>(null)
+    const [originalFile, setOriginalFile] = useState<File | null>(null)
+    const [saving, setSaving] = useState(false)
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const handleUpload = async (file: File) => {
+        setUploading(true)
+        setError(null)
+        setPreviewData(null)
+        setOriginalFile(file)
+        setProgress('Analizando audiometría con AudioClone IA...')
+
+        try {
+            const audioData = await analyzeAudiometryDirect('', [file])
+            if (!audioData?.thresholds) {
+                throw new Error('La IA no pudo extraer los datos audiométricos del documento.')
+            }
+            setProgress(`✅ Audiometría extraída. Revisa y confirma.`)
+            setPreviewData(audioData)
+        } catch (err: any) {
+            console.error('[AudioUpload] Error:', err)
+            setError(err.message || 'Error al procesar el documento')
+            setOriginalFile(null)
+        } finally {
+            setUploading(false)
+        }
+    }
+
+    const confirmSave = async () => {
+        if (!previewData) return
+        setSaving(true)
+        try {
+            const resultados: any[] = []
+            const od = previewData.thresholds?.right || []
+            const oi = previewData.thresholds?.left || []
+
+            od.forEach((t: any) => {
+                if (t.value !== null && t.value !== undefined) {
+                    resultados.push({ parametro_nombre: `OD_${t.frequency}Hz`, resultado_numerico: t.value, resultado: String(t.value), unidad: 'dB HL', categoria: 'Oído Derecho' })
+                }
+            })
+            oi.forEach((t: any) => {
+                if (t.value !== null && t.value !== undefined) {
+                    resultados.push({ parametro_nombre: `OI_${t.frequency}Hz`, resultado_numerico: t.value, resultado: String(t.value), unidad: 'dB HL', categoria: 'Oído Izquierdo' })
+                }
+            })
+
+            const audiogramBlob = FREQS_ALL.map(f => {
+                const odVal = od.find((t: any) => t.frequency === f)?.value
+                const oiVal = oi.find((t: any) => t.frequency === f)?.value
+                return { frecuencia: f, od: odVal ?? null, oi: oiVal ?? null }
+            })
+            resultados.push({ parametro_nombre: 'AUDIOGRAMA_DATOS', resultado: JSON.stringify(audiogramBlob), categoria: 'Audiograma' })
+
+            if (previewData.diagnosis?.rightEar) resultados.push({ parametro_nombre: 'DIAGNOSTICO_OD', resultado: previewData.diagnosis.rightEar, categoria: 'Diagnóstico' })
+            if (previewData.diagnosis?.leftEar) resultados.push({ parametro_nombre: 'DIAGNOSTICO_OI', resultado: previewData.diagnosis.leftEar, categoria: 'Diagnóstico' })
+            if (previewData.diagnosis?.general) resultados.push({ parametro_nombre: 'DIAGNOSTICO_GENERAL', resultado: previewData.diagnosis.general, categoria: 'Diagnóstico' })
+            if (previewData.equipment?.device) resultados.push({ parametro_nombre: 'EQUIPO', resultado: previewData.equipment.device, categoria: 'Datos del Estudio' })
+            if (previewData.testDetails?.doctor) resultados.push({ parametro_nombre: 'MEDICO_RESPONSABLE', resultado: previewData.testDetails.doctor, categoria: 'Datos del Estudio' })
+
+            const { data: estudio, error: dbErr } = await supabase.from('estudios_clinicos').insert({
+                paciente_id: pacienteId,
+                tipo_estudio: 'audiometria',
+                fecha_estudio: previewData.testDetails?.audiometryDate || new Date().toISOString().split('T')[0],
+                medico_responsable: previewData.testDetails?.doctor || '',
+                equipo: previewData.equipment?.device || '',
+                diagnostico: previewData.diagnosis?.general || `OD: ${previewData.diagnosis?.rightEar || '—'} | OI: ${previewData.diagnosis?.leftEar || '—'}`,
+                datos_extra: {
+                    audioclone_data: previewData,
+                    _source: 'AudioClone Pipeline',
+                    _extracted_at: new Date().toISOString(),
+                }
+            }).select('id').single()
+            if (dbErr) throw dbErr
+
+            if (estudio?.id && resultados.length > 0) {
+                const rows = resultados.map(r => ({ estudio_id: estudio.id, ...r }))
+                await supabase.from('resultados_estudio').insert(rows)
+            }
+
+            if (originalFile && empresaId) {
+                try {
+                    const patientName = previewData.patient?.name || 'Paciente'
+                    const fecha = new Date().toISOString().split('T')[0]
+                    const ext = originalFile.name.split('.').pop() || 'pdf'
+                    const renamedFile = new File(
+                        [originalFile],
+                        `Audiometria_${patientName.replace(/\s+/g, '_')}_${fecha}.${ext}`,
+                        { type: originalFile.type }
+                    )
+                    await secureStorageService.upload(renamedFile, {
+                        pacienteId, empresaId,
+                        categoria: 'audiometria',
+                        subcategoria: 'reporte_original',
+                        descripcion: `Audiometría de ${patientName} — ${fecha}`,
+                        userId, userNombre: userName, userRol: userRol,
+                    })
+                } catch (storageErr) {
+                    console.warn('⚠️ No se pudo guardar el archivo original:', storageErr)
+                }
+            }
+
+            setPreviewData(null)
+            setOriginalFile(null)
+            onComplete()
+        } catch (err: any) {
+            setError(err.message || 'Error al guardar en base de datos')
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const cancelPreview = () => {
+        setPreviewData(null)
+        setOriginalFile(null)
+        setProgress('')
+        setError(null)
+    }
+
+    const triggerUpload = () => fileInputRef.current?.click()
+
+    const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) handleUpload(file)
+        if (e.target) e.target.value = ''
+    }
+
+    return { uploading, saving, progress, error, previewData, fileInputRef, triggerUpload, onFileSelected, confirmSave, cancelPreview }
+}
+
 // ─────────────────────────────────────────────
 // COMPONENTE PRINCIPAL
 // ─────────────────────────────────────────────
 export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
+    const { user } = useAuth()
     const [loading, setLoading] = useState(true)
     const [audio, setAudio] = useState<any>(null)
     const [prev, setPrev] = useState<any>(null)
     const [activeSection, setActiveSection] = useState<'scanner' | 'analisis'>('scanner')
     const [showPrev, setShowPrev] = useState(false)
-
-    useEffect(() => { if (pacienteId) loadData() }, [pacienteId])
 
     const loadData = async () => {
         try {
@@ -393,27 +534,136 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
         finally { setLoading(false) }
     }
 
+    useEffect(() => { if (pacienteId) loadData() }, [pacienteId])
+
+    const reload = () => { setAudio(null); setPrev(null); loadData() }
+    const upload = useAudiometryUpload(
+        pacienteId,
+        user?.empresa_id || '',
+        user?.id,
+        user?.nombre ? `${user.nombre} ${user.apellido_paterno || ''}`.trim() : undefined,
+        user?.rol,
+        reload
+    )
+
+    // ── Loading ──
     if (loading) return (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
+            <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1.2 }}>
                 <Ear className="w-8 h-8 text-violet-500" />
             </motion.div>
             <p className="text-slate-400 text-xs font-medium">Cargando audiometría...</p>
         </div>
     )
 
+    // ── Preview mode (extraído pero no guardado) ── Idéntico a EspirometriaTab
+    if (upload.previewData) return (
+        <div className="space-y-5">
+            {/* Confirmation banner */}
+            <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl border-2 border-amber-300 p-5 shadow-lg"
+            >
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                            <AlertTriangle className="w-5 h-5 text-amber-600" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-black text-amber-900">Vista previa — Sin guardar</h3>
+                            <p className="text-xs text-amber-700">{upload.progress}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={upload.cancelPreview}
+                            className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 rounded-xl transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={upload.confirmSave}
+                            disabled={upload.saving}
+                            className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 rounded-xl shadow-lg shadow-emerald-200/50 transition-all disabled:opacity-50"
+                        >
+                            {upload.saving ? (
+                                <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
+                            ) : (
+                                <><Save className="w-4 h-4" /> Confirmar y Guardar</>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </motion.div>
+
+            {upload.error && (
+                <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-200">
+                    <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-red-700">{upload.error}</p>
+                </div>
+            )}
+
+            {/* Preview of AudiometryReviewClone */}
+            <div className="overflow-x-auto bg-slate-50/50 p-2 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
+                <div className="min-w-[800px]">
+                    <AudiometryReviewClone data={upload.previewData} />
+                </div>
+            </div>
+        </div>
+    )
+
+    // ── Sin datos → Subir PDF ── Idéntico a EspirometriaTab
     if (!audio) return (
-        <Card className="border-0 shadow-sm p-12 text-center">
-            <div className="w-16 h-16 bg-violet-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Ear className="w-8 h-8 text-violet-300" />
-            </div>
-            <h3 className="text-slate-800 font-bold">Sin registros de audiometría</h3>
-            <p className="text-slate-500 text-sm max-w-xs mx-auto mt-2 mb-6">
-                Sube el PDF o foto de la audiometría para que el sistema extraiga los datos automáticamente.
-            </p>
-            <div className="max-w-lg mx-auto">
-                <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="audiometria" onSaved={loadData} />
-            </div>
+        <Card className="border-0 shadow-sm">
+            <CardContent className="p-12 text-center">
+                <div className="w-16 h-16 bg-violet-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Ear className="w-8 h-8 text-violet-300" />
+                </div>
+                <h3 className="text-slate-800 font-bold text-lg">Sin registros de audiometría</h3>
+                <p className="text-slate-500 text-sm max-w-sm mx-auto mt-2 mb-8">
+                    Sube el PDF del reporte de audiometría y la IA extraerá automáticamente
+                    todos los datos, audiogramas y diagnóstico para crear la réplica digital.
+                </p>
+
+                {/* Upload */}
+                <input
+                    ref={upload.fileInputRef}
+                    type="file"
+                    accept=".pdf,application/pdf,image/*"
+                    onChange={upload.onFileSelected}
+                    className="hidden"
+                />
+
+                {upload.uploading ? (
+                    <div className="max-w-sm mx-auto space-y-4">
+                        <div className="flex items-center justify-center gap-3 p-4 bg-violet-50 rounded-xl border border-violet-200">
+                            <Loader2 className="w-5 h-5 text-violet-600 animate-spin" />
+                            <p className="text-sm font-medium text-violet-800">{upload.progress}</p>
+                        </div>
+                    </div>
+                ) : (
+                    <button
+                        onClick={upload.triggerUpload}
+                        className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-violet-200/50 hover:shadow-xl hover:scale-[1.02] transition-all"
+                    >
+                        <Upload className="w-5 h-5" />
+                        Subir Reporte de Audiometría
+                    </button>
+                )}
+
+                {upload.error && (
+                    <div className="mt-6 max-w-sm mx-auto flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-200">
+                        <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-red-700">{upload.error}</p>
+                    </div>
+                )}
+
+                <p className="text-[10px] text-slate-400 mt-6">
+                    Powered by Gemini Pro — AudioClone: extracción completa con audiogramas, umbrales y diagnóstico
+                </p>
+            </CardContent>
         </Card>
     )
 
@@ -450,7 +700,25 @@ export default function AudiometriaTab({ pacienteId }: { pacienteId: string }) {
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                        <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="audiometria" onSaved={loadData} />
+                        {/* Re-upload button */}
+                        <input
+                            ref={upload.fileInputRef}
+                            type="file"
+                            accept=".pdf,application/pdf,image/*"
+                            onChange={upload.onFileSelected}
+                            className="hidden"
+                        />
+                        <button
+                            onClick={upload.triggerUpload}
+                            disabled={upload.uploading}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-50 border border-violet-200 text-violet-700 text-xs font-bold hover:bg-violet-100 transition-colors disabled:opacity-50"
+                        >
+                            {upload.uploading ? (
+                                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Procesando...</>
+                            ) : (
+                                <><RefreshCw className="w-3.5 h-3.5" /> Actualizar Estudio</>
+                            )}
+                        </button>
                         <div className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-100">
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Fecha</p>
                             <p className="text-sm font-bold text-slate-700">
