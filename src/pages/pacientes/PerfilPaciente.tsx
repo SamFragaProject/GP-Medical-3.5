@@ -30,6 +30,7 @@ import { Paciente, pacientesService } from '@/services/dataService'
 import toast from 'react-hot-toast'
 import FotoPaciente from '@/components/expediente/FotoPaciente'
 import { supabase } from '@/lib/supabase'
+import HumanBodySVG, { usePatientAlerts, BODY_ZONES } from '@/components/expediente/HumanBodySVG'
 import { printCertificadoAptitud, printExpedienteCompleto } from '@/components/expediente/ExportarPDFPaciente'
 import {
     analyzeJobPosition,
@@ -297,6 +298,9 @@ export default function PerfilPaciente() {
     const gradient = GENERO_GRADIENT[paciente?.genero || ''] || 'from-slate-400 to-slate-600'
     const initials = paciente ? `${(paciente.nombre || '')[0] || ''}${(paciente.apellido_paterno || '')[0] || ''}`.toUpperCase() : ''
     const v = (field: string) => editing ? ((editData as any)[field] ?? (paciente as any)?.[field] ?? '') : ((paciente as any)?.[field] ?? '')
+
+    // Body SVG alerts
+    const { alerts: bodyAlerts, loading: alertsLoading } = usePatientAlerts(id || '')
 
     // Export patient data
     const handleExport = () => {
@@ -570,362 +574,373 @@ export default function PerfilPaciente() {
                 </div>
             </div>
 
-            {/* ── UNIFIED TABS ── */}
-            {/* ── UNIFIED TABS ── */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                {/* ═══ CARD GRID NAVIGATION ═══ */}
-                <div className="bg-white shadow-xl shadow-slate-200/50 rounded-3xl border border-slate-100 p-4 sm:p-6 mb-6">
-                    {!activeCategory ? (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <button
-                                onClick={() => { setActiveCategory('info'); setActiveTab('general'); }}
-                                className="group flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-slate-100 hover:border-blue-400 hover:shadow-lg transition-all bg-gradient-to-b from-white to-slate-50/50 text-left sm:text-center"
-                            >
-                                <div className="w-16 h-16 rounded-2xl bg-blue-50 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
-                                    <User className="w-8 h-8 text-blue-600" />
-                                </div>
-                                <div>
-                                    <p className="font-black text-slate-800 text-lg mb-1">Información del Paciente</p>
-                                    <p className="text-xs text-slate-500 font-medium">Datos personales, laborales y de contacto</p>
-                                </div>
-                            </button>
+            {/* ── 3-LEVEL NAVIGATION (Body → Category → Module) ── */}
+            {(() => {
+                // Derive navigation level
+                const navLevel = !activeCategory ? 'body' : (activeTab && activeCategory) ? 'module' : 'category'
+                const catLabel = activeCategory === 'info' ? 'Información del Paciente' : activeCategory === 'clinico' ? 'Expediente Clínico' : 'Tratamiento y Documentos'
+                const catColor = activeCategory === 'info' ? 'blue' : activeCategory === 'clinico' ? 'emerald' : 'violet'
 
-                            <button
-                                onClick={() => { setActiveCategory('clinico'); setActiveTab('dashboard'); }}
-                                className="group flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-emerald-100 hover:border-emerald-400 hover:shadow-lg transition-all bg-gradient-to-b from-white to-emerald-50/30 text-left sm:text-center"
-                            >
-                                <div className="w-16 h-16 rounded-2xl bg-emerald-50 group-hover:bg-emerald-100 flex items-center justify-center transition-colors">
-                                    <Stethoscope className="w-8 h-8 text-emerald-600" />
-                                </div>
-                                <div>
-                                    <p className="font-black text-emerald-800 text-lg mb-1">Expediente Clínico</p>
-                                    <p className="text-xs text-emerald-600/70 font-medium">Dashboard, historia inteligente, documentos</p>
-                                </div>
-                            </button>
-
-                            <button
-                                onClick={() => { setActiveCategory('diagnostico'); setActiveTab('recetas'); }}
-                                className="group flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-violet-100 hover:border-violet-400 hover:shadow-lg transition-all bg-gradient-to-b from-white to-violet-50/30 text-left sm:text-center"
-                            >
-                                <div className="w-16 h-16 rounded-2xl bg-violet-50 group-hover:bg-violet-100 flex items-center justify-center transition-colors">
-                                    <FileText className="w-8 h-8 text-violet-600" />
-                                </div>
-                                <div>
-                                    <p className="font-black text-violet-800 text-lg mb-1">Tratamiento y Documentos</p>
-                                    <p className="text-xs text-violet-600/70 font-medium">Recetas, dictámenes e incapacidades</p>
-                                </div>
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                            {/* Navigation Header */}
-                            <div className="flex items-center gap-4 mb-6 border-b border-slate-100 pb-4">
-                                <button
-                                    onClick={() => setActiveCategory(null)}
-                                    className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                return (
+                    <>
+                        <AnimatePresence mode="wait">
+                            {/* ═══ LEVEL 0: HUMAN BODY SVG + CATEGORY CARDS ═══ */}
+                            {!activeCategory && (
+                                <motion.div
+                                    key="body-view"
+                                    initial={{ opacity: 0, y: 16 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -8 }}
+                                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                                    className="space-y-6"
                                 >
-                                    <ArrowLeft className="w-5 h-5" />
-                                </button>
-                                <div>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5">Volver a Categorías</p>
-                                    <p className={`text-lg font-black ${activeCategory === 'info' ? 'text-slate-700' : activeCategory === 'clinico' ? 'text-emerald-700' : 'text-violet-700'}`}>
-                                        {activeCategory === 'info' ? 'Información del Paciente' : activeCategory === 'clinico' ? 'Expediente Clínico' : 'Tratamiento y Documentos'}
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            {/* Sub-tabs Grid */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-                                {TABS.filter(t => t.group === activeCategory).map(tab => {
-                                    const isActive = activeTab === tab.value
-                                    const c = TAB_COLORS[tab.value]
-                                    return (
-                                        <button key={tab.value} onClick={() => setActiveTab(tab.value)}
-                                            className={`relative group flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer
-                                                ${isActive ? `${c.bg} border-transparent ring-2 ${c.ring} shadow-lg scale-[1.03]` : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:scale-[1.02]'}`}
-                                        >
-                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-sm
-                                                ${isActive ? `bg-gradient-to-br ${c.gradient} shadow-md` : 'bg-slate-100 group-hover:bg-slate-200'}`}>
-                                                <tab.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                                            </div>
-                                            <span className={`text-xs font-bold leading-tight text-center ${isActive ? c.text : 'text-slate-500'}`}>{tab.label}</span>
-                                            {isActive && <div className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-6 h-1.5 rounded-full bg-gradient-to-r ${c.gradient}`} />}
-                                        </button>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    )}
-                </div>
-                
-                <TabsList className="hidden">
-                    {TABS.map(tab => (
-                        <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
-                    ))}
-                </TabsList>
+                                    {/* Body SVG */}
+                                    <div className="bg-white shadow-xl shadow-slate-200/50 rounded-3xl border border-slate-100 p-6">
+                                        <div className="text-center mb-4">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Mapa Clínico Interactivo</p>
+                                            <p className="text-xs text-slate-500 mt-0.5">Selecciona una zona para acceder al módulo correspondiente</p>
+                                        </div>
+                                        <HumanBodySVG
+                                            alerts={bodyAlerts}
+                                            loading={alertsLoading}
+                                            onZoneClick={(module) => {
+                                                // Find which category this module belongs to
+                                                const clinicalModules = ['dashboard', 'historia', 'resumen', 'apnp', 'ahf', 'ocupacional', 'exploracion', 'audiometria', 'espirometria', 'electrocardiograma', 'vision', 'laboratorio', 'rayosx', 'consentimientos', 'notas', 'timeline']
+                                                const infoModules = ['general', 'laboral', 'contacto']
+                                                const diagModules = ['recetas', 'dictamenes', 'incapacidades']
+                                                if (clinicalModules.includes(module)) {
+                                                    setActiveCategory('clinico')
+                                                    setActiveTab(module)
+                                                } else if (infoModules.includes(module)) {
+                                                    setActiveCategory('info')
+                                                    setActiveTab(module)
+                                                } else if (diagModules.includes(module)) {
+                                                    setActiveCategory('diagnostico')
+                                                    setActiveTab(module)
+                                                }
+                                            }}
+                                        />
+                                    </div>
 
-                {activeCategory && activeTabConfig?.description && (
-                    <motion.div
-                        key={activeTab}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 mb-6"
-                    >
-                        <activeTabConfig.icon className="w-4 h-4 text-slate-400" />
-                        <span className="text-xs font-semibold text-slate-500">{activeTabConfig.description}</span>
-                    </motion.div>
-                )}
-
-                {activeCategory && (
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={activeTab}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.15 }}
-                            className="min-h-[500px]"
-                        >
-                        {/* ═══ GENERAL TAB ═══ */}
-                        <TabsContent value="general" className="space-y-6 mt-0">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <EditableField icon={User} label="Nombre" value={v('nombre')} field="nombre" editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={User} label="Apellido Paterno" value={v('apellido_paterno')} field="apellido_paterno" editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={User} label="Apellido Materno" value={v('apellido_materno')} field="apellido_materno" editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={Calendar} label="Fecha de Nacimiento" value={editing ? v('fecha_nacimiento') : formatDate(paciente.fecha_nacimiento)} field="fecha_nacimiento" type={editing ? 'date' : 'text'} editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={Users} label="Género" value={v('genero')} field="genero" editing={editing} onChange={handleFieldChange} options={['masculino', 'femenino', 'otro']} />
-                                <EditableField icon={Shield} label="CURP" value={v('curp')} field="curp" type="mono" editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={FileText} label="RFC" value={v('rfc')} field="rfc" type="mono" editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={Shield} label="NSS (IMSS)" value={v('nss')} field="nss" type="mono" editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={Heart} label="Estado Civil" value={v('estado_civil')} field="estado_civil" editing={editing} onChange={handleFieldChange} options={['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Unión libre']} />
-                                <EditableField icon={Droplets} label="Tipo de Sangre" value={v('tipo_sangre')} field="tipo_sangre" editing={editing} onChange={handleFieldChange} options={['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']} />
-                                <EditableField icon={AlertTriangle} label="Alergias" value={v('alergias')} field="alergias" editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={CheckCircle} label="Estatus" value={v('estatus')} field="estatus" editing={editing} onChange={handleFieldChange} options={['activo', 'inactivo', 'baja']} />
-                            </div>
-
-                            {/* Emergency Contact */}
-                            <Card className="border-amber-200 bg-amber-50/50">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="flex items-center gap-2 text-amber-800 text-base">
-                                        <AlertTriangle className="w-5 h-5 text-amber-500" />
-                                        Contacto de Emergencia
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
+                                    {/* Category Cards */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <EditableField icon={User} label="Nombre" value={v('contacto_emergencia_nombre')} field="contacto_emergencia_nombre" editing={editing} onChange={handleFieldChange} />
-                                        <EditableField icon={Users} label="Parentesco" value={v('contacto_emergencia_parentesco')} field="contacto_emergencia_parentesco" editing={editing} onChange={handleFieldChange} />
-                                        <EditableField icon={Phone} label="Teléfono" value={v('contacto_emergencia_telefono')} field="contacto_emergencia_telefono" editing={editing} onChange={handleFieldChange} />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        {/* ═══ LABORAL TAB ═══ */}
-                        <TabsContent value="laboral" className="space-y-6 mt-0">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <EditableField icon={Clipboard} label="Número de Empleado" value={v('numero_empleado')} field="numero_empleado" type="mono" editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={Building2} label="Empresa" value={v('empresa_nombre')} field="empresa_nombre" editing={false} onChange={() => { }} />
-                                <EditableField icon={MapPin} label="Sede" value={v('sede_nombre')} field="sede_nombre" editing={false} onChange={() => { }} />
-                                <EditableField icon={Briefcase} label="Puesto" value={v('puesto')} field="puesto" editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={Users} label="Área" value={v('area')} field="area" editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={Users} label="Departamento" value={v('departamento')} field="departamento" editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={Clock} label="Turno" value={v('turno')} field="turno" editing={editing} onChange={handleFieldChange} options={['Matutino', 'Vespertino', 'Nocturno', 'Mixto']} />
-                                <EditableField icon={FileText} label="Tipo de Contrato" value={v('tipo_contrato')} field="tipo_contrato" editing={editing} onChange={handleFieldChange} options={['Indeterminado', 'Temporal', 'Prueba', 'Capacitación', 'De obra']} />
-                                <EditableField icon={Calendar} label="Fecha de Ingreso" value={editing ? v('fecha_ingreso') : formatDate(paciente.fecha_ingreso)} field="fecha_ingreso" type={editing ? 'date' : 'text'} editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={Clock} label="Jornada (horas)" value={v('jornada_horas')?.toString() || ''} field="jornada_horas" type="number" editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={User} label="Supervisor" value={v('supervisor_nombre')} field="supervisor_nombre" editing={editing} onChange={handleFieldChange} />
-                            </div>
-
-                            {/* ═══ RISK ANALYZER SECTION ═══ */}
-                            <Card className="border-violet-200 bg-gradient-to-br from-violet-50/80 to-indigo-50/50 shadow-lg">
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-center justify-between">
-                                        <CardTitle className="flex items-center gap-2 text-violet-800 text-base">
-                                            <Brain className="w-5 h-5 text-violet-500" />
-                                            Analizador de Riesgos Laborales
-                                            <Badge className="bg-violet-100 text-violet-700 border-violet-200 text-[10px]">IA</Badge>
-                                        </CardTitle>
-                                        <div className="flex gap-2">
-                                            <Button
-                                                onClick={handleAnalyzeRisks}
-                                                disabled={isAnalyzingAI}
-                                                size="sm"
-                                                className="bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white rounded-xl gap-2 text-xs shadow-md"
+                                        {[
+                                            { cat: 'info' as const, tab: 'general', icon: User, color: 'blue', title: 'Información del Paciente', desc: 'Datos personales, laborales y de contacto', border: 'border-blue-100 hover:border-blue-400', iconBg: 'bg-blue-50 group-hover:bg-blue-100', iconColor: 'text-blue-600', titleColor: 'text-slate-800', descColor: 'text-slate-500', gradient: 'from-white to-blue-50/30' },
+                                            { cat: 'clinico' as const, tab: 'dashboard', icon: Stethoscope, color: 'emerald', title: 'Expediente Clínico', desc: 'Dashboard, estudios, historia clínica', border: 'border-emerald-100 hover:border-emerald-400', iconBg: 'bg-emerald-50 group-hover:bg-emerald-100', iconColor: 'text-emerald-600', titleColor: 'text-emerald-800', descColor: 'text-emerald-600/70', gradient: 'from-white to-emerald-50/30' },
+                                            { cat: 'diagnostico' as const, tab: 'recetas', icon: FileText, color: 'violet', title: 'Tratamiento y Documentos', desc: 'Recetas, dictámenes, incapacidades', border: 'border-violet-100 hover:border-violet-400', iconBg: 'bg-violet-50 group-hover:bg-violet-100', iconColor: 'text-violet-600', titleColor: 'text-violet-800', descColor: 'text-violet-600/70', gradient: 'from-white to-violet-50/30' },
+                                        ].map((c, i) => (
+                                            <motion.button
+                                                key={c.cat}
+                                                initial={{ opacity: 0, y: 12 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: 0.1 + i * 0.08, duration: 0.3 }}
+                                                onClick={() => { setActiveCategory(c.cat); setActiveTab(c.tab); }}
+                                                className={`group flex flex-col items-center gap-3 p-6 rounded-2xl border-2 ${c.border} hover:shadow-lg transition-all bg-gradient-to-b ${c.gradient} text-center`}
                                             >
-                                                {isAnalyzingAI ? (
-                                                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Analizando...</>
-                                                ) : (
-                                                    <><Zap className="w-3.5 h-3.5" /> Analizar con IA</>
-                                                )}
-                                            </Button>
-                                            {showRiesgos && totalRisksCount > 0 && (
-                                                <Button
-                                                    onClick={saveRisksOnly}
-                                                    disabled={saving}
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded-xl gap-2 text-xs"
-                                                >
-                                                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                                                    Guardar Riesgos
-                                                </Button>
-                                            )}
+                                                <div className={`w-16 h-16 rounded-2xl ${c.iconBg} flex items-center justify-center transition-colors`}>
+                                                    <c.icon className={`w-8 h-8 ${c.iconColor}`} />
+                                                </div>
+                                                <div>
+                                                    <p className={`font-black ${c.titleColor} text-lg mb-1`}>{c.title}</p>
+                                                    <p className={`text-xs ${c.descColor} font-medium`}>{c.desc}</p>
+                                                </div>
+                                                <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                                            </motion.button>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {/* ═══ LEVEL 1+2: CATEGORY VIEW WITH SUB-TABS & CONTENT ═══ */}
+                            {activeCategory && (
+                                <motion.div
+                                    key={`cat-${activeCategory}`}
+                                    initial={{ opacity: 0, y: 16 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -8 }}
+                                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                                    className="space-y-6"
+                                >
+                                    {/* Navigation Header */}
+                                    <div className="bg-white shadow-xl shadow-slate-200/50 rounded-3xl border border-slate-100 p-4 sm:p-6">
+                                        <div className="flex items-center gap-4 mb-5 border-b border-slate-100 pb-4">
+                                            <button
+                                                onClick={() => setActiveCategory(null)}
+                                                className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                                            >
+                                                <ArrowLeft className="w-5 h-5" />
+                                            </button>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5">← Vista General</p>
+                                                <p className={`text-lg font-black text-${catColor}-700`}>{catLabel}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Sub-module cards grid */}
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+                                            {TABS.filter(t => t.group === activeCategory).map((tab, i) => {
+                                                const isActive = activeTab === tab.value
+                                                const c = TAB_COLORS[tab.value]
+                                                return (
+                                                    <motion.button
+                                                        key={tab.value}
+                                                        initial={{ opacity: 0, scale: 0.9 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        transition={{ delay: i * 0.04, duration: 0.25 }}
+                                                        onClick={() => setActiveTab(tab.value)}
+                                                        className={`relative group flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer
+                                                            ${isActive ? `${c.bg} border-transparent ring-2 ${c.ring} shadow-lg scale-[1.03]` : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-md hover:scale-[1.02]'}`}
+                                                    >
+                                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-sm
+                                                            ${isActive ? `bg-gradient-to-br ${c.gradient} shadow-md` : 'bg-slate-100 group-hover:bg-slate-200'}`}>
+                                                            <tab.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                                                        </div>
+                                                        <span className={`text-xs font-bold leading-tight text-center ${isActive ? c.text : 'text-slate-500'}`}>{tab.label}</span>
+                                                        {isActive && <div className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-6 h-1.5 rounded-full bg-gradient-to-r ${c.gradient}`} />}
+                                                    </motion.button>
+                                                )
+                                            })}
                                         </div>
                                     </div>
-                                </CardHeader>
-                                <CardContent>
-                                    {isAnalyzingAI && (
-                                        <div className="flex flex-col items-center py-8">
-                                            <div className="relative">
-                                                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 animate-pulse flex items-center justify-center">
-                                                    <Brain className="w-8 h-8 text-white animate-bounce" />
-                                                </div>
-                                            </div>
-                                            <p className="text-sm font-bold text-violet-700 mt-4">OpenAI analizando riesgos para "{v('puesto')}"...</p>
-                                            <p className="text-xs text-violet-400 mt-1">Identificando riesgos físicos, químicos, ergonómicos y más</p>
-                                        </div>
+
+                                    {/* Tab description */}
+                                    {activeTabConfig?.description && (
+                                        <motion.div
+                                            key={activeTab}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100"
+                                        >
+                                            <activeTabConfig.icon className="w-4 h-4 text-slate-400" />
+                                            <span className="text-xs font-semibold text-slate-500">{activeTabConfig.description}</span>
+                                        </motion.div>
                                     )}
 
-                                    {!isAnalyzingAI && !showRiesgos && (
-                                        <div className="text-center py-6">
-                                            <Zap className="w-10 h-10 mx-auto text-violet-300 mb-2" />
-                                            <p className="text-sm font-semibold text-slate-500">Presiona "Analizar con IA" para identificar riesgos del puesto</p>
-                                            <p className="text-xs text-slate-400 mt-1">La IA analizará el puesto "{v('puesto') || '(sin puesto)'}" y determinará los riesgos laborales</p>
-                                        </div>
-                                    )}
+                                    {/* ═══ MODULE CONTENT (Full Width) ═══ */}
+                                    <Tabs value={activeTab} onValueChange={setActiveTab}>
+                                        <TabsList className="hidden">
+                                            {TABS.map(tab => (
+                                                <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
+                                            ))}
+                                        </TabsList>
 
-                                    {!isAnalyzingAI && showRiesgos && (
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
-                                                <CheckCircle className="w-5 h-5 text-emerald-500" />
-                                                <span className="text-sm font-bold text-emerald-800">
-                                                    Análisis completado — {totalRisksCount} riesgos identificados
-                                                </span>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                                                {Object.entries(RISK_CATEGORIES).map(([catKey, cat]) => {
-                                                    const catRisks = (riesgos as any)[catKey] || {}
-                                                    const activeCount = Object.values(catRisks).filter(Boolean).length
-                                                    return (
-                                                        <div key={catKey} className={`rounded-xl border p-3 transition-all ${activeCount > 0 ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-100'}`}>
-                                                            <div className="flex items-center gap-2 mb-2">
-                                                                <span className="text-lg">{cat.emoji}</span>
-                                                                <span className="text-xs font-bold text-slate-700">{cat.label}</span>
-                                                                {activeCount > 0 && (
-                                                                    <Badge className="bg-amber-200 text-amber-800 text-[9px] ml-auto">{activeCount}</Badge>
-                                                                )}
+                                        <AnimatePresence mode="wait">
+                                            <motion.div
+                                                key={activeTab}
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.15 }}
+                                                className="min-h-[500px]"
+                                            >
+                                                {/* ═══ GENERAL TAB ═══ */}
+                                                <TabsContent value="general" className="space-y-6 mt-0">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                        <EditableField icon={User} label="Nombre" value={v('nombre')} field="nombre" editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={User} label="Apellido Paterno" value={v('apellido_paterno')} field="apellido_paterno" editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={User} label="Apellido Materno" value={v('apellido_materno')} field="apellido_materno" editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={Calendar} label="Fecha de Nacimiento" value={editing ? v('fecha_nacimiento') : formatDate(paciente.fecha_nacimiento)} field="fecha_nacimiento" type={editing ? 'date' : 'text'} editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={Users} label="Género" value={v('genero')} field="genero" editing={editing} onChange={handleFieldChange} options={['masculino', 'femenino', 'otro']} />
+                                                        <EditableField icon={Shield} label="CURP" value={v('curp')} field="curp" type="mono" editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={FileText} label="RFC" value={v('rfc')} field="rfc" type="mono" editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={Shield} label="NSS (IMSS)" value={v('nss')} field="nss" type="mono" editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={Heart} label="Estado Civil" value={v('estado_civil')} field="estado_civil" editing={editing} onChange={handleFieldChange} options={['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Unión libre']} />
+                                                        <EditableField icon={Droplets} label="Tipo de Sangre" value={v('tipo_sangre')} field="tipo_sangre" editing={editing} onChange={handleFieldChange} options={['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']} />
+                                                        <EditableField icon={AlertTriangle} label="Alergias" value={v('alergias')} field="alergias" editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={CheckCircle} label="Estatus" value={v('estatus')} field="estatus" editing={editing} onChange={handleFieldChange} options={['activo', 'inactivo', 'baja']} />
+                                                    </div>
+                                                    <Card className="border-amber-200 bg-amber-50/50">
+                                                        <CardHeader className="pb-2">
+                                                            <CardTitle className="flex items-center gap-2 text-amber-800 text-base">
+                                                                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                                                                Contacto de Emergencia
+                                                            </CardTitle>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                                <EditableField icon={User} label="Nombre" value={v('contacto_emergencia_nombre')} field="contacto_emergencia_nombre" editing={editing} onChange={handleFieldChange} />
+                                                                <EditableField icon={Users} label="Parentesco" value={v('contacto_emergencia_parentesco')} field="contacto_emergencia_parentesco" editing={editing} onChange={handleFieldChange} />
+                                                                <EditableField icon={Phone} label="Teléfono" value={v('contacto_emergencia_telefono')} field="contacto_emergencia_telefono" editing={editing} onChange={handleFieldChange} />
                                                             </div>
-                                                            <div className="space-y-1">
-                                                                {Object.entries(cat.items).map(([riskKey, riskLabel]) => {
-                                                                    const active = catRisks[riskKey] || false
-                                                                    return (
-                                                                        <button
-                                                                            key={riskKey}
-                                                                            onClick={() => toggleRisk(catKey, riskKey)}
-                                                                            className={`w-full text-left px-2 py-1 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5 ${active
-                                                                                ? 'bg-amber-200/80 text-amber-900'
-                                                                                : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
-                                                                                }`}
-                                                                        >
-                                                                            <span className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${active ? 'bg-amber-500 border-amber-500' : 'border-slate-300'}`} />
-                                                                            {riskLabel}
-                                                                        </button>
-                                                                    )
-                                                                })}
+                                                        </CardContent>
+                                                    </Card>
+                                                </TabsContent>
+
+                                                {/* ═══ LABORAL TAB ═══ */}
+                                                <TabsContent value="laboral" className="space-y-6 mt-0">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                        <EditableField icon={Clipboard} label="Número de Empleado" value={v('numero_empleado')} field="numero_empleado" type="mono" editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={Building2} label="Empresa" value={v('empresa_nombre')} field="empresa_nombre" editing={false} onChange={() => { }} />
+                                                        <EditableField icon={MapPin} label="Sede" value={v('sede_nombre')} field="sede_nombre" editing={false} onChange={() => { }} />
+                                                        <EditableField icon={Briefcase} label="Puesto" value={v('puesto')} field="puesto" editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={Users} label="Área" value={v('area')} field="area" editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={Users} label="Departamento" value={v('departamento')} field="departamento" editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={Clock} label="Turno" value={v('turno')} field="turno" editing={editing} onChange={handleFieldChange} options={['Matutino', 'Vespertino', 'Nocturno', 'Mixto']} />
+                                                        <EditableField icon={FileText} label="Tipo de Contrato" value={v('tipo_contrato')} field="tipo_contrato" editing={editing} onChange={handleFieldChange} options={['Indeterminado', 'Temporal', 'Prueba', 'Capacitación', 'De obra']} />
+                                                        <EditableField icon={Calendar} label="Fecha de Ingreso" value={editing ? v('fecha_ingreso') : formatDate(paciente.fecha_ingreso)} field="fecha_ingreso" type={editing ? 'date' : 'text'} editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={Clock} label="Jornada (horas)" value={v('jornada_horas')?.toString() || ''} field="jornada_horas" type="number" editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={User} label="Supervisor" value={v('supervisor_nombre')} field="supervisor_nombre" editing={editing} onChange={handleFieldChange} />
+                                                    </div>
+
+                                                    {/* ═══ RISK ANALYZER ═══ */}
+                                                    <Card className="border-violet-200 bg-gradient-to-br from-violet-50/80 to-indigo-50/50 shadow-lg">
+                                                        <CardHeader className="pb-3">
+                                                            <div className="flex items-center justify-between">
+                                                                <CardTitle className="flex items-center gap-2 text-violet-800 text-base">
+                                                                    <Brain className="w-5 h-5 text-violet-500" />
+                                                                    Analizador de Riesgos Laborales
+                                                                    <Badge className="bg-violet-100 text-violet-700 border-violet-200 text-[10px]">IA</Badge>
+                                                                </CardTitle>
+                                                                <div className="flex gap-2">
+                                                                    <Button onClick={handleAnalyzeRisks} disabled={isAnalyzingAI} size="sm" className="bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white rounded-xl gap-2 text-xs shadow-md">
+                                                                        {isAnalyzingAI ? (<><Loader2 className="w-3.5 h-3.5 animate-spin" /> Analizando...</>) : (<><Zap className="w-3.5 h-3.5" /> Analizar con IA</>)}
+                                                                    </Button>
+                                                                    {showRiesgos && totalRisksCount > 0 && (
+                                                                        <Button onClick={saveRisksOnly} disabled={saving} size="sm" variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded-xl gap-2 text-xs">
+                                                                            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                                                            Guardar Riesgos
+                                                                        </Button>
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            {isAnalyzingAI && (
+                                                                <div className="flex flex-col items-center py-8">
+                                                                    <div className="w-16 h-16 rounded-full bg-gradient-to-r from-violet-500 to-indigo-600 animate-pulse flex items-center justify-center">
+                                                                        <Brain className="w-8 h-8 text-white animate-bounce" />
+                                                                    </div>
+                                                                    <p className="text-sm font-bold text-violet-700 mt-4">OpenAI analizando riesgos para "{v('puesto')}"...</p>
+                                                                </div>
+                                                            )}
+                                                            {!isAnalyzingAI && !showRiesgos && (
+                                                                <div className="text-center py-6">
+                                                                    <Zap className="w-10 h-10 mx-auto text-violet-300 mb-2" />
+                                                                    <p className="text-sm font-semibold text-slate-500">Presiona "Analizar con IA" para identificar riesgos del puesto</p>
+                                                                </div>
+                                                            )}
+                                                            {!isAnalyzingAI && showRiesgos && (
+                                                                <div className="space-y-4">
+                                                                    <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                                                                        <CheckCircle className="w-5 h-5 text-emerald-500" />
+                                                                        <span className="text-sm font-bold text-emerald-800">Análisis completado — {totalRisksCount} riesgos identificados</span>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                                                        {Object.entries(RISK_CATEGORIES).map(([catKey, cat]) => {
+                                                                            const catRisks = (riesgos as any)[catKey] || {}
+                                                                            const activeCount = Object.values(catRisks).filter(Boolean).length
+                                                                            return (
+                                                                                <div key={catKey} className={`rounded-xl border p-3 transition-all ${activeCount > 0 ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-100'}`}>
+                                                                                    <div className="flex items-center gap-2 mb-2">
+                                                                                        <span className="text-lg">{cat.emoji}</span>
+                                                                                        <span className="text-xs font-bold text-slate-700">{cat.label}</span>
+                                                                                        {activeCount > 0 && <Badge className="bg-amber-200 text-amber-800 text-[9px] ml-auto">{activeCount}</Badge>}
+                                                                                    </div>
+                                                                                    <div className="space-y-1">
+                                                                                        {Object.entries(cat.items).map(([riskKey, riskLabel]) => {
+                                                                                            const active = catRisks[riskKey] || false
+                                                                                            return (
+                                                                                                <button key={riskKey} onClick={() => toggleRisk(catKey, riskKey)}
+                                                                                                    className={`w-full text-left px-2 py-1 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5 ${active ? 'bg-amber-200/80 text-amber-900' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}>
+                                                                                                    <span className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${active ? 'bg-amber-500 border-amber-500' : 'border-slate-300'}`} />
+                                                                                                    {riskLabel}
+                                                                                                </button>
+                                                                                            )
+                                                                                        })}
+                                                                                    </div>
+                                                                                </div>
+                                                                            )
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </CardContent>
+                                                    </Card>
+                                                </TabsContent>
 
-                        {/* ═══ CONTACTO TAB ═══ */}
-                        <TabsContent value="contacto" className="space-y-6 mt-0">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <EditableField icon={Mail} label="Correo Electrónico" value={v('email')} field="email" editing={editing} onChange={handleFieldChange} />
-                                <EditableField icon={Phone} label="Teléfono" value={v('telefono')} field="telefono" editing={editing} onChange={handleFieldChange} />
-                            </div>
-                            <Card className="border-0 shadow-lg">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-bold text-slate-600">Fotografía del Paciente</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <FotoPaciente
-                                        currentUrl={paciente.foto_url}
-                                        nombre={`${paciente.nombre} ${paciente.apellido_paterno}`}
-                                        initials={initials}
-                                        gradient={gradient}
-                                        size="lg"
-                                        editable={true}
-                                        onPhotoChange={(url) => {
-                                            setPaciente(prev => prev ? { ...prev, foto_url: url } : prev)
-                                        }}
-                                    />
-                                    <p className="text-[10px] text-slate-400 mt-2 font-medium">Click para subir o cambiar la fotografía</p>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
+                                                {/* ═══ CONTACTO TAB ═══ */}
+                                                <TabsContent value="contacto" className="space-y-6 mt-0">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <EditableField icon={Mail} label="Correo Electrónico" value={v('email')} field="email" editing={editing} onChange={handleFieldChange} />
+                                                        <EditableField icon={Phone} label="Teléfono" value={v('telefono')} field="telefono" editing={editing} onChange={handleFieldChange} />
+                                                    </div>
+                                                    <Card className="border-0 shadow-lg">
+                                                        <CardHeader className="pb-2">
+                                                            <CardTitle className="text-sm font-bold text-slate-600">Fotografía del Paciente</CardTitle>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            <FotoPaciente
+                                                                currentUrl={paciente.foto_url}
+                                                                nombre={`${paciente.nombre} ${paciente.apellido_paterno}`}
+                                                                initials={initials}
+                                                                gradient={gradient}
+                                                                size="lg"
+                                                                editable={true}
+                                                                onPhotoChange={(url) => {
+                                                                    setPaciente(prev => prev ? { ...prev, foto_url: url } : prev)
+                                                                }}
+                                                            />
+                                                            <p className="text-[10px] text-slate-400 mt-2 font-medium">Click para subir o cambiar la fotografía</p>
+                                                        </CardContent>
+                                                    </Card>
+                                                </TabsContent>
 
-                        {/* ═══ DASHBOARD TAB ═══ */}
-                        <TabsContent value="dashboard" className="mt-0">
-                            <Suspense fallback={<TabLoader label="Cargando dashboard clínico..." />}>
-                                <PatientDashboardTab pacienteId={id!} />
-                            </Suspense>
-                        </TabsContent>
+                                                {/* ═══ CLINICAL TABS ═══ */}
+                                                <TabsContent value="dashboard" className="mt-0">
+                                                    <Suspense fallback={<TabLoader label="Cargando dashboard clínico..." />}>
+                                                        <PatientDashboardTab pacienteId={id!} />
+                                                    </Suspense>
+                                                </TabsContent>
 
+                                                <TabsContent value="expediente" className="mt-0">
+                                                    <Suspense fallback={<TabLoader label="Cargando expediente clínico..." />}>
+                                                        <HistorialClinicoCompleto pacienteId={id!} />
+                                                    </Suspense>
+                                                </TabsContent>
 
+                                                {/* ═══ TREATMENT TABS ═══ */}
+                                                <TabsContent value="recetas" className="mt-0">
+                                                    <Suspense fallback={<TabLoader label="Cargando recetas..." />}>
+                                                        <RecetasTab pacienteId={id!} />
+                                                    </Suspense>
+                                                </TabsContent>
 
-                        {/* ═══ CLINICAL TAB ═══ */}
-                        <TabsContent value="expediente" className="mt-0">
-                            <Suspense fallback={<TabLoader label="Cargando expediente clínico..." />}>
-                                <HistorialClinicoCompleto pacienteId={id!} />
-                            </Suspense>
-                        </TabsContent>
+                                                <TabsContent value="incapacidades" className="mt-0">
+                                                    <Suspense fallback={<TabLoader label="Cargando incapacidades..." />}>
+                                                        <IncapacidadesTab pacienteId={id!} />
+                                                    </Suspense>
+                                                </TabsContent>
 
-                        {/* ═══ TREATMENT TABS ═══ */}
-                        <TabsContent value="recetas" className="mt-0">
-                            <Suspense fallback={<TabLoader label="Cargando recetas..." />}>
-                                <RecetasTab pacienteId={id!} />
-                            </Suspense>
-                        </TabsContent>
+                                                <TabsContent value="dictamenes" className="mt-0">
+                                                    <Suspense fallback={<TabLoader label="Cargando dictámenes..." />}>
+                                                        <DictamenesTab pacienteId={id!} />
+                                                    </Suspense>
+                                                </TabsContent>
 
-                        <TabsContent value="incapacidades" className="mt-0">
-                            <Suspense fallback={<TabLoader label="Cargando incapacidades..." />}>
-                                <IncapacidadesTab pacienteId={id!} />
-                            </Suspense>
-                        </TabsContent>
+                                                <TabsContent value="documentos" className="mt-0">
+                                                    <Suspense fallback={<TabLoader label="Cargando documentos cifrados..." />}>
+                                                        <DocumentosExpedienteTab
+                                                            pacienteId={id!}
+                                                            empresaId={user?.empresa_id || ''}
+                                                            pacienteNombre={`${paciente.nombre} ${paciente.apellido_paterno}`}
+                                                        />
+                                                    </Suspense>
+                                                </TabsContent>
 
-                        <TabsContent value="dictamenes" className="mt-0">
-                            <Suspense fallback={<TabLoader label="Cargando dictámenes..." />}>
-                                <DictamenesTab pacienteId={id!} />
-                            </Suspense>
-                        </TabsContent>
-
-                        <TabsContent value="documentos" className="mt-0">
-                            <Suspense fallback={<TabLoader label="Cargando documentos cifrados..." />}>
-                                <DocumentosExpedienteTab
-                                    pacienteId={id!}
-                                    empresaId={user?.empresa_id || ''}
-                                    pacienteNombre={`${paciente.nombre} ${paciente.apellido_paterno}`}
-                                />
-                            </Suspense>
-                        </TabsContent>
-
-                        <TabsContent value="timeline" className="mt-0">
-                            <Suspense fallback={<TabLoader label="Cargando línea de tiempo inteligente..." />}>
-                                <TimelineViewerTab pacienteId={id!} />
-                            </Suspense>
-                        </TabsContent>
-                    </motion.div>
-                </AnimatePresence>
-                )}
-            </Tabs>
+                                                <TabsContent value="timeline" className="mt-0">
+                                                    <Suspense fallback={<TabLoader label="Cargando línea de tiempo..." />}>
+                                                        <TimelineViewerTab pacienteId={id!} />
+                                                    </Suspense>
+                                                </TabsContent>
+                                            </motion.div>
+                                        </AnimatePresence>
+                                    </Tabs>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </>
+                )
+            })()}
         </div>
     )
 }
