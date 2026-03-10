@@ -18,6 +18,7 @@ import { analyzeOptometryDirect } from '@/services/geminiDocumentService'
 import { secureStorageService } from '@/services/secureStorageService'
 import { useAuth } from '@/contexts/AuthContext'
 import { EMPRESA_PRINCIPAL_ID } from '@/config/empresa'
+import toast from 'react-hot-toast'
 
 // ── Tabla Snellen ──
 const SNELLEN_SCORE: Record<string, number> = {
@@ -276,8 +277,10 @@ const useOptometryUpload = (pacienteId: string, empresaId: string, userId: strin
                         userRol: userRol,
                     })
                     console.log('[OptoClone] ✅ Archivo guardado en Storage')
+                    toast.success('📎 Archivo original guardado correctamente')
                 } catch (storageErr) {
                     console.error('[OptoClone] ⚠️ Error guardando archivo:', storageErr)
+                    toast.error('No se pudo guardar el archivo original')
                     // No bloquear si falla el storage — los datos ya se guardaron
                 }
             } else {
@@ -594,7 +597,7 @@ export default function EstudiosVisualesTab({ pacienteId }: { pacienteId: string
                                 )}
                             </>
                         )}
-                        <DocumentosAdjuntos pacienteId={pacienteId} categoria="optometria" titulo="Archivo Original Optometría" collapsedByDefault={false} />
+
                     </motion.div>
                 )}
 
@@ -868,6 +871,9 @@ export default function EstudiosVisualesTab({ pacienteId }: { pacienteId: string
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Documentos adjuntos — SIEMPRE visible, fuera de condicionales */}
+            <DocumentosAdjuntos pacienteId={pacienteId} categoria="optometria" titulo="Archivo Original Optometría" collapsedByDefault={false} />
         </div>
     )
 }
