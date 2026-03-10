@@ -416,8 +416,11 @@ export const secureStorageService = {
 
     /**
      * 📋 LISTAR DOCUMENTOS POR CATEGORÍA de un paciente
+     * Combina Supabase + localStorage (fallback de upload en modo demo)
      */
     async getByPacienteAndCategoria(pacienteId: string, categoria: string): Promise<DocumentoExpediente[]> {
+        let supabaseDocs: DocumentoExpediente[] = []
+
         try {
             const { data, error } = await supabase
                 .from('documentos_expediente')
@@ -427,12 +430,29 @@ export const secureStorageService = {
                 .eq('activo', true)
                 .order('created_at', { ascending: false })
 
-            if (error) throw error
-            return (data || []) as DocumentoExpediente[]
+            if (!error && data) {
+                supabaseDocs = data as DocumentoExpediente[]
+            }
         } catch {
-            const allDocs = JSON.parse(localStorage.getItem('GPMedical_documentos') || '[]')
-            return allDocs.filter((d: DocumentoExpediente) => d.paciente_id === pacienteId && d.categoria === categoria && d.activo)
+            // Supabase query failed
         }
+
+        // Siempre revisar localStorage (fallback de upload)
+        try {
+            const allLocal = JSON.parse(localStorage.getItem('GPMedical_documentos') || '[]')
+            const localDocs = allLocal.filter(
+                (d: DocumentoExpediente) => d.paciente_id === pacienteId && d.categoria === categoria && d.activo !== false
+            )
+            if (localDocs.length > 0) {
+                const supabaseIds = new Set(supabaseDocs.map(d => d.id))
+                const uniqueLocal = localDocs.filter((d: DocumentoExpediente) => !supabaseIds.has(d.id))
+                return [...supabaseDocs, ...uniqueLocal]
+            }
+        } catch {
+            // localStorage parse failed
+        }
+
+        return supabaseDocs
     },
 
     /**
