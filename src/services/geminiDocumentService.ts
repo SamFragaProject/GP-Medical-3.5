@@ -1329,6 +1329,153 @@ export async function analyzeAudiometryDirect(_text: string, imageFiles: File[] 
     throw new Error(`AudioClone: Ningún modelo pudo extraer la audiometría. Último error: ${lastError?.message || 'desconocido'}`);
 }
 
+// ══════════════════════════════════════════════════════════════════
+// OptoClone — Motor de extracción directa para Optometría
+// Replica la lógica de extract-optometría (standalone Vite app)
+// ══════════════════════════════════════════════════════════════════
+
+const OPTOMETRY_PROMPT = `ERES UN EXPERTO EN EXTRACCIÓN DE DATOS MÉDICOS DE OPTOMETRÍA. Analiza exhaustivamente este reporte de examen optométrico de GP Medical Health.
+
+Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta (sin markdown, sin texto adicional):
+{
+  "folio": "",
+  "patient": {
+    "name": "",
+    "age": "",
+    "company": "",
+    "jobTitle": ""
+  },
+  "methods": {
+    "visualAcuity": "",
+    "colorPerception": ""
+  },
+  "results": {
+    "farVision": {
+      "natural": { "rightEye": "", "leftEye": "" },
+      "corrected": { "rightEye": "", "leftEye": "" }
+    },
+    "nearVision": {
+      "natural": { "rightEye": "", "leftEye": "" },
+      "corrected": { "rightEye": "", "leftEye": "" }
+    },
+    "colorPerception": "",
+    "refraction": {
+      "rightEye": { "sphere": "", "cylinder": "", "axis": "" },
+      "leftEye": { "sphere": "", "cylinder": "", "axis": "" }
+    },
+    "intraocularPressure": {
+      "rightEye": "",
+      "leftEye": ""
+    },
+    "campimetry": {
+      "rightEye": "",
+      "leftEye": ""
+    }
+  },
+  "diagnosis": [],
+  "doctor": {
+    "name": "",
+    "specialty": "",
+    "credentials": ""
+  }
+}
+
+INSTRUCCIONES CRÍTICAS:
+1. Extrae TODAS las mediciones de agudeza visual: visión lejana y cercana, natural y corregida, para ambos ojos
+2. Los valores de AV lejana usan escala Snellen (ej. 20/20, 20/30). Los de visión cercana usan escala Jaeger (J1, J2, J3, etc.)
+3. Si un valor aparece como "-" (guión), devuélvelo como "-" o cadena vacía
+4. Extrae datos de refracción si existen (esfera, cilindro, eje)
+5. Extrae presión intraocular si existe (en mmHg)
+6. Extrae resultados de percepción de colores y método utilizado (Test de Ishihara)
+7. Extrae el diagnóstico EXACTO como array de strings
+8. Extrae datos del doctor (nombre, especialidad, cédulas profesionales)
+9. NO uses formato \`\`\`json\`\`\`, devuelve SOLO el JSON`;
+
+export async function analyzeOptometryDirect(_text: string, imageFiles: File[] = []): Promise<any> {
+    const MODELS_TO_TRY = [
+        'gemini-3.1-pro-preview',
+        'gemini-2.5-pro',
+        'gemini-2.0-pro',
+        'gemini-2.0-flash',
+    ];
+
+    const toBase64 = (file: File): Promise<{ data: string; mimeType: string }> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result as string;
+                resolve({
+                    data: dataUrl.split(',')[1],
+                    mimeType: file.type || 'image/jpeg'
+                });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const imageData = await Promise.all(imageFiles.map(toBase64));
+
+    let lastError: any = null;
+
+    for (const model of MODELS_TO_TRY) {
+        try {
+            console.log(`[OptoClone] Probando modelo: ${model}...`);
+
+            const contents: any[] = [
+                ...imageData.map(img => ({ inlineData: img })),
+                OPTOMETRY_PROMPT
+            ];
+
+            const response = await ai.models.generateContent({
+                model,
+                contents,
+                config: {
+                    responseMimeType: "application/json",
+                    temperature: 0.1,
+                }
+            });
+
+            const jsonStr = response.text?.trim();
+            if (!jsonStr) {
+                console.warn(`[OptoClone] ${model}: respuesta vacía, intentando siguiente...`);
+                continue;
+            }
+
+            const cleaned = jsonStr.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+            const data = JSON.parse(cleaned);
+
+            // Validar que tiene resultados de AV
+            const hasFarVision = data.results?.farVision?.natural?.rightEye || data.results?.farVision?.natural?.leftEye;
+            if (!hasFarVision && (!data.diagnosis || data.diagnosis.length === 0)) {
+                console.warn(`[OptoClone] ${model}: sin datos de visión, intentando siguiente...`);
+                continue;
+            }
+
+            trackUsage(model, jsonStr.length / 4, jsonStr.length / 4);
+            console.log('[OptoClone] ✅ Extracción exitosa:', {
+                model,
+                patient: data.patient?.name,
+                farVisionOD: data.results?.farVision?.natural?.rightEye,
+                farVisionOI: data.results?.farVision?.natural?.leftEye,
+                nearVisionOD: data.results?.nearVision?.natural?.rightEye,
+                colorPerception: data.results?.colorPerception,
+                diagnosisCount: data.diagnosis?.length,
+            });
+
+            return data;
+
+        } catch (err: any) {
+            console.warn(`[OptoClone] ${model} falló:`, err.message || err);
+            lastError = err;
+            continue;
+        }
+    }
+
+    throw new Error(`OptoClone: Ningún modelo pudo extraer la optometría. Último error: ${lastError?.message || 'desconocido'}`);
+}
+
 export function isGeminiConfigured(): boolean {
     return !!API_KEY;
 }
+
