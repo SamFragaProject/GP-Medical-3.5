@@ -470,6 +470,61 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
         // Agrupar resultados por categoría
         const categories = Array.from(new Set(extractedData.results.map(r => r.category || 'General')))
 
+        // ═══ AUDIOMETRÍA: Layout dedicado estilo clon GP Medical ═══
+        if (tipoEstudio === 'audiometria' && audiocloneData) {
+            return (
+                <div className="space-y-5">
+                    {/* Banner de confirmación */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl border-2 border-amber-300 p-5 shadow-lg"
+                    >
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                                    <Edit3 className="w-5 h-5 text-amber-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-amber-900">Vista previa — AudioClone Digital</h3>
+                                    <p className="text-xs text-amber-700">
+                                        Réplica digital completa del reporte. <strong>{extractedData.results.length} parámetros</strong> extraídos. Verifica y confirma.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setPhase('idle')}
+                                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 rounded-xl transition-colors"
+                                >
+                                    Descartar
+                                </button>
+                                <a href={fileUrl} target="_blank" rel="noreferrer"
+                                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+                                >
+                                    <Eye className="w-4 h-4" /> Original
+                                </a>
+                                <button
+                                    onClick={confirmAndSave}
+                                    className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-xl shadow-lg shadow-blue-200/50 transition-all"
+                                >
+                                    <Save className="w-4 h-4" /> Confirmar y Guardar
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* Clon visual a ancho completo */}
+                    <div className="overflow-x-auto bg-slate-50/50 p-2 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
+                        <div className="min-w-[800px]">
+                            <AudiometryReviewClone data={audiocloneData} />
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+
+        // ═══ OTROS ESTUDIOS: Layout genérico con acordeón ═══
         return (
             <div className="space-y-6">
                 <Card className="overflow-hidden border-0 shadow-2xl rounded-[2.5rem] bg-white">
@@ -508,62 +563,55 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                             </div>
                         </div>
 
-                        {/* CONTENIDO: AudioClone visual O acordeón genérico */}
-                        {tipoEstudio === 'audiometria' && audiocloneData ? (
-                            <AudiometryReviewClone data={audiocloneData} />
-                        ) : (
-                            <>
-                            {/* LISTADO DE CATEGORÍAS TIPO ACORDEÓN */}
-                            <div className="space-y-4">
-                                {categories.map(cat => (
-                                    <div key={cat} className="border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                                        <button onClick={() => toggleCategory(cat)} className="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-200" />
-                                                <span className="font-black text-slate-800 uppercase tracking-widest text-xs">{cat}</span>
-                                                <Badge variant="secondary" className="bg-slate-200/50 text-slate-500 font-bold border-0 text-[9px]">{extractedData.results.filter(r => r.category === cat).length} items</Badge>
-                                            </div>
-                                            {expandedCategories[cat] ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
-                                        </button>
-                                        {expandedCategories[cat] && (
-                                            <div className="px-8 pb-6 border-t border-slate-50 animate-in fade-in slide-in-from-top-2 duration-300">
-                                                <table className="w-full text-sm">
-                                                    <thead className="text-[10px] text-slate-400 font-black uppercase tracking-widest border-b border-slate-50">
-                                                        <tr>
-                                                            <th className="py-4 text-left">Parámetro</th>
-                                                            <th className="py-4 text-center">Valor / Resultado</th>
-                                                            <th className="py-4 text-left">Unidad</th>
-                                                            <th className="py-4 text-left">Rango</th>
-                                                            <th className="py-4 w-10"></th>
+                        {/* LISTADO DE CATEGORÍAS TIPO ACORDEÓN */}
+                        <div className="space-y-4">
+                            {categories.map(cat => (
+                                <div key={cat} className="border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                                    <button onClick={() => toggleCategory(cat)} className="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-200" />
+                                            <span className="font-black text-slate-800 uppercase tracking-widest text-xs">{cat}</span>
+                                            <Badge variant="secondary" className="bg-slate-200/50 text-slate-500 font-bold border-0 text-[9px]">{extractedData.results.filter(r => r.category === cat).length} items</Badge>
+                                        </div>
+                                        {expandedCategories[cat] ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                                    </button>
+                                    {expandedCategories[cat] && (
+                                        <div className="px-8 pb-6 border-t border-slate-50 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <table className="w-full text-sm">
+                                                <thead className="text-[10px] text-slate-400 font-black uppercase tracking-widest border-b border-slate-50">
+                                                    <tr>
+                                                        <th className="py-4 text-left">Parámetro</th>
+                                                        <th className="py-4 text-center">Valor / Resultado</th>
+                                                        <th className="py-4 text-left">Unidad</th>
+                                                        <th className="py-4 text-left">Rango</th>
+                                                        <th className="py-4 w-10"></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-50">
+                                                    {extractedData.results.filter(r => r.category === cat).map((res, ri) => (
+                                                        <tr key={ri} className="group hover:bg-slate-50/30">
+                                                            <td className="py-4 font-bold text-slate-700">{res.name}</td>
+                                                            <td className="py-4 text-center">
+                                                                {typeof res.value === 'object' ? (
+                                                                    <Badge className="bg-indigo-50 text-indigo-600 border-indigo-100 font-bold px-3 py-1">DATOS COMPLEJOS (GRÁFICA)</Badge>
+                                                                ) : (
+                                                                    <span className="text-xl font-black text-emerald-600 tracking-tighter">{res.value}</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="py-4 text-slate-400 font-medium">{res.unit || '-'}</td>
+                                                            <td className="py-4 text-slate-400 text-xs">{res.range || '-'}</td>
+                                                            <td className="py-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <button className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                                                            </td>
                                                         </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-slate-50">
-                                                        {extractedData.results.filter(r => r.category === cat).map((res, ri) => (
-                                                            <tr key={ri} className="group hover:bg-slate-50/30">
-                                                                <td className="py-4 font-bold text-slate-700">{res.name}</td>
-                                                                <td className="py-4 text-center">
-                                                                    {typeof res.value === 'object' ? (
-                                                                        <Badge className="bg-indigo-50 text-indigo-600 border-indigo-100 font-bold px-3 py-1">DATOS COMPLEJOS (GRÁFICA)</Badge>
-                                                                    ) : (
-                                                                        <span className="text-xl font-black text-emerald-600 tracking-tighter">{res.value}</span>
-                                                                    )}
-                                                                </td>
-                                                                <td className="py-4 text-slate-400 font-medium">{res.unit || '-'}</td>
-                                                                <td className="py-4 text-slate-400 text-xs">{res.range || '-'}</td>
-                                                                <td className="py-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                    <button className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                            </>
-                        )}
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
 
                         {/* SUMMARY */}
                         <div className="space-y-4">
