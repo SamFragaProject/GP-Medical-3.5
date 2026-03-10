@@ -1172,6 +1172,163 @@ export async function analyzeLabDirect(_text: string, imageFiles: File[] = []): 
     throw new Error(`LabClone: Ningún modelo pudo extraer los laboratorios. Último error: ${lastError?.message || 'desconocido'}`);
 }
 
+// ══════════════════════════════════════════════════════════════════
+// AudioClone — Motor de extracción directa para Audiometrías
+// Replica la lógica de extract-audiometria (standalone Vite app)
+// ══════════════════════════════════════════════════════════════════
+
+const AUDIOMETRY_PROMPT = `ERES UN EXPERTO EN EXTRACCIÓN DE DATOS MÉDICOS DE AUDIOMETRÍA. Analiza exhaustivamente este reporte de audiometría tonal.
+
+Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta (sin markdown, sin texto adicional):
+{
+  "patient": {
+    "name": "",
+    "dob": "",
+    "age": "",
+    "sex": ""
+  },
+  "testDetails": {
+    "audiometryDate": "",
+    "medicalRecordDate": "",
+    "doctor": ""
+  },
+  "thresholds": {
+    "right": [
+      { "frequency": "125", "value": null },
+      { "frequency": "250", "value": null },
+      { "frequency": "500", "value": null },
+      { "frequency": "750", "value": null },
+      { "frequency": "1000", "value": null },
+      { "frequency": "1500", "value": null },
+      { "frequency": "2000", "value": null },
+      { "frequency": "3000", "value": null },
+      { "frequency": "4000", "value": null },
+      { "frequency": "6000", "value": null },
+      { "frequency": "8000", "value": null }
+    ],
+    "left": [
+      { "frequency": "125", "value": null },
+      { "frequency": "250", "value": null },
+      { "frequency": "500", "value": null },
+      { "frequency": "750", "value": null },
+      { "frequency": "1000", "value": null },
+      { "frequency": "1500", "value": null },
+      { "frequency": "2000", "value": null },
+      { "frequency": "3000", "value": null },
+      { "frequency": "4000", "value": null },
+      { "frequency": "6000", "value": null },
+      { "frequency": "8000", "value": null }
+    ]
+  },
+  "diagnosis": {
+    "rightEar": "",
+    "leftEar": "",
+    "general": ""
+  },
+  "equipment": {
+    "device": "",
+    "serialNumber": "",
+    "calibrationDate": ""
+  }
+}
+
+INSTRUCCIONES CRÍTICAS:
+1. Extrae los UMBRALES DE VÍA AÉREA (VA) para AMBOS OÍDOS (derecho e izquierdo) en TODAS las frecuencias disponibles (125, 250, 500, 750, 1000/1k, 1500/1.5k, 2000/2k, 3000/3k, 4000/4k, 6000/6k, 8000/8k Hz)
+2. Los valores son en dB HL (decibelios). Léelos con PRECISIÓN ABSOLUTA de la tabla o audiograma
+3. Si una frecuencia muestra "1k", "1.5k", "2k", etc., conviértela a "1000", "1500", "2000" respectivamente
+4. Si un valor no existe para una frecuencia, pon "value": null
+5. Si hay un audiograma gráfico, LEE LOS VALORES DE LOS PUNTOS en el eje Y (dB HL)
+6. Extrae el diagnóstico EXACTO de cada oído (ej. NORMOACUSIA, HIPOACUSIA LEVE, etc.)
+7. Extrae datos del equipo: dispositivo, número de serie, fecha de calibración
+8. NO uses formato \`\`\`json\`\`\`, devuelve SOLO el JSON`;
+
+export async function analyzeAudiometryDirect(_text: string, imageFiles: File[] = []): Promise<any> {
+    const MODELS_TO_TRY = [
+        'gemini-3.1-pro-preview',
+        'gemini-2.5-pro',
+        'gemini-2.0-pro',
+        'gemini-2.0-flash',
+    ];
+
+    const toBase64 = (file: File): Promise<{ data: string; mimeType: string }> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result as string;
+                resolve({
+                    data: dataUrl.split(',')[1],
+                    mimeType: file.type || 'image/jpeg'
+                });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const imageData = await Promise.all(imageFiles.map(toBase64));
+
+    let lastError: any = null;
+
+    for (const model of MODELS_TO_TRY) {
+        try {
+            console.log(`[AudioClone] Probando modelo: ${model}...`);
+
+            const contents: any[] = [
+                ...imageData.map(img => ({ inlineData: img })),
+                AUDIOMETRY_PROMPT
+            ];
+
+            const response = await ai.models.generateContent({
+                model,
+                contents,
+                config: {
+                    responseMimeType: "application/json",
+                    temperature: 0.1,
+                }
+            });
+
+            const jsonStr = response.text?.trim();
+            if (!jsonStr) {
+                console.warn(`[AudioClone] ${model}: respuesta vacía, intentando siguiente...`);
+                continue;
+            }
+
+            const cleaned = jsonStr.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+            const data = JSON.parse(cleaned);
+
+            // Validar que tiene umbrales auditivos
+            const hasRight = data.thresholds?.right?.some((t: any) => t.value !== null && t.value !== undefined);
+            const hasLeft = data.thresholds?.left?.some((t: any) => t.value !== null && t.value !== undefined);
+            if (!hasRight && !hasLeft) {
+                console.warn(`[AudioClone] ${model}: sin umbrales auditivos, intentando siguiente...`);
+                continue;
+            }
+
+            trackUsage(model, jsonStr.length / 4, jsonStr.length / 4);
+            const rightCount = data.thresholds?.right?.filter((t: any) => t.value !== null).length || 0;
+            const leftCount = data.thresholds?.left?.filter((t: any) => t.value !== null).length || 0;
+            console.log('[AudioClone] ✅ Extracción exitosa:', {
+                model,
+                patient: data.patient?.name,
+                rightFreqs: rightCount,
+                leftFreqs: leftCount,
+                diagRight: data.diagnosis?.rightEar,
+                diagLeft: data.diagnosis?.leftEar,
+                equipment: data.equipment?.device,
+            });
+
+            return data;
+
+        } catch (err: any) {
+            console.warn(`[AudioClone] ${model} falló:`, err.message || err);
+            lastError = err;
+            continue;
+        }
+    }
+
+    throw new Error(`AudioClone: Ningún modelo pudo extraer la audiometría. Último error: ${lastError?.message || 'desconocido'}`);
+}
+
 export function isGeminiConfigured(): boolean {
     return !!API_KEY;
 }

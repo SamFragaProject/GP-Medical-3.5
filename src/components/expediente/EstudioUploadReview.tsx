@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import {
-    analyzeDocument, analyzeSpirometryDirect, type StructuredMedicalData, type LabResult
+    analyzeDocument, analyzeSpirometryDirect, analyzeAudiometryDirect, type StructuredMedicalData, type LabResult
 } from '@/services/geminiDocumentService'
 import { crearEstudioConResultados, type TipoEstudio } from '@/services/estudiosService'
 
@@ -44,6 +44,7 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
     const [isDragging, setIsDragging] = useState(false)
     const [extractedData, setExtractedData] = useState<StructuredMedicalData | null>(null)
     const [spirocloneData, setSpirocloneData] = useState<any>(null) // SpiroClone direct data
+    const [audiocloneData, setAudiocloneData] = useState<any>(null) // AudioClone direct data
     const [editingIdx, setEditingIdx] = useState<number | null>(null)
     const [errorMsg, setErrorMsg] = useState('')
     const [fileUrl, setFileUrl] = useState('')
@@ -115,6 +116,78 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                 return
             }
 
+            // ── AUDIOMETRÍA: usar motor AudioClone directo ──
+            if (tipoEstudio === 'audiometria') {
+                const audioData = await analyzeAudiometryDirect(rawText, images)
+                setAudiocloneData(audioData)
+                // Construir resultados para la UI de review
+                const allResults: any[] = []
+                // Umbrales OD
+                ;(audioData.thresholds?.right || []).forEach((t: any) => {
+                    if (t.value !== null && t.value !== undefined) {
+                        allResults.push({
+                            name: `OD ${t.frequency} Hz`, value: `${t.value} dB`, unit: 'dB HL', range: '≤25 normal',
+                            description: '', visualizationType: 'simple' as any, category: 'Oído Derecho',
+                            parametro: `OD_${t.frequency}Hz`, resultado: String(t.value), unidad: 'dB HL', rango: '≤25',
+                            observacion: '', categoria: 'Oído Derecho'
+                        })
+                    }
+                })
+                // Umbrales OI
+                ;(audioData.thresholds?.left || []).forEach((t: any) => {
+                    if (t.value !== null && t.value !== undefined) {
+                        allResults.push({
+                            name: `OI ${t.frequency} Hz`, value: `${t.value} dB`, unit: 'dB HL', range: '≤25 normal',
+                            description: '', visualizationType: 'simple' as any, category: 'Oído Izquierdo',
+                            parametro: `OI_${t.frequency}Hz`, resultado: String(t.value), unidad: 'dB HL', rango: '≤25',
+                            observacion: '', categoria: 'Oído Izquierdo'
+                        })
+                    }
+                })
+                // Audiograma completo (JSON blob para reconstrucción)
+                const audiogramData = [
+                    ...(audioData.thresholds?.right || []).filter((t: any) => t.value !== null).map((t: any) => ({ frecuencia: t.frequency, od: t.value })),
+                ]
+                ;(audioData.thresholds?.left || []).forEach((t: any) => {
+                    if (t.value === null) return
+                    const existing = audiogramData.find(a => a.frecuencia === t.frequency)
+                    if (existing) existing.oi = t.value
+                    else audiogramData.push({ frecuencia: t.frequency, oi: t.value })
+                })
+                allResults.push({
+                    name: 'AUDIOGRAMA_DATOS', value: JSON.stringify(audiogramData), unit: '', range: '',
+                    description: 'Datos del audiograma completo', visualizationType: 'simple' as any,
+                    category: 'Audiograma', parametro: 'AUDIOGRAMA_DATOS', resultado: JSON.stringify(audiogramData),
+                    unidad: '', rango: '', observacion: '', categoria: 'Audiograma'
+                })
+                // Diagnósticos
+                if (audioData.diagnosis?.rightEar) {
+                    allResults.push({ name: 'DIAGNOSTICO_OD', value: audioData.diagnosis.rightEar, unit: '', range: '', description: '', visualizationType: 'simple' as any, category: 'Diagnóstico', parametro: 'DIAGNOSTICO_OD', resultado: audioData.diagnosis.rightEar, unidad: '', rango: '', observacion: '', categoria: 'Diagnóstico' })
+                }
+                if (audioData.diagnosis?.leftEar) {
+                    allResults.push({ name: 'DIAGNOSTICO_OI', value: audioData.diagnosis.leftEar, unit: '', range: '', description: '', visualizationType: 'simple' as any, category: 'Diagnóstico', parametro: 'DIAGNOSTICO_OI', resultado: audioData.diagnosis.leftEar, unidad: '', rango: '', observacion: '', categoria: 'Diagnóstico' })
+                }
+                if (audioData.diagnosis?.general) {
+                    allResults.push({ name: 'DIAGNOSTICO_GENERAL', value: audioData.diagnosis.general, unit: '', range: '', description: '', visualizationType: 'simple' as any, category: 'Diagnóstico', parametro: 'DIAGNOSTICO_GENERAL', resultado: audioData.diagnosis.general, unidad: '', rango: '', observacion: '', categoria: 'Diagnóstico' })
+                }
+                // Datos del estudio
+                if (audioData.testDetails?.doctor) {
+                    allResults.push({ name: 'MEDICO_RESPONSABLE', value: audioData.testDetails.doctor, unit: '', range: '', description: '', visualizationType: 'simple' as any, category: 'Datos del Estudio', parametro: 'MEDICO_RESPONSABLE', resultado: audioData.testDetails.doctor, unidad: '', rango: '', observacion: '', categoria: 'Datos del Estudio' })
+                }
+                if (audioData.equipment?.device) {
+                    allResults.push({ name: 'EQUIPO', value: audioData.equipment.device, unit: '', range: '', description: `SN: ${audioData.equipment?.serialNumber || '-'} | Cal: ${audioData.equipment?.calibrationDate || '-'}`, visualizationType: 'simple' as any, category: 'Datos del Estudio', parametro: 'EQUIPO', resultado: audioData.equipment.device, unidad: '', rango: '', observacion: '', categoria: 'Datos del Estudio' })
+                }
+
+                setExtractedData({
+                    patientData: { name: audioData.patient?.name || 'Paciente', age: audioData.patient?.age, gender: audioData.patient?.sex },
+                    results: allResults,
+                    summary: `Audiometría Tonal — OD: ${audioData.diagnosis?.rightEar || 'Sin dx'} | OI: ${audioData.diagnosis?.leftEar || 'Sin dx'}. Doctor: ${audioData.testDetails?.doctor || '-'}. Equipo: ${audioData.equipment?.device || '-'}.`
+                })
+                setProgress(100); setPhase('review')
+                toast.success(`AudioClone: ${allResults.length} parámetros extraídos con precisión`)
+                return
+            }
+
             const analysis = await analyzeDocument(config.sectionId, rawText, images)
             setExtractedData(analysis); setProgress(100); setPhase('review')
             toast.success('Extracción de alta precisión completada')
@@ -161,6 +234,106 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                 if (!estudio) throw new Error('No se pudo crear el registro del estudio')
                 setPhase('done')
                 toast.success('Espirometría integrada con SpiroClone')
+                if (onSaved) onSaved()
+                return
+            }
+
+            // ═══════════════════════════════════════════════
+            // AUDIOMETRÍA: Guardar datos de AudioClone directo
+            // ═══════════════════════════════════════════════
+            if (tipoEstudio === 'audiometria' && audiocloneData) {
+                const audioResults: any[] = []
+                // Umbrales por frecuencia - formato que AudiometriaTab puede leer
+                ;(audiocloneData.thresholds?.right || []).forEach((t: any) => {
+                    if (t.value !== null && t.value !== undefined) {
+                        audioResults.push({
+                            parametro_nombre: `OD_${t.frequency}Hz`,
+                            categoria: 'Oído Derecho',
+                            resultado: String(t.value),
+                            resultado_numerico: Number(t.value),
+                            unidad: 'dB HL',
+                            observacion: ''
+                        })
+                    }
+                })
+                ;(audiocloneData.thresholds?.left || []).forEach((t: any) => {
+                    if (t.value !== null && t.value !== undefined) {
+                        audioResults.push({
+                            parametro_nombre: `OI_${t.frequency}Hz`,
+                            categoria: 'Oído Izquierdo',
+                            resultado: String(t.value),
+                            resultado_numerico: Number(t.value),
+                            unidad: 'dB HL',
+                            observacion: ''
+                        })
+                    }
+                })
+                // AUDIOGRAMA_DATOS blob para renderizado de gráfica
+                const audioBlobData = [
+                    ...(audiocloneData.thresholds?.right || []).filter((t: any) => t.value !== null).map((t: any) => ({ frecuencia: t.frequency, od: t.value })),
+                ]
+                ;(audiocloneData.thresholds?.left || []).forEach((t: any) => {
+                    if (t.value === null) return
+                    const existing = audioBlobData.find(a => a.frecuencia === t.frequency)
+                    if (existing) (existing as any).oi = t.value
+                    else audioBlobData.push({ frecuencia: t.frequency, oi: t.value } as any)
+                })
+                audioResults.push({
+                    parametro_nombre: 'AUDIOGRAMA_DATOS',
+                    categoria: 'Audiograma',
+                    resultado: JSON.stringify(audioBlobData),
+                    resultado_numerico: null,
+                    unidad: '',
+                    observacion: 'Datos del audiograma completo (JSON)'
+                })
+                // Diagnósticos
+                if (audiocloneData.diagnosis?.rightEar) {
+                    audioResults.push({ parametro_nombre: 'DIAGNOSTICO_OD', categoria: 'Diagnóstico', resultado: audiocloneData.diagnosis.rightEar, resultado_numerico: null, unidad: '', observacion: '' })
+                }
+                if (audiocloneData.diagnosis?.leftEar) {
+                    audioResults.push({ parametro_nombre: 'DIAGNOSTICO_OI', categoria: 'Diagnóstico', resultado: audiocloneData.diagnosis.leftEar, resultado_numerico: null, unidad: '', observacion: '' })
+                }
+                if (audiocloneData.diagnosis?.general) {
+                    audioResults.push({ parametro_nombre: 'DIAGNOSTICO_GENERAL', categoria: 'Diagnóstico', resultado: audiocloneData.diagnosis.general, resultado_numerico: null, unidad: '', observacion: '' })
+                }
+                // Equipo y médico
+                if (audiocloneData.testDetails?.doctor) {
+                    audioResults.push({ parametro_nombre: 'MEDICO_RESPONSABLE', categoria: 'Datos del Estudio', resultado: audiocloneData.testDetails.doctor, resultado_numerico: null, unidad: '', observacion: '' })
+                }
+                if (audiocloneData.equipment?.device) {
+                    audioResults.push({ parametro_nombre: 'EQUIPO', categoria: 'Datos del Estudio', resultado: audiocloneData.equipment.device, resultado_numerico: null, unidad: '', observacion: `SN: ${audiocloneData.equipment?.serialNumber || '-'} | Cal: ${audiocloneData.equipment?.calibrationDate || '-'}` })
+                }
+
+                // Extraer fecha
+                let fechaEstudio = new Date().toISOString().split('T')[0]
+                if (audiocloneData.testDetails?.audiometryDate) {
+                    const parts = audiocloneData.testDetails.audiometryDate.match(/(\d{2})\/(\d{2})\/(\d{4})/)
+                    if (parts) fechaEstudio = `${parts[3]}-${parts[2]}-${parts[1]}`
+                }
+
+                const diagText = [audiocloneData.diagnosis?.rightEar, audiocloneData.diagnosis?.leftEar, audiocloneData.diagnosis?.general].filter(Boolean).join(' | ')
+
+                const estudio = await crearEstudioConResultados(
+                    pacienteId,
+                    tipoEstudio,
+                    {
+                        fecha_estudio: fechaEstudio,
+                        archivo_origen: fileUrl,
+                        institucion: 'GP Medical Health - AudioClone Pro',
+                        interpretacion: diagText || 'Audiometría procesada por AudioClone IA',
+                        medico_responsable: audiocloneData.testDetails?.doctor || 'Motor AudioClone IA',
+                        equipo: audiocloneData.equipment?.device || '',
+                        diagnostico: diagText,
+                        datos_extra: {
+                            audioclone_data: audiocloneData,
+                            _ai_config: 'AudioClone Direct Pipeline'
+                        }
+                    },
+                    audioResults
+                )
+                if (!estudio) throw new Error('No se pudo crear el registro del estudio')
+                setPhase('done')
+                toast.success('Audiometría integrada con AudioClone')
                 if (onSaved) onSaved()
                 return
             }
