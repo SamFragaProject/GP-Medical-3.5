@@ -17,6 +17,7 @@ import {
     analyzeDocument, analyzeSpirometryDirect, analyzeAudiometryDirect, type StructuredMedicalData, type LabResult
 } from '@/services/geminiDocumentService'
 import { crearEstudioConResultados, type TipoEstudio } from '@/services/estudiosService'
+import AudiometryReviewClone from '@/components/expediente/AudiometryReviewClone'
 
 type Phase = 'idle' | 'uploading' | 'extracting' | 'review' | 'saving' | 'done' | 'error'
 
@@ -507,55 +508,62 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                             </div>
                         </div>
 
-                        {/* LISTADO DE CATEGORÍAS TIPO ACORDEÓN */}
-                        <div className="space-y-4">
-                            {categories.map(cat => (
-                                <div key={cat} className="border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                                    <button onClick={() => toggleCategory(cat)} className="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-200" />
-                                            <span className="font-black text-slate-800 uppercase tracking-widest text-xs">{cat}</span>
-                                            <Badge variant="secondary" className="bg-slate-200/50 text-slate-500 font-bold border-0 text-[9px]">{extractedData.results.filter(r => r.category === cat).length} items</Badge>
-                                        </div>
-                                        {expandedCategories[cat] ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
-                                    </button>
-                                    {expandedCategories[cat] && (
-                                        <div className="px-8 pb-6 border-t border-slate-50 animate-in fade-in slide-in-from-top-2 duration-300">
-                                            <table className="w-full text-sm">
-                                                <thead className="text-[10px] text-slate-400 font-black uppercase tracking-widest border-b border-slate-50">
-                                                    <tr>
-                                                        <th className="py-4 text-left">Parámetro</th>
-                                                        <th className="py-4 text-center">Valor / Resultado</th>
-                                                        <th className="py-4 text-left">Unidad</th>
-                                                        <th className="py-4 text-left">Rango</th>
-                                                        <th className="py-4 w-10"></th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-slate-50">
-                                                    {extractedData.results.filter(r => r.category === cat).map((res, ri) => (
-                                                        <tr key={ri} className="group hover:bg-slate-50/30">
-                                                            <td className="py-4 font-bold text-slate-700">{res.name}</td>
-                                                            <td className="py-4 text-center">
-                                                                {typeof res.value === 'object' ? (
-                                                                    <Badge className="bg-indigo-50 text-indigo-600 border-indigo-100 font-bold px-3 py-1">DATOS COMPLEJOS (GRÁFICA)</Badge>
-                                                                ) : (
-                                                                    <span className="text-xl font-black text-emerald-600 tracking-tighter">{res.value}</span>
-                                                                )}
-                                                            </td>
-                                                            <td className="py-4 text-slate-400 font-medium">{res.unit || '-'}</td>
-                                                            <td className="py-4 text-slate-400 text-xs">{res.range || '-'}</td>
-                                                            <td className="py-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <button className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
-                                                            </td>
+                        {/* CONTENIDO: AudioClone visual O acordeón genérico */}
+                        {tipoEstudio === 'audiometria' && audiocloneData ? (
+                            <AudiometryReviewClone data={audiocloneData} />
+                        ) : (
+                            <>
+                            {/* LISTADO DE CATEGORÍAS TIPO ACORDEÓN */}
+                            <div className="space-y-4">
+                                {categories.map(cat => (
+                                    <div key={cat} className="border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                                        <button onClick={() => toggleCategory(cat)} className="w-full px-8 py-5 flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-200" />
+                                                <span className="font-black text-slate-800 uppercase tracking-widest text-xs">{cat}</span>
+                                                <Badge variant="secondary" className="bg-slate-200/50 text-slate-500 font-bold border-0 text-[9px]">{extractedData.results.filter(r => r.category === cat).length} items</Badge>
+                                            </div>
+                                            {expandedCategories[cat] ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                                        </button>
+                                        {expandedCategories[cat] && (
+                                            <div className="px-8 pb-6 border-t border-slate-50 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                <table className="w-full text-sm">
+                                                    <thead className="text-[10px] text-slate-400 font-black uppercase tracking-widest border-b border-slate-50">
+                                                        <tr>
+                                                            <th className="py-4 text-left">Parámetro</th>
+                                                            <th className="py-4 text-center">Valor / Resultado</th>
+                                                            <th className="py-4 text-left">Unidad</th>
+                                                            <th className="py-4 text-left">Rango</th>
+                                                            <th className="py-4 w-10"></th>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-50">
+                                                        {extractedData.results.filter(r => r.category === cat).map((res, ri) => (
+                                                            <tr key={ri} className="group hover:bg-slate-50/30">
+                                                                <td className="py-4 font-bold text-slate-700">{res.name}</td>
+                                                                <td className="py-4 text-center">
+                                                                    {typeof res.value === 'object' ? (
+                                                                        <Badge className="bg-indigo-50 text-indigo-600 border-indigo-100 font-bold px-3 py-1">DATOS COMPLEJOS (GRÁFICA)</Badge>
+                                                                    ) : (
+                                                                        <span className="text-xl font-black text-emerald-600 tracking-tighter">{res.value}</span>
+                                                                    )}
+                                                                </td>
+                                                                <td className="py-4 text-slate-400 font-medium">{res.unit || '-'}</td>
+                                                                <td className="py-4 text-slate-400 text-xs">{res.range || '-'}</td>
+                                                                <td className="py-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <button className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            </>
+                        )}
 
                         {/* SUMMARY */}
                         <div className="space-y-4">
