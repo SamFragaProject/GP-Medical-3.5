@@ -697,7 +697,7 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                         </div>
 
                         {/* Interpretación narrativa — texto completo */}
-                        {(ecg.descripcion_ritmo || ecg.analisis_morfologico || ecg.conclusion) && (
+                        {(currentEcg.descripcion_ritmo || currentEcg.analisis_morfologico || currentEcg.conclusion) && (
                             <Card className="border-slate-100 shadow-sm">
                                 <CardContent className="p-5 space-y-4">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reporte de Interpretación Médica</p>
