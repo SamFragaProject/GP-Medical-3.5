@@ -632,6 +632,56 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                         </div>
 
                         <DocumentosAdjuntos pacienteId={pacienteId} categoria="ecg" titulo="Archivo ECG Original (Trazado / Reporte)" collapsedByDefault={false} />
+
+                        {/* ── Todos los datos extraídos — texto verbatim ── */}
+                        {ecg.rawResults && ecg.rawResults.length > 0 && (
+                            <Card className="border-slate-100 shadow-sm overflow-hidden">
+                                <div className="bg-slate-50 border-b border-slate-100 px-5 py-3 flex items-center justify-between">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                        🧠 Todos los Datos Extraídos por IA — {ecg.rawResults.length} parámetros
+                                    </p>
+                                    <Badge className="bg-indigo-100 text-indigo-700 text-[9px] border-0">VERBATIM</Badge>
+                                </div>
+                                <div className="p-5 space-y-4">
+                                    {(() => {
+                                        // Group by category
+                                        const cats = new Map<string, any[]>()
+                                        for (const r of ecg.rawResults) {
+                                            const cat = r.categoria || r.category || 'General'
+                                            if (!cats.has(cat)) cats.set(cat, [])
+                                            cats.get(cat)!.push(r)
+                                        }
+                                        return Array.from(cats.entries()).map(([cat, items]) => (
+                                            <div key={cat}>
+                                                <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-2">
+                                                    <span className="w-2 h-2 rounded-full bg-rose-400" />
+                                                    {cat}
+                                                    <Badge variant="secondary" className="bg-slate-100 text-slate-500 text-[9px] border-0">{items.length}</Badge>
+                                                </p>
+                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                    {items.map((r: any, i: number) => {
+                                                        const displayValue = r.resultado_numerico != null
+                                                            ? `${r.resultado_numerico}${r.unidad ? ` ${r.unidad}` : ''}`
+                                                            : typeof r.resultado === 'string'
+                                                                ? (r.resultado.length > 100 ? r.resultado.substring(0, 100) + '...' : r.resultado)
+                                                                : String(r.resultado || '—')
+                                                        return (
+                                                            <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-rose-200 transition-colors" title={typeof r.resultado === 'string' ? r.resultado : ''}>
+                                                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 truncate">{r.parametro_nombre}</p>
+                                                                <p className="text-sm font-bold text-slate-800 mt-0.5 break-words">
+                                                                    {displayValue}
+                                                                </p>
+                                                                {r.observacion && <p className="text-[9px] text-slate-400 mt-0.5 truncate">{r.observacion}</p>}
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))
+                                    })()}
+                                </div>
+                            </Card>
+                        )}
                     </motion.div>
                 )}
 
@@ -727,6 +777,175 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                         {/* Ejes eléctricos */}
                         {(ecg.eje_p !== null || ecg.eje_qrs !== null || ecg.eje_t !== null) && (
                             <EjesElectricos ejeP={ecg.eje_p} ejeQRS={ecg.eje_qrs} ejeT={ecg.eje_t} />
+                        )}
+
+                        {/* ── Radar Chart — Perfil Cardíaco ── */}
+                        {(() => {
+                            const radarParams = [
+                                { param: 'FC', value: ecg.fc, normalMin: 60, normalMax: 100, max: 150 },
+                                { param: 'PR', value: ecg.intervalo_pr, normalMin: 120, normalMax: 200, max: 300 },
+                                { param: 'QRS', value: ecg.complejo_qrs, normalMin: 60, normalMax: 100, max: 160 },
+                                { param: 'QTc', value: ecg.intervalo_qtc, normalMin: 350, normalMax: 450, max: 600 },
+                                { param: 'Ond P', value: ecg.onda_p, normalMin: 80, normalMax: 120, max: 180 },
+                            ].filter(p => p.value != null)
+
+                            if (radarParams.length < 3) return null
+
+                            const cx = 100, cy = 100, r = 75
+                            const angleStep = (2 * Math.PI) / radarParams.length
+                            const getPoint = (idx: number, value: number, maxVal: number) => {
+                                const angle = (idx * angleStep) - Math.PI / 2
+                                const ratio = Math.min(value / maxVal, 1)
+                                return {
+                                    x: cx + r * ratio * Math.cos(angle),
+                                    y: cy + r * ratio * Math.sin(angle)
+                                }
+                            }
+
+                            // Value polygon
+                            const valuePoints = radarParams.map((p, i) => getPoint(i, p.value!, p.max))
+                            const valuePolygon = valuePoints.map(p => `${p.x},${p.y}`).join(' ')
+
+                            // Normal polygon (upper bound)
+                            const normalPoints = radarParams.map((p, i) => getPoint(i, p.normalMax, p.max))
+                            const normalPolygon = normalPoints.map(p => `${p.x},${p.y}`).join(' ')
+
+                            return (
+                                <Card className="border-slate-100 shadow-sm">
+                                    <CardContent className="p-5">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">
+                                            🎯 Perfil Cardíaco — Radar de Parámetros
+                                        </p>
+                                        <div className="flex items-center justify-center">
+                                            <svg width="220" height="220" viewBox="0 0 200 200">
+                                                {/* Grid rings */}
+                                                {[0.25, 0.5, 0.75, 1].map(ring => (
+                                                    <circle key={ring} cx={cx} cy={cy} r={r * ring}
+                                                        fill="none" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2 2" />
+                                                ))}
+                                                {/* Axis lines */}
+                                                {radarParams.map((_, i) => {
+                                                    const angle = (i * angleStep) - Math.PI / 2
+                                                    return (
+                                                        <line key={i}
+                                                            x1={cx} y1={cy}
+                                                            x2={cx + r * Math.cos(angle)}
+                                                            y2={cy + r * Math.sin(angle)}
+                                                            stroke="#e2e8f0" strokeWidth="0.5" />
+                                                    )
+                                                })}
+                                                {/* Normal range polygon */}
+                                                <polygon points={normalPolygon} fill="#10b98133" stroke="#10b981" strokeWidth="1" strokeDasharray="4 2" />
+                                                {/* Value polygon */}
+                                                <motion.polygon
+                                                    points={valuePolygon}
+                                                    fill="#f4364433" stroke="#f43644" strokeWidth="2"
+                                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                                    transition={{ duration: 0.8 }}
+                                                />
+                                                {/* Data points */}
+                                                {valuePoints.map((p, i) => (
+                                                    <motion.circle key={i} cx={p.x} cy={p.y} r="4"
+                                                        fill="#f43644" stroke="white" strokeWidth="2"
+                                                        initial={{ r: 0 }} animate={{ r: 4 }}
+                                                        transition={{ duration: 0.5, delay: i * 0.1 }}
+                                                    />
+                                                ))}
+                                                {/* Labels */}
+                                                {radarParams.map((p, i) => {
+                                                    const angle = (i * angleStep) - Math.PI / 2
+                                                    const labelR = r + 18
+                                                    return (
+                                                        <text key={i}
+                                                            x={cx + labelR * Math.cos(angle)}
+                                                            y={cy + labelR * Math.sin(angle)}
+                                                            textAnchor="middle" dominantBaseline="middle"
+                                                            fontSize="9" fontWeight="800" fill="#475569"
+                                                        >
+                                                            {p.param}
+                                                        </text>
+                                                    )
+                                                })}
+                                            </svg>
+                                            <div className="ml-4 space-y-1.5">
+                                                {radarParams.map((p, i) => {
+                                                    const isWarn = p.value! < p.normalMin || p.value! > p.normalMax
+                                                    return (
+                                                        <div key={i} className="flex items-center gap-2">
+                                                            <span className={`text-xs font-black w-10 ${isWarn ? 'text-amber-600' : 'text-slate-600'}`}>{p.param}</span>
+                                                            <span className={`text-sm font-black ${isWarn ? 'text-amber-600' : 'text-slate-800'}`}>{p.value}</span>
+                                                            <span className="text-[9px] text-slate-400">({p.normalMin}-{p.normalMax})</span>
+                                                        </div>
+                                                    )
+                                                })}
+                                                <div className="flex items-center gap-2 mt-2 text-[9px]">
+                                                    <div className="w-3 h-3 rounded-sm" style={{ background: '#10b98133', border: '1px solid #10b981' }} />
+                                                    <span className="text-slate-400">Rango normal</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-[9px]">
+                                                    <div className="w-3 h-3 rounded-sm" style={{ background: '#f4364433', border: '1px solid #f43644' }} />
+                                                    <span className="text-slate-400">Paciente</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )
+                        })()}
+
+                        {/* ── Conducción Eléctrica Timeline — Ciclo Cardíaco ── */}
+                        {(ecg.onda_p || ecg.intervalo_pr || ecg.complejo_qrs || ecg.intervalo_qt) && (
+                            <Card className="border-slate-100 shadow-sm">
+                                <CardContent className="p-5">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">
+                                        ⚡ Ciclo Cardíaco — Secuencia de Conducción
+                                    </p>
+                                    <div className="relative">
+                                        {/* Total bar background */}
+                                        <div className="h-10 bg-slate-100 rounded-xl overflow-hidden relative flex">
+                                            {(() => {
+                                                const total = (ecg.rr || ecg.intervalo_qt || 800) // Total cycle in ms
+                                                const segments = [
+                                                    { label: 'P', ms: ecg.onda_p || 100, color: 'from-blue-400 to-blue-500' },
+                                                    { label: 'PR seg', ms: ((ecg.intervalo_pr || 160) - (ecg.onda_p || 100)), color: 'from-sky-300 to-sky-400' },
+                                                    { label: 'QRS', ms: ecg.complejo_qrs || 80, color: 'from-rose-500 to-red-600' },
+                                                    { label: 'ST-T', ms: ((ecg.intervalo_qt || 400) - (ecg.complejo_qrs || 80) - ((ecg.intervalo_pr || 160) - (ecg.onda_p || 100)) - (ecg.onda_p || 100)), color: 'from-amber-400 to-orange-500' },
+                                                ].filter(s => s.ms > 0)
+                                                const sumMs = segments.reduce((s, seg) => s + seg.ms, 0)
+                                                return segments.map((seg, i) => (
+                                                    <motion.div
+                                                        key={i}
+                                                        className={`h-full bg-gradient-to-r ${seg.color} flex items-center justify-center relative`}
+                                                        style={{ width: `${(seg.ms / sumMs) * 100}%` }}
+                                                        initial={{ scaleX: 0 }}
+                                                        animate={{ scaleX: 1 }}
+                                                        transition={{ duration: 0.6, delay: i * 0.15 }}
+                                                    >
+                                                        <span className="text-[8px] font-black text-white drop-shadow-sm">
+                                                            {seg.label}
+                                                        </span>
+                                                    </motion.div>
+                                                ))
+                                            })()}
+                                        </div>
+                                        {/* Labels below */}
+                                        <div className="flex justify-between mt-2">
+                                            {[
+                                                { label: 'Onda P', value: ecg.onda_p, color: 'text-blue-600' },
+                                                { label: 'Int. PR', value: ecg.intervalo_pr, color: 'text-sky-600' },
+                                                { label: 'QRS', value: ecg.complejo_qrs, color: 'text-rose-600' },
+                                                { label: 'QT', value: ecg.intervalo_qt, color: 'text-amber-600' },
+                                                { label: 'QTc', value: ecg.intervalo_qtc, color: 'text-orange-600' },
+                                            ].filter(l => l.value).map((l, i) => (
+                                                <div key={i} className="text-center">
+                                                    <p className={`text-xs font-black ${l.color}`}>{l.value} ms</p>
+                                                    <p className="text-[8px] text-slate-400 font-bold">{l.label}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         )}
 
                         {/* Análisis por componente */}

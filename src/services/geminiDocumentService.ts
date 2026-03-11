@@ -503,6 +503,8 @@ ESTADO Y CONCLUSIÓN:
 
 Eres un cardiólogo experto digitalizando un electrocardiograma de GP Medical (equipo BTL CardioPoint).
 El documento puede ser: (A) el trazado ECG con tabla de mediciones, (B) reporte de interpretación narrativa, o (C) ambos.
+REGLA CRÍTICA: Extrae TODO el texto TAL CUAL aparece en el documento. NO parafrasees, NO resumas, NO interpretes por tu cuenta.
+Los campos de interpretación (DESCRIPCION_RITMO, ANALISIS_MORFOLOGICO, SEGMENTO_ST, ONDA_T_DESC, CONCLUSION_ECG) deben contener el texto EXACTO VERBATIM del documento.
 Extrae CADA parámetro como item individual.
 
 CRITERIOS DE INTERPRETACIÓN CARDIOLÓGICA:
