@@ -505,61 +505,36 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                         animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                         className="space-y-5">
 
-                        {/* Trazado ECG — si hay waveform digitalizado, renderizar; si no, aviso */}
-                        {ecg.waveformData && ecg.waveformData.length > 0 ? (
+                        {/* Documento ECG Original — Preview del PDF/imagen subido */}
+                        {ecg.archivo_url ? (
                             <Card className="border-slate-100 shadow-sm overflow-hidden">
                                 <div className="bg-slate-50 border-b border-slate-100 px-5 py-3 flex items-center justify-between">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                        Trazado ECG Digitalizado — {ecg.waveformData.length} derivaciones
+                                        📄 Documento ECG Original
                                     </p>
-                                    <Badge className="bg-emerald-100 text-emerald-700 text-[9px] border-0">TRAZO REAL</Badge>
+                                    <div className="flex items-center gap-2">
+                                        <Badge className="bg-rose-100 text-rose-700 text-[9px] border-0">ARCHIVO GUARDADO</Badge>
+                                        <a href={ecg.archivo_url} target="_blank" rel="noreferrer"
+                                            className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors underline">
+                                            Abrir en nueva pestaña ↗
+                                        </a>
+                                    </div>
                                 </div>
-                                <div className="relative bg-white" style={{ aspectRatio: '2 / 1.2' }}>
-                                    {/* Red ECG grid background */}
-                                    <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                                        <defs>
-                                            <pattern id="ecgSmallGrid" width="4" height="4" patternUnits="userSpaceOnUse">
-                                                <path d="M 4 0 L 0 0 0 4" fill="none" stroke="#ffdbdb" strokeWidth="0.5" />
-                                            </pattern>
-                                            <pattern id="ecgLargeGrid" width="20" height="20" patternUnits="userSpaceOnUse">
-                                                <rect width="20" height="20" fill="url(#ecgSmallGrid)" />
-                                                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#ffb3b3" strokeWidth="1" />
-                                            </pattern>
-                                        </defs>
-                                        <rect width="100%" height="100%" fill="url(#ecgLargeGrid)" />
-                                    </svg>
-                                    {/* 12-lead waveforms in 2 columns */}
-                                    <div className="relative z-10 grid grid-cols-2 h-full">
-                                        {['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'].map(leadName => {
-                                            const leadData = ecg.waveformData.find((w: any) => w.lead === leadName)
-                                            const points = leadData?.points || []
-                                            const hasData = points.length > 0 && (Math.max(...points) - Math.min(...points)) > 0.05
-                                            return (
-                                                <div key={leadName} className="relative border-b border-r border-slate-100/30" style={{ minHeight: '40px' }}>
-                                                    <span className={`absolute left-1 top-0.5 text-[9px] font-black z-20 px-0.5 ${hasData ? 'text-emerald-700 bg-emerald-50/80' : 'text-slate-400 bg-white/60'}`}>
-                                                        {leadName}
-                                                    </span>
-                                                    {hasData && (
-                                                        <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 300 40">
-                                                            <path
-                                                                d={points.map((p: number, i: number) => {
-                                                                    const x = (i / points.length) * 300
-                                                                    const y = 20 - p * 18
-                                                                    return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`
-                                                                }).join(' ')}
-                                                                fill="none" stroke="#000" strokeWidth="1" strokeLinejoin="round" strokeLinecap="round"
-                                                            />
-                                                        </svg>
-                                                    )}
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                    {/* Calibration footer */}
-                                    <div className="absolute bottom-0 left-0 right-0 bg-white/60 px-2 py-0.5 flex justify-between text-[8px] text-slate-500 z-20">
-                                        <span>10.0 mm/mV — 25.00 mm/sec</span>
-                                        <span>Filtro: 0.07 Spline - 90 Adapt, ~50 Hz</span>
-                                    </div>
+                                <div className="p-4">
+                                    {ecg.archivo_url.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
+                                        <img
+                                            src={ecg.archivo_url}
+                                            alt="Trazado ECG"
+                                            className="w-full max-h-[600px] object-contain rounded-xl border border-slate-200 bg-white"
+                                        />
+                                    ) : (
+                                        <iframe
+                                            src={ecg.archivo_url}
+                                            className="w-full rounded-xl border border-slate-200 bg-white"
+                                            style={{ height: '600px' }}
+                                            title="Preview ECG Document"
+                                        />
+                                    )}
                                 </div>
                             </Card>
                         ) : ecg.tiene_trazado ? (
@@ -699,8 +674,55 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                 <ECGParamGauge label="PR" value={ecg.intervalo_pr} unit="ms" min={120} max={200} />
                                 <ECGParamGauge label="QRS" value={ecg.complejo_qrs} unit="ms" min={60} max={100} />
                                 <ECGParamGauge label="QTc" value={ecg.intervalo_qtc} unit="ms" min={350} max={450} />
+                                <ECGParamGauge label="QT" value={ecg.intervalo_qt} unit="ms" min={350} max={450} />
+                                <ECGParamGauge label="Onda P" value={ecg.onda_p} unit="ms" min={80} max={120} />
+                                <ECGParamGauge label="SpO2" value={ecg.spo2} unit="%" min={95} max={100} />
+                                <ECGParamGauge label="RR" value={ecg.rr} unit="ms" min={600} max={1000} />
                             </div>
                         </div>
+
+                        {/* Intervalos ECG - Bar Chart comparativo */}
+                        {(ecg.intervalo_pr || ecg.complejo_qrs || ecg.intervalo_qt || ecg.intervalo_qtc) && (
+                            <Card className="border-slate-100 shadow-sm">
+                                <CardContent className="p-5">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Intervalos ECG — Comparativa con Rangos Normales</p>
+                                    <div className="space-y-3">
+                                        {[
+                                            { label: 'PR', value: ecg.intervalo_pr, min: 120, max: 200, color: 'bg-blue-500' },
+                                            { label: 'QRS', value: ecg.complejo_qrs, min: 60, max: 100, color: 'bg-purple-500' },
+                                            { label: 'QT', value: ecg.intervalo_qt, min: 350, max: 450, color: 'bg-cyan-500' },
+                                            { label: 'QTc', value: ecg.intervalo_qtc, min: 350, max: 450, color: 'bg-rose-500' },
+                                        ].map(({ label, value, min, max, color }) => {
+                                            if (!value) return null
+                                            const pct = Math.min(100, (value / (max * 1.3)) * 100)
+                                            const isWarn = value < min || value > max
+                                            return (
+                                                <div key={label} className="flex items-center gap-3">
+                                                    <span className="text-xs font-black text-slate-500 w-10">{label}</span>
+                                                    <div className="flex-1 h-5 bg-slate-100 rounded-full overflow-hidden relative">
+                                                        {/* Normal range indicator */}
+                                                        <div className="absolute h-full bg-emerald-100 rounded-full" style={{
+                                                            left: `${(min / (max * 1.3)) * 100}%`,
+                                                            width: `${((max - min) / (max * 1.3)) * 100}%`
+                                                        }} />
+                                                        <motion.div
+                                                            className={`h-full rounded-full ${isWarn ? 'bg-amber-500' : color}`}
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${pct}%` }}
+                                                            transition={{ duration: 0.8, ease: 'easeOut' }}
+                                                        />
+                                                    </div>
+                                                    <span className={`text-xs font-black w-16 text-right ${isWarn ? 'text-amber-600' : 'text-slate-700'}`}>
+                                                        {value} ms
+                                                    </span>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                    <p className="text-[9px] text-slate-400 mt-3">█ Zona verde = rango normal de referencia</p>
+                                </CardContent>
+                            </Card>
+                        )}
 
                         {/* Ejes eléctricos */}
                         {(ecg.eje_p !== null || ecg.eje_qrs !== null || ecg.eje_t !== null) && (

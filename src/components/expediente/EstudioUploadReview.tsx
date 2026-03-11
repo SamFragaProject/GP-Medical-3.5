@@ -18,8 +18,10 @@ import {
 } from '@/services/geminiDocumentService'
 import { crearEstudioConResultados, type TipoEstudio } from '@/services/estudiosService'
 import AudiometryReviewClone from '@/components/expediente/AudiometryReviewClone'
-import EcgReviewClone from '@/components/expediente/EcgReviewClone'
 import { extractWaveforms, type ExtractedWaveforms } from '@/services/ecgWaveformExtractor'
+import { secureStorageService } from '@/services/secureStorageService'
+import { useAuth } from '@/contexts/AuthContext'
+import { EMPRESA_PRINCIPAL_ID } from '@/config/empresa'
 
 type Phase = 'idle' | 'uploading' | 'extracting' | 'review' | 'saving' | 'done' | 'error'
 
@@ -42,6 +44,7 @@ const STUDY_CONFIG: Record<string, { title: string, icon: any, gradient: string,
 }
 
 export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteNombre, isCompact, onSaved }: Props) {
+    const { user } = useAuth()
     const [phase, setPhase] = useState<Phase>('idle')
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [progress, setProgress] = useState(0)
@@ -54,6 +57,8 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
     const [editingIdx, setEditingIdx] = useState<number | null>(null)
     const [errorMsg, setErrorMsg] = useState('')
     const [fileUrl, setFileUrl] = useState('')
+    const [uploadedFileUrls, setUploadedFileUrls] = useState<string[]>([]) // Object URLs for preview
+    const [uploadedFiles, setUploadedFiles] = useState<File[]>([]) // Original files for saving
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ 'General': true, 'Audiometría Tonal': true, 'Biometría Hemática': true, 'Interpretación': true })
 
     const config = STUDY_CONFIG[tipoEstudio] || STUDY_CONFIG.laboratorio
@@ -91,6 +96,9 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
         if (!files.length) return
         const primaryFile = files[0]
         setPhase('uploading'); setProgress(10); setErrorMsg('')
+        // Store files and create preview URLs
+        setUploadedFiles(files)
+        setUploadedFileUrls(files.map(f => URL.createObjectURL(f)))
         try {
             const fileExt = primaryFile.name.split('.').pop()
             const fileName = `${pacienteNombre || pacienteId}_${tipoEstudio}_${Date.now()}.${fileExt}`.replace(/\s/g, '_')
@@ -485,8 +493,53 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                     ecgResults
                 )
                 if (!estudio) throw new Error('No se pudo crear el registro del estudio')
+
+                // ── Guardar archivos renombrados via secureStorageService ──
+                if (uploadedFiles.length > 0) {
+                    try {
+                        let eid = user?.empresa_id || ''
+                        if (!eid) {
+                            const { data: pac } = await supabase.from('pacientes').select('empresa_id').eq('id', pacienteId).single()
+                            eid = pac?.empresa_id || ''
+                        }
+                        if (!eid) eid = EMPRESA_PRINCIPAL_ID
+                        if (eid) {
+                            const patientName = extractedData.patientData?.name || pacienteNombre || 'Paciente'
+                            const fecha = new Date().toISOString().split('T')[0]
+                            for (let fi = 0; fi < uploadedFiles.length; fi++) {
+                                const f = uploadedFiles[fi]
+                                const ext = f.name.split('.').pop() || 'pdf'
+                                const suffix = uploadedFiles.length > 1 ? `_${fi === 0 ? 'Trazado' : 'Interpretacion'}` : ''
+                                const renamedFile = new File(
+                                    [f],
+                                    `ECG${suffix}_${patientName.replace(/\s+/g, '_')}_${fecha}.${ext}`,
+                                    { type: f.type }
+                                )
+                                await secureStorageService.upload(renamedFile, {
+                                    pacienteId,
+                                    empresaId: eid,
+                                    categoria: 'ecg',
+                                    subcategoria: fi === 0 ? 'trazado' : 'interpretacion',
+                                    descripcion: `ECG de ${patientName} — ${fecha}`,
+                                    userId: user?.id,
+                                    userNombre: user?.nombre ? `${user.nombre} ${user.apellido_paterno || ''}`.trim() : undefined,
+                                    userRol: user?.rol,
+                                })
+                            }
+                            console.log('📎 Archivos ECG guardados en Storage con nombre correcto')
+                        }
+                    } catch (storageErr) {
+                        console.warn('⚠️ No se pudo guardar archivo ECG en Storage:', storageErr)
+                    }
+                }
+
+                // Cleanup object URLs
+                uploadedFileUrls.forEach(u => URL.revokeObjectURL(u))
+                setUploadedFileUrls([])
+                setUploadedFiles([])
+
                 setPhase('done')
-                toast.success(`ECG integrado${ecgWaveformData?.success ? ' con trazado digitalizado' : ''}`)
+                toast.success(`ECG integrado — ${ecgResults.length} parámetros guardados`)
                 if (onSaved) onSaved()
                 return
             }
@@ -678,8 +731,10 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                 )
             }
 
-            // ═══ ECG: Layout dedicado estilo EcgClone (igual que AudioClone) ═══
+            // ═══ ECG: Layout con previsualización del PDF/imagen original + datos extraídos ═══
             if (tipoEstudio === 'ecg' && ecgCloneData) {
+                // Categorize results for clean display
+                const ecgCategories = Array.from(new Set(extractedData.results.map(r => r.category || 'General')))
                 return (
                     <div className="space-y-5">
                         {/* Banner de confirmación */}
@@ -694,17 +749,17 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                                         <Edit3 className="w-5 h-5 text-rose-600" />
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-black text-rose-900">Vista previa — EcgClone Digital</h3>
+                                        <h3 className="text-sm font-black text-rose-900">Vista previa — ECG Extraído</h3>
                                         <p className="text-xs text-rose-700">
-                                            Réplica digital del electrocardiograma. <strong>{extractedData.results.length} parámetros</strong> extraídos.
-                                            {ecgWaveformData?.success && <> + <strong>{ecgWaveformData.leads.length} derivaciones</strong> digitalizadas.</>}
+                                            <strong>{extractedData.results.length} parámetros</strong> extraídos del documento.
+                                            {uploadedFiles.length > 1 && <> Se procesaron <strong>{uploadedFiles.length} archivos</strong>.</>}
                                             {' '}Verifica y confirma.
                                         </p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <button
-                                        onClick={() => setPhase('idle')}
+                                        onClick={() => { setPhase('idle'); uploadedFileUrls.forEach(u => URL.revokeObjectURL(u)) }}
                                         className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 rounded-xl transition-colors"
                                     >
                                         Descartar
@@ -724,10 +779,91 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                             </div>
                         </motion.div>
 
-                        {/* Clon visual a ancho completo */}
-                        <div className="overflow-x-auto bg-slate-50/50 p-2 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
-                            <div className="min-w-[800px]">
-                                <EcgReviewClone data={ecgCloneData} waveforms={ecgWaveformData?.leads} />
+                        {/* ── Previsualización del PDF/Imagen original subido ── */}
+                        {uploadedFileUrls.length > 0 && (
+                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                                <div className="bg-slate-50 border-b border-slate-100 px-5 py-3 flex items-center justify-between">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                        📄 Documento Original — {uploadedFiles.length} archivo{uploadedFiles.length > 1 ? 's' : ''}
+                                    </p>
+                                    <Badge className="bg-rose-100 text-rose-700 text-[9px] border-0">PREVIEW</Badge>
+                                </div>
+                                <div className="p-4 space-y-4">
+                                    {uploadedFileUrls.map((url, idx) => {
+                                        const file = uploadedFiles[idx]
+                                        if (!file) return null
+                                        const isPdf = file.type === 'application/pdf'
+                                        const isImage = file.type.startsWith('image/')
+                                        return (
+                                            <div key={idx}>
+                                                {uploadedFiles.length > 1 && (
+                                                    <p className="text-xs font-bold text-slate-500 mb-2">📎 {file.name}</p>
+                                                )}
+                                                {isPdf ? (
+                                                    <iframe
+                                                        src={url}
+                                                        className="w-full rounded-xl border border-slate-200"
+                                                        style={{ height: '600px' }}
+                                                        title={`Preview ${file.name}`}
+                                                    />
+                                                ) : isImage ? (
+                                                    <img
+                                                        src={url}
+                                                        alt={file.name}
+                                                        className="w-full max-h-[600px] object-contain rounded-xl border border-slate-200 bg-slate-50"
+                                                    />
+                                                ) : (
+                                                    <div className="p-8 text-center text-slate-400 text-sm bg-slate-50 rounded-xl">
+                                                        Archivo: {file.name} ({(file.size / 1024).toFixed(0)} KB)
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── Datos extraídos por categoría (tabla limpia) ── */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="bg-slate-50 border-b border-slate-100 px-5 py-3">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                    🧠 Datos Extraídos por IA — {extractedData.results.length} parámetros
+                                </p>
+                            </div>
+                            <div className="p-5 space-y-4">
+                                {ecgCategories.map(cat => {
+                                    const catResults = extractedData.results.filter(r => (r.category || 'General') === cat)
+                                    return (
+                                        <div key={cat}>
+                                            <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-rose-400" />
+                                                {cat}
+                                                <Badge variant="secondary" className="bg-slate-100 text-slate-500 text-[9px] border-0">{catResults.length}</Badge>
+                                            </p>
+                                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                {catResults.map((res, ri) => (
+                                                    <div key={ri} className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{res.name}</p>
+                                                        <p className="text-sm font-bold text-slate-800 mt-0.5 break-words">
+                                                            {String(res.value || '—').length > 80
+                                                                ? String(res.value).substring(0, 80) + '...'
+                                                                : String(res.value || '—')}
+                                                        </p>
+                                                        {res.unit && <p className="text-[9px] text-slate-400">{res.unit}</p>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                                {/* Summary / Interpretation */}
+                                {extractedData.summary && (
+                                    <div className="p-4 bg-rose-50 rounded-xl border border-rose-100 mt-4">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-rose-500 mb-1">Interpretación / Conclusión</p>
+                                        <p className="text-sm text-slate-700 leading-relaxed font-medium">{extractedData.summary}</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
