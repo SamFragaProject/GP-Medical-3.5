@@ -339,13 +339,22 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
     const [estudios, setEstudios] = useState<any[]>([])
     const [activeSection, setActiveSection] = useState<'scanner' | 'analisis'>('scanner')
     const [selectedIdx, setSelectedIdx] = useState(0)
+    const [fileLoadFailed, setFileLoadFailed] = useState(false)
 
     const currentEcg = estudios[selectedIdx] || {}
     const isNormalEcg = currentEcg.resultado_global?.toLowerCase().includes('normal') || (currentEcg.fc && currentEcg.fc >= 60 && currentEcg.fc <= 100)
-    const isFileError = !currentEcg.archivo_url || 
+    
+    // Static checks on the URL string itself
+    const isFileErrorStatic = !currentEcg.archivo_url || 
                         currentEcg.archivo_url.includes('"error"') || 
                         currentEcg.archivo_url.includes('Bucket not found') || 
+                        currentEcg.archivo_url.includes('statusCode') ||
                         currentEcg.archivo_url.startsWith('{');
+    // Combined: static check OR runtime load failure
+    const isFileError = isFileErrorStatic || fileLoadFailed;
+
+    // Reset fileLoadFailed when switching studies
+    useEffect(() => { setFileLoadFailed(false) }, [selectedIdx])
 
     useEffect(() => { if (pacienteId) loadECG() }, [pacienteId])
 
@@ -423,6 +432,29 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                         clasificacion: ecg.clasificacion,
                         tiene_trazado: false,
                     })
+                }
+            }
+
+            // ── PRE-VALIDAR URLs de archivos antes de guardar ──
+            for (const item of all) {
+                if (item.archivo_url && item.archivo_url.startsWith('http')) {
+                    try {
+                        const resp = await fetch(item.archivo_url, { method: 'HEAD' })
+                        if (!resp.ok) {
+                            // Server returned 4xx/5xx — mark as unavailable
+                            console.warn('ECG archivo_url returned', resp.status, '— marking as unavailable')
+                            item.archivo_url = null
+                        }
+                    } catch (fetchErr) {
+                        // Network error or CORS — try GET with no-cors as fallback
+                        try {
+                            const resp2 = await fetch(item.archivo_url, { method: 'GET', mode: 'no-cors' })
+                            // no-cors returns opaque response, we can't check status — keep URL
+                        } catch {
+                            console.warn('ECG archivo_url unreachable:', fetchErr)
+                            item.archivo_url = null
+                        }
+                    }
                 }
             }
 
@@ -646,6 +678,7 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                             src={`${currentEcg.archivo_url}#toolbar=0&navpanes=0`}
                                             className="w-full h-[800px] border-0 rounded-3xl shadow-inner bg-white"
                                             title="ECG Original PDF"
+                                            onError={() => setFileLoadFailed(true)}
                                         />
                                     ) : currentEcg.archivo_url ? (
                                         <div className="w-full h-full flex justify-center bg-slate-950 rounded-[2rem] overflow-hidden p-6 shadow-2xl relative group">
@@ -654,6 +687,7 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                                 alt="ECG Trazado"
                                                 className="max-w-full h-auto shadow-2xl rounded-lg cursor-zoom-in transition-transform duration-700 group-hover:scale-[1.01]"
                                                 onClick={() => window.open(currentEcg.archivo_url, '_blank')}
+                                                onError={() => setFileLoadFailed(true)}
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors pointer-events-none" />
                                             <div className="absolute top-10 right-10 opacity-0 group-hover:opacity-100 transition-opacity">
