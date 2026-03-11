@@ -453,14 +453,26 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
             // ECG: Guardar datos de Gemini + Waveform Digitizer
             // ═══════════════════════════════════════════════
             if (tipoEstudio === 'ecg') {
-                const ecgResults = extractedData.results.map(r => ({
-                    parametro_nombre: r.name,
-                    categoria: r.category || 'General',
-                    resultado: typeof r.value === 'object' ? JSON.stringify(r.value) : String(r.value ?? ''),
-                    resultado_numerico: typeof r.value === 'number' ? r.value : parseFloat(String(r.value)) || null,
-                    unidad: r.unit || '',
-                    observacion: r.description || ''
-                }))
+                const ecgResults = extractedData.results
+                    .filter(r => r.value != null && String(r.value).trim() !== '')
+                    .map(r => {
+                        const valStr = typeof r.value === 'object' ? JSON.stringify(r.value) : String(r.value ?? '')
+                        let numVal: number | null = null
+                        if (typeof r.value === 'number') {
+                            numVal = isFinite(r.value) ? r.value : null
+                        } else {
+                            const parsed = parseFloat(String(r.value))
+                            numVal = isFinite(parsed) ? parsed : null
+                        }
+                        return {
+                            parametro_nombre: r.name || 'UNKNOWN',
+                            categoria: r.category || 'General',
+                            resultado: valStr || '—',
+                            resultado_numerico: numVal,
+                            unidad: r.unit || '',
+                            observacion: r.description || ''
+                        }
+                    })
 
                 // Add waveform data as a special JSON blob result
                 if (ecgWaveformData?.success) {
@@ -474,6 +486,8 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                     })
                 }
 
+                console.log(`📊 ECG: Guardando ${ecgResults.length} parámetros...`)
+
                 const estudio = await crearEstudioConResultados(
                     pacienteId,
                     tipoEstudio,
@@ -481,18 +495,18 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                         fecha_estudio: extractedData.patientData?.reportDate || new Date().toISOString().split('T')[0],
                         archivo_origen: fileUrl,
                         institucion: 'GP Medical Health - ECG Engine Pro',
-                        interpretacion: extractedData.summary,
+                        interpretacion: extractedData.summary || '',
                         medico_responsable: extractedData.results.find(r => r.name === 'MEDICO_RESPONSABLE')?.value as string || 'Motor ECG IA',
                         datos_extra: {
                             patientData: extractedData.patientData,
                             hasWaveformData: ecgWaveformData?.success ?? false,
-                            waveformLeadCount: ecgWaveformData?.leads.length ?? 0,
+                            waveformLeadCount: ecgWaveformData?.leads?.length ?? 0,
                             _ai_config: 'Gemini Flash 2.0 + Waveform Digitizer'
                         }
                     },
                     ecgResults
                 )
-                if (!estudio) throw new Error('No se pudo crear el registro del estudio')
+                if (!estudio) throw new Error('No se pudo crear el registro del estudio — revisa la consola para el error de Supabase')
 
                 // ── Guardar archivos renombrados via secureStorageService ──
                 if (uploadedFiles.length > 0) {

@@ -210,37 +210,40 @@ export async function crearEstudioConResultados(
             paciente_id: pacienteId,
             tipo_estudio: tipoEstudio,
             fecha_estudio: estudioData.fecha_estudio || new Date().toISOString().split('T')[0],
-            archivo_origen: estudioData.archivo_origen,
-            medico_responsable: estudioData.medico_responsable,
-            equipo: estudioData.equipo,
-            interpretacion: estudioData.interpretacion,
-            diagnostico: estudioData.diagnostico,
-            clasificacion: estudioData.clasificacion,
-            calidad: estudioData.calidad,
+            archivo_origen: estudioData.archivo_origen || null,
+            medico_responsable: estudioData.medico_responsable || null,
+            equipo: estudioData.equipo || null,
+            interpretacion: estudioData.interpretacion || null,
+            diagnostico: estudioData.diagnostico || null,
+            clasificacion: estudioData.clasificacion || null,
+            calidad: estudioData.calidad || null,
             datos_extra: estudioData.datos_extra || {},
         })
         .select().single()
-    if (estErr || !estudio) { console.error('crearEstudio error:', estErr); return null }
+    if (estErr || !estudio) { console.error('❌ crearEstudio INSERT error:', estErr?.message, estErr?.details, estErr?.hint); return null }
 
     const catalogo = await getCatalogo(tipoEstudio)
     const catMap = new Map(catalogo.map(c => [c.nombre, c]))
     const rows = resultados.map(r => {
         const cat = catMap.get(r.parametro_nombre)
+        // Sanitize resultado_numerico — NaN crashes Postgres NUMERIC columns
+        let numVal = r.resultado_numerico ?? null
+        if (numVal !== null && !isFinite(numVal)) numVal = null
         return {
             estudio_id: estudio.id, paciente_id: pacienteId,
-            parametro_id: cat?.id || null, parametro_nombre: r.parametro_nombre,
+            parametro_id: cat?.id || null, parametro_nombre: r.parametro_nombre || 'UNKNOWN',
             categoria: r.categoria || cat?.categoria || '',
-            resultado: r.resultado, resultado_numerico: r.resultado_numerico,
+            resultado: r.resultado || '—', resultado_numerico: numVal,
             unidad: r.unidad || cat?.unidad || '',
-            rango_ref_min: cat?.rango_ref_min, rango_ref_max: cat?.rango_ref_max,
-            rango_ref_texto: cat?.rango_ref_texto,
-            bandera: calcularBandera(r.resultado, r.resultado_numerico, cat?.rango_ref_min, cat?.rango_ref_max, cat?.rango_ref_texto),
-            observacion: r.observacion,
+            rango_ref_min: cat?.rango_ref_min ?? null, rango_ref_max: cat?.rango_ref_max ?? null,
+            rango_ref_texto: cat?.rango_ref_texto ?? null,
+            bandera: calcularBandera(r.resultado || '', numVal, cat?.rango_ref_min, cat?.rango_ref_max, cat?.rango_ref_texto),
+            observacion: r.observacion || null,
         }
     })
     if (rows.length > 0) {
         const { error } = await supabase.from('resultados_estudio').insert(rows)
-        if (error) console.error('insert results error:', error)
+        if (error) console.error('❌ insert results error:', error.message, error.details, error.hint, 'Rows count:', rows.length)
     }
     return estudio
 }
