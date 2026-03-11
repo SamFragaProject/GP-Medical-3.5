@@ -70,6 +70,8 @@ function buildFromResultados(estudio: any, resultados: any[]): any {
         eje_t: num('EJE_T'),
         // Interpretación
         ritmo_automatico: get('RITMO_AUTOMATICO') || get('RITMO') || '',
+        conduccion: get('CONDUCCION') || '',
+        morfologia: get('MORFOLOGIA') || '',
         resultado_global: get('RESULTADO_GLOBAL') || estudio.diagnostico || '',
         descripcion_ritmo: get('DESCRIPCION_RITMO') || get('RITMO_DESCRIPCION') || '',
         analisis_morfologico: get('ANALISIS_MORFOLOGICO') || '',

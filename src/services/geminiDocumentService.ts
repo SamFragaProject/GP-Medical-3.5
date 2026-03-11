@@ -501,52 +501,53 @@ ESTADO Y CONCLUSIÓN:
             return {
                 prompt: `${GLOBAL_INSTRUCTION}
 
-Eres un cardiólogo experto digitalizando un electrocardiograma de GP Medical (equipo BTL CardioPoint).
-El documento puede ser: (A) el trazado ECG con tabla de mediciones, (B) reporte de interpretación narrativa, o (C) ambos.
-REGLA CRÍTICA: Extrae TODO el texto TAL CUAL aparece en el documento. NO parafrasees, NO resumas, NO interpretes por tu cuenta.
-Los campos de interpretación (DESCRIPCION_RITMO, ANALISIS_MORFOLOGICO, SEGMENTO_ST, ONDA_T_DESC, CONCLUSION_ECG) deben contener el texto EXACTO VERBATIM del documento.
-Extrae CADA parámetro como item individual.
+Eres un experto en digitalización de documentos médicos. Tu trabajo es EXTRAER datos de un electrocardiograma de GP Medical.
 
-CRITERIOS DE INTERPRETACIÓN CARDIOLÓGICA:
-RITMOS: Sinusal normal (cada QRS precedido por P, FC 60-100) | Bradicardia sinusal (<60) | Taquicardia sinusal (>100) | FA (ausencia P, RR irregular)
-BLOQUEOS: BAV 1° (PR >200ms constante) | BAV 2° Mobitz I (PR alargamiento progresivo) | BAV 2° Mobitz II (PR fijo, P no conducidas) | BAV 3° (disociación AV)
-BLOQUEO RAMA: BRDHH (QRS >120ms, rSR' en V1-V2) | BRIHH (QRS >120ms, R ancha V5-V6)
-SEGMENTO ST: Elevación >1mm en 2+ derivaciones contiguas = isquemia aguda | Depresión >0.5mm = isquemia subendocárdica
-EJES: Normal -30° a +90° | Izquierdo <-30° (HVI, BRIHH) | Derecho >+90° (HVD, BRDHH)
+REGLA ABSOLUTA: Tu único trabajo es COPIAR los datos del documento. NO interpretes, NO diagnostiques, NO agregues nada que no esté escrito en el documento.
+- El campo "value" = el valor EXACTO tal como aparece impreso en el documento.
+- El campo "description" = texto que el propio documento dice junto al valor, o vacío si no dice nada.
+- NO pongas "Normal", "Anormal", "Bradicardia", "Taquicardia" en description a menos que ESO sea lo que dice el documento textualmente.
 
-PARÁMETROS NUMÉRICOS DE LA TABLA DE MEDICIONES (si existe el trazado):
-- name:"FC", value: frecuencia cardiaca en lpm, unit:"lpm", range:"60-100", description:"Normal"/"Bradicardia <60"/"Taquicardia >100", visualizationType:"gauge", category:"Parámetros Numéricos"
-- name:"RR", value: intervalo RR en ms, unit:"ms", range:"600-1000", visualizationType:"gauge", category:"Parámetros Numéricos"
-- name:"ONDA_P", value: duración P en ms, unit:"ms", range:"80-120", description:"Normal"/"Prolongada"/"Ausente", visualizationType:"gauge", category:"Parámetros Numéricos"
-- name:"INTERVALO_PR", value: intervalo PR en ms, unit:"ms", range:"120-200", description:"Normal"/"Bloqueo 1° grado >200ms", visualizationType:"gauge", category:"Parámetros Numéricos"
-- name:"COMPLEJO_QRS", value: duración QRS en ms, unit:"ms", range:"60-100", description:"Normal"/"Bloqueo rama >120ms", visualizationType:"gauge", category:"Parámetros Numéricos"
-- name:"INTERVALO_QT", value: QT en ms, unit:"ms", range:"350-450", visualizationType:"gauge", category:"Parámetros Numéricos"
-- name:"INTERVALO_QTC", value: QTc corregido por Bazett en ms, unit:"ms", range:"<440 H / <460 M", description:"Normal"/"Prolongado", visualizationType:"gauge", category:"Parámetros Numéricos"
-- name:"SPO2", value: saturación O2 si se registró, unit:"%", range:"95-100", category:"Parámetros Numéricos"
-- name:"PA", value: presión arterial si se registró (ej:"120/80"), unit:"mmHg", range:"<120/80", category:"Parámetros Numéricos"
+Extrae CADA dato como item individual.
+
+PARÁMETROS NUMÉRICOS (si existe tabla de mediciones):
+- name:"FC", value: número exacto, unit:"lpm", range:"60-100", category:"Parámetros Eléctricos"
+- name:"RR", value: número exacto, unit:"ms", range:"600-1000", category:"Parámetros Eléctricos"
+- name:"ONDA_P", value: número exacto, unit:"ms", range:"80-120", category:"Parámetros Eléctricos"
+- name:"INTERVALO_PR", value: número exacto, unit:"ms", range:"120-200", category:"Parámetros Eléctricos"
+- name:"COMPLEJO_QRS", value: número exacto, unit:"ms", range:"60-100", category:"Parámetros Eléctricos"
+- name:"INTERVALO_QT", value: número exacto, unit:"ms", range:"350-450", category:"Parámetros Eléctricos"
+- name:"INTERVALO_QTC", value: número exacto, unit:"ms", range:"<440 H / <460 M", category:"Parámetros Eléctricos"
+- name:"SPO2", value: número exacto, unit:"%", range:"95-100", category:"Parámetros Eléctricos"
+- name:"PA", value: texto exacto (ej:"120/80"), unit:"mmHg", category:"Parámetros Eléctricos"
 
 EJES ELÉCTRICOS:
-- name:"EJE_P", value: eje onda P en °, unit:"°", range:"0° a 75°", category:"Ejes Eléctricos"
-- name:"EJE_QRS", value: eje QRS en °, unit:"°", range:"-30° a +90°", description:"Normal"/"Izquierdo"/"Derecho", category:"Ejes Eléctricos"
-- name:"EJE_T", value: eje onda T en °, unit:"°", category:"Ejes Eléctricos"
+- name:"EJE_P", value: número exacto en °, unit:"°", range:"0-75", category:"Ejes Eléctricos"
+- name:"EJE_QRS", value: número exacto en °, unit:"°", range:"-30 a +90", category:"Ejes Eléctricos"
+- name:"EJE_T", value: número exacto en °, unit:"°", category:"Ejes Eléctricos"
 
-INTERPRETACIÓN AUTOMÁTICA DEL EQUIPO:
-- name:"RITMO_AUTOMATICO", value: texto exacto del sistema (ej:"Ritmo sinusal"), category:"Interpretación Automática"
-- name:"RESULTADO_GLOBAL", value: texto exacto (ej:"ECG normal"), category:"Interpretación Automática"
+TEXTOS DEL EQUIPO (copiar EXACTO como aparecen en el documento):
+- name:"RITMO", value: texto tal cual del campo "Ritmo" del documento, category:"Ritmo Cardíaco"
+- name:"CONDUCCION", value: texto tal cual del campo "Conducción" si existe, category:"Ritmo Cardíaco"
+- name:"MORFOLOGIA", value: texto tal cual del campo "Morfología" si existe, category:"Ritmo Cardíaco"
+- name:"RITMO_AUTOMATICO", value: texto exacto de la interpretación automática del equipo, category:"Interpretación"
+- name:"RESULTADO_GLOBAL", value: texto exacto del resultado global del equipo, category:"Interpretación"
 
-INTERPRETACIÓN MÉDICA (del reporte narrativo si existe):
-- name:"DESCRIPCION_RITMO", value: descripción completa del ritmo cardiaco, visualizationType:"list", category:"Interpretación Médica"
-- name:"ANALISIS_MORFOLOGICO", value: descripción morfológica de ondas P, QRS, T y segmento ST-T, category:"Interpretación Médica"
-- name:"SEGMENTO_ST", value: descripción del segmento ST (ej:"Sin alteraciones en el segmento ST"), category:"Interpretación Médica"
-- name:"ONDA_T_DESC", value: descripción de onda T, category:"Interpretación Médica"
-- name:"CONCLUSION_ECG", value: TEXTO COMPLETO de la conclusión/impresión clínica VERBATIM, visualizationType:"list", category:"Interpretación Médica"
+TEXTOS DE INTERPRETACIÓN MÉDICA (copiar VERBATIM el texto completo del reporte):
+- name:"DESCRIPCION_RITMO", value: texto COMPLETO tal cual aparece en el reporte, category:"Interpretación"
+- name:"ANALISIS_MORFOLOGICO", value: texto COMPLETO tal cual aparece, category:"Interpretación"
+- name:"SEGMENTO_ST", value: texto COMPLETO tal cual aparece, category:"Interpretación"
+- name:"ONDA_T_DESC", value: texto tal cual aparece, category:"Interpretación"
+- name:"CONCLUSION_ECG", value: COPIA EXACTA COMPLETA de toda la conclusión/impresión clínica, category:"Interpretación"
 
 METADATOS:
-- name:"TIPO_ESTUDIO", value: tipo (ej:"ECG en reposo","ECG de esfuerzo"), category:"Datos del Estudio"
-- name:"EQUIPO_ECG", value: nombre y versión del electrocardiógrafo (ej:"BTL CardioPoint 2.33.163.0"), description: número de serie, category:"Datos del Estudio"
-- name:"FECHA_ESTUDIO", value: fecha y hora exactas del estudio, category:"Datos del Estudio"
-- name:"MEDICO_RESPONSABLE", value: nombre del médico responsable, category:"Datos del Estudio"
-- name:"TIENE_TRAZADO_IMAGEN", value: "true" si el documento incluye la imagen gráfica de las 12 derivaciones ECG, "false" si es solo reporte textual, category:"Metadatos"`,
+- name:"TIPO_ESTUDIO", value: tipo exacto, category:"Datos del Estudio"
+- name:"EQUIPO_ECG", value: nombre y versión del equipo, description: número de serie, category:"Datos del Estudio"
+- name:"FECHA_ESTUDIO", value: fecha y hora exactas, category:"Datos del Estudio"
+- name:"MEDICO_RESPONSABLE", value: nombre del médico, category:"Datos del Estudio"
+- name:"TIENE_TRAZADO_IMAGEN", value: "true" si incluye imagen gráfica ECG, "false" si solo texto, category:"Metadatos"
+
+Si hay CUALQUIER otro dato visible en el documento que no esté en esta lista, extráelo también como item adicional.`,
                 schema: {
                     type: Type.OBJECT,
                     properties: {
