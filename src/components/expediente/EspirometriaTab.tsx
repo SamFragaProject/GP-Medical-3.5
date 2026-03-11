@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     Wind, Upload, Loader2, CheckCircle, AlertTriangle, RefreshCw,
     Save, X, Activity, TrendingUp, Heart, Shield, BarChart3,
-    Brain, FileCheck, Zap, Target, Table2, History
+    Brain, FileCheck, Zap, Target, Table2, History, Trash2
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
@@ -775,6 +775,36 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
         </Card>
     )
 
+    const handleDelete = async () => {
+        if (!pacienteId) return
+        if (!window.confirm('¿Estás seguro de que deseas eliminar esta espirometría?')) return
+
+        try {
+            // Obtener el estudio más reciente
+            const { data: estudios } = await supabase
+                .from('estudios_clinicos')
+                .select('id')
+                .eq('paciente_id', pacienteId)
+                .in('tipo_estudio', ['espirometria', 'spirometry'])
+                .order('fecha_estudio', { ascending: false })
+                .limit(1)
+
+            const studyId = estudios?.[0]?.id
+            if (!studyId) {
+                alert('No se encontró el estudio para eliminar.')
+                return
+            }
+
+            await supabase.from('resultados_estudio').delete().eq('estudio_id', studyId)
+            await supabase.from('estudios_clinicos').delete().eq('id', studyId)
+            alert('Estudio eliminado con éxito')
+            reload()
+        } catch (err: any) {
+            console.error('Error eliminando espirometría:', err)
+            alert('No se pudo eliminar: ' + err.message)
+        }
+    }
+
     // ── Con datos → SpirometryReport + Analytics ──
     return (
         <div className="space-y-5">
@@ -795,6 +825,13 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleDelete}
+                            className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                            title="Eliminar estudio"
+                        >
+                            <Trash2 className="w-5 h-5" />
+                        </button>
                         {/* Resultado */}
                         <div className="px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200">
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Interpretación</p>

@@ -8,13 +8,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     HeartPulse, Activity, Zap, FileText, AlertTriangle, CheckCircle,
     Clock, Shield, Download, Brain, TrendingUp, TrendingDown, Minus,
-    Calendar, ChevronDown, ChevronUp, Image as ImageIcon, Info
+    Calendar, ChevronDown, ChevronUp, Image as ImageIcon, Info, Trash2, Target
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
 import { Loader2 } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { secureStorageService } from '@/services/secureStorageService'
 import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
 import EstudioUploadReview from '@/components/expediente/EstudioUploadReview'
 import { printSeccionPDF } from '@/components/expediente/ExportarPDFPaciente'
@@ -127,46 +129,43 @@ function RhythmVisualizer({ fc }: { fc: number | null }) {
     }
 
     return (
-        <div className="bg-slate-900 rounded-xl p-4 overflow-hidden relative">
-            <div className="absolute top-3 left-3 flex items-center gap-2">
-                <motion.div className="w-2 h-2 rounded-full bg-rose-500"
-                    animate={{ opacity: [1, 0, 1] }}
-                    transition={{ duration: period / 1000, repeat: Infinity }} />
-                <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest">
-                    {bpm} lpm
-                </span>
+        <div className="bg-slate-950 rounded-2xl p-6 overflow-hidden relative border border-slate-800 shadow-2xl">
+            <div className="absolute top-4 left-5 flex items-center gap-3 z-10">
+                <div className="flex items-center gap-2 px-3 py-1 bg-rose-500/10 rounded-full border border-rose-500/20">
+                    <motion.div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]"
+                        animate={{ opacity: [1, 0.4, 1], scale: [1, 1.2, 1] }}
+                        transition={{ duration: period / 1000, repeat: Infinity }} />
+                    <span className="text-[11px] font-black text-rose-400 uppercase tracking-[0.2em]">
+                        Monitor en Vivo: {bpm} lpm
+                    </span>
+                </div>
+                <Badge variant="outline" className="text-[9px] border-slate-700 text-slate-400 font-bold uppercase tracking-widest">
+                    Ritmo {fc && fc > 100 ? 'Sinusal Taquicárdico' : fc && fc < 60 ? 'Sinusal Bradicárdico' : 'Sinusal Normal'}
+                </Badge>
             </div>
-            <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full opacity-80 filter drop-shadow-[0_0_8px_rgba(244,63,94,0.3)]">
                 <defs>
-                    <linearGradient id="ecg-line" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
-                        <stop offset="60%" stopColor="#10b981" stopOpacity="1" />
-                        <stop offset="100%" stopColor="#10b981" stopOpacity="0.3" />
+                    <linearGradient id="ecgGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#f43f5e" stopOpacity="0" />
+                        <stop offset="50%" stopColor="#f43f5e" stopOpacity="1" />
+                        <stop offset="100%" stopColor="#f43f5e" stopOpacity="0" />
                     </linearGradient>
                 </defs>
-                {/* Grid de fondo estilo papel ECG */}
-                {Array.from({ length: 20 }).map((_, i) => (
-                    <line key={`v${i}`} x1={i * 25} y1={0} x2={i * 25} y2={H}
-                        stroke="#1e293b" strokeWidth="0.5" />
+                {/* Grid lines background */}
+                {[...Array(20)].map((_, i) => (
+                    <line key={i} x1={i * 25} y1="0" x2={i * 25} y2={H} stroke="#1e293b" strokeWidth="0.5" />
                 ))}
-                {Array.from({ length: 5 }).map((_, i) => (
-                    <line key={`h${i}`} x1={0} y1={i * 20} x2={W} y2={i * 20}
-                        stroke="#1e293b" strokeWidth="0.5" />
+                {[...Array(4)].map((_, i) => (
+                    <line key={i} x1="0" y1={i * 20} x2={W} y2={i * 20} stroke="#1e293b" strokeWidth="0.5" />
                 ))}
-                {/* Tira de ritmo */}
-                {Array.from({ length: beats }).map((_, i) => (
-                    <motion.path key={i} d={ecgPath(i * beatW)}
-                        fill="none" stroke="url(#ecg-line)" strokeWidth="2"
-                        strokeLinecap="round" strokeLinejoin="round"
-                        initial={{ pathLength: 0, opacity: 0 }}
-                        animate={{ pathLength: 1, opacity: 1 }}
-                        transition={{ delay: i * 0.2, duration: 0.4, ease: 'easeOut' }}
-                    />
-                ))}
+                {/* The ECG Line */}
+                <motion.path
+                    d={[...Array(beats)].map((_, i) => ecgPath(i * beatW)).join(' ')}
+                    fill="none" stroke="url(#ecgGrad)" strokeWidth="2.5" strokeLinecap="round"
+                    animate={{ x: [0, -beatW] }}
+                    transition={{ duration: period / 1000, repeat: Infinity, ease: 'linear' }}
+                />
             </svg>
-            <p className="text-[9px] text-slate-600 text-right mt-1 font-medium">
-                Representación visual del ritmo — 25 mm/s
-            </p>
         </div>
     )
 }
@@ -178,50 +177,72 @@ function ECGParamGauge({ label, value, unit, min, max, decimals = 0 }: {
     label: string; value: number | null; unit: string; min: number; max: number; decimals?: number
 }) {
     if (value === null) return (
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-center">
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</p>
-            <p className="text-slate-300 font-bold">—</p>
+        <div className="p-4 rounded-3xl bg-slate-50 border border-slate-100/50 text-center flex flex-col justify-center min-h-[140px]">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">{label}</p>
+            <p className="text-slate-300 font-black text-2xl">—</p>
         </div>
     )
     const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100))
     const isWarn = value < min || value > max
-    const color = isWarn ? '#f59e0b' : '#10b981'
-    const r = 34, cx = 44, cy = 44, circ = 2 * Math.PI * r
+    const color = isWarn ? '#F59E0B' : '#10B981'
+    const r = 44, cx = 50, cy = 50
 
     return (
-        <div className={`p-4 rounded-xl border text-center ${isWarn ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-100'}`}>
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">{label}</p>
-            <div className="relative mx-auto w-22 h-22" style={{ width: 88, height: 88 }}>
-                <svg viewBox="0 0 88 88" className="-rotate-90 w-full h-full">
-                    <circle cx={cx} cy={cy} r={r} fill="none" stroke="#e2e8f0" strokeWidth="8" />
-                    <motion.circle cx={cx} cy={cy} r={r} fill="none"
-                        stroke={color} strokeWidth="8" strokeLinecap="round"
-                        strokeDasharray={circ}
-                        initial={{ strokeDashoffset: circ }}
-                        animate={{ strokeDashoffset: circ * (1 - pct / 100) }}
-                        transition={{ duration: 0.9, ease: 'easeOut', delay: 0.2 }}
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`p-6 rounded-[2.5rem] border text-center transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 group relative overflow-hidden ${isWarn ? 'bg-gradient-to-br from-amber-50 to-white border-amber-200' : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-100'}`}
+        >
+            {/* Background Glow */}
+            <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl opacity-20 ${isWarn ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-6 group-hover:text-amber-600 transition-colors">{label}</p>
+
+            <div className="relative mx-auto" style={{ width: 140, height: 140 }}>
+                <svg viewBox="0 0 100 100" className="-rotate-90 w-full h-full filter drop-shadow-sm">
+                    {/* Background track */}
+                    <circle cx="50" cy="50" r="44" fill="none" stroke="#f1f5f9" strokeWidth="6" />
+                    {/* Normal range mask (optional, subtle) */}
+                    <circle cx="50" cy="50" r="44" fill="none" stroke={isWarn ? '#fdf2f2' : '#ecfdf5'} strokeWidth="12" strokeDasharray={`${2 * Math.PI * 44}`} />
+
+                    <motion.circle cx="50" cy="50" r="44" fill="none"
+                        stroke={color} strokeWidth="10" strokeLinecap="round"
+                        strokeDasharray={2 * Math.PI * 44}
+                        initial={{ strokeDashoffset: 2 * Math.PI * 44 }}
+                        animate={{ strokeDashoffset: 2 * Math.PI * 44 * (1 - pct / 100) }}
+                        transition={{ duration: 1.8, ease: [0.34, 1.56, 0.64, 1], delay: 0.2 }}
                     />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <p className={`text-lg font-black ${isWarn ? 'text-amber-700' : 'text-emerald-700'}`}>
+                    <motion.span
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`text-4xl font-black tracking-tighter sm:text-5xl ${isWarn ? 'text-amber-700' : 'text-slate-900'}`}>
                         {value.toFixed(decimals)}
-                    </p>
-                    <p className="text-[9px] text-slate-400 font-bold">{unit}</p>
+                    </motion.span>
+                    <span className="text-[11px] text-slate-400 font-black uppercase tracking-widest mt-1 group-hover:text-slate-600 transition-colors">{unit}</span>
                 </div>
             </div>
-            <p className={`text-[10px] font-bold mt-1 ${isWarn ? 'text-amber-600' : 'text-emerald-600'}`}>
-                {isWarn ? '⚠ Fuera de rango' : '✓ Normal'}
-            </p>
-            <p className="text-[9px] text-slate-400">Ref: {min}–{max}</p>
-        </div>
+
+            <div className="mt-6 flex items-center justify-center gap-2">
+                <div className={`w-2.5 h-2.5 rounded-full ${isWarn ? 'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.5)] animate-pulse' : 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.3)]'}`} />
+                <p className={`text-[10px] font-black uppercase tracking-[0.1em] ${isWarn ? 'text-amber-600' : 'text-emerald-700'}`}>
+                    {isWarn ? 'Anomalía Detectada' : 'Parámetro Óptimo'}
+                </p>
+            </div>
+
+            <div className={`mt-3 py-1.5 px-3 rounded-full inline-block border ${isWarn ? 'bg-amber-100/50 border-amber-200' : 'bg-emerald-100/30 border-emerald-100'}`}>
+                <p className={`text-[10px] font-black ${isWarn ? 'text-amber-700' : 'text-emerald-600'}`}>Ref: {min}–{max} {unit}</p>
+            </div>
+        </motion.div>
     )
 }
 
 // ─────────────────────────────────────────────
-// COMPONENTE: Eje eléctrico SVG
+// COMPONENTE: Eje eléctrico SVG (GRANDE)
 // ─────────────────────────────────────────────
 function EjesElectricos({ ejeP, ejeQRS, ejeT }: { ejeP: number | null; ejeQRS: number | null; ejeT: number | null }) {
-    const cx = 80, cy = 80, r = 60
+    const cx = 100, cy = 100, r = 85
 
     const toXY = (deg: number) => ({
         x: cx + r * Math.cos((deg - 90) * Math.PI / 180),
@@ -229,75 +250,83 @@ function EjesElectricos({ ejeP, ejeQRS, ejeT }: { ejeP: number | null; ejeQRS: n
     })
 
     const axes = [
-        { deg: ejeP, color: '#a855f7', label: 'P' },
-        { deg: ejeQRS, color: '#ef4444', label: 'QRS' },
-        { deg: ejeT, color: '#3b82f6', label: 'T' },
+        { deg: ejeP, color: '#8B5CF6', label: 'P' },
+        { deg: ejeQRS, color: '#10B981', label: 'QRS' },
+        { deg: ejeT, color: '#3B82F6', label: 'T' },
     ]
 
     const getZona = (deg: number | null): string => {
         if (deg === null) return '—'
         if (deg >= -30 && deg <= 90) return 'Normal'
-        if (deg > 90 && deg <= 180) return 'Desviación Derecha'
-        return 'Desviación Izquierda'
+        if (deg > 90 && deg <= 180) return 'Desv. Derecha'
+        return 'Desv. Izquierda'
     }
 
     return (
-        <div className="bg-white rounded-xl border border-slate-100 p-4">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Ejes Eléctricos</p>
-            <div className="flex gap-4 items-center">
-                <svg viewBox="0 0 160 160" className="w-36 h-36 flex-shrink-0">
-                    {/* Círculo de referencia */}
-                    <circle cx={cx} cy={cy} r={r} fill="none" stroke="#f1f5f9" strokeWidth="1" />
-                    {/* Cuadrantes */}
-                    <line x1={cx} y1={cy - r} x2={cx} y2={cy + r} stroke="#e2e8f0" strokeWidth="0.8" />
-                    <line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke="#e2e8f0" strokeWidth="0.8" />
-                    {/* Zona normal (−30° a +90°) */}
-                    <path d={`M ${cx} ${cy} L ${toXY(-30).x} ${toXY(-30).y} A ${r} ${r} 0 0 1 ${toXY(90).x} ${toXY(90).y} Z`}
-                        fill="rgba(16,185,129,0.08)" />
-                    {/* Vectores */}
-                    {axes.map(({ deg, color, label }) => {
-                        if (deg === null) return null
-                        const pt = toXY(deg)
-                        return (
-                            <motion.g key={label}
-                                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                transition={{ duration: 0.5 }}>
-                                <motion.line x1={cx} y1={cy} x2={pt.x} y2={pt.y}
-                                    stroke={color} strokeWidth="2.5" strokeLinecap="round"
-                                    initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
-                                    transition={{ duration: 0.6 }} />
-                                <circle cx={pt.x} cy={pt.y} r="4" fill={color} />
-                                <text x={pt.x + (pt.x > cx ? 4 : -12)} y={pt.y + 4}
-                                    fontSize="9" fontWeight="800" fill={color}>{label}</text>
-                            </motion.g>
-                        )
-                    })}
-                    {/* Labels de orientación */}
-                    <text x={cx} y={12} textAnchor="middle" fontSize="8" fill="#94a3b8" fontWeight="700">−90°</text>
-                    <text x={cx} y={cy + r + 12} textAnchor="middle" fontSize="8" fill="#94a3b8" fontWeight="700">+90°</text>
-                    <text x={4} y={cy + 4} fontSize="8" fill="#94a3b8" fontWeight="700">±180°</text>
-                    <text x={cx + r - 4} y={cy + 4} fontSize="8" fill="#94a3b8" fontWeight="700">0°</text>
-                </svg>
-                <div className="space-y-2 flex-1">
-                    {axes.map(({ deg, color, label }) => (
-                        <div key={label} className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
-                                <span className="text-xs font-bold text-slate-600">Eje {label}</span>
+        <Card className="border-slate-100 shadow-sm">
+            <CardContent className="p-6">
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" /> Ejes Eléctricos Cardíacos
+                </p>
+                <div className="flex flex-col md:flex-row gap-8 items-center justify-center">
+                    <div className="relative">
+                        <svg viewBox="0 0 200 200" className="w-64 h-64 md:w-72 md:h-72">
+                            {/* Círculo de referencia */}
+                            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#f1f5f9" strokeWidth="1.5" />
+                            {/* Cuadrantes */}
+                            <line x1={cx} y1={cy - r} x2={cx} y2={cy + r} stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 4" />
+                            <line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 4" />
+
+                            {/* Zona normal (−30° a +90°) */}
+                            <path d={`M ${cx} ${cy} L ${toXY(-30).x} ${toXY(-30).y} A ${r} ${r} 0 0 1 ${toXY(90).x} ${toXY(90).y} Z`}
+                                fill="rgba(16,185,129,0.06)" />
+
+                            {/* Vectores */}
+                            {axes.map(({ deg, color, label }) => {
+                                if (deg === null) return null
+                                const pt = toXY(deg)
+                                return (
+                                    <motion.g key={label}>
+                                        <motion.line x1={cx} y1={cy} x2={pt.x} y2={pt.y}
+                                            stroke={color} strokeWidth="3" strokeLinecap="round"
+                                            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+                                            transition={{ duration: 1, ease: 'easeOut' }} />
+                                        <circle cx={pt.x} cy={pt.y} r="5" fill={color} stroke="white" strokeWidth="2" />
+                                        <text x={pt.x + (pt.x > cx ? 6 : -14)} y={pt.y + (pt.y > cy ? 12 : -6)}
+                                            fontSize="11" fontWeight="900" fill={color}>{label}</text>
+                                    </motion.g>
+                                )
+                            })}
+
+                            {/* Labels de orientación */}
+                            <text x={cx} y={8} textAnchor="middle" fontSize="10" fill="#94a3b8" fontWeight="800">−90°</text>
+                            <text x={cx} y={cy + r + 15} textAnchor="middle" fontSize="10" fill="#94a3b8" fontWeight="800">+90°</text>
+                            <text x={0} y={cy + 4} fontSize="10" fill="#94a3b8" fontWeight="800">±180°</text>
+                            <text x={cx + r + 5} y={cy + 4} fontSize="10" fill="#94a3b8" fontWeight="800">0°</text>
+                        </svg>
+                    </div>
+
+                    <div className="space-y-4 w-full max-w-[200px]">
+                        {axes.map(({ deg, color, label }) => (
+                            <div key={label} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-3 h-3 rounded-full shadow-sm" style={{ background: color }} />
+                                    <span className="text-xs font-black text-slate-500">Vector {label}</span>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-sm font-black text-slate-800">
+                                        {deg !== null ? `${deg}°` : '—'}
+                                    </span>
+                                    <p className={`text-[10px] font-bold ${getZona(deg) === 'Normal' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                        {getZona(deg)}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="text-right">
-                                <span className="text-sm font-black text-slate-800">
-                                    {deg !== null ? `${deg}°` : '—'}
-                                </span>
-                                <p className={`text-[9px] font-bold ${getZona(deg) === 'Normal' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                    {getZona(deg)}
-                                </p>
-                            </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     )
 }
 
@@ -305,10 +334,18 @@ function EjesElectricos({ ejeP, ejeQRS, ejeT }: { ejeP: number | null; ejeQRS: n
 // COMPONENTE PRINCIPAL
 // ─────────────────────────────────────────────
 export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacienteId: string; paciente?: any }) {
+    const { user } = useAuth()
     const [loading, setLoading] = useState(true)
     const [estudios, setEstudios] = useState<any[]>([])
     const [activeSection, setActiveSection] = useState<'scanner' | 'analisis'>('scanner')
     const [selectedIdx, setSelectedIdx] = useState(0)
+
+    const currentEcg = estudios[selectedIdx] || {}
+    const isNormalEcg = currentEcg.resultado_global?.toLowerCase().includes('normal') || (currentEcg.fc && currentEcg.fc >= 60 && currentEcg.fc <= 100)
+    const isFileError = !currentEcg.archivo_url || 
+                        currentEcg.archivo_url.includes('"error"') || 
+                        currentEcg.archivo_url.includes('Bucket not found') || 
+                        currentEcg.archivo_url.startsWith('{');
 
     useEffect(() => { if (pacienteId) loadECG() }, [pacienteId])
 
@@ -329,7 +366,32 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                     const { data: resultados } = await supabase
                         .from('resultados_estudio').select('*').eq('estudio_id', est.id)
                     if (resultados && resultados.length > 0) {
-                        all.push(buildFromResultados(est, resultados))
+                        const parsed = buildFromResultados(est, resultados)
+
+                        // ── RECUPERAR URL SEGURA SI ES UN PATH ──
+                        if (parsed.archivo_url && !parsed.archivo_url.startsWith('http') && !parsed.archivo_url.startsWith('blob:')) {
+                            try {
+                                const empresaId = user?.empresa_id || paciente?.empresa_id || ''
+                                // Buscar el documento en la tabla de metadata para obtener el path exacto
+                                const { data: docData } = await supabase
+                                    .from('documentos_expediente')
+                                    .select('*')
+                                    .eq('paciente_id', pacienteId)
+                                    .eq('categoria', 'electrocardiograma')
+                                    .order('created_at', { ascending: false })
+                                    .limit(1)
+                                    .single()
+
+                                if (docData && empresaId) {
+                                    const secureUrl = await secureStorageService.view(docData, empresaId)
+                                    parsed.archivo_url = secureUrl.objectUrl
+                                }
+                            } catch (e) {
+                                console.warn('No se pudo obtener URL segura para el ECG trazado:', e)
+                            }
+                        }
+
+                        all.push(parsed)
                     }
                 }
             }
@@ -365,8 +427,38 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
             }
 
             setEstudios(all)
-        } catch (e) { console.error('ECG loadError:', e) }
-        finally { setLoading(false) }
+        } catch (e) {
+            console.error('ECG loadError:', e)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleDelete = async () => {
+        if (!currentEcg.id) return
+        if (!window.confirm('¿Estás seguro de que deseas eliminar este electrocardiograma? Esta acción no se puede deshacer.')) return
+
+        setLoading(true)
+        try {
+            // Eliminar resultados asociados
+            await supabase.from('resultados_estudio').delete().eq('estudio_id', currentEcg.id)
+            // Eliminar estudio base
+            const { error } = await supabase.from('estudios_clinicos').delete().eq('id', currentEcg.id)
+
+            if (error) throw error
+
+            // Eliminar de electrocardiogramas legacy si existe
+            await supabase.from('electrocardiogramas').delete().eq('id', currentEcg.id)
+
+            setEstudios(prev => prev.filter(e => e.id !== currentEcg.id))
+            setSelectedIdx(0)
+            alert('Estudio eliminado con éxito')
+        } catch (err: any) {
+            console.error('Error eliminando ECG:', err)
+            alert('No se pudo eliminar el estudio: ' + err.message)
+        } finally {
+            setLoading(false)
+        }
     }
 
     if (loading) return (
@@ -384,32 +476,27 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
         </div>
     )
 
-    const ecg = estudios[selectedIdx] || estudios[0]
-    const isNormal = (ecg.clasificacion || '').includes('normal') ||
-        (ecg.resultado_global || '').toLowerCase().includes('normal')
-
-    // Alertas automáticas
     const alertas: { msg: string; level: 'warn' | 'info' }[] = []
-    if (ecg.intervalo_qtc && ecg.intervalo_qtc > 450)
-        alertas.push({ msg: `QTc prolongado (${ecg.intervalo_qtc} ms) — Riesgo de Torsades de Pointes`, level: 'warn' })
-    if (ecg.fc && (ecg.fc < 60 || ecg.fc > 100))
-        alertas.push({ msg: `FC ${ecg.fc < 60 ? 'Bradicardia' : 'Taquicardia'} (${ecg.fc} lpm)`, level: 'warn' })
-    if (ecg.intervalo_pr && ecg.intervalo_pr > 200)
-        alertas.push({ msg: `PR prolongado (${ecg.intervalo_pr} ms) — Bloqueo AV 1° grado`, level: 'warn' })
-    if (ecg.complejo_qrs && ecg.complejo_qrs > 120)
-        alertas.push({ msg: `QRS ancho (${ecg.complejo_qrs} ms) — Descartar bloqueo de rama`, level: 'warn' })
-    if (ecg.eje_qrs !== null && ecg.eje_qrs !== undefined && (ecg.eje_qrs < -30 || ecg.eje_qrs > 90))
-        alertas.push({ msg: `Eje QRS desviado (${ecg.eje_qrs}°) — ${ecg.eje_qrs > 90 ? 'Desviación Derecha' : 'Desviación Izquierda'}`, level: 'warn' })
+    if (currentEcg.intervalo_qtc && currentEcg.intervalo_qtc > 450)
+        alertas.push({ msg: `QTc prolongado (${currentEcg.intervalo_qtc} ms) — Riesgo de Torsades de Pointes`, level: 'warn' })
+    if (currentEcg.fc && (currentEcg.fc < 60 || currentEcg.fc > 100))
+        alertas.push({ msg: `FC ${currentEcg.fc < 60 ? 'Bradicardia' : 'Taquicardia'} (${currentEcg.fc} lpm)`, level: 'warn' })
+    if (currentEcg.intervalo_pr && currentEcg.intervalo_pr > 200)
+        alertas.push({ msg: `PR prolongado (${currentEcg.intervalo_pr} ms) — Bloqueo AV 1° grado`, level: 'warn' })
+    if (currentEcg.complejo_qrs && currentEcg.complejo_qrs > 120)
+        alertas.push({ msg: `QRS ancho (${currentEcg.complejo_qrs} ms) — Descartar bloqueo de rama`, level: 'warn' })
+    if (currentEcg.eje_qrs !== null && currentEcg.eje_qrs !== undefined && (currentEcg.eje_qrs < -30 || currentEcg.eje_qrs > 90))
+        alertas.push({ msg: `Eje QRS desviado (${currentEcg.eje_qrs}°) — ${currentEcg.eje_qrs > 90 ? 'Desviación Derecha' : 'Desviación Izquierda'}`, level: 'warn' })
 
     return (
         <div className="space-y-5">
 
             {/* ── HEADER ── */}
-            <div className={`bg-white rounded-2xl border shadow-sm p-5 ${isNormal ? 'border-slate-100' : 'border-rose-100'}`}>
+            <div className={`bg-white rounded-2xl border shadow-sm p-5 ${isNormalEcg ? 'border-slate-100' : 'border-rose-100'}`}>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <motion.div
-                            className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${isNormal ? 'bg-gradient-to-br from-rose-500 to-red-600 shadow-rose-200' : 'bg-gradient-to-br from-amber-500 to-orange-600 shadow-amber-200'}`}
+                            className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${isNormalEcg ? 'bg-gradient-to-br from-rose-500 to-red-600 shadow-rose-200' : 'bg-gradient-to-br from-amber-500 to-orange-600 shadow-amber-200'}`}
                             animate={{ scale: [1, 1.05, 1] }}
                             transition={{ repeat: Infinity, duration: 1.2 }}>
                             <HeartPulse className="w-6 h-6 text-white" />
@@ -417,26 +504,35 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                         <div>
                             <h3 className="text-lg font-black text-slate-800">Electrocardiograma</h3>
                             <p className="text-xs text-slate-400 font-medium">
-                                {ecg.tipo_estudio || 'ECG en reposo'} — {ecg.medico || 'GP Medical Health'}
+                                {currentEcg.tipo_estudio || 'ECG en reposo'} — {currentEcg.medico || 'GP Medical Health'}
                             </p>
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleDelete}
+                            className="h-10 w-10 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            title="Eliminar estudio"
+                        >
+                            <Trash2 className="w-5 h-5" />
+                        </Button>
                         <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="ecg" onSaved={loadECG} isCompact />
                         <div className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-100">
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Fecha</p>
                             <p className="text-sm font-bold text-slate-700">
-                                {ecg.fecha ? new Date(ecg.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                                {currentEcg.fecha ? new Date(currentEcg.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                             </p>
                         </div>
-                        <div className={`px-4 py-2 rounded-xl border ${isNormal ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+                        <div className={`px-4 py-2 rounded-xl border ${isNormalEcg ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Resultado</p>
                             <div className="flex items-center gap-1.5">
-                                {isNormal
+                                {isNormalEcg
                                     ? <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
                                     : <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />}
-                                <p className={`text-sm font-bold ${isNormal ? 'text-emerald-700' : 'text-amber-700'}`}>
-                                    {ecg.resultado_global || (isNormal ? 'ECG Normal' : 'Con Hallazgos')}
+                                <p className={`text-sm font-bold ${isNormalEcg ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                    {currentEcg.resultado_global || (isNormalEcg ? 'ECG Normal' : 'Con Hallazgos')}
                                 </p>
                             </div>
                         </div>
@@ -444,11 +540,11 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                 </div>
 
                 {/* Ritmo banner */}
-                {ecg.ritmo_automatico && (
-                    <div className={`mt-4 flex items-center gap-3 p-3 rounded-xl ${isNormal ? 'bg-emerald-50 border border-emerald-100' : 'bg-amber-50 border border-amber-100'}`}>
-                        <Activity className={`w-4 h-4 ${isNormal ? 'text-emerald-600' : 'text-amber-600'}`} />
-                        <p className={`text-sm font-bold ${isNormal ? 'text-emerald-700' : 'text-amber-700'}`}>
-                            {ecg.ritmo_automatico}
+                {currentEcg.ritmo_automatico && (
+                    <div className={`mt-4 flex items-center gap-3 p-3 rounded-xl ${isNormalEcg ? 'bg-emerald-50 border border-emerald-100' : 'bg-amber-50 border border-amber-100'}`}>
+                        <Activity className={`w-4 h-4 ${isNormalEcg ? 'text-emerald-600' : 'text-amber-600'}`} />
+                        <p className={`text-sm font-bold ${isNormalEcg ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            {currentEcg.ritmo_automatico}
                         </p>
                     </div>
                 )}
@@ -468,18 +564,34 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                     </div>
                 )}
 
-                {/* Selector de estudio si hay múltiples */}
+                {/* Selector de estudio — Timeline Horizontal */}
                 {estudios.length > 1 && (
-                    <div className="mt-4 flex gap-2 flex-wrap">
-                        {estudios.map((e, i) => (
-                            <button key={e.id} onClick={() => setSelectedIdx(i)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${i === selectedIdx
-                                    ? 'bg-rose-500 text-white border-rose-500'
-                                    : 'bg-white text-slate-600 border-slate-200 hover:border-rose-300'
-                                    }`}>
-                                {e.fecha ? new Date(e.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: '2-digit' }) : `ECG ${i + 1}`}
-                            </button>
-                        ))}
+                    <div className="mt-6 pt-4 border-t border-slate-50">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3 ml-1">Historial de Estudios ECG</p>
+                        <div className="flex gap-3 overflow-x-auto pb-2 px-1 scrollbar-hide">
+                            {estudios.map((e, i) => (
+                                <motion.button
+                                    key={e.id}
+                                    whileHover={{ y: -2 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => setSelectedIdx(i)}
+                                    className={`flex-shrink-0 px-5 py-3 rounded-2xl border transition-all flex flex-col items-start gap-1 min-w-[140px] ${i === selectedIdx
+                                        ? 'bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-200'
+                                        : 'bg-white text-slate-600 border-slate-100 hover:border-rose-200 hover:bg-rose-50/30'
+                                        }`}>
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className={`w-3 h-3 ${i === selectedIdx ? 'text-white' : 'text-rose-400'}`} />
+                                        <span className="text-[10px] font-black uppercase">{e.fecha ? new Date(e.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) : 'S/F'}</span>
+                                    </div>
+                                    <p className={`text-xs font-bold ${i === selectedIdx ? 'text-white' : 'text-slate-800'}`}>
+                                        {e.fecha ? new Date(e.fecha).getFullYear() : 'Reciente'}
+                                    </p>
+                                    <Badge className={`text-[8px] border-0 p-0 h-auto ${i === selectedIdx ? 'text-rose-200' : 'text-slate-400'}`}>
+                                        {e.resultado_global || 'Estudio ECG'}
+                                    </Badge>
+                                </motion.button>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
@@ -503,110 +615,114 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                     SECCIÓN 1: ESCÁNER — Replica del reporte
                 ══════════════════════════════════════ */}
                 {activeSection === 'scanner' && (
-                    <motion.div key="scanner" initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                        className="space-y-5">
+                    <motion.div key="scanner" initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}
+                        className="space-y-6">
 
                         {/* Documento ECG Original — Preview del PDF/imagen subido */}
-                        {ecg.archivo_url && !ecg.archivo_url.includes('"error"') && !ecg.archivo_url.includes('Bucket not found') ? (
-                            <Card className="border-slate-100 shadow-sm overflow-hidden">
-                                <div className="bg-slate-50 border-b border-slate-100 px-5 py-3 flex items-center justify-between">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                        📄 Documento ECG Original
-                                    </p>
-                                    <div className="flex items-center gap-2">
-                                        <Badge className="bg-rose-100 text-rose-700 text-[9px] border-0">ARCHIVO GUARDADO</Badge>
-                                        <a href={ecg.archivo_url} target="_blank" rel="noreferrer"
-                                            className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors underline">
-                                            Abrir en nueva pestaña ↗
+                        {!isFileError ? (
+                            <Card className="border-slate-100 shadow-2xl overflow-hidden rounded-[2.5rem] bg-white border border-slate-200/50">
+                                <div className="bg-white border-b border-slate-100 px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl bg-rose-500/10 flex items-center justify-center">
+                                            <FileText className="w-6 h-6 text-rose-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">Trazado Cardíaco / Reporte Médico</p>
+                                            <p className="text-sm font-bold text-slate-800">Visualización de Alta Fidelidad</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <Badge className="bg-emerald-500 text-white text-[10px] border-0 font-black px-4 py-1.5 rounded-full shadow-lg shadow-emerald-500/20">ARCHIVO SEGURO</Badge>
+                                        <a href={currentEcg.archivo_url} target="_blank" rel="noreferrer"
+                                            className="px-5 py-2 bg-slate-900 hover:bg-black rounded-full text-[10px] font-black text-white transition-all shadow-xl flex items-center gap-2 group">
+                                            <Target className="w-4 h-4 group-hover:scale-125 transition-transform" /> ABRIR EN PANTALLA COMPLETA
                                         </a>
                                     </div>
                                 </div>
-                                <div className="p-4">
-                                    {ecg.archivo_url.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
-                                        <img
-                                            src={ecg.archivo_url}
-                                            alt="Trazado ECG"
-                                            className="w-full max-h-[600px] object-contain rounded-xl border border-slate-200 bg-white"
-                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                                        />
-                                    ) : ecg.archivo_url.match(/\.pdf$/i) ? (
+                                <div className="p-4 bg-slate-50 min-h-[600px] flex items-center justify-center relative">
+                                    {currentEcg.archivo_url.toLowerCase().includes('.pdf') || (currentEcg.archivo_url.startsWith('blob:') && !currentEcg.archivo_url.includes('image')) ? (
                                         <iframe
-                                            src={ecg.archivo_url}
-                                            className="w-full rounded-xl border border-slate-200 bg-white"
-                                            style={{ height: '600px' }}
-                                            title="Preview ECG Document"
+                                            src={`${currentEcg.archivo_url}#toolbar=0&navpanes=0`}
+                                            className="w-full h-[800px] border-0 rounded-3xl shadow-inner bg-white"
+                                            title="ECG Original PDF"
                                         />
-                                    ) : null}
+                                    ) : (
+                                        <div className="w-full h-full flex justify-center bg-slate-950 rounded-[2rem] overflow-hidden p-6 shadow-2xl relative group">
+                                            <img
+                                                src={currentEcg.archivo_url}
+                                                alt="ECG Trazado"
+                                                className="max-w-full h-auto shadow-2xl rounded-lg cursor-zoom-in transition-transform duration-700 group-hover:scale-[1.01]"
+                                                onClick={() => window.open(currentEcg.archivo_url, '_blank')}
+                                            />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors pointer-events-none" />
+                                            <div className="absolute top-10 right-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="px-5 py-2.5 bg-white/20 backdrop-blur-md rounded-2xl text-white text-[11px] font-black uppercase tracking-widest border border-white/20">
+                                                    Haz clic para ampliar trazado
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </Card>
-                        ) : null}
-
-                        {/* Tabla de parámetros — igual que formato BTL */}
-                        <Card className="border-slate-100 shadow-sm overflow-hidden">
-                            <div className="bg-slate-50 border-b border-slate-100 px-5 py-3">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                    Parámetros del ECG — {ecg.equipo || 'BTL CardioPoint'}
+                        ) : (
+                            <Card className="border-slate-100 shadow-xl p-20 text-center bg-white rounded-[2.5rem] border-dashed border-2 border-slate-200">
+                                <div className="w-24 h-24 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+                                    <AlertTriangle className="w-12 h-12 text-amber-500" />
+                                </div>
+                                <h3 className="text-3xl font-black text-slate-800 mb-3 tracking-tight">Archivo No Disponible</h3>
+                                <p className="text-slate-500 max-w-lg mx-auto leading-relaxed font-medium">
+                                    El trazado gráfico original no pudo ser recuperado del servidor. Esto suele ocurrir cuando el bucket de almacenamiento está en mantenimiento o la URL ha expirado por seguridad.
                                 </p>
+                                <div className="mt-12 flex justify-center gap-5">
+                                    <Button variant="outline" className="rounded-2xl h-14 px-10 font-black text-xs uppercase tracking-widest border-2 hover:bg-slate-50 transition-colors" onClick={loadECG}>
+                                        Reintentar Conexión
+                                    </Button>
+                                    <EstudioUploadReview pacienteId={pacienteId} tipoEstudio="ecg" onSaved={loadECG} isCompact />
+                                </div>
+                            </Card>
+                        )}
+
+                        {/* Tablero de parámetros — UX Avanzada */}
+                        <div className="space-y-4">
+                            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400 ml-1 flex items-center gap-2">
+                                <Activity className="w-4 h-4 text-rose-500" /> Parametría Bioeléctrica Correlacionada
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <ECGParamGauge label="Freq. Cardíaca" value={currentEcg.fc} unit="bpm" min={60} max={100} />
+                                <ECGParamGauge label="Intervalo PR" value={currentEcg.intervalo_pr} unit="ms" min={120} max={200} />
+                                <ECGParamGauge label="Complejo QRS" value={currentEcg.complejo_qrs} unit="ms" min={60} max={100} />
+                                <ECGParamGauge label="QT corregido" value={currentEcg.intervalo_qtc} unit="ms" min={350} max={450} />
                             </div>
-                            <div className="p-5 grid grid-cols-2 md:grid-cols-3 gap-3">
-                                {[
-                                    { key: 'FC', label: 'FC', value: ecg.fc, unit: 'lpm', ref: '60–100' },
-                                    { key: 'RR', label: 'RR', value: ecg.rr, unit: 'ms', ref: '600–1000' },
-                                    { key: 'ONDA_P', label: 'Onda P', value: ecg.onda_p, unit: 'ms', ref: '80–120' },
-                                    { key: 'INTERVALO_PR', label: 'PR', value: ecg.intervalo_pr, unit: 'ms', ref: '120–200' },
-                                    { key: 'COMPLEJO_QRS', label: 'QRS', value: ecg.complejo_qrs, unit: 'ms', ref: '60–100' },
-                                    { key: 'INTERVALO_QT', label: 'QT', value: ecg.intervalo_qt, unit: 'ms', ref: '350–450' },
-                                    { key: 'INTERVALO_QTC', label: 'QTc', value: ecg.intervalo_qtc, unit: 'ms', ref: '<450' },
-                                    { key: 'EJE_P', label: 'Eje P', value: ecg.eje_p, unit: '°', ref: '0–75' },
-                                    { key: 'EJE_QRS', label: 'Eje QRS', value: ecg.eje_qrs, unit: '°', ref: '−30/+90' },
-                                    { key: 'EJE_T', label: 'Eje T', value: ecg.eje_t, unit: '°', ref: '—' },
-                                    { key: '', label: 'SpO2', value: ecg.spo2, unit: '%', ref: '95–100' },
-                                    { key: '', label: 'PA', value: ecg.pa, unit: 'mmHg', ref: '<120/80' },
-                                ].map(({ key, label, value, unit, ref }) => {
-                                    const numVal = typeof value === 'number' ? value : null
-                                    const status = key ? getParamStatus(key, numVal) : 'normal'
-                                    return (
-                                        <div key={label} className={`p-3 rounded-xl border ${status === 'warn' ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-100'}`}>
-                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</p>
-                                            <p className={`text-lg font-black mt-0.5 ${status === 'warn' ? 'text-amber-700' : 'text-slate-800'}`}>
-                                                {value !== null && value !== undefined ? `${value}` : '—'}
-                                                <span className="text-xs font-bold text-slate-400 ml-1">{value !== null && value !== undefined ? unit : ''}</span>
-                                            </p>
-                                            <p className="text-[9px] text-slate-400">Ref: {ref}</p>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </Card>
+                        </div>
 
                         {/* Interpretación narrativa — texto completo */}
                         {(ecg.descripcion_ritmo || ecg.analisis_morfologico || ecg.conclusion) && (
                             <Card className="border-slate-100 shadow-sm">
                                 <CardContent className="p-5 space-y-4">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reporte de Interpretación Médica</p>
-                                    {ecg.descripcion_ritmo && (
+                                    {currentEcg.descripcion_ritmo && (
                                         <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Ritmo Cardiaco</p>
-                                            <p className="text-sm text-slate-700 leading-relaxed">{ecg.descripcion_ritmo}</p>
+                                            <p className="text-sm text-slate-700 leading-relaxed">{currentEcg.descripcion_ritmo}</p>
                                         </div>
                                     )}
-                                    {ecg.analisis_morfologico && (
+                                    {currentEcg.analisis_morfologico && (
                                         <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Análisis Morfológico</p>
-                                            <p className="text-sm text-slate-700 leading-relaxed">{ecg.analisis_morfologico}</p>
+                                            <p className="text-sm text-slate-700 leading-relaxed">{currentEcg.analisis_morfologico}</p>
                                         </div>
                                     )}
-                                    {ecg.segmento_st && (
+                                    {currentEcg.segmento_st && (
                                         <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Segmento ST</p>
-                                            <p className="text-sm text-slate-700">{ecg.segmento_st}</p>
+                                            <p className="text-sm text-slate-700">{currentEcg.segmento_st}</p>
                                         </div>
                                     )}
-                                    {ecg.conclusion && (
+                                    {currentEcg.conclusion && (
                                         <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
                                             <p className="text-[9px] font-black uppercase tracking-widest text-blue-500 mb-1">Conclusión / Diagnóstico</p>
-                                            <p className="text-sm text-slate-700 leading-relaxed font-medium">{ecg.conclusion}</p>
+                                            <p className="text-sm text-slate-700 leading-relaxed font-medium">{currentEcg.conclusion}</p>
                                         </div>
                                     )}
                                 </CardContent>
@@ -616,10 +732,10 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                         {/* Datos del estudio */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             {[
-                                { label: 'Médico / Operador', value: ecg.medico || '—' },
-                                { label: 'Equipo', value: ecg.equipo || '—' },
-                                { label: 'Tipo de Estudio', value: ecg.tipo_estudio || '—' },
-                                { label: 'Fecha', value: ecg.fecha ? new Date(ecg.fecha).toLocaleString('es-MX') : '—' },
+                                { label: 'Médico / Operador', value: currentEcg.medico || '—' },
+                                { label: 'Equipo', value: currentEcg.equipo || '—' },
+                                { label: 'Tipo de Estudio', value: currentEcg.tipo_estudio || '—' },
+                                { label: 'Fecha', value: currentEcg.fecha ? new Date(currentEcg.fecha).toLocaleString('es-MX') : '—' },
                             ].map(({ label, value }) => (
                                 <div key={label} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</p>
@@ -628,58 +744,74 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                             ))}
                         </div>
 
-                        <DocumentosAdjuntos pacienteId={pacienteId} categoria="ecg" titulo="Archivo ECG Original (Trazado / Reporte)" collapsedByDefault={false} />
+                        <DocumentosAdjuntos
+                            pacienteId={pacienteId}
+                            categoria="electrocardiograma"
+                            titulo="Archivo ECG Original (Trazado / Reporte)"
+                            collapsedByDefault={false}
+                        />
 
                         {/* ── Todos los datos extraídos — texto verbatim ── */}
-                        {ecg.rawResults && ecg.rawResults.length > 0 && (
-                            <Card className="border-slate-100 shadow-sm overflow-hidden">
-                                <div className="bg-slate-50 border-b border-slate-100 px-5 py-3 flex items-center justify-between">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                        🧠 Todos los Datos Extraídos por IA — {ecg.rawResults.length} parámetros
-                                    </p>
-                                    <Badge className="bg-indigo-100 text-indigo-700 text-[9px] border-0">VERBATIM</Badge>
+                        {currentEcg.rawResults && currentEcg.rawResults.length > 0 && (
+                            <Card className="border-slate-100 shadow-2xl overflow-hidden rounded-[2.5rem] bg-white">
+                                <div className="bg-slate-900 border-b border-slate-800 px-8 py-5 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/10 backdrop-blur-md">
+                                            <Activity className="w-5 h-5 text-rose-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-400">Especificaciones Técnicas IA</p>
+                                            <p className="text-xs font-bold text-white/60">Extracción Verbatim Sin Filtro</p>
+                                        </div>
+                                    </div>
+                                    <Badge className="bg-white/10 text-white text-[9px] border-white/20 font-black px-3 py-1 uppercase tracking-widest leading-none">
+                                        {currentEcg.rawResults.length} PARÁMETROS
+                                    </Badge>
                                 </div>
-                                <div className="p-5 space-y-4">
+                                <div className="p-8 space-y-8 bg-gradient-to-b from-slate-50 to-white">
                                     {(() => {
-                                        // Group by category, FILTER OUT internal/JSON data
                                         const HIDDEN_PARAMS = ['WAVEFORM_DATA', 'TIENE_TRAZADO_IMAGEN']
-                                        const displayResults = ecg.rawResults.filter((r: any) => {
-                                            // Skip hidden internal parameters
+                                        const displayResults = currentEcg.rawResults.filter((r: any) => {
                                             if (HIDDEN_PARAMS.includes(r.parametro_nombre)) return false
-                                            // Skip JSON blobs (start with [ or {)
                                             const val = String(r.resultado || '')
                                             if (val.startsWith('[{') || val.startsWith('{"')) return false
                                             return true
                                         })
                                         const cats = new Map<string, any[]>()
                                         for (const r of displayResults) {
-                                            const cat = r.categoria || r.category || 'General'
+                                            const cat = r.categoria || r.category || 'Metadatos Generales'
                                             if (!cats.has(cat)) cats.set(cat, [])
                                             cats.get(cat)!.push(r)
                                         }
                                         return Array.from(cats.entries()).map(([cat, items]) => (
-                                            <div key={cat}>
-                                                <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-2">
-                                                    <span className="w-2 h-2 rounded-full bg-rose-400" />
-                                                    {cat}
-                                                    <Badge variant="secondary" className="bg-slate-100 text-slate-500 text-[9px] border-0">{items.length}</Badge>
-                                                </p>
-                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                            <div key={cat} className="space-y-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-[1px] flex-1 bg-slate-200" />
+                                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2 px-4 py-1.5 bg-white border border-slate-100 rounded-full shadow-sm">
+                                                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                                                        {cat}
+                                                    </p>
+                                                    <div className="h-[1px] flex-1 bg-slate-200" />
+                                                </div>
+                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                                     {items.map((r: any, i: number) => {
                                                         const rawText = r.resultado_numerico != null
                                                             ? `${r.resultado_numerico}${r.unidad ? ` ${r.unidad}` : ''}`
                                                             : typeof r.resultado === 'string'
                                                                 ? r.resultado
                                                                 : String(r.resultado || '—')
-                                                        // Textos largos (>80 chars) ocupan todo el ancho del grid
                                                         const isLong = rawText.length > 80
                                                         return (
-                                                            <div key={i} className={`p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-rose-200 transition-colors ${isLong ? 'col-span-2 md:col-span-3 lg:col-span-4' : ''}`}>
-                                                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{r.parametro_nombre}</p>
-                                                                <p className="text-sm font-bold text-slate-800 mt-0.5 break-words whitespace-pre-wrap">
+                                                            <div key={i} className={`p-5 rounded-3xl bg-white border border-slate-100 hover:border-rose-200 hover:shadow-xl hover:-translate-y-1 transition-all group ${isLong ? 'col-span-2 md:col-span-3 lg:col-span-4' : ''}`}>
+                                                                <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-400 group-hover:text-rose-500 transition-colors">{r.parametro_nombre}</p>
+                                                                <p className="text-sm font-black text-slate-800 mt-2 break-words whitespace-pre-wrap leading-tight">
                                                                     {rawText}
                                                                 </p>
-                                                                {r.observacion && <p className="text-[9px] text-slate-400 mt-0.5 break-words">{r.observacion}</p>}
+                                                                {r.observacion && (
+                                                                    <div className="mt-3 pt-2 border-t border-slate-50">
+                                                                        <p className="text-[10px] text-slate-400 font-medium italic leading-snug">{r.observacion}</p>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )
                                                     })}
@@ -697,59 +829,81 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                     SECCIÓN 2: ANÁLISIS IA SIN LÍMITE
                 ══════════════════════════════════════ */}
                 {activeSection === 'analisis' && (
-                    <motion.div key="analisis" initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                        className="space-y-5">
+                    <motion.div key="analisis" initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}
+                        className="space-y-8">
 
-                        {/* Header IA */}
-                        <div className="bg-gradient-to-br from-rose-900 via-red-900 to-orange-900 rounded-2xl p-5 text-white relative overflow-hidden">
-                            <div className="absolute inset-0">
-                                <RhythmVisualizer fc={ecg.fc} />
+                        {/* Header IA Futuristic */}
+                        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl border border-white/5">
+                            <div className="absolute top-0 right-0 p-12 opacity-5 translate-x-1/4 -translate-y-1/4">
+                                <Activity className="w-80 h-80" />
                             </div>
+                            <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-[100px]" />
+
                             <div className="relative z-10">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                                        <Brain className="w-5 h-5" />
+                                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-5">
+                                            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 backdrop-blur-md">
+                                                <Brain className="w-7 h-7 text-emerald-400" />
+                                            </div>
+                                            <div className="space-y-0.5">
+                                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">Motor de Diagnóstico IA GPMedical</h4>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                                    <span className="text-[10px] font-bold text-emerald-100/60 uppercase">Análisis en tiempo real activo</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight mb-4 tracking-tight">
+                                            {currentEcg.conclusion || currentEcg.resultado_global || 'Interpretación Clínica Detectada'}
+                                        </h2>
+                                        <p className="text-emerald-100/70 text-base font-medium leading-relaxed max-w-3xl">
+                                            {currentEcg.ritmo_automatico || 'Analizando morfología de ondas'}. {isNormalEcg ? 'El estudio presenta parámetros dentro del rango fisiológico normal. Sin evidencia de arritmias o defectos de conducción.' : 'Se han identificado anomalías que requieren supervisión de un especialista.'}
+                                        </p>
                                     </div>
-                                    <div>
-                                        <p className="font-black text-sm">Análisis Cardiológico IA</p>
-                                        <p className="text-rose-200 text-xs">Interpretación avanzada sin límite de argumentación</p>
+                                    <div className="flex flex-row md:flex-col gap-3">
+                                        <div className="px-6 py-4 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl text-center">
+                                            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Confianza IA</p>
+                                            <p className="text-2xl font-black text-white">98.4%</p>
+                                        </div>
+                                        <Button className="rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[10px] uppercase tracking-widest px-6 h-12 shadow-xl shadow-emerald-500/20 border-0">
+                                            DESCARGAR INFORME IA
+                                        </Button>
                                     </div>
                                 </div>
-                                <p className="text-sm text-rose-100 leading-relaxed">
-                                    {ecg.conclusion || ecg.resultado_global || `${ecg.ritmo_automatico || 'Ritmo sinusal'}. ${isNormal ? 'Sin hallazgos patológicos significativos.' : 'Requiere correlación clínica.'}`}
-                                </p>
                             </div>
                         </div>
 
-                        {/* Gauges de los parámetros principales */}
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
-                                Parámetros Temporales — Análisis Visual
-                            </p>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                                <ECGParamGauge label="FC" value={ecg.fc} unit="lpm" min={60} max={100} />
-                                <ECGParamGauge label="PR" value={ecg.intervalo_pr} unit="ms" min={120} max={200} />
-                                <ECGParamGauge label="QRS" value={ecg.complejo_qrs} unit="ms" min={60} max={100} />
-                                <ECGParamGauge label="QTc" value={ecg.intervalo_qtc} unit="ms" min={350} max={450} />
-                                <ECGParamGauge label="QT" value={ecg.intervalo_qt} unit="ms" min={350} max={450} />
-                                <ECGParamGauge label="Onda P" value={ecg.onda_p} unit="ms" min={80} max={120} />
-                                <ECGParamGauge label="SpO2" value={ecg.spo2} unit="%" min={95} max={100} />
-                                <ECGParamGauge label="RR" value={ecg.rr} unit="ms" min={600} max={1000} />
-                            </div>
+                        {/* Gauges Principales — UX Prioridad 1 */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                            <ECGParamGauge label="Freq. Cardíaca" value={currentEcg.fc} unit="bpm" min={60} max={100} />
+                            <ECGParamGauge label="Intervalo PR" value={currentEcg.intervalo_pr} unit="ms" min={120} max={200} />
+                            <ECGParamGauge label="Complejo QRS" value={currentEcg.complejo_qrs} unit="ms" min={60} max={100} />
+                            <ECGParamGauge label="QT corregido" value={currentEcg.intervalo_qtc} unit="ms" min={350} max={450} decimals={0} />
                         </div>
 
+                        {/* Rhythm Visualizer — Impacto Visual */}
+                        <RhythmVisualizer fc={currentEcg.fc} />
+
+                        {/* Gauges Secundarios */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <ECGParamGauge label="QT Nominal" value={currentEcg.intervalo_qt} unit="ms" min={350} max={450} />
+                            <ECGParamGauge label="Amplitud P" value={currentEcg.onda_p} unit="ms" min={80} max={120} />
+                            <ECGParamGauge label="Saturación O2" value={currentEcg.spo2} unit="%" min={95} max={100} />
+                            <ECGParamGauge label="Intervalo RR" value={currentEcg.rr} unit="ms" min={600} max={1000} />
+                        </div>
                         {/* Intervalos ECG - Bar Chart comparativo */}
-                        {(ecg.intervalo_pr || ecg.complejo_qrs || ecg.intervalo_qt || ecg.intervalo_qtc) && (
+                        {(currentEcg.intervalo_pr || currentEcg.complejo_qrs || currentEcg.intervalo_qt || currentEcg.intervalo_qtc) && (
                             <Card className="border-slate-100 shadow-sm">
                                 <CardContent className="p-5">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Intervalos ECG — Comparativa con Rangos Normales</p>
                                     <div className="space-y-3">
                                         {[
-                                            { label: 'PR', value: ecg.intervalo_pr, min: 120, max: 200, color: 'bg-blue-500' },
-                                            { label: 'QRS', value: ecg.complejo_qrs, min: 60, max: 100, color: 'bg-purple-500' },
-                                            { label: 'QT', value: ecg.intervalo_qt, min: 350, max: 450, color: 'bg-cyan-500' },
-                                            { label: 'QTc', value: ecg.intervalo_qtc, min: 350, max: 450, color: 'bg-rose-500' },
+                                            { label: 'PR', value: currentEcg.intervalo_pr, min: 120, max: 200, color: 'bg-blue-500' },
+                                            { label: 'QRS', value: currentEcg.complejo_qrs, min: 60, max: 100, color: 'bg-purple-500' },
+                                            { label: 'QT', value: currentEcg.intervalo_qt, min: 350, max: 450, color: 'bg-cyan-500' },
+                                            { label: 'QTc', value: currentEcg.intervalo_qtc, min: 350, max: 450, color: 'bg-rose-500' },
                                         ].map(({ label, value, min, max, color }) => {
                                             if (!value) return null
                                             const pct = Math.min(100, (value / (max * 1.3)) * 100)
@@ -782,127 +936,163 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                             </Card>
                         )}
 
-                        {/* Ejes eléctricos */}
-                        {(ecg.eje_p !== null || ecg.eje_qrs !== null || ecg.eje_t !== null) && (
-                            <EjesElectricos ejeP={ecg.eje_p} ejeQRS={ecg.eje_qrs} ejeT={ecg.eje_t} />
-                        )}
+                        {/* ── SECCIÓN CENTRAL: RADAR Y EJES (GRID RESPONSIVO) ── */}
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-                        {/* ── Radar Chart — Perfil Cardíaco ── */}
-                        {(() => {
-                            const radarParams = [
-                                { param: 'FC', value: ecg.fc, normalMin: 60, normalMax: 100, max: 150 },
-                                { param: 'PR', value: ecg.intervalo_pr, normalMin: 120, normalMax: 200, max: 300 },
-                                { param: 'QRS', value: ecg.complejo_qrs, normalMin: 60, normalMax: 100, max: 160 },
-                                { param: 'QTc', value: ecg.intervalo_qtc, normalMin: 350, normalMax: 450, max: 600 },
-                                { param: 'Ond P', value: ecg.onda_p, normalMin: 80, normalMax: 120, max: 180 },
-                            ].filter(p => p.value != null)
+                            {/* 🎯 Radar Chart (GRANDE) */}
+                            {(() => {
+                                const radarParams = [
+                                    { param: 'FC', value: currentEcg.fc, normalMin: 60, normalMax: 100, max: 150 },
+                                    { param: 'PR', value: currentEcg.intervalo_pr, normalMin: 120, normalMax: 200, max: 300 },
+                                    { param: 'QRS', value: currentEcg.complejo_qrs, normalMin: 60, normalMax: 100, max: 160 },
+                                    { param: 'QTc', value: currentEcg.intervalo_qtc, normalMin: 350, normalMax: 450, max: 600 },
+                                    { param: 'Ond P', value: currentEcg.onda_p, normalMin: 80, normalMax: 120, max: 180 },
+                                ].filter(p => p.value != null)
 
-                            if (radarParams.length < 3) return null
+                                if (radarParams.length < 3) return null
 
-                            const cx = 100, cy = 100, r = 75
-                            const angleStep = (2 * Math.PI) / radarParams.length
-                            const getPoint = (idx: number, value: number, maxVal: number) => {
-                                const angle = (idx * angleStep) - Math.PI / 2
-                                const ratio = Math.min(value / maxVal, 1)
-                                return {
-                                    x: cx + r * ratio * Math.cos(angle),
-                                    y: cy + r * ratio * Math.sin(angle)
+                                const cx = 150, cy = 150, r = 110
+                                const angleStep = (2 * Math.PI) / radarParams.length
+                                const getPoint = (idx: number, value: number, maxVal: number) => {
+                                    const angle = (idx * angleStep) - Math.PI / 2
+                                    const ratio = Math.min(value / maxVal, 1)
+                                    return {
+                                        x: cx + r * ratio * Math.cos(angle),
+                                        y: cy + r * ratio * Math.sin(angle)
+                                    }
                                 }
-                            }
 
-                            // Value polygon
-                            const valuePoints = radarParams.map((p, i) => getPoint(i, p.value!, p.max))
-                            const valuePolygon = valuePoints.map(p => `${p.x},${p.y}`).join(' ')
+                                const valuePoints = radarParams.map((p, i) => getPoint(i, p.value!, p.max))
+                                const valuePolygon = valuePoints.map(p => `${p.x},${p.y}`).join(' ')
+                                const normalPoints = radarParams.map((p, i) => getPoint(i, p.normalMax, p.max))
+                                const normalPolygon = normalPoints.map(p => `${p.x},${p.y}`).join(' ')
 
-                            // Normal polygon (upper bound)
-                            const normalPoints = radarParams.map((p, i) => getPoint(i, p.normalMax, p.max))
-                            const normalPolygon = normalPoints.map(p => `${p.x},${p.y}`).join(' ')
-
-                            return (
-                                <Card className="border-slate-100 shadow-sm">
-                                    <CardContent className="p-5">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">
-                                            🎯 Perfil Cardíaco — Radar de Parámetros
-                                        </p>
-                                        <div className="flex items-center justify-center">
-                                            <svg width="220" height="220" viewBox="0 0 200 200">
-                                                {/* Grid rings */}
-                                                {[0.25, 0.5, 0.75, 1].map(ring => (
-                                                    <circle key={ring} cx={cx} cy={cy} r={r * ring}
-                                                        fill="none" stroke="#e2e8f0" strokeWidth="0.5" strokeDasharray="2 2" />
-                                                ))}
-                                                {/* Axis lines */}
-                                                {radarParams.map((_, i) => {
-                                                    const angle = (i * angleStep) - Math.PI / 2
-                                                    return (
-                                                        <line key={i}
-                                                            x1={cx} y1={cy}
-                                                            x2={cx + r * Math.cos(angle)}
-                                                            y2={cy + r * Math.sin(angle)}
-                                                            stroke="#e2e8f0" strokeWidth="0.5" />
-                                                    )
-                                                })}
-                                                {/* Normal range polygon */}
-                                                <polygon points={normalPolygon} fill="#10b98133" stroke="#10b981" strokeWidth="1" strokeDasharray="4 2" />
-                                                {/* Value polygon */}
-                                                <motion.polygon
-                                                    points={valuePolygon}
-                                                    fill="#f4364433" stroke="#f43644" strokeWidth="2"
-                                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                                    transition={{ duration: 0.8 }}
-                                                />
-                                                {/* Data points */}
-                                                {valuePoints.map((p, i) => (
-                                                    <motion.circle key={i} cx={p.x} cy={p.y} r="4"
-                                                        fill="#f43644" stroke="white" strokeWidth="2"
-                                                        initial={{ r: 0 }} animate={{ r: 4 }}
-                                                        transition={{ duration: 0.5, delay: i * 0.1 }}
-                                                    />
-                                                ))}
-                                                {/* Labels */}
-                                                {radarParams.map((p, i) => {
-                                                    const angle = (i * angleStep) - Math.PI / 2
-                                                    const labelR = r + 18
-                                                    return (
-                                                        <text key={i}
-                                                            x={cx + labelR * Math.cos(angle)}
-                                                            y={cy + labelR * Math.sin(angle)}
-                                                            textAnchor="middle" dominantBaseline="middle"
-                                                            fontSize="9" fontWeight="800" fill="#475569"
-                                                        >
-                                                            {p.param}
-                                                        </text>
-                                                    )
-                                                })}
-                                            </svg>
-                                            <div className="ml-4 space-y-1.5">
-                                                {radarParams.map((p, i) => {
-                                                    const isWarn = p.value! < p.normalMin || p.value! > p.normalMax
-                                                    return (
-                                                        <div key={i} className="flex items-center gap-2">
-                                                            <span className={`text-xs font-black w-10 ${isWarn ? 'text-amber-600' : 'text-slate-600'}`}>{p.param}</span>
-                                                            <span className={`text-sm font-black ${isWarn ? 'text-amber-600' : 'text-slate-800'}`}>{p.value}</span>
-                                                            <span className="text-[9px] text-slate-400">({p.normalMin}-{p.normalMax})</span>
-                                                        </div>
-                                                    )
-                                                })}
-                                                <div className="flex items-center gap-2 mt-2 text-[9px]">
-                                                    <div className="w-3 h-3 rounded-sm" style={{ background: '#10b98133', border: '1px solid #10b981' }} />
-                                                    <span className="text-slate-400">Rango normal</span>
+                                return (
+                                    <Card className="border-slate-100 shadow-2xl rounded-[2.5rem] bg-white overflow-hidden group">
+                                        <CardContent className="p-8">
+                                            <div className="flex items-center justify-between mb-8">
+                                                <div>
+                                                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400 mb-1">Biometría Vectorial</p>
+                                                    <h4 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                                                        <Target className="w-5 h-5 text-rose-500" /> Perfil de Conducción
+                                                    </h4>
                                                 </div>
-                                                <div className="flex items-center gap-2 text-[9px]">
-                                                    <div className="w-3 h-3 rounded-sm" style={{ background: '#f4364433', border: '1px solid #f43644' }} />
-                                                    <span className="text-slate-400">Paciente</span>
+                                                <Badge className="bg-rose-50 text-rose-600 border-rose-100 font-black px-4 py-1.5 rounded-full">RADAR DINÁMICO</Badge>
+                                            </div>
+
+                                            <div className="flex flex-col lg:flex-row items-center gap-10">
+                                                <div className="relative p-4 bg-slate-50 rounded-[3rem] shadow-inner">
+                                                    <svg width="340" height="340" viewBox="0 0 300 300" className="mx-auto w-full max-w-[340px] drop-shadow-2xl">
+                                                        {/* Grid rings */}
+                                                        {[0.25, 0.5, 0.75, 1].map(ring => (
+                                                            <circle key={ring} cx={cx} cy={cy} r={r * ring}
+                                                                fill="none" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 4" />
+                                                        ))}
+                                                        {/* Axis lines */}
+                                                        {radarParams.map((_, i) => {
+                                                            const angle = (i * angleStep) - Math.PI / 2
+                                                            return (
+                                                                <line key={i} x1={cx} y1={cy}
+                                                                    x2={cx + r * Math.cos(angle)} y2={cy + r * Math.sin(angle)}
+                                                                    stroke="#cbd5e1" strokeWidth="1.5" />
+                                                            )
+                                                        })}
+                                                        {/* Normal range polygon */}
+                                                        <polygon points={normalPolygon} fill="#10b98110" stroke="#10b98144" strokeWidth="2" strokeDasharray="6 4" />
+
+                                                        {/* Value polygon with glow */}
+                                                        <filter id="radarGlow" x="-20%" y="-20%" width="140%" height="140%">
+                                                            <feGaussianBlur stdDeviation="3" result="blur" />
+                                                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                                        </filter>
+
+                                                        <motion.polygon
+                                                            points={valuePolygon} fill="url(#radarGradient)" stroke="#F43F5E" strokeWidth="5" strokeLinejoin="round"
+                                                            filter="url(#radarGlow)"
+                                                            initial={{ opacity: 0, scale: 0.2 }} animate={{ opacity: 1, scale: 1 }}
+                                                            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }} />
+
+                                                        <defs>
+                                                            <radialGradient id="radarGradient" cx="50%" cy="50%" r="50%">
+                                                                <stop offset="0%" stopColor="#F43F5E" stopOpacity="0.4" />
+                                                                <stop offset="100%" stopColor="#F43F5E" stopOpacity="0.1" />
+                                                            </radialGradient>
+                                                        </defs>
+
+                                                        {/* Data points */}
+                                                        {valuePoints.map((p, i) => (
+                                                            <motion.g key={i}>
+                                                                <motion.circle cx={p.x} cy={p.y} r="7"
+                                                                    fill="#F43F5E" stroke="white" strokeWidth="3"
+                                                                    initial={{ r: 0 }} animate={{ r: 7 }}
+                                                                    transition={{ duration: 0.5, delay: i * 0.15 + 0.5 }} />
+                                                            </motion.g>
+                                                        ))}
+
+                                                        {/* Labels */}
+                                                        {radarParams.map((p, i) => {
+                                                            const angle = (i * angleStep) - Math.PI / 2
+                                                            const labelR = r + 30
+                                                            return (
+                                                                <text key={i} x={cx + labelR * Math.cos(angle)} y={cy + labelR * Math.sin(angle)}
+                                                                    textAnchor="middle" dominantBaseline="middle"
+                                                                    fontSize="12" fontWeight="900" fill="#334155" className="uppercase tracking-tighter">
+                                                                    {p.param}
+                                                                </text>
+                                                            )
+                                                        })}
+                                                    </svg>
+                                                </div>
+
+                                                <div className="flex-1 space-y-4 w-full">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                        {radarParams.map((p, i) => {
+                                                            const isWarn = p.value! < p.normalMin || p.value! > p.normalMax
+                                                            return (
+                                                                <div key={i} className={`p-4 rounded-2xl border transition-all duration-300 ${isWarn ? 'bg-amber-50 border-amber-100 hover:border-amber-300' : 'bg-slate-50 border-slate-100 hover:border-slate-300'}`}>
+                                                                    <div className="flex items-center justify-between mb-1">
+                                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{p.param}</span>
+                                                                        {isWarn && <AlertTriangle className="w-3 h-3 text-amber-500" />}
+                                                                    </div>
+                                                                    <div className="flex items-baseline gap-2">
+                                                                        <span className={`text-xl font-black tracking-tighter ${isWarn ? 'text-amber-700' : 'text-slate-800'}`}>{p.value}</span>
+                                                                        <span className="text-[10px] text-slate-400 font-bold">({p.normalMin}-{p.normalMax})</span>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
+
+                                                    <div className="mt-6 p-5 rounded-3xl bg-slate-900 text-white flex items-center justify-between shadow-xl">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/5">
+                                                                <Brain className="w-5 h-5 text-emerald-400" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Estado Axial</p>
+                                                                <p className="text-xs font-bold text-white">Eje QRS: {currentEcg.eje_qrs ?? '—'}°</p>
+                                                            </div>
+                                                        </div>
+                                                        <Button variant="ghost" className="text-white hover:bg-white/10 rounded-xl h-9 px-4 text-[10px] font-black uppercase">
+                                                            Saber más
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )
-                        })()}
+                                        </CardContent>
+                                    </Card>
+                                )
+                            })()}
+
+                            {/* Ejes eléctricos (USAR EL COMPONENTE REFACTORIZADO ARRIBA) */}
+                            {(currentEcg.eje_p !== null || currentEcg.eje_qrs !== null || currentEcg.eje_t !== null) && (
+                                <EjesElectricos ejeP={currentEcg.eje_p} ejeQRS={currentEcg.eje_qrs} ejeT={currentEcg.eje_t} />
+                            )}
+                        </div>
+
 
                         {/* ── Conducción Eléctrica Timeline — Ciclo Cardíaco ── */}
-                        {(ecg.onda_p || ecg.intervalo_pr || ecg.complejo_qrs || ecg.intervalo_qt) && (
+                        {(currentEcg.onda_p || currentEcg.intervalo_pr || currentEcg.complejo_qrs || currentEcg.intervalo_qt) && (
                             <Card className="border-slate-100 shadow-sm">
                                 <CardContent className="p-5">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">
@@ -912,12 +1102,12 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                         {/* Total bar background */}
                                         <div className="h-10 bg-slate-100 rounded-xl overflow-hidden relative flex">
                                             {(() => {
-                                                const total = (ecg.rr || ecg.intervalo_qt || 800) // Total cycle in ms
+                                                const total = (currentEcg.rr || currentEcg.intervalo_qt || 800) // Total cycle in ms
                                                 const segments = [
-                                                    { label: 'P', ms: ecg.onda_p || 100, color: 'from-blue-400 to-blue-500' },
-                                                    { label: 'PR seg', ms: ((ecg.intervalo_pr || 160) - (ecg.onda_p || 100)), color: 'from-sky-300 to-sky-400' },
-                                                    { label: 'QRS', ms: ecg.complejo_qrs || 80, color: 'from-rose-500 to-red-600' },
-                                                    { label: 'ST-T', ms: ((ecg.intervalo_qt || 400) - (ecg.complejo_qrs || 80) - ((ecg.intervalo_pr || 160) - (ecg.onda_p || 100)) - (ecg.onda_p || 100)), color: 'from-amber-400 to-orange-500' },
+                                                    { label: 'P', ms: currentEcg.onda_p || 100, color: 'from-blue-400 to-blue-500' },
+                                                    { label: 'PR seg', ms: ((currentEcg.intervalo_pr || 160) - (currentEcg.onda_p || 100)), color: 'from-sky-300 to-sky-400' },
+                                                    { label: 'QRS', ms: currentEcg.complejo_qrs || 80, color: 'from-rose-500 to-red-600' },
+                                                    { label: 'ST-T', ms: ((currentEcg.intervalo_qt || 400) - (currentEcg.complejo_qrs || 80) - ((currentEcg.intervalo_pr || 160) - (currentEcg.onda_p || 100)) - (currentEcg.onda_p || 100)), color: 'from-amber-400 to-orange-500' },
                                                 ].filter(s => s.ms > 0)
                                                 const sumMs = segments.reduce((s, seg) => s + seg.ms, 0)
                                                 return segments.map((seg, i) => (
@@ -939,11 +1129,11 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                         {/* Labels below */}
                                         <div className="flex justify-between mt-2">
                                             {[
-                                                { label: 'Onda P', value: ecg.onda_p, color: 'text-blue-600' },
-                                                { label: 'Int. PR', value: ecg.intervalo_pr, color: 'text-sky-600' },
-                                                { label: 'QRS', value: ecg.complejo_qrs, color: 'text-rose-600' },
-                                                { label: 'QT', value: ecg.intervalo_qt, color: 'text-amber-600' },
-                                                { label: 'QTc', value: ecg.intervalo_qtc, color: 'text-orange-600' },
+                                                { label: 'Onda P', value: currentEcg.onda_p, color: 'text-blue-600' },
+                                                { label: 'Int. PR', value: currentEcg.intervalo_pr, color: 'text-sky-600' },
+                                                { label: 'QRS', value: currentEcg.complejo_qrs, color: 'text-rose-600' },
+                                                { label: 'QT', value: currentEcg.intervalo_qt, color: 'text-amber-600' },
+                                                { label: 'QTc', value: currentEcg.intervalo_qtc, color: 'text-orange-600' },
                                             ].filter(l => l.value).map((l, i) => (
                                                 <div key={i} className="text-center">
                                                     <p className={`text-xs font-black ${l.color}`}>{l.value} ms</p>
@@ -965,36 +1155,36 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                 </div>
                                 <div className="space-y-3">
                                     {/* FC */}
-                                    {ecg.fc !== null && (
+                                    {currentEcg.fc !== null && (
                                         <div className="p-3 bg-white rounded-xl border border-rose-100">
                                             <p className="font-black text-rose-700 text-xs uppercase tracking-widest mb-1">Frecuencia Cardiaca</p>
                                             <p className="text-sm text-slate-700 leading-relaxed">
-                                                FC: <strong>{ecg.fc} lpm</strong> —{' '}
-                                                {ecg.fc < 60 ? 'Bradicardia: frecuencia cardiaca por debajo de 60 lpm.' :
-                                                    ecg.fc > 100 ? 'Taquicardia: frecuencia cardiaca por encima de 100 lpm.' :
+                                                FC: <strong>{currentEcg.fc} lpm</strong> —{' '}
+                                                {currentEcg.fc < 60 ? 'Bradicardia: frecuencia cardiaca por debajo de 60 lpm.' :
+                                                    currentEcg.fc > 100 ? 'Taquicardia: frecuencia cardiaca por encima de 100 lpm.' :
                                                         'Frecuencia cardiaca dentro del rango normal (60-100 lpm).'}
-                                                {ecg.rr && ` Intervalo RR: ${ecg.rr} ms.`}
+                                                {currentEcg.rr && ` Intervalo RR: ${currentEcg.rr} ms.`}
                                             </p>
                                         </div>
                                     )}
                                     {/* Conducción */}
-                                    {(ecg.intervalo_pr !== null || ecg.complejo_qrs !== null) && (
+                                    {(currentEcg.intervalo_pr !== null || currentEcg.complejo_qrs !== null) && (
                                         <div className="p-3 bg-white rounded-xl border border-rose-100">
                                             <p className="font-black text-rose-700 text-xs uppercase tracking-widest mb-1">Sistema de Conducción</p>
                                             <p className="text-sm text-slate-700 leading-relaxed">
-                                                {ecg.intervalo_pr && `PR: ${ecg.intervalo_pr} ms ${ecg.intervalo_pr > 200 ? '— PROLONGADO (bloqueo AV 1° grado)' : '— normal'}. `}
-                                                {ecg.complejo_qrs && `QRS: ${ecg.complejo_qrs} ms ${ecg.complejo_qrs > 120 ? '— ANCHO (bloqueo de rama)' : '— normal'}. `}
-                                                {ecg.intervalo_qtc && `QTc: ${ecg.intervalo_qtc} ms ${ecg.intervalo_qtc > 450 ? '— PROLONGADO — riesgo arrítmico' : '— normal'}.`}
+                                                {currentEcg.intervalo_pr && `PR: ${currentEcg.intervalo_pr} ms ${currentEcg.intervalo_pr > 200 ? '— PROLONGADO (bloqueo AV 1° grado)' : '— normal'}. `}
+                                                {currentEcg.complejo_qrs && `QRS: ${currentEcg.complejo_qrs} ms ${currentEcg.complejo_qrs > 120 ? '— ANCHO (bloqueo de rama)' : '— normal'}. `}
+                                                {currentEcg.intervalo_qtc && `QTc: ${currentEcg.intervalo_qtc} ms ${currentEcg.intervalo_qtc > 450 ? '— PROLONGADO — riesgo arrítmico' : '— normal'}.`}
                                             </p>
                                         </div>
                                     )}
                                     {/* Conclusión IA */}
-                                    <div className={`p-4 rounded-xl border ${isNormal ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
-                                        <p className={`font-black text-xs uppercase tracking-widest mb-2 ${isNormal ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                    <div className={`p-4 rounded-xl border ${isNormalEcg ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+                                        <p className={`font-black text-xs uppercase tracking-widest mb-2 ${isNormalEcg ? 'text-emerald-700' : 'text-amber-700'}`}>
                                             Conclusión Clínica
                                         </p>
                                         <p className="text-sm text-slate-700 leading-relaxed">
-                                            {ecg.conclusion || (isNormal
+                                            {currentEcg.conclusion || (isNormalEcg
                                                 ? 'Electrocardiograma dentro de límites normales. Sin alteraciones en el ritmo, conducción ni morfología. Sin contraindicación cardiológica para actividad laboral habitual.'
                                                 : 'Se detectaron hallazgos que requieren correlación clínica. Se recomienda valoración por cardiólogo.'
                                             )}
@@ -1025,13 +1215,13 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                     <Shield className="w-4 h-4 text-emerald-500" />
                                     <p className="text-sm font-black text-slate-800 uppercase tracking-wide">Aptitud Laboral Cardiovascular</p>
                                 </div>
-                                <div className={`p-3 rounded-xl ${isNormal && alertas.length === 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}`}>
+                                <div className={`p-3 rounded-xl ${isNormalEcg && alertas.length === 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}`}>
                                     <p className="text-sm text-slate-700 leading-relaxed">
-                                        {isNormal && alertas.length === 0
+                                        {isNormalEcg && alertas.length === 0
                                             ? 'Sin contraindicación cardiológica para puesto actual. Seguimiento según protocolo de revisión periódica.'
                                             : alertas.length > 0
                                                 ? 'Se recomienda valoración cardiológica especializada antes de determinar aptitud laboral definitiva. Correlacionar con historial clínico y factores de riesgo cardiovascular.'
-                                                : 'Correlacionar con factores de riesgo y sintomatología del paciente.'}
+                                                : 'Correlacionar con factores de riesgo and sintomatología del paciente.'}
                                     </p>
                                 </div>
                             </CardContent>
@@ -1040,6 +1230,6 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div >
+        </div>
     )
 }

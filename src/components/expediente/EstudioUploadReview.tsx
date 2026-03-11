@@ -532,7 +532,7 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                                 await secureStorageService.upload(renamedFile, {
                                     pacienteId,
                                     empresaId: eid,
-                                    categoria: 'ecg',
+                                    categoria: 'electrocardiograma',
                                     subcategoria: fi === 0 ? 'trazado' : 'interpretacion',
                                     descripcion: `ECG de ${patientName} — ${fecha}`,
                                     userId: user?.id,
