@@ -506,7 +506,7 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                     },
                     ecgResults
                 )
-                if (!estudio) throw new Error('No se pudo crear el registro del estudio — revisa la consola para el error de Supabase')
+                // crearEstudioConResultados now throws on error, no need for null check
 
                 // ── Guardar archivos renombrados via secureStorageService ──
                 if (uploadedFiles.length > 0) {

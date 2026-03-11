@@ -193,6 +193,24 @@ export async function getUltimoEstudioCompleto(pacienteId: string, tipoEstudio: 
     return getEstudioCompleto(estudios[0].id)
 }
 
+// ─── Sanitizar fecha para Postgres DATE ───
+function sanitizeDateForPostgres(dateStr: string | undefined | null): string {
+    if (!dateStr) return new Date().toISOString().split('T')[0]
+    // Already YYYY-MM-DD?
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
+    // Try ISO parse
+    const isoDate = new Date(dateStr)
+    if (!isNaN(isoDate.getTime())) return isoDate.toISOString().split('T')[0]
+    // Try dd/mm/yyyy or dd-mm-yyyy
+    const dmy = dateStr.match(/(\d{1,2})[/\-\.](\d{1,2})[/\-\.](\d{4})/)
+    if (dmy) {
+        const [, d, m, y] = dmy
+        return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
+    }
+    // Fallback to today
+    return new Date().toISOString().split('T')[0]
+}
+
 // ─── Crear estudio completo ───
 
 export async function crearEstudioConResultados(
@@ -209,8 +227,9 @@ export async function crearEstudioConResultados(
         .insert({
             paciente_id: pacienteId,
             tipo_estudio: tipoEstudio,
-            fecha_estudio: estudioData.fecha_estudio || new Date().toISOString().split('T')[0],
+            fecha_estudio: sanitizeDateForPostgres(estudioData.fecha_estudio),
             archivo_origen: estudioData.archivo_origen || null,
+            institucion: (estudioData as any).institucion || 'GP Medical Health',
             medico_responsable: estudioData.medico_responsable || null,
             equipo: estudioData.equipo || null,
             interpretacion: estudioData.interpretacion || null,
@@ -220,7 +239,11 @@ export async function crearEstudioConResultados(
             datos_extra: estudioData.datos_extra || {},
         })
         .select().single()
-    if (estErr || !estudio) { console.error('❌ crearEstudio INSERT error:', estErr?.message, estErr?.details, estErr?.hint); return null }
+    if (estErr || !estudio) {
+        const msg = estErr?.message || 'Error desconocido al crear estudio'
+        console.error('❌ crearEstudio INSERT error:', msg, estErr?.details, estErr?.hint)
+        throw new Error(`Error DB (estudios_clinicos): ${msg}`)
+    }
 
     const catalogo = await getCatalogo(tipoEstudio)
     const catMap = new Map(catalogo.map(c => [c.nombre, c]))
@@ -243,7 +266,10 @@ export async function crearEstudioConResultados(
     })
     if (rows.length > 0) {
         const { error } = await supabase.from('resultados_estudio').insert(rows)
-        if (error) console.error('❌ insert results error:', error.message, error.details, error.hint, 'Rows count:', rows.length)
+        if (error) {
+            console.error('❌ insert results error:', error.message, error.details, error.hint, 'Rows count:', rows.length)
+            // Don't throw here — the study record was created, results just failed
+        }
     }
     return estudio
 }
