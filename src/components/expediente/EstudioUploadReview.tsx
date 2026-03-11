@@ -842,17 +842,19 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                                                 <Badge variant="secondary" className="bg-slate-100 text-slate-500 text-[9px] border-0">{catResults.length}</Badge>
                                             </p>
                                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                                                {catResults.map((res, ri) => (
-                                                    <div key={ri} className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{res.name}</p>
-                                                        <p className="text-sm font-bold text-slate-800 mt-0.5 break-words">
-                                                            {String(res.value || '—').length > 80
-                                                                ? String(res.value).substring(0, 80) + '...'
-                                                                : String(res.value || '—')}
-                                                        </p>
-                                                        {res.unit && <p className="text-[9px] text-slate-400">{res.unit}</p>}
-                                                    </div>
-                                                ))}
+                                                {catResults.map((res, ri) => {
+                                                    const fullText = String(res.value || '—')
+                                                    const isLong = fullText.length > 80
+                                                    return (
+                                                        <div key={ri} className={`p-3 rounded-xl bg-slate-50 border border-slate-100 ${isLong ? 'col-span-2 md:col-span-3 lg:col-span-4' : ''}`}>
+                                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{res.name}</p>
+                                                            <p className="text-sm font-bold text-slate-800 mt-0.5 break-words whitespace-pre-wrap">
+                                                                {fullText}
+                                                            </p>
+                                                            {res.unit && <p className="text-[9px] text-slate-400">{res.unit}</p>}
+                                                        </div>
+                                                    )
+                                                })}
                                             </div>
                                         </div>
                                     )

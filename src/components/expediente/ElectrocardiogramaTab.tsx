@@ -660,18 +660,20 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                                 </p>
                                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                                     {items.map((r: any, i: number) => {
-                                                        const displayValue = r.resultado_numerico != null
+                                                        const rawText = r.resultado_numerico != null
                                                             ? `${r.resultado_numerico}${r.unidad ? ` ${r.unidad}` : ''}`
                                                             : typeof r.resultado === 'string'
-                                                                ? (r.resultado.length > 100 ? r.resultado.substring(0, 100) + '...' : r.resultado)
+                                                                ? r.resultado
                                                                 : String(r.resultado || '—')
+                                                        // Textos largos (>80 chars) ocupan todo el ancho del grid
+                                                        const isLong = rawText.length > 80
                                                         return (
-                                                            <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-rose-200 transition-colors" title={typeof r.resultado === 'string' ? r.resultado : ''}>
-                                                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 truncate">{r.parametro_nombre}</p>
-                                                                <p className="text-sm font-bold text-slate-800 mt-0.5 break-words">
-                                                                    {displayValue}
+                                                            <div key={i} className={`p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-rose-200 transition-colors ${isLong ? 'col-span-2 md:col-span-3 lg:col-span-4' : ''}`}>
+                                                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{r.parametro_nombre}</p>
+                                                                <p className="text-sm font-bold text-slate-800 mt-0.5 break-words whitespace-pre-wrap">
+                                                                    {rawText}
                                                                 </p>
-                                                                {r.observacion && <p className="text-[9px] text-slate-400 mt-0.5 truncate">{r.observacion}</p>}
+                                                                {r.observacion && <p className="text-[9px] text-slate-400 mt-0.5 break-words">{r.observacion}</p>}
                                                             </div>
                                                         )
                                                     })}
