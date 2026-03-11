@@ -641,13 +641,13 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                     </div>
                                 </div>
                                 <div className="p-4 bg-slate-50 min-h-[600px] flex items-center justify-center relative">
-                                    {currentEcg.archivo_url.toLowerCase().includes('.pdf') || (currentEcg.archivo_url.startsWith('blob:') && !currentEcg.archivo_url.includes('image')) ? (
+                                    {currentEcg.archivo_url && (currentEcg.archivo_url.toLowerCase().includes('.pdf') || (currentEcg.archivo_url.startsWith('blob:') && !currentEcg.archivo_url.includes('image'))) ? (
                                         <iframe
                                             src={`${currentEcg.archivo_url}#toolbar=0&navpanes=0`}
                                             className="w-full h-[800px] border-0 rounded-3xl shadow-inner bg-white"
                                             title="ECG Original PDF"
                                         />
-                                    ) : (
+                                    ) : currentEcg.archivo_url ? (
                                         <div className="w-full h-full flex justify-center bg-slate-950 rounded-[2rem] overflow-hidden p-6 shadow-2xl relative group">
                                             <img
                                                 src={currentEcg.archivo_url}
@@ -662,7 +662,7 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                                 </div>
                                             </div>
                                         </div>
-                                    )}
+                                    ) : null}
                                 </div>
                             </Card>
                         ) : (
