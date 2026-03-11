@@ -508,7 +508,7 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                         className="space-y-5">
 
                         {/* Documento ECG Original — Preview del PDF/imagen subido */}
-                        {ecg.archivo_url ? (
+                        {ecg.archivo_url && !ecg.archivo_url.includes('"error"') && !ecg.archivo_url.includes('Bucket not found') ? (
                             <Card className="border-slate-100 shadow-sm overflow-hidden">
                                 <div className="bg-slate-50 border-b border-slate-100 px-5 py-3 flex items-center justify-between">
                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
@@ -528,23 +528,18 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                             src={ecg.archivo_url}
                                             alt="Trazado ECG"
                                             className="w-full max-h-[600px] object-contain rounded-xl border border-slate-200 bg-white"
+                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                                         />
-                                    ) : (
+                                    ) : ecg.archivo_url.match(/\.pdf$/i) ? (
                                         <iframe
                                             src={ecg.archivo_url}
                                             className="w-full rounded-xl border border-slate-200 bg-white"
                                             style={{ height: '600px' }}
                                             title="Preview ECG Document"
                                         />
-                                    )}
+                                    ) : null}
                                 </div>
                             </Card>
-                        ) : ecg.tiene_trazado ? (
-                            <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-200 p-8 text-center">
-                                <ImageIcon className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                                <p className="text-sm font-bold text-slate-500">Trazado ECG — Ver archivo adjunto</p>
-                                <p className="text-xs text-slate-400 mt-1">El trazado de 12 derivaciones está disponible en el archivo original</p>
-                            </div>
                         ) : null}
 
                         {/* Tabla de parámetros — igual que formato BTL */}
@@ -646,9 +641,18 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                                 </div>
                                 <div className="p-5 space-y-4">
                                     {(() => {
-                                        // Group by category
+                                        // Group by category, FILTER OUT internal/JSON data
+                                        const HIDDEN_PARAMS = ['WAVEFORM_DATA', 'TIENE_TRAZADO_IMAGEN']
+                                        const displayResults = ecg.rawResults.filter((r: any) => {
+                                            // Skip hidden internal parameters
+                                            if (HIDDEN_PARAMS.includes(r.parametro_nombre)) return false
+                                            // Skip JSON blobs (start with [ or {)
+                                            const val = String(r.resultado || '')
+                                            if (val.startsWith('[{') || val.startsWith('{"')) return false
+                                            return true
+                                        })
                                         const cats = new Map<string, any[]>()
-                                        for (const r of ecg.rawResults) {
+                                        for (const r of displayResults) {
                                             const cat = r.categoria || r.category || 'General'
                                             if (!cats.has(cat)) cats.set(cat, [])
                                             cats.get(cat)!.push(r)
@@ -1036,6 +1040,6 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     )
 }
