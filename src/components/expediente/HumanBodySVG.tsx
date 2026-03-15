@@ -249,26 +249,11 @@ export default function HumanBodySVG({ alerts, loading, onZoneClick }: HumanBody
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="relative w-full max-w-md mx-auto gp-body-enter"
+            className="relative w-full max-w-[280px] mx-auto gp-body-enter"
         >
-            {/* Status bar */}
-            <div className="flex items-center justify-center gap-4 mb-4">
-                <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Normal</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alerta ({totalAlerts})</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sin datos</span>
-                </div>
-            </div>
 
             {/* SVG Body */}
-            <svg viewBox="0 0 300 340" className="w-full h-auto" style={{ maxHeight: '420px' }}>
+            <svg viewBox="0 0 300 340" className="w-full h-auto" style={{ maxHeight: '300px' }}>
                 <defs>
                     {/* Glow filters for each color */}
                     {BODY_ZONES.map(z => (

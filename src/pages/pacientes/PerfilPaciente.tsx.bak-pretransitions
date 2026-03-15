@@ -76,35 +76,30 @@ interface TabConfig {
 }
 
 const TABS: TabConfig[] = [
+    { value: 'dashboard', label: 'Dashboard', icon: Activity, group: 'clinico', description: 'Semáforo clínico, alertas y análisis ejecutivo' },
     { value: 'general', label: 'General', icon: User, group: 'info' },
     { value: 'laboral', label: 'Laboral', icon: Building2, group: 'info' },
     { value: 'contacto', label: 'Contacto', icon: Phone, group: 'info' },
+    { value: 'timeline', label: 'Historia Inteligente', icon: Brain, group: 'clinico', description: 'Línea de tiempo cronológica con documentos extraídos por IA' },
     { value: 'expediente', label: 'Expediente', icon: Stethoscope, group: 'clinico', description: 'APNP, AHF, Labs, Audiometría, Espirometría, ECG, RX, Exploración Física' },
+    { value: 'documentos', label: 'Documentos', icon: FolderOpen, group: 'clinico', description: 'Documentos cifrados del paciente' },
     { value: 'recetas', label: 'Recetas', icon: Pill, group: 'diagnostico', description: 'Prescripciones médicas' },
     { value: 'dictamenes', label: 'Dictámenes', icon: FileText, group: 'diagnostico', description: 'Dictámenes de aptitud laboral' },
     { value: 'incapacidades', label: 'Incapacidades', icon: FileBarChart, group: 'diagnostico', description: 'Certificados de incapacidad' },
 ]
 
 const TAB_COLORS: Record<string, { gradient: string; bg: string; text: string; ring: string }> = {
-    general: { gradient: 'from-slate-500 to-gray-600', bg: 'bg-slate-800/60 backdrop-blur-md', text: 'text-white', ring: 'ring-slate-500/50' },
-    laboral: { gradient: 'from-blue-500 to-indigo-600', bg: 'bg-blue-900/40 backdrop-blur-md', text: 'text-blue-200', ring: 'ring-blue-500/50' },
-    contacto: { gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-900/40 backdrop-blur-md', text: 'text-violet-200', ring: 'ring-violet-500/50' },
-    expediente: { gradient: 'from-teal-500 to-emerald-600', bg: 'bg-teal-900/40 backdrop-blur-md', text: 'text-teal-200', ring: 'ring-teal-500/50' },
-    recetas: { gradient: 'from-pink-500 to-rose-600', bg: 'bg-pink-900/40 backdrop-blur-md', text: 'text-pink-200', ring: 'ring-pink-500/50' },
-    dictamenes: { gradient: 'from-cyan-500 to-blue-600', bg: 'bg-cyan-900/40 backdrop-blur-md', text: 'text-cyan-200', ring: 'ring-cyan-500/50' },
-    incapacidades: { gradient: 'from-red-500 to-rose-600', bg: 'bg-red-900/40 backdrop-blur-md', text: 'text-red-200', ring: 'ring-red-500/50' },
+    dashboard: { gradient: 'from-emerald-500 to-teal-600', bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-300' },
+    general: { gradient: 'from-slate-500 to-gray-600', bg: 'bg-slate-50', text: 'text-slate-700', ring: 'ring-slate-300' },
+    laboral: { gradient: 'from-blue-500 to-indigo-600', bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-300' },
+    contacto: { gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', text: 'text-violet-700', ring: 'ring-violet-300' },
+    timeline: { gradient: 'from-fuchsia-500 to-pink-600', bg: 'bg-fuchsia-50', text: 'text-fuchsia-700', ring: 'ring-fuchsia-300' },
+    expediente: { gradient: 'from-teal-500 to-emerald-600', bg: 'bg-teal-50', text: 'text-teal-700', ring: 'ring-teal-300' },
+    documentos: { gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-300' },
+    recetas: { gradient: 'from-pink-500 to-rose-600', bg: 'bg-pink-50', text: 'text-pink-700', ring: 'ring-pink-300' },
+    dictamenes: { gradient: 'from-cyan-500 to-blue-600', bg: 'bg-cyan-50', text: 'text-cyan-700', ring: 'ring-cyan-300' },
+    incapacidades: { gradient: 'from-red-500 to-rose-600', bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-300' },
 }
-
-// ─── Expediente section cards for the main landing ───
-const EXPEDIENTE_SECTIONS = [
-    { value: 'expediente', label: 'Expediente Clínico', icon: Stethoscope, desc: 'Historia, APNP, AHF, Exploración', gradient: 'from-teal-500 to-emerald-600', glow: '#10b981', tint: 'rgba(16,185,129,0.08)', group: 'clinico' as const },
-    { value: 'general', label: 'Datos Personales', icon: User, desc: 'Nombre, CURP, RFC, NSS', gradient: 'from-slate-400 to-slate-600', glow: '#94a3b8', tint: 'rgba(148,163,184,0.06)', group: 'info' as const },
-    { value: 'laboral', label: 'Datos Laborales', icon: Building2, desc: 'Empresa, puesto, riesgos IA', gradient: 'from-blue-500 to-indigo-600', glow: '#3b82f6', tint: 'rgba(59,130,246,0.08)', group: 'info' as const },
-    { value: 'recetas', label: 'Recetas', icon: Pill, desc: 'Prescripciones médicas activas', gradient: 'from-pink-500 to-rose-600', glow: '#ec4899', tint: 'rgba(236,72,153,0.07)', group: 'diagnostico' as const },
-    { value: 'dictamenes', label: 'Dictámenes', icon: FileText, desc: 'Aptitud laboral y certificados', gradient: 'from-cyan-500 to-blue-600', glow: '#06b6d4', tint: 'rgba(6,182,212,0.08)', group: 'diagnostico' as const },
-    { value: 'incapacidades', label: 'Incapacidades', icon: FileBarChart, desc: 'Certificados de incapacidad', gradient: 'from-red-500 to-rose-600', glow: '#ef4444', tint: 'rgba(239,68,68,0.06)', group: 'diagnostico' as const },
-    { value: 'contacto', label: 'Contacto / Foto', icon: Phone, desc: 'Teléfono, email, fotografía', gradient: 'from-violet-500 to-purple-600', glow: '#8b5cf6', tint: 'rgba(139,92,246,0.07)', group: 'info' as const },
-]
 
 // =============================================
 // EDITABLE FIELD COMPONENT
@@ -115,13 +110,13 @@ function EditableField({ icon: Icon, label, value, field, type = 'text', options
 }) {
     if (!editing) {
         return (
-            <div className="group relative flex items-start gap-3 p-4 bg-slate-900/40 rounded-2xl border border-white/5 hover:bg-slate-800/60 hover:border-white/10 transition-all shadow-sm">
-                <div className="flex items-center justify-center w-10 h-10 flex-shrink-0 rounded-xl bg-slate-800 border border-white/5 group-hover:bg-slate-700 transition-colors shadow-inner">
-                    <Icon className="w-4 h-4 text-emerald-400 group-hover:text-emerald-300 drop-shadow-sm" />
+            <div className="group relative flex items-start gap-3 p-4 bg-slate-50/80 rounded-2xl border border-slate-100 hover:border-emerald-200 transition-all">
+                <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white shadow-sm border border-slate-100">
+                    <Icon className="w-4 h-4 text-slate-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 group-hover:text-slate-400 mb-1 transition-colors">{label}</p>
-                    <p className={`text-sm font-semibold text-slate-200 truncate group-hover:text-white transition-colors ${type === 'mono' ? 'font-mono tracking-wider text-emerald-100' : ''}`}>{value || '—'}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-0.5">{label}</p>
+                    <p className={`text-sm font-semibold text-slate-800 truncate ${type === 'mono' ? 'font-mono tracking-wider' : ''}`}>{value || '—'}</p>
                 </div>
             </div>
         )
@@ -129,16 +124,16 @@ function EditableField({ icon: Icon, label, value, field, type = 'text', options
 
     if (options) {
         return (
-            <div className="flex items-start gap-3 p-4 bg-emerald-900/20 rounded-2xl border border-emerald-500/30 transition-all shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-                <div className="flex items-center justify-center w-10 h-10 flex-shrink-0 rounded-xl bg-emerald-500/20 border border-emerald-500/30 shadow-inner">
-                    <Icon className="w-4 h-4 text-emerald-400 drop-shadow-md" />
+            <div className="flex items-start gap-3 p-4 bg-emerald-50/50 rounded-2xl border-2 border-emerald-200 transition-all">
+                <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white shadow-sm border border-emerald-200">
+                    <Icon className="w-4 h-4 text-emerald-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-1.5">{label}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-600 mb-1">{label}</p>
                     <select
                         value={value || ''}
                         onChange={(e) => onChange(field, e.target.value)}
-                        className="w-full bg-slate-900 border border-emerald-500/30 rounded-lg px-3 py-2 text-sm font-semibold text-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                        className="w-full bg-white border border-emerald-200 rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                     >
                         <option value="">— Seleccionar —</option>
                         {options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -149,21 +144,20 @@ function EditableField({ icon: Icon, label, value, field, type = 'text', options
     }
 
     return (
-        <div className="flex items-start gap-3 p-4 bg-emerald-900/20 rounded-2xl border border-emerald-500/30 transition-all shadow-[0_0_15px_-3px_rgba(16,185,129,0.15)] relative">
-            <div className="flex items-center justify-center w-10 h-10 flex-shrink-0 rounded-xl bg-emerald-500/20 border border-emerald-500/30 shadow-inner">
-                <Icon className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+        <div className="flex items-start gap-3 p-4 bg-emerald-50/50 rounded-2xl border-2 border-emerald-200 transition-all">
+            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white shadow-sm border border-emerald-200">
+                <Icon className="w-4 h-4 text-emerald-600" />
             </div>
             <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-1.5">{label}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-600 mb-1">{label}</p>
                 <input
                     type={type === 'date' ? 'date' : type === 'number' ? 'number' : 'text'}
                     value={value || ''}
                     onChange={(e) => onChange(field, e.target.value)}
-                    className="w-full bg-slate-900/80 border border-emerald-500/30 rounded-lg px-3 py-2 text-sm font-semibold text-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all placeholder:text-slate-500"
+                    className="w-full bg-white border border-emerald-200 rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                     placeholder={label}
                 />
             </div>
-
         </div>
     )
 }
@@ -181,32 +175,8 @@ export default function PerfilPaciente() {
         (location.state as any)?.paciente || null
     )
     const [loading, setLoading] = useState(!paciente)
-    const [activeTab, setActiveTab] = useState('expediente')
+    const [activeTab, setActiveTab] = useState('dashboard')
     const [activeCategory, setActiveCategory] = useState<'info' | 'clinico' | 'diagnostico' | null>(null)
-
-    // ⚡ /midu — Videogame-style screen navigation direction
-    const [navDirection, setNavDirection] = useState<'forward' | 'back'>('forward')
-
-    // Navigation helpers — set direction BEFORE state change
-    const navigateForward = (cat: 'info' | 'clinico' | 'diagnostico', tab: string) => {
-        setNavDirection('forward')
-        setActiveCategory(cat)
-        setActiveTab(tab)
-    }
-    const navigateBack = () => {
-        setNavDirection('back')
-        setActiveCategory(null)
-    }
-
-    // Slide animation variants — GPU-accelerated transforms only
-    const slideVariants = {
-        enterFromRight: { opacity: 0, x: 280, scale: 0.97 },
-        enterFromLeft: { opacity: 0, x: -280, scale: 0.97 },
-        center: { opacity: 1, x: 0, scale: 1 },
-        exitToLeft: { opacity: 0, x: -200, scale: 0.97 },
-        exitToRight: { opacity: 0, x: 200, scale: 0.97 },
-    }
-    const transitionConfig = { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] }
     const [editing, setEditing] = useState(false)
     const [saving, setSaving] = useState(false)
     const [editData, setEditData] = useState<Partial<Paciente>>({})
@@ -215,15 +185,6 @@ export default function PerfilPaciente() {
     const [isAnalyzingAI, setIsAnalyzingAI] = useState(false)
     const [riesgos, setRiesgos] = useState<OccupationalRisks>({ ...EMPTY_RISKS })
     const [showRiesgos, setShowRiesgos] = useState(false)
-
-    // ── ELITE DARK THEME — Aplica clase especial ──
-    useEffect(() => {
-        document.body.classList.add('perfil-elite-dark')
-        return () => {
-            document.body.classList.remove('perfil-elite-dark')
-        }
-    }, [])
-
 
     // Load patient data
     useEffect(() => {
@@ -418,14 +379,6 @@ export default function PerfilPaciente() {
         }
     }
 
-    // ── Action dropdown state ── (debe estar ANTES de cualquier return early)
-    const [showActions, setShowActions] = useState(false)
-    const actionsRef = useRef<HTMLDivElement>(null)
-    useEffect(() => {
-        const h = (e: MouseEvent) => { if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) setShowActions(false) }
-        document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h)
-    }, [])
-
     // ── ELIMINAR PACIENTE (Cascade) ──
     const [deleting, setDeleting] = useState(false)
     const handleDeletePatient = async () => {
@@ -473,52 +426,32 @@ export default function PerfilPaciente() {
 
     const activeTabConfig = TABS.find(t => t.value === activeTab)
 
-    return (
-        <div className="layout-perfil-paciente space-y-6 pb-12 p-6 sm:p-10">
-            {/* ── BREADCRUMB OSCURO INLINE ── */}
-            <nav className="flex items-center gap-2 text-xs font-bold text-white/30 mb-2 self-start">
-                <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1 hover:text-white/60 transition-colors">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-                </button>
-                <span className="text-white/20">›</span>
-                <button onClick={() => navigate('/pacientes')} className="hover:text-white/60 transition-colors">Pacientes</button>
-                <span className="text-white/20">›</span>
-                <span className="text-white/50 truncate max-w-[200px]">
-                    {paciente.nombre} {paciente.apellido_paterno}
-                </span>
-            </nav>
+    // ── Action dropdown state ──
+    const [showActions, setShowActions] = useState(false)
+    const actionsRef = useRef<HTMLDivElement>(null)
+    useEffect(() => {
+        const h = (e: MouseEvent) => { if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) setShowActions(false) }
+        document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h)
+    }, [])
 
-            {/* ── HERO HEADER — /samu Obsidian-Glass Premium V3 Elite ── */}
+    return (
+        <div className="space-y-6 pb-12">
+            {/* ── HERO HEADER — /samu Obsidian-Glass Premium ── */}
             <motion.div
                 initial={{ opacity: 0, y: -12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-                className="relative rounded-[2rem] z-10 mb-8 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
-                style={{ background: 'linear-gradient(135deg, rgba(6,78,59,0.4) 0%, rgba(2,6,23,0.8) 100%)' }}
+                className="relative overflow-hidden rounded-[2rem] border border-white/[0.06]"
+                style={{ background: 'linear-gradient(145deg, #06070a 0%, #0c0e14 40%, #0a0c12 100%)' }}
             >
-                {/* Gradient Mask Border */}
-                <div className="absolute inset-0 rounded-[2rem] p-[3px] pointer-events-none z-[2]"
-                    style={{
-                        background: 'linear-gradient(135deg, #00ffb2 0%, transparent 40%, transparent 60%, #00f2fe 100%)',
-                        WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                        WebkitMaskComposite: 'xor',
-                        maskComposite: 'exclude',
-                    }}
-                />
+                {/* Ambient glows */}
+                <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-emerald-500/[0.07] rounded-full -translate-x-1/2 -translate-y-1/2 blur-[120px] pointer-events-none" />
+                <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-blue-500/[0.05] rounded-full translate-x-1/3 translate-y-1/3 blur-[100px] pointer-events-none" />
+                <div className="absolute top-1/2 right-1/4 w-[200px] h-[200px] bg-violet-500/[0.04] rounded-full blur-[80px] pointer-events-none" />
 
-                {/* Outer Glow Effect */}
-                <div className="absolute inset-0 rounded-[2rem] -z-10 opacity-15 blur-[25px] pointer-events-none"
-                    style={{ background: 'linear-gradient(135deg, #00ffb2 0%, transparent 40%, transparent 60%, #00f2fe 100%)' }}
-                />
-
-                {/* Ambient Internal Glows */}
-                <div className="absolute top-0 left-0 right-0 h-[60%] rounded-t-[2rem] pointer-events-none"
-                    style={{ background: 'radial-gradient(ellipse at top, rgba(255,255,255,0.04) 0%, transparent 70%)' }}
-                />
-
-                <div className="relative z-10 p-6 sm:p-10">
+                <div className="relative z-10 p-6 sm:p-8">
                     {/* Top bar: Back + Actions */}
-                    <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center justify-between mb-6">
                         <motion.button
                             whileHover={{ x: -3 }}
                             onClick={() => navigate('/pacientes')}
@@ -587,8 +520,8 @@ export default function PerfilPaciente() {
                     <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6">
                         {/* Photo with glow ring */}
                         <div className="relative">
-                            <div className="absolute inset-0 bg-[#00f2fe]/20 rounded-full blur-xl scale-110" />
-                            <div className="relative ring-2 ring-[#00ffb2]/30 ring-offset-2 ring-offset-transparent rounded-full">
+                            <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl scale-110" />
+                            <div className="relative ring-2 ring-white/[0.08] ring-offset-2 ring-offset-transparent rounded-full">
                                 <FotoPaciente
                                     currentUrl={paciente.foto_url}
                                     nombre={`${paciente.nombre} ${paciente.apellido_paterno}`}
@@ -618,7 +551,7 @@ export default function PerfilPaciente() {
                                     edad && { icon: '📅', text: `${edad} años`, bg: 'bg-white/[0.06]' },
                                     paciente.genero && { icon: paciente.genero === 'masculino' ? '♂️' : '♀️', text: paciente.genero, bg: `bg-gradient-to-r ${gradient} bg-opacity-20` },
                                     paciente.tipo_sangre && { icon: '🩸', text: paciente.tipo_sangre, bg: 'bg-rose-500/10' },
-                                    paciente.estatus && { icon: paciente.estatus === 'activo' ? '✅' : '⏸️', text: paciente.estatus, bg: paciente.estatus === 'activo' ? 'bg-[#00ffb2]/10 text-[#00ffb2]' : 'bg-slate-500/10' },
+                                    paciente.estatus && { icon: paciente.estatus === 'activo' ? '✅' : '⏸️', text: paciente.estatus, bg: paciente.estatus === 'activo' ? 'bg-emerald-500/10' : 'bg-slate-500/10' },
                                     editing && { icon: '✏️', text: 'Editando', bg: 'bg-violet-500/15' },
                                 ].filter(Boolean).map((chip: any, i) => (
                                     <motion.div
@@ -636,29 +569,20 @@ export default function PerfilPaciente() {
                         </div>
 
                         {/* Quick info cards */}
-                        <div className="flex flex-wrap xl:grid xl:grid-cols-2 gap-3 shrink-0 mt-6 lg:mt-0">
+                        <div className="flex flex-row lg:flex-col gap-2">
                             {[
-                                paciente.empresa_nombre && { icon: Building2, label: 'Empresa', text: paciente.empresa_nombre, color: 'text-blue-400', glow: 'bg-blue-500/10 border-blue-500/20' },
-                                paciente.puesto && { icon: Briefcase, label: 'Puesto', text: paciente.puesto, color: 'text-amber-400', glow: 'bg-amber-500/10 border-amber-500/20' },
-                                paciente.curp && { icon: Shield, label: 'CURP', text: paciente.curp, color: 'text-emerald-400', glow: 'bg-emerald-500/10 border-emerald-500/20' },
-                                paciente.rfc && { icon: FileText, label: 'RFC', text: paciente.rfc, color: 'text-purple-400', glow: 'bg-purple-500/10 border-purple-500/20' },
-                                paciente.nss && { icon: Heart, label: 'NSS (IMSS)', text: paciente.nss, color: 'text-rose-400', glow: 'bg-rose-500/10 border-rose-500/20' },
-                                paciente.telefono && { icon: Phone, label: 'Contacto', text: paciente.telefono, color: 'text-cyan-400', glow: 'bg-cyan-500/10 border-cyan-500/20' },
+                                paciente.empresa_nombre && { icon: Building2, text: paciente.empresa_nombre, color: 'text-blue-400', glow: 'bg-blue-500/10' },
+                                paciente.puesto && { icon: Briefcase, text: paciente.puesto, color: 'text-amber-400', glow: 'bg-amber-500/10' },
                             ].filter(Boolean).map((card: any, i) => (
                                 <motion.div
                                     key={i}
                                     initial={{ opacity: 0, x: 10 }}
                                     animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.2 + i * 0.05 }}
-                                    className={`px-4 py-3 rounded-2xl ${card.glow} border backdrop-blur-sm flex items-center gap-3 min-w-[210px] hover:scale-[1.02] transition-transform shadow-lg cursor-default`}
+                                    transition={{ delay: 0.2 + i * 0.1 }}
+                                    className={`px-4 py-3 rounded-2xl ${card.glow} border border-white/[0.06] backdrop-blur-sm min-w-[110px]`}
                                 >
-                                    <div className={`p-2 rounded-xl bg-slate-950/40 ${card.color} shadow-inner`}>
-                                        <card.icon className="w-5 h-5 drop-shadow-md" />
-                                    </div>
-                                    <div className="flex flex-col flex-1 min-w-0">
-                                        <p className="text-[10px] uppercase tracking-widest font-black text-slate-400/80 mb-0.5">{card.label}</p>
-                                        <p className="text-sm font-bold text-white truncate w-full">{card.text}</p>
-                                    </div>
+                                    <card.icon className={`w-4 h-4 ${card.color} mb-1`} />
+                                    <p className="text-[11px] text-white/60 font-bold truncate max-w-[130px]">{card.text}</p>
                                 </motion.div>
                             ))}
                         </div>
@@ -666,214 +590,159 @@ export default function PerfilPaciente() {
                 </div>
             </motion.div>
 
-            {/* ── DIRECT EXPEDIENTE NAVIGATION ── */}
+            {/* ── 3-LEVEL NAVIGATION (Body → Category → Module) ── */}
             {(() => {
+                // Derive navigation level
+                const navLevel = !activeCategory ? 'body' : (activeTab && activeCategory) ? 'module' : 'category'
                 const catLabel = activeCategory === 'info' ? 'Información del Paciente' : activeCategory === 'clinico' ? 'Expediente Clínico' : 'Tratamiento y Documentos'
                 const catColor = activeCategory === 'info' ? 'blue' : activeCategory === 'clinico' ? 'emerald' : 'violet'
 
                 return (
                     <>
-                        {/* overflow-hidden prevents horizontal scrollbar during slide transitions */}
-                        <div className="overflow-hidden">
-                        <AnimatePresence mode="wait" initial={false}>
-                            {/* ═══ LEVEL 0: EXPEDIENTE LANDING — Spectacular Cards + Dashboard ═══ */}
+                        <AnimatePresence mode="wait">
+                            {/* ═══ LEVEL 0: HUMAN BODY SVG + CATEGORY CARDS ═══ */}
                             {!activeCategory && (
                                 <motion.div
-                                    key="expediente-landing"
-                                    initial={navDirection === 'back' ? slideVariants.enterFromLeft : slideVariants.enterFromRight}
-                                    animate={slideVariants.center}
-                                    exit={navDirection === 'forward' ? slideVariants.exitToLeft : slideVariants.exitToRight}
-                                    transition={transitionConfig}
+                                    key="body-view"
+                                    initial={{ opacity: 0, y: 16 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -8 }}
+                                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                                    className="space-y-5"
                                 >
-                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                                        {/* ═══ LEFT: Spectacular Section Cards ═══ */}
-                                        <div className="lg:col-span-7 xl:col-span-8">
-                                            {/* ═══ NEBULAFORGE V4 — Cosmic Glass (Pixel-Perfect) ═══ */}
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 12 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.6 }}
-                                                className="relative rounded-[1.5rem] overflow-hidden"
-                                                style={{
-                                                    /* CAPA 1: Background darker for max glow contrast */
-                                                    background: 'linear-gradient(145deg, #060a14 0%, #0b1120 30%, #0d0f24 60%, #080c18 100%)',
-                                                    /* CAPA 3: Container edge */
-                                                    boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 24px 80px -12px rgba(0,0,0,0.6)',
-                                                }}
-                                            >
-                                                {/* CAPA 2: Animated Mesh Gradient — 4 nebula orbs (Optimized for Performance) */}
-                                                <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ transform: 'translateZ(0)' }}>
-                                                    <motion.div
-                                                        className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full"
-                                                        style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.05) 35%, transparent 70%)' }}
-                                                        animate={{ x: [0, 18, 0], y: [0, -12, 0] }}
-                                                        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-                                                    />
-                                                    <motion.div
-                                                        className="absolute -bottom-24 -left-24 w-[500px] h-[500px] rounded-full"
-                                                        style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.10) 0%, rgba(59,130,246,0.04) 35%, transparent 70%)' }}
-                                                        animate={{ x: [0, -12, 0], y: [0, 14, 0] }}
-                                                        transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
-                                                    />
-                                                    <motion.div
-                                                        className="absolute top-1/4 left-1/4 w-[700px] h-[700px] rounded-full"
-                                                        style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, rgba(139,92,246,0.03) 30%, transparent 65%)' }}
-                                                        animate={{ x: [0, 10, 0], y: [0, -10, 0], scale: [1, 1.06, 1] }}
-                                                        transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut' }}
-                                                    />
-                                                    <motion.div
-                                                        className="absolute -bottom-16 right-1/4 w-[450px] h-[450px] rounded-full"
-                                                        style={{ background: 'radial-gradient(circle, rgba(236,72,153,0.07) 0%, rgba(236,72,153,0.03) 35%, transparent 70%)' }}
-                                                        animate={{ x: [0, -8, 0], y: [0, 8, 0] }}
-                                                        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-                                                    />
-                                                </div>
+                                    {/* ── Compact Alert Summary Bar ── */}
+                                    {bodyAlerts && Object.keys(bodyAlerts).length > 0 && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="flex items-center gap-3 px-5 py-3 rounded-2xl border border-slate-100 bg-white/80 backdrop-blur-sm shadow-sm"
+                                        >
+                                            <Activity className="w-4 h-4 text-slate-400" />
+                                            <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Estado Clínico</span>
+                                            <div className="flex items-center gap-2 ml-auto">
+                                                {(() => {
+                                                    let ok = 0, alert = 0, noData = 0
+                                                    Object.values(bodyAlerts).forEach((a: any) => {
+                                                        if (a.status === 'normal') ok++
+                                                        else if (a.status === 'alert' || a.status === 'critical') alert++
+                                                        else noData++
+                                                    })
+                                                    return (
+                                                        <>
+                                                            {ok > 0 && <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{ok} Normal</span>}
+                                                            {alert > 0 && <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />{alert} Alerta</span>}
+                                                            {noData > 0 && <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-50 text-slate-500 text-[10px] font-bold"><span className="w-1.5 h-1.5 rounded-full bg-slate-300" />{noData} Sin datos</span>}
+                                                        </>
+                                                    )
+                                                })()}
+                                            </div>
+                                        </motion.div>
+                                    )}
 
-                                                {/* Section Header */}
-                                                <div className="relative px-6 pt-6 pb-3 flex items-center gap-4">
-                                                    <div className="relative">
-                                                        <div className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center"
-                                                            style={{
-                                                                boxShadow: `
-                                                                    0 0 24px -2px rgba(16,185,129,0.55),
-                                                                    0 8px 20px -6px rgba(16,185,129,0.45),
-                                                                    0 2px 6px -1px rgba(0,0,0,0.35),
-                                                                    inset 0 1px 1px rgba(255,255,255,0.25),
-                                                                    inset 0 -1px 1px rgba(0,0,0,0.15)
-                                                                `,
-                                                            }}>
-                                                            <Stethoscope className="w-5 h-5 text-white" strokeWidth={1.5} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
-                                                        </div>
-                                                        <motion.div className="absolute inset-0 rounded-[14px]"
-                                                            animate={{ boxShadow: ['0 0 0 0px rgba(16,185,129,0)', '0 0 0 8px rgba(16,185,129,0.15)', '0 0 0 0px rgba(16,185,129,0)'] }}
-                                                            transition={{ duration: 2.5, repeat: Infinity }} />
+                                    {/* ── Integrated Layout: Body SVG (compact) + Portal Cards ── */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                                        {/* Body SVG — Compact Left Column */}
+                                        <div className="lg:col-span-4">
+                                            <div className="card-premium overflow-hidden h-full">
+                                                <div className="relative p-4">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.02] via-transparent to-blue-500/[0.02] pointer-events-none" />
+                                                    <div className="relative text-center mb-2">
+                                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Mapa Clínico</p>
                                                     </div>
-                                                    <div>
-                                                        <h2 className="text-[15px] font-black text-white" style={{ letterSpacing: '-0.01em' }}>Expediente del Paciente</h2>
-                                                        <p className="text-[10px] font-medium" style={{ color: 'rgba(100,116,139,0.8)', letterSpacing: '0.03em' }}>Selecciona una sección para ingresar</p>
-                                                    </div>
-                                                </div>
-
-                                                {/* ═══ COSMIC GLASS CARDS ═══ */}
-                                                <div className="relative px-5 pb-6 pt-2 grid grid-cols-2 sm:grid-cols-3 gap-[14px]">
-                                                    {EXPEDIENTE_SECTIONS.map((section, i) => (
-                                                        <motion.button
-                                                            key={section.value}
-                                                            /* CAPA 11: Entry animation */
-                                                            initial={{ opacity: 0, y: 28, scale: 0.88 }}
-                                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                            transition={{ delay: 0.1 + i * 0.08, duration: 0.6, ease: [0.22, 0.68, 0.36, 1.0] as [number, number, number, number] }}
-                                                            /* CAPA 10: Hover — more pronounced */
-                                                            whileHover={{ y: -8, scale: 1.04, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
-                                                            whileTap={{ scale: 0.97 }}
-                                                            onClick={() => navigateForward(section.group, section.value)}
-                                                            className="group relative flex flex-col items-start rounded-[20px] text-left overflow-hidden cursor-pointer"
-                                                            style={{
-                                                                padding: '18px',
-                                                                /* CAPA 5: Triple-layer glass with ellipse tints */
-                                                                background: `
-                                                                    radial-gradient(ellipse at 20% 90%, ${section.glow}18 0%, transparent 55%),
-                                                                    radial-gradient(ellipse at 90% 10%, ${section.glow}0a 0%, transparent 45%),
-                                                                    linear-gradient(155deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.05) 100%)
-                                                                `,
-                                                                backdropFilter: 'blur(20px) saturate(1.6)',
-                                                                WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
-                                                                /* Border with brighter top = zenith light */
-                                                                border: '1px solid rgba(255,255,255,0.08)',
-                                                                borderTopColor: 'rgba(255,255,255,0.14)',
-                                                                /* CAPA 6: Light emission — 60px glow */
-                                                                boxShadow: `
-                                                                    0 0 60px -15px ${section.glow}35,
-                                                                    0 8px 32px -8px rgba(0,0,0,0.5),
-                                                                    inset 0 1px 0 0 rgba(255,255,255,0.12),
-                                                                    inset 0 -1px 0 0 rgba(255,255,255,0.03)
-                                                                `,
-                                                                transition: 'box-shadow 0.4s ease, border-color 0.3s ease',
+                                                    <div className="max-h-[320px] flex items-center justify-center">
+                                                        <HumanBodySVG
+                                                            alerts={bodyAlerts}
+                                                            loading={alertsLoading}
+                                                            onZoneClick={(module) => {
+                                                                const clinicalModules = ['dashboard', 'historia', 'resumen', 'apnp', 'ahf', 'ocupacional', 'exploracion', 'audiometria', 'espirometria', 'electrocardiograma', 'vision', 'laboratorio', 'rayosx', 'consentimientos', 'notas', 'timeline']
+                                                                const infoModules = ['general', 'laboral', 'contacto']
+                                                                const diagModules = ['recetas', 'dictamenes', 'incapacidades']
+                                                                if (clinicalModules.includes(module)) { setActiveCategory('clinico'); setActiveTab(module) }
+                                                                else if (infoModules.includes(module)) { setActiveCategory('info'); setActiveTab(module) }
+                                                                else if (diagModules.includes(module)) { setActiveCategory('diagnostico'); setActiveTab(module) }
                                                             }}
-                                                        >
-                                                            {/* CAPA 6: Internal glow orbs — main (70% of card) */}
-                                                            <div className="absolute rounded-full pointer-events-none opacity-30 group-hover:opacity-65 transition-opacity duration-500"
-                                                                style={{
-                                                                    bottom: '-30%', left: '-20%',
-                                                                    width: '70%', height: '70%',
-                                                                    background: section.glow,
-                                                                    filter: 'blur(40px)',
-                                                                }} />
-                                                            {/* Secondary orb */}
-                                                            <div className="absolute rounded-full pointer-events-none opacity-[0.12] group-hover:opacity-[0.35] transition-opacity duration-500"
-                                                                style={{
-                                                                    top: '-15%', right: '-15%',
-                                                                    width: '45%', height: '45%',
-                                                                    background: section.glow,
-                                                                    filter: 'blur(30px)',
-                                                                }} />
-
-                                                            {/* CAPA 8: Glass reflection line */}
-                                                            <div className="absolute top-0 left-[12%] right-[12%] h-[1px] opacity-50 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                                                                style={{
-                                                                    background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.20) 25%, ${section.glow}50 50%, rgba(255,255,255,0.20) 75%, transparent)`,
-                                                                }} />
-
-                                                            {/* CAPA 10: Hover glow intensification overlay */}
-                                                            <div className="absolute inset-0 rounded-[20px] opacity-0 group-hover:opacity-100 transition-all duration-400 pointer-events-none"
-                                                                style={{
-                                                                    boxShadow: `
-                                                                        0 0 80px -10px ${section.glow}50,
-                                                                        0 0 120px -20px ${section.glow}20,
-                                                                        inset 0 0 0 1px ${section.glow}30,
-                                                                        inset 0 1px 0 rgba(255,255,255,0.15)
-                                                                    `,
-                                                                }} />
-
-                                                            {/* CAPA 7: Volumetric Icon — 5 shadow layers */}
-                                                            <div className="relative mb-4">
-                                                                <div className={`w-11 h-11 rounded-[14px] bg-gradient-to-br ${section.gradient} flex items-center justify-center transition-all duration-300 group-hover:scale-[1.12] group-hover:rotate-[-3deg]`}
-                                                                    style={{
-                                                                        boxShadow: `
-                                                                            0 0 24px -2px ${section.glow}55,
-                                                                            0 8px 20px -6px ${section.glow}45,
-                                                                            0 2px 6px -1px rgba(0,0,0,0.35),
-                                                                            inset 0 1px 1px rgba(255,255,255,0.25),
-                                                                            inset 0 -1px 1px rgba(0,0,0,0.15)
-                                                                        `,
-                                                                    }}>
-                                                                    <section.icon className="w-[22px] h-[22px] text-white" strokeWidth={1.5} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
-                                                                </div>
-                                                            </div>
-
-                                                            {/* CAPA 9: Typography */}
-                                                            <div className="relative flex-1 w-full">
-                                                                <p className="font-extrabold text-white/95 leading-tight" style={{ fontSize: '13px', letterSpacing: '-0.02em', textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>{section.label}</p>
-                                                                <p className="leading-relaxed mt-1.5 group-hover:text-slate-300/85 transition-colors duration-300" style={{ fontSize: '10px', color: 'rgba(148,163,184,0.65)', lineHeight: 1.5 }}>{section.desc}</p>
-                                                            </div>
-
-                                                            {/* CAPA 12: CTA reveal on hover */}
-                                                            <div className="relative flex items-center gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-[6px] group-hover:translate-y-0">
-                                                                <span className="font-bold uppercase" style={{ fontSize: '9px', letterSpacing: '0.08em', color: section.glow }}>Ver sección</span>
-                                                                <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform duration-200" style={{ color: section.glow }} />
-                                                            </div>
-                                                        </motion.button>
-                                                    ))}
+                                                        />
+                                                    </div>
+                                                    <p className="text-[9px] text-slate-400 text-center mt-2">Toca una zona para navegar</p>
                                                 </div>
-                                            </motion.div>
+                                            </div>
                                         </div>
 
-                                        {/* ═══ RIGHT: Premium Clinical Dashboard ═══ */}
-                                        <div className="lg:col-span-5 xl:col-span-4">
-                                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, duration: 0.5 }}>
-                                                <Suspense fallback={
-                                                    <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-[1.5rem] border border-slate-100 bg-white">
-                                                        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-                                                        <span className="text-xs text-slate-400 font-bold">Cargando dashboard...</span>
+                                        {/* Portal Cards — Right Column (Stacked) */}
+                                        <div className="lg:col-span-8 flex flex-col gap-4">
+                                            {[
+                                                {
+                                                    cat: 'info' as const, tab: 'general', icon: User,
+                                                    title: 'Información del Paciente',
+                                                    desc: 'Datos personales, laborales y contacto',
+                                                    modules: ['General', 'Laboral', 'Contacto'],
+                                                    gradient: 'from-blue-500 to-indigo-600',
+                                                    iconBg: 'bg-blue-500/10',
+                                                    iconColor: 'text-blue-600',
+                                                    glowColor: 'rgba(59,130,246,0.12)',
+                                                    borderHover: 'hover:border-blue-300',
+                                                },
+                                                {
+                                                    cat: 'clinico' as const, tab: 'dashboard', icon: Stethoscope,
+                                                    title: 'Expediente Clínico',
+                                                    desc: 'Dashboard, estudios, historia clínica e IA',
+                                                    modules: ['Dashboard', 'Timeline', 'Expediente', 'Documentos'],
+                                                    gradient: 'from-emerald-500 to-teal-600',
+                                                    iconBg: 'bg-emerald-500/10',
+                                                    iconColor: 'text-emerald-600',
+                                                    glowColor: 'rgba(16,185,129,0.12)',
+                                                    borderHover: 'hover:border-emerald-300',
+                                                },
+                                                {
+                                                    cat: 'diagnostico' as const, tab: 'recetas', icon: FileText,
+                                                    title: 'Tratamiento y Documentos',
+                                                    desc: 'Recetas, dictámenes e incapacidades',
+                                                    modules: ['Recetas', 'Dictámenes', 'Incapacidades'],
+                                                    gradient: 'from-violet-500 to-purple-600',
+                                                    iconBg: 'bg-violet-500/10',
+                                                    iconColor: 'text-violet-600',
+                                                    glowColor: 'rgba(139,92,246,0.12)',
+                                                    borderHover: 'hover:border-violet-300',
+                                                },
+                                            ].map((c, i) => (
+                                                <motion.button
+                                                    key={c.cat}
+                                                    initial={{ opacity: 0, x: 20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: 0.1 + i * 0.08, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                                                    whileHover={{ x: 4, transition: { duration: 0.15 } }}
+                                                    onClick={() => { setActiveCategory(c.cat); setActiveTab(c.tab) }}
+                                                    className={`group relative flex items-center gap-5 p-5 rounded-2xl border border-slate-100 ${c.borderHover} bg-white transition-all duration-300 overflow-hidden text-left flex-1`}
+                                                    style={{ boxShadow: `0 4px 20px -8px ${c.glowColor}` }}
+                                                >
+                                                    {/* Hover glow */}
+                                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                                                        style={{ background: `linear-gradient(135deg, ${c.glowColor}, transparent 60%)` }} />
+
+                                                    {/* Icon */}
+                                                    <div className="relative flex-shrink-0">
+                                                        <div className={`w-14 h-14 rounded-2xl ${c.iconBg} flex items-center justify-center transition-all group-hover:scale-110 group-hover:shadow-lg`}>
+                                                            <c.icon className={`w-6 h-6 ${c.iconColor}`} />
+                                                        </div>
                                                     </div>
-                                                }>
-                                                    <PatientDashboardTab pacienteId={id!} onNavigate={(tab) => {
-                                                        const clinicalModules = ['laboratorio', 'audiometria', 'espirometria', 'electrocardiograma', 'vision', 'rayosx']
-                                                        const tabMap: Record<string, string> = { laboratorio: 'laboratorio', audiometria: 'audiometria', espirometria: 'espirometria', electrocardiograma: 'electrocardiograma', vision: 'vision', rayosx: 'rayosx' }
-                                                        navigateForward('clinico', tabMap[tab] || tab)
-                                                    }} />
-                                                </Suspense>
-                                            </motion.div>
+
+                                                    {/* Content */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="font-black text-slate-800 text-sm mb-0.5 group-hover:text-slate-900">{c.title}</h3>
+                                                        <p className="text-[11px] text-slate-500 font-medium mb-2">{c.desc}</p>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {c.modules.map(m => (
+                                                                <span key={m} className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${c.iconBg} ${c.iconColor}`}>
+                                                                    {m}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Arrow */}
+                                                    <ChevronRight className={`w-5 h-5 ${c.iconColor} opacity-40 group-hover:opacity-100 transition-all group-hover:translate-x-1 flex-shrink-0`} />
+                                                </motion.button>
+                                            ))}
                                         </div>
                                     </div>
                                 </motion.div>
@@ -883,39 +752,34 @@ export default function PerfilPaciente() {
                             {activeCategory && (
                                 <motion.div
                                     key={`cat-${activeCategory}`}
-                                    initial={navDirection === 'forward' ? slideVariants.enterFromRight : slideVariants.enterFromLeft}
-                                    animate={slideVariants.center}
-                                    exit={navDirection === 'back' ? slideVariants.exitToRight : slideVariants.exitToLeft}
-                                    transition={transitionConfig}
+                                    initial={{ opacity: 0, y: 16 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -8 }}
+                                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                                     className="space-y-6"
                                 >
                                     {/* Navigation Header — /samu Premium */}
-                                    <div className="bg-slate-950/60 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden">
+                                    <div className="card-premium overflow-hidden">
                                         {/* Accent line top */}
-                                        <div className={`h-1.5 shadow-[0_0_15px_currentColor] bg-gradient-to-r ${activeCategory === 'info' ? 'from-blue-400 to-indigo-500 text-blue-500' : activeCategory === 'clinico' ? 'from-emerald-400 to-teal-500 text-emerald-500' : 'from-violet-400 to-purple-500 text-violet-500'}`} />
+                                        <div className={`h-1 bg-gradient-to-r ${activeCategory === 'info' ? 'from-blue-500 to-indigo-600' : activeCategory === 'clinico' ? 'from-emerald-500 to-teal-600' : 'from-violet-500 to-purple-600'}`} />
 
-                                        <div className="p-5 sm:p-7 relative z-10">
-                                            {/* Ambient Glow */}
-                                            {activeCategory === 'clinico' && <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/3" />}
-                                            {activeCategory === 'info' && <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/3" />}
-                                            {activeCategory === 'diagnostico' && <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/3" />}
-
-                                            <div className="flex items-center gap-4 mb-6 relative z-10">
+                                        <div className="p-5 sm:p-6">
+                                            <div className="flex items-center gap-4 mb-5">
                                                 <motion.button
-                                                    whileHover={{ x: -2, scale: 1.05 }}
-                                                    onClick={navigateBack}
-                                                    className={`flex items-center justify-center w-11 h-11 rounded-2xl bg-${catColor}-500/10 border border-${catColor}-500/30 hover:bg-${catColor}-500/20 text-${catColor}-400 transition-all shadow-inner`}
+                                                    whileHover={{ x: -3 }}
+                                                    onClick={() => setActiveCategory(null)}
+                                                    className={`flex items-center justify-center w-10 h-10 rounded-xl bg-${catColor}-50 hover:bg-${catColor}-100 text-${catColor}-600 transition-all`}
                                                 >
-                                                    <ArrowLeft className="w-5 h-5 drop-shadow-md" />
+                                                    <ArrowLeft className="w-5 h-5" />
                                                 </motion.button>
                                                 <div className="flex-1">
-                                                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400/80 mb-1">← Vista General</p>
-                                                    <p className={`text-2xl font-extrabold text-white tracking-tight drop-shadow-md`}>{catLabel}</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5">← Vista General</p>
+                                                    <p className={`text-lg font-black text-${catColor}-700`}>{catLabel}</p>
                                                 </div>
                                             </div>
 
                                             {/* Sub-module tab strip */}
-                                            <div className="flex flex-wrap gap-2.5 relative z-10">
+                                            <div className="flex flex-wrap gap-2">
                                                 {TABS.filter(t => t.group === activeCategory).map((tab, i) => {
                                                     const isActive = activeTab === tab.value
                                                     const c = TAB_COLORS[tab.value]
@@ -926,14 +790,14 @@ export default function PerfilPaciente() {
                                                             animate={{ opacity: 1, y: 0 }}
                                                             transition={{ delay: i * 0.04, duration: 0.25 }}
                                                             onClick={() => setActiveTab(tab.value)}
-                                                            className={`group relative flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-200 cursor-pointer
-                                                                ${isActive ? `${c.bg} ${c.ring} shadow-[0_4px_20px_rgba(0,0,0,0.3)] border-${c.ring.split('-')[1]}-500/30` : 'bg-slate-900/40 border-white/5 hover:bg-slate-800/60 hover:border-white/10'}`}
+                                                            className={`group relative flex items-center gap-2.5 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer
+                                                                ${isActive ? `${c.bg} ring-1 ${c.ring} shadow-md` : 'bg-slate-50 hover:bg-slate-100 hover:shadow-sm'}`}
                                                         >
-                                                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all
-                                                                ${isActive ? `bg-gradient-to-br ${c.gradient} shadow-lg shadow-${c.ring.split('-')[1]}-500/20` : 'bg-white/5 border border-white/10 group-hover:border-white/20'}`}>
-                                                                <tab.icon className={`w-4 h-4 ${isActive ? 'text-white drop-shadow-md' : 'text-slate-400 group-hover:text-white'}`} />
+                                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all
+                                                                ${isActive ? `bg-gradient-to-br ${c.gradient} shadow-sm` : 'bg-white border border-slate-200 group-hover:border-slate-300'}`}>
+                                                                <tab.icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-500'}`} />
                                                             </div>
-                                                            <span className={`text-sm font-bold tracking-wide ${isActive ? c.text : 'text-slate-400 group-hover:text-white'}`}>{tab.label}</span>
+                                                            <span className={`text-xs font-bold ${isActive ? c.text : 'text-slate-500 group-hover:text-slate-700'}`}>{tab.label}</span>
                                                         </motion.button>
                                                     )
                                                 })}
@@ -947,10 +811,10 @@ export default function PerfilPaciente() {
                                             key={activeTab}
                                             initial={{ opacity: 0, y: 4 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className="flex items-center gap-3 px-5 py-3.5 bg-slate-900/60 backdrop-blur-xl rounded-[1.25rem] border border-white/10 shadow-[0_4px_15px_rgba(0,0,0,0.3)] w-max max-w-full overflow-hidden"
+                                            className="flex items-center gap-2.5 px-5 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-slate-100 shadow-sm"
                                         >
-                                            <activeTabConfig.icon className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                                            <span className="text-[13px] font-semibold text-slate-300 relative z-10 truncate">{activeTabConfig.description}</span>
+                                            <activeTabConfig.icon className="w-4 h-4 text-slate-400" />
+                                            <span className="text-xs font-semibold text-slate-500">{activeTabConfig.description}</span>
                                         </motion.div>
                                     )}
 
@@ -987,10 +851,10 @@ export default function PerfilPaciente() {
                                                         <EditableField icon={AlertTriangle} label="Alergias" value={v('alergias')} field="alergias" editing={editing} onChange={handleFieldChange} />
                                                         <EditableField icon={CheckCircle} label="Estatus" value={v('estatus')} field="estatus" editing={editing} onChange={handleFieldChange} options={['activo', 'inactivo', 'baja']} />
                                                     </div>
-                                                    <Card className="border-amber-500/30 bg-amber-900/20 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.3)] rounded-[2rem] overflow-hidden">
+                                                    <Card className="border-amber-200 bg-amber-50/50">
                                                         <CardHeader className="pb-2">
-                                                            <CardTitle className="flex items-center gap-2 text-amber-400 text-base font-bold tracking-wide">
-                                                                <AlertTriangle className="w-5 h-5 text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]" />
+                                                            <CardTitle className="flex items-center gap-2 text-amber-800 text-base">
+                                                                <AlertTriangle className="w-5 h-5 text-amber-500" />
                                                                 Contacto de Emergencia
                                                             </CardTitle>
                                                         </CardHeader>
@@ -1021,24 +885,21 @@ export default function PerfilPaciente() {
                                                     </div>
 
                                                     {/* ═══ RISK ANALYZER ═══ */}
-                                                    <Card className="border-violet-500/30 bg-gradient-to-br from-violet-900/20 to-indigo-900/20 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.4)] rounded-[2rem] overflow-hidden relative">
-                                                        <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/3" />
-                                                        <CardHeader className="pb-4 relative z-10">
+                                                    <Card className="border-violet-200 bg-gradient-to-br from-violet-50/80 to-indigo-50/50 shadow-lg">
+                                                        <CardHeader className="pb-3">
                                                             <div className="flex items-center justify-between">
-                                                                <CardTitle className="flex items-center gap-3 text-violet-300 text-base font-bold tracking-wide">
-                                                                    <div className="p-2 bg-violet-500/20 rounded-xl border border-violet-500/30 shadow-inner">
-                                                                        <Brain className="w-5 h-5 text-violet-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.8)]" />
-                                                                    </div>
+                                                                <CardTitle className="flex items-center gap-2 text-violet-800 text-base">
+                                                                    <Brain className="w-5 h-5 text-violet-500" />
                                                                     Analizador de Riesgos Laborales
-                                                                    <Badge className="bg-violet-900/50 text-violet-300 border border-violet-500/40 text-[10px] uppercase font-black tracking-widest px-2 py-0.5 shadow-[0_0_10px_rgba(139,92,246,0.2)]">IA</Badge>
+                                                                    <Badge className="bg-violet-100 text-violet-700 border-violet-200 text-[10px]">IA</Badge>
                                                                 </CardTitle>
-                                                                <div className="flex gap-3">
-                                                                    <Button onClick={handleAnalyzeRisks} disabled={isAnalyzingAI} size="sm" className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-[0_4px_15px_-3px_rgba(139,92,246,0.5)] border border-violet-400/20 text-white rounded-xl gap-2 font-bold px-4 transition-all hover:scale-[1.02]">
-                                                                        {isAnalyzingAI ? (<><Loader2 className="w-4 h-4 animate-spin" /> Analizando...</>) : (<><Zap className="w-4 h-4 text-violet-200" /> Analizar con IA</>)}
+                                                                <div className="flex gap-2">
+                                                                    <Button onClick={handleAnalyzeRisks} disabled={isAnalyzingAI} size="sm" className="bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white rounded-xl gap-2 text-xs shadow-md">
+                                                                        {isAnalyzingAI ? (<><Loader2 className="w-3.5 h-3.5 animate-spin" /> Analizando...</>) : (<><Zap className="w-3.5 h-3.5" /> Analizar con IA</>)}
                                                                     </Button>
                                                                     {showRiesgos && totalRisksCount > 0 && (
-                                                                        <Button onClick={saveRisksOnly} disabled={saving} size="sm" variant="outline" className="border-emerald-500/40 bg-emerald-900/20 text-emerald-400 hover:bg-emerald-500/30 hover:border-emerald-400 rounded-xl gap-2 font-bold transition-all hover:scale-[1.02] shadow-[0_4px_15px_-3px_rgba(16,185,129,0.2)]">
-                                                                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                                                        <Button onClick={saveRisksOnly} disabled={saving} size="sm" variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded-xl gap-2 text-xs">
+                                                                            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                                                                             Guardar Riesgos
                                                                         </Button>
                                                                     )}
@@ -1127,6 +988,12 @@ export default function PerfilPaciente() {
                                                 </TabsContent>
 
                                                 {/* ═══ CLINICAL TABS ═══ */}
+                                                <TabsContent value="dashboard" className="mt-0">
+                                                    <Suspense fallback={<TabLoader label="Cargando dashboard clínico..." />}>
+                                                        <PatientDashboardTab pacienteId={id!} />
+                                                    </Suspense>
+                                                </TabsContent>
+
                                                 <TabsContent value="expediente" className="mt-0">
                                                     <Suspense fallback={<TabLoader label="Cargando expediente clínico..." />}>
                                                         <HistorialClinicoCompleto pacienteId={id!} />
@@ -1173,7 +1040,6 @@ export default function PerfilPaciente() {
                                 </motion.div>
                             )}
                         </AnimatePresence>
-                        </div>
                     </>
                 )
             })()}

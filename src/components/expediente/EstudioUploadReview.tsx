@@ -64,6 +64,42 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
     const config = STUDY_CONFIG[tipoEstudio] || STUDY_CONFIG.laboratorio
     const fileInputRef = useRef<HTMLInputElement>(null)
 
+    // ── BMP → JPG converter (Canvas API nativa) ──
+    const convertBmpToJpgFile = (file: File): Promise<File> => {
+        return new Promise((resolve, reject) => {
+            const img = new Image()
+            const url = URL.createObjectURL(file)
+            img.onload = () => {
+                const canvas = document.createElement('canvas')
+                let w = img.width, h = img.height
+                const MAX = 4096
+                if (w > MAX || h > MAX) {
+                    const ratio = Math.min(MAX / w, MAX / h)
+                    w = Math.round(w * ratio); h = Math.round(h * ratio)
+                }
+                canvas.width = w; canvas.height = h
+                const ctx = canvas.getContext('2d')
+                if (!ctx) { URL.revokeObjectURL(url); reject(new Error('No canvas ctx')); return }
+                ctx.drawImage(img, 0, 0, w, h)
+                URL.revokeObjectURL(url)
+                canvas.toBlob(blob => {
+                    if (!blob) { reject(new Error('Blob conversion failed')); return }
+                    const newName = file.name.replace(/\.bmp$/i, '.jpg')
+                    resolve(new File([blob], newName, { type: 'image/jpeg' }))
+                }, 'image/jpeg', 0.85)
+            }
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error(`No se pudo cargar BMP: ${file.name}`)) }
+            img.src = url
+        })
+    }
+
+    // ── Check if file is BMP (by MIME or extension, since Windows can leave MIME empty) ──
+    const isBmpFile = (file: File): boolean =>
+        file.type === 'image/bmp' || file.name.toLowerCase().endsWith('.bmp')
+
+    const isImageFile = (file: File): boolean =>
+        file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|tiff?|bmp)$/i.test(file.name)
+
     const prepareFilesForAnalysis = async (file: File) => {
         let rawText = ''
         let images: File[] = []
@@ -88,14 +124,31 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                     if (blob) images.push(new File([blob], `page_${i}.jpg`, { type: 'image/jpeg' }))
                 }
             }
-        } else if (file.type.startsWith('image/')) { images = [file] }
+        } else if (isBmpFile(file)) {
+            // BMP → Convert to JPG before sending to Gemini (Gemini doesn't support image/bmp)
+            console.log(`🔄 Converting BMP to JPG for Gemini: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`)
+            const jpgFile = await convertBmpToJpgFile(file)
+            console.log(`✅ Converted: ${jpgFile.name} (${(jpgFile.size / 1024 / 1024).toFixed(1)} MB)`)
+            images = [jpgFile]
+        } else if (isImageFile(file)) {
+            images = [file]
+        }
         return { rawText, images }
     }
 
     const startProcess = async (files: File[]) => {
         if (!files.length) return
-        const primaryFile = files[0]
+        let primaryFile = files[0]
         setPhase('uploading'); setProgress(10); setErrorMsg('')
+
+        // Convert BMP to JPG before uploading to Storage (BMPs are too large)
+        if (isBmpFile(primaryFile)) {
+            console.log(`🔄 Converting BMP to JPG before Supabase upload: ${primaryFile.name}`)
+            primaryFile = await convertBmpToJpgFile(primaryFile)
+            // Replace in the files array too
+            files = [primaryFile, ...files.slice(1)]
+        }
+
         // Store files and create preview URLs
         setUploadedFiles(files)
         setUploadedFileUrls(files.map(f => URL.createObjectURL(f)))
@@ -559,6 +612,173 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
             }
 
             // ═══════════════════════════════════════════════
+            // RADIOGRAFÍA: Pipeline dedicado con mapeo correcto
+            // ═══════════════════════════════════════════════
+            if (tipoEstudio === 'radiografia') {
+                const getVal = (name: string, ...aliases: string[]) => {
+                    const all = [name, ...aliases]
+                    for (const n of all) {
+                        const r = extractedData.results.find(r =>
+                            r.name?.toUpperCase() === n.toUpperCase() ||
+                            r.parametro?.toUpperCase() === n.toUpperCase()
+                        )
+                        if (r && r.value != null && String(r.value).trim()) return String(r.value)
+                    }
+                    return ''
+                }
+
+                // Consolidar hallazgos de todas las estructuras anatómicas en un solo bloque de texto
+                const hallazgosCats = ['Hallazgos Radiológicos', 'Hallazgos']
+                const hallazgosItems = extractedData.results.filter(r =>
+                    hallazgosCats.some(c => r.category?.toLowerCase().includes(c.toLowerCase())) &&
+                    r.value != null && String(r.value).trim()
+                )
+                const hallazgosText = hallazgosItems.length > 0
+                    ? hallazgosItems.map(r => `${r.name}: ${r.value}`).join('\n')
+                    : getVal('HALLAZGOS', 'DESCRIPCION')
+
+                const regionVal = getVal('REGION_ESTUDIADA', 'REGION_ANATOMICA', 'REGION')
+                const conclusionVal = getVal('CONCLUSIÓN_RADIOLÓGICA', 'CONCLUSION_RADIOLOGICA', 'IMPRESION_DIAGNOSTICA', 'CONCLUSION')
+                const iloVal = getVal('CLASIFICACION_ILO', 'ILO', 'CLASIFICACION_OIT')
+                const radiologo = getVal('RADIOLOGO', 'MEDICO_RESPONSABLE')
+
+                // Determinar resultado: normal/anormal/critico
+                const allText = `${hallazgosText} ${conclusionVal} ${extractedData.summary}`.toLowerCase()
+                const isNormal = allText.includes('normal') || allText.includes('sin alteracion') || allText.includes('sin hallazgo') || iloVal === '0/0'
+                const resultado = isNormal ? 'Normal' : 'Anormal'
+
+                // Parse region/proyeccion (ej. "Tórax PA" → region=Tórax, proyeccion=PA)
+                const regionParts = regionVal.match(/(.+?)\s+(PA|AP|Lateral|LAT|Oblicua)$/i)
+                const region = regionParts ? regionParts[1] : regionVal || 'Tórax'
+                const proyeccion = regionParts ? regionParts[2] : getVal('TIPO_PROYECCION', 'PROYECCION') || 'PA y lateral'
+
+                const rxResults: any[] = [
+                    { parametro_nombre: 'REGION_ANATOMICA', categoria: 'Datos del Estudio', resultado: region, resultado_numerico: null, unidad: '', observacion: '' },
+                    { parametro_nombre: 'TIPO_PROYECCION', categoria: 'Datos del Estudio', resultado: proyeccion, resultado_numerico: null, unidad: '', observacion: '' },
+                    { parametro_nombre: 'TIPO_ESTUDIO', categoria: 'Datos del Estudio', resultado: 'Radiografía', resultado_numerico: null, unidad: '', observacion: '' },
+                    { parametro_nombre: 'RESULTADO', categoria: 'Diagnóstico', resultado: resultado, resultado_numerico: null, unidad: '', observacion: '' },
+                    { parametro_nombre: 'MEDICO_RESPONSABLE', categoria: 'Datos del Estudio', resultado: radiologo || 'Motor IA Pro v3', resultado_numerico: null, unidad: '', observacion: '' },
+                ]
+
+                // Hallazgos como texto completo
+                if (hallazgosText) {
+                    rxResults.push({ parametro_nombre: 'HALLAZGOS', categoria: 'Reporte Radiológico', resultado: hallazgosText, resultado_numerico: null, unidad: '', observacion: '' })
+                }
+
+                // Impresión diagnóstica
+                if (conclusionVal) {
+                    rxResults.push({ parametro_nombre: 'IMPRESION_DIAGNOSTICA', categoria: 'Diagnóstico', resultado: conclusionVal, resultado_numerico: null, unidad: '', observacion: '' })
+                }
+
+                // ILO si existe
+                if (iloVal) {
+                    rxResults.push({ parametro_nombre: 'CLASIFICACION_ILO', categoria: 'Clasificaciones', resultado: iloVal, resultado_numerico: null, unidad: '', observacion: '' })
+                }
+                const profusion = getVal('PROFUSION_OPACIDADES', 'PROFUSION')
+                if (profusion) {
+                    rxResults.push({ parametro_nombre: 'PROFUSION_OPACIDADES', categoria: 'Clasificaciones', resultado: profusion, resultado_numerico: null, unidad: '', observacion: '' })
+                }
+                const tipoOpac = getVal('TIPO_OPACIDADES')
+                if (tipoOpac) {
+                    rxResults.push({ parametro_nombre: 'TIPO_OPACIDADES', categoria: 'Clasificaciones', resultado: tipoOpac, resultado_numerico: null, unidad: '', observacion: '' })
+                }
+
+                // Recomendación
+                const recomendacion = getVal('RECOMENDACION', 'RECOMENDACIONES')
+                if (recomendacion) {
+                    rxResults.push({ parametro_nombre: 'RECOMENDACION', categoria: 'Diagnóstico', resultado: recomendacion, resultado_numerico: null, unidad: '', observacion: '' })
+                }
+
+                // Técnica
+                const tecnica = getVal('TECNICA', 'TECNICA_RADIOLOGICA')
+                if (tecnica) {
+                    rxResults.push({ parametro_nombre: 'TECNICA', categoria: 'Datos del Estudio', resultado: tecnica, resultado_numerico: null, unidad: '', observacion: '' })
+                }
+
+                // ICT
+                const ict = getVal('INDICE_CARDIOTORÁCICO', 'INDICE_CARDIOTORACICO', 'ICT')
+                if (ict) {
+                    rxResults.push({ parametro_nombre: 'INDICE_CARDIOTORACICO', categoria: 'Mediciones', resultado: ict, resultado_numerico: parseFloat(ict) || null, unidad: 'ratio', observacion: '' })
+                }
+
+                console.log(`🦴 RX: Guardando ${rxResults.length} parámetros mapeados para RayosXTab...`)
+
+                const estudioRx = await crearEstudioConResultados(
+                    pacienteId,
+                    tipoEstudio,
+                    {
+                        fecha_estudio: extractedData.patientData?.reportDate || new Date().toISOString().split('T')[0],
+                        archivo_origen: fileUrl,
+                        institucion: 'GP Medical Health - RX Engine Pro',
+                        interpretacion: conclusionVal || extractedData.summary || '',
+                        diagnostico: resultado,
+                        medico_responsable: radiologo || 'Motor IA Pro v3',
+                        datos_extra: {
+                            patientData: extractedData.patientData,
+                            hallazgos: hallazgosText,
+                            region_anatomica: region,
+                            clasificacion_oit: iloVal,
+                            _ai_config: 'Gemini Flash 2.0 — RX Dedicated Pipeline'
+                        }
+                    },
+                    rxResults
+                )
+
+                // ── Guardar archivos en Storage ──
+                if (uploadedFiles.length > 0) {
+                    try {
+                        let eid = user?.empresa_id || ''
+                        if (!eid) {
+                            const { data: pac } = await supabase.from('pacientes').select('empresa_id').eq('id', pacienteId).single()
+                            eid = pac?.empresa_id || ''
+                        }
+                        if (!eid) eid = EMPRESA_PRINCIPAL_ID
+                        if (eid) {
+                            const patientName = extractedData.patientData?.name || pacienteNombre || 'Paciente'
+                            const fecha = new Date().toISOString().split('T')[0]
+                            for (let fi = 0; fi < uploadedFiles.length; fi++) {
+                                let f = uploadedFiles[fi]
+                                // Convert BMP to JPG before saving
+                                if (f.type === 'image/bmp' || f.name.toLowerCase().endsWith('.bmp')) {
+                                    f = await convertBmpToJpgFile(f)
+                                }
+                                const ext = f.name.split('.').pop() || 'jpg'
+                                const suffix = uploadedFiles.length > 1 ? `_${fi + 1}` : ''
+                                const renamedFile = new File(
+                                    [f],
+                                    `RX${suffix}_${patientName.replace(/\s+/g, '_')}_${fecha}.${ext}`,
+                                    { type: f.type }
+                                )
+                                await secureStorageService.upload(renamedFile, {
+                                    pacienteId,
+                                    empresaId: eid,
+                                    categoria: 'radiografia',
+                                    subcategoria: fi === 0 ? 'imagen' : 'interpretacion',
+                                    descripcion: `Radiografía de ${patientName} — ${region} ${proyeccion} — ${fecha}`,
+                                    userId: user?.id,
+                                    userNombre: user?.nombre ? `${user.nombre} ${user.apellido_paterno || ''}`.trim() : undefined,
+                                    userRol: user?.rol,
+                                })
+                            }
+                            console.log('📎 Archivos RX guardados en Storage con nombre correcto')
+                        }
+                    } catch (storageErr) {
+                        console.warn('⚠️ No se pudo guardar archivo RX en Storage:', storageErr)
+                    }
+                }
+
+                // Cleanup object URLs
+                uploadedFileUrls.forEach(u => URL.revokeObjectURL(u))
+                setUploadedFileUrls([])
+                setUploadedFiles([])
+
+                setPhase('done')
+                toast.success(`Radiografía integrada — ${rxResults.length} parámetros guardados`)
+                if (onSaved) onSaved()
+                return
+            }
+
+            // ═══════════════════════════════════════════════
             // OTROS ESTUDIOS: Pipeline genérico normal
             // ═══════════════════════════════════════════════
             // 1. Preparar resultados estándar (strings, números, o JSON serializado)
@@ -1012,7 +1232,7 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                             onClick={() => fileInputRef.current?.click()}
                             className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-sm transition-colors"
                         >
-                            <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length > 0) { setSelectedFile(files[0]); startProcess(files); } }} accept=".pdf,.png,.jpg,.jpeg" />
+                            <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length > 0) { setSelectedFile(files[0]); startProcess(files); } }} accept=".pdf,.png,.jpg,.jpeg,.bmp,image/bmp" />
                             <UploadCloud className="w-3.5 h-3.5" />
                             Actualizar {config.category}
                             <Badge className="bg-emerald-500 text-white border-0 text-[9px] h-4 ml-1">Pro</Badge>
@@ -1027,11 +1247,11 @@ export default function EstudioUploadReview({ pacienteId, tipoEstudio, pacienteN
                         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                         onDragLeave={() => setIsDragging(false)}
                         onClick={() => fileInputRef.current?.click()}>
-                        <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length > 0) { setSelectedFile(files[0]); startProcess(files); } }} accept=".pdf,.png,.jpg,.jpeg" />
+                        <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length > 0) { setSelectedFile(files[0]); startProcess(files); } }} accept=".pdf,.png,.jpg,.jpeg,.bmp,image/bmp" />
                         <div className={`w-24 h-24 rounded-[2.5rem] flex items-center justify-center bg-gradient-to-br ${config.gradient} shadow-2xl ${config.shadow}`}><UploadCloud className="w-12 h-12 text-white" /></div>
                         <div className="text-center">
                             <h4 className="text-2xl font-black text-slate-800 tracking-tight">Cargar {config.category}</h4>
-                            <p className="text-slate-400 font-medium mt-1">Sube el pdf o imágenes (puedes seleccionar varios e.g. Trazado + Reporte).</p>
+                            <p className="text-slate-400 font-medium mt-1">Sube PDF, imágenes JPG/PNG o BMP (puedes seleccionar varios e.g. Trazado + Reporte).</p>
                         </div>
                         <div className="flex gap-2">
                             {['PDF Vision', 'Extracción Gráfica', 'OCR v3'].map(t => <Badge key={t} className="bg-slate-100 text-slate-400 border-0 font-bold px-3 py-1 text-[10px] uppercase">{t}</Badge>)}

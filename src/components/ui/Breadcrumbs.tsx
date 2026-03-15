@@ -74,11 +74,17 @@ export function Breadcrumbs() {
 
     if (pathnames.length === 0 || pathnames[0] === 'dashboard') return null
 
+    const isDark = location.pathname.includes('/perfil')
+
     return (
-        <nav className="flex items-center space-x-2 text-xs font-bold text-slate-400 mb-6 bg-white/50 backdrop-blur-md p-2 px-4 rounded-xl border border-white/20 self-start shadow-sm">
+        <nav className={`flex items-center space-x-2 text-xs font-bold mb-6 p-2 px-4 rounded-xl self-start shadow-sm backdrop-blur-md border ${
+            isDark
+                ? 'text-white/40 bg-white/[0.04] border-white/10'
+                : 'text-slate-400 bg-white/50 border-white/20'
+        }`}>
             <Link
                 to="/dashboard"
-                className="flex items-center hover:text-primary transition-colors gap-1"
+                className={`flex items-center transition-colors gap-1 ${isDark ? 'hover:text-white/80' : 'hover:text-primary'}`}
             >
                 <Home className="w-3.5 h-3.5" />
                 <span className="sr-only">Inicio</span>
@@ -91,15 +97,15 @@ export function Breadcrumbs() {
 
                 return (
                     <React.Fragment key={to}>
-                        <ChevronRight className="w-3 h-3 text-slate-300" />
+                        <ChevronRight className={`w-3 h-3 ${isDark ? 'text-white/20' : 'text-slate-300'}`} />
                         {last ? (
-                            <span className="text-slate-900 font-black truncate max-w-[150px]">
+                            <span className={`font-black truncate max-w-[150px] ${isDark ? 'text-white/70' : 'text-slate-900'}`}>
                                 {label}
                             </span>
                         ) : (
                             <Link
                                 to={to}
-                                className="hover:text-primary transition-colors"
+                                className={`transition-colors ${isDark ? 'hover:text-white/80' : 'hover:text-primary'}`}
                             >
                                 {label}
                             </Link>

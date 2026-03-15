@@ -83,10 +83,10 @@ function buildFromResultados(estudio: any, resultados: any[]): any {
 
 // ── Clasificación de Ritmo ──
 const classifyRhythm = (fc: number | null): { label: string; color: string; bg: string; border: string; desc: string } => {
-    if (fc === null) return { label: 'Sin datos', color: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-200', desc: 'No hay datos de frecuencia cardíaca' }
-    if (fc < 60) return { label: 'Bradicardia', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', desc: `FC ${fc} lpm — por debajo de 60 lpm` }
-    if (fc > 100) return { label: 'Taquicardia', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200', desc: `FC ${fc} lpm — por encima de 100 lpm` }
-    return { label: 'Ritmo Normal', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', desc: `FC ${fc} lpm — rango sinusal normal` }
+    if (fc === null) return { label: 'Sin datos', color: 'text-slate-500', bg: 'bg-white/5', border: 'border-white/10', desc: 'No hay datos de frecuencia cardíaca' }
+    if (fc < 60) return { label: 'Bradicardia', color: 'text-blue-700', bg: 'bg-indigo-500/10', border: 'border-blue-200', desc: `FC ${fc} lpm — por debajo de 60 lpm` }
+    if (fc > 100) return { label: 'Taquicardia', color: 'text-rose-400', bg: 'bg-rose-500/100/10', border: 'border-red-200', desc: `FC ${fc} lpm — por encima de 100 lpm` }
+    return { label: 'Ritmo Normal', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', desc: `FC ${fc} lpm — rango sinusal normal` }
 }
 
 // ── Clasificación del Eje ──
@@ -175,16 +175,16 @@ function ECGAnalytics({ ecg }: { ecg: any }) {
                     <Activity className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                    <h3 className="text-lg font-black text-slate-800">Análisis Clínico</h3>
+                    <h3 className="text-lg font-black text-white">Análisis Clínico</h3>
                     <p className="text-xs text-slate-400 font-medium">Interpretación automática de parámetros electrocardiográficos</p>
                 </div>
             </div>
 
             {/* KPI Cards — same style as Espirometria */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                <div className="bg-slate-900/60 rounded-2xl border border-white/10 backdrop-blur-xl p-4 shadow-sm">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Freq. Cardíaca</p>
-                    <p className="text-3xl font-black text-slate-800">
+                    <p className="text-3xl font-black text-white">
                         {ecg.fc ?? '—'}
                         <span className="text-sm font-bold text-slate-400 ml-1">lpm</span>
                     </p>
@@ -193,9 +193,9 @@ function ECGAnalytics({ ecg }: { ecg: any }) {
                     </p>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                <div className="bg-slate-900/60 rounded-2xl border border-white/10 backdrop-blur-xl p-4 shadow-sm">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Intervalo PR</p>
-                    <p className="text-3xl font-black text-slate-800">
+                    <p className="text-3xl font-black text-white">
                         {ecg.intervalo_pr ?? '—'}
                         <span className="text-sm font-bold text-slate-400 ml-1">ms</span>
                     </p>
@@ -204,9 +204,9 @@ function ECGAnalytics({ ecg }: { ecg: any }) {
                     </p>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                <div className="bg-slate-900/60 rounded-2xl border border-white/10 backdrop-blur-xl p-4 shadow-sm">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Complejo QRS</p>
-                    <p className="text-3xl font-black text-slate-800">
+                    <p className="text-3xl font-black text-white">
                         {ecg.complejo_qrs ?? '—'}
                         <span className="text-sm font-bold text-slate-400 ml-1">ms</span>
                     </p>
@@ -215,9 +215,9 @@ function ECGAnalytics({ ecg }: { ecg: any }) {
                     </p>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                <div className="bg-slate-900/60 rounded-2xl border border-white/10 backdrop-blur-xl p-4 shadow-sm">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">QTc (Bazett)</p>
-                    <p className="text-3xl font-black text-slate-800">
+                    <p className="text-3xl font-black text-white">
                         {ecg.intervalo_qtc ?? '—'}
                         <span className="text-sm font-bold text-slate-400 ml-1">ms</span>
                     </p>
@@ -232,7 +232,7 @@ function ECGAnalytics({ ecg }: { ecg: any }) {
                 {/* Rhythm Classification */}
                 <div className={`rounded-2xl border p-5 ${rhythm.bg} ${rhythm.border}`}>
                     <div className="flex items-center gap-2 mb-3">
-                        <Shield className="w-5 h-5 text-slate-600" />
+                        <Shield className="w-5 h-5 text-slate-300" />
                         <p className="text-xs font-black uppercase tracking-widest text-slate-500">Clasificación Rítmica</p>
                     </div>
                     <p className={`text-xl font-black ${rhythm.color}`}>{rhythm.label}</p>
@@ -240,9 +240,9 @@ function ECGAnalytics({ ecg }: { ecg: any }) {
                 </div>
 
                 {/* Global Result */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="bg-slate-900/60 rounded-[2rem] border border-white/10 backdrop-blur-xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
                     <div className="flex items-center gap-2 mb-3">
-                        <TrendingUp className="w-5 h-5 text-slate-600" />
+                        <TrendingUp className="w-5 h-5 text-slate-300" />
                         <p className="text-xs font-black uppercase tracking-widest text-slate-500">Resultado Global</p>
                     </div>
                     <p className={`text-xl font-black ${global.color}`}>
@@ -254,27 +254,27 @@ function ECGAnalytics({ ecg }: { ecg: any }) {
                 </div>
 
                 {/* Axis + Conduction */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="bg-slate-900/60 rounded-[2rem] border border-white/10 backdrop-blur-xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
                     <div className="flex items-center gap-2 mb-3">
-                        <Heart className="w-5 h-5 text-slate-600" />
+                        <Heart className="w-5 h-5 text-slate-300" />
                         <p className="text-xs font-black uppercase tracking-widest text-slate-500">Vectores Eléctricos</p>
                     </div>
                     <div className="space-y-2 text-sm">
                         <div className="flex items-center justify-between">
-                            <span className="text-slate-600">Eje QRS</span>
+                            <span className="text-slate-300">Eje QRS</span>
                             <span className={`font-bold ${axis.color}`}>{ecg.eje_qrs !== null ? `${ecg.eje_qrs}°` : '—'} ({axis.label})</span>
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-slate-600">Eje P</span>
-                            <span className="font-bold text-slate-700">{ecg.eje_p !== null ? `${ecg.eje_p}°` : '—'}</span>
+                            <span className="text-slate-300">Eje P</span>
+                            <span className="font-bold text-white/90">{ecg.eje_p !== null ? `${ecg.eje_p}°` : '—'}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-slate-600">Eje T</span>
-                            <span className="font-bold text-slate-700">{ecg.eje_t !== null ? `${ecg.eje_t}°` : '—'}</span>
+                            <span className="text-slate-300">Eje T</span>
+                            <span className="font-bold text-white/90">{ecg.eje_t !== null ? `${ecg.eje_t}°` : '—'}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-slate-600">Ritmo</span>
-                            <span className="font-bold text-slate-700">{ecg.ritmo_automatico || '—'}</span>
+                            <span className="text-slate-300">Ritmo</span>
+                            <span className="font-bold text-white/90">{ecg.ritmo_automatico || '—'}</span>
                         </div>
                     </div>
                 </div>
@@ -283,8 +283,8 @@ function ECGAnalytics({ ecg }: { ecg: any }) {
             {/* Charts — same grid as Espirometria */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Bar Chart: Intervals */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                    <h4 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2">
+                <div className="bg-slate-900/60 rounded-[2rem] border border-white/10 backdrop-blur-xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+                    <h4 className="text-sm font-black text-white/90 mb-4 flex items-center gap-2">
                         <BarChart3 className="w-4 h-4 text-rose-500" />
                         Intervalos Cardíacos
                     </h4>
@@ -306,8 +306,8 @@ function ECGAnalytics({ ecg }: { ecg: any }) {
                 </div>
 
                 {/* Radar Chart */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                    <h4 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2">
+                <div className="bg-slate-900/60 rounded-[2rem] border border-white/10 backdrop-blur-xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+                    <h4 className="text-sm font-black text-white/90 mb-4 flex items-center gap-2">
                         <Brain className="w-4 h-4 text-indigo-500" />
                         Perfil Cardíaco (Radar)
                     </h4>
@@ -330,8 +330,8 @@ function ECGAnalytics({ ecg }: { ecg: any }) {
             {/* Rhythm Visualizer — ECG waveform strip */}
             <div className="bg-slate-950 rounded-2xl p-5 overflow-hidden relative border border-slate-800 shadow-sm">
                 <div className="flex items-center gap-3 mb-3">
-                    <div className="flex items-center gap-2 px-3 py-1 bg-rose-500/10 rounded-full border border-rose-500/20">
-                        <motion.div className="w-2 h-2 rounded-full bg-rose-500"
+                    <div className="flex items-center gap-2 px-3 py-1 bg-rose-500/100/10 rounded-full border border-rose-500/20">
+                        <motion.div className="w-2 h-2 rounded-full bg-rose-500/100"
                             animate={{ opacity: [1, 0.3, 1] }}
                             transition={{ duration: ecg.fc ? 60 / ecg.fc : 0.8, repeat: Infinity }} />
                         <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest">
@@ -365,14 +365,14 @@ function ECGAnalytics({ ecg }: { ecg: any }) {
             </div>
 
             {/* Detailed Parameters Table — same style as Espirometria */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm overflow-x-auto">
-                <h4 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2">
+            <div className="bg-slate-900/60 rounded-[2rem] border border-white/10 backdrop-blur-xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-x-auto">
+                <h4 className="text-sm font-black text-white/90 mb-4 flex items-center gap-2">
                     <Table2 className="w-4 h-4 text-slate-500" />
                     Tabla Detallada de Parámetros
                 </h4>
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="border-b-2 border-slate-200">
+                        <tr className="border-b-2 border-white/10">
                             <th className="text-left py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Parámetro</th>
                             <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-blue-600">Valor</th>
                             <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Unidad</th>
@@ -384,8 +384,8 @@ function ECGAnalytics({ ecg }: { ecg: any }) {
                         {params.map((row, idx) => {
                             const low = isParamLow(row.key, row.value)
                             return (
-                                <tr key={idx} className={`border-b border-slate-100 ${low ? 'bg-red-50/50' : 'hover:bg-slate-50'}`}>
-                                    <td className="py-2 px-2 font-semibold text-slate-700">{row.name}</td>
+                                <tr key={idx} className={`border-b border-white/5 ${low ? 'bg-rose-500/100/10/50' : 'hover:bg-white/5'}`}>
+                                    <td className="py-2 px-2 font-semibold text-white/90">{row.name}</td>
                                     <td className="py-2 px-2 text-right font-bold text-blue-700">{row.value}</td>
                                     <td className="py-2 px-2 text-right text-slate-500">{row.unit}</td>
                                     <td className="py-2 px-2 text-right text-slate-500">{row.ref}</td>
@@ -443,8 +443,8 @@ function RhythmStrip({ ecg }: { ecg: any }) {
     return (
         <div className="bg-slate-950 rounded-2xl p-5 overflow-hidden relative border border-slate-800 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 rounded-full border border-rose-500/20">
-                    <motion.div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/100/10 rounded-full border border-rose-500/20">
+                    <motion.div className="w-2.5 h-2.5 rounded-full bg-rose-500/100 shadow-[0_0_8px_rgba(244,63,94,0.6)]"
                         animate={{ opacity: [1, 0.3, 1], scale: [1, 1.15, 1] }}
                         transition={{ duration: 60 / bpm, repeat: Infinity }} />
                     <span className="text-[11px] font-black text-rose-400 uppercase tracking-widest">
@@ -498,9 +498,9 @@ function ECGScannerView({ ecg }: { ecg: any }) {
                 ].map((p, i) => {
                     const isWarn = p.value !== null && (p.value < p.min || p.value > p.max)
                     return (
-                        <div key={i} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                        <div key={i} className="bg-slate-900/60 rounded-2xl border border-white/10 backdrop-blur-xl p-4 shadow-sm">
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">{p.label}</p>
-                            <p className="text-3xl font-black text-slate-800">
+                            <p className="text-3xl font-black text-white">
                                 {p.value ?? '—'}
                                 <span className="text-sm font-bold text-slate-400 ml-1">{p.unit}</span>
                             </p>
@@ -515,28 +515,28 @@ function ECGScannerView({ ecg }: { ecg: any }) {
 
             {/* Interpretation narrative */}
             {(ecg.descripcion_ritmo || ecg.analisis_morfologico || ecg.conclusion) && (
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-4">
+                <div className="bg-slate-900/60 rounded-[2rem] border border-white/10 backdrop-blur-xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] space-y-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reporte de Interpretación Médica</p>
                     {ecg.descripcion_ritmo && (
-                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="p-3 bg-white/5 rounded-xl border border-white/5">
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Ritmo Cardiaco</p>
-                            <p className="text-sm text-slate-700 leading-relaxed">{ecg.descripcion_ritmo}</p>
+                            <p className="text-sm text-white/90 leading-relaxed">{ecg.descripcion_ritmo}</p>
                         </div>
                     )}
                     {ecg.analisis_morfologico && (
-                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="p-3 bg-white/5 rounded-xl border border-white/5">
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Análisis Morfológico</p>
-                            <p className="text-sm text-slate-700 leading-relaxed">{ecg.analisis_morfologico}</p>
+                            <p className="text-sm text-white/90 leading-relaxed">{ecg.analisis_morfologico}</p>
                         </div>
                     )}
                     {ecg.segmento_st && (
-                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="p-3 bg-white/5 rounded-xl border border-white/5">
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Segmento ST</p>
-                            <p className="text-sm text-slate-700 leading-relaxed">{ecg.segmento_st}</p>
+                            <p className="text-sm text-white/90 leading-relaxed">{ecg.segmento_st}</p>
                         </div>
                     )}
                     {ecg.conclusion && (
-                        <div className={`p-4 rounded-xl border ${isNormal ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+                        <div className={`p-4 rounded-xl border ${isNormal ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'}`}>
                             <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${isNormal ? 'text-emerald-500' : 'text-amber-500'}`}>Conclusión</p>
                             <p className={`text-sm font-medium leading-relaxed ${isNormal ? 'text-emerald-800' : 'text-amber-800'}`}>{ecg.conclusion}</p>
                         </div>
@@ -546,13 +546,13 @@ function ECGScannerView({ ecg }: { ecg: any }) {
 
             {/* Study metadata */}
             {(ecg.medico || ecg.equipo || ecg.tipo_estudio) && (
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                <div className="bg-slate-900/60 rounded-[2rem] border border-white/10 backdrop-blur-xl p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Datos del Estudio</p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        {ecg.medico && <div><p className="text-slate-400 text-xs">Médico</p><p className="font-bold text-slate-700">{ecg.medico}</p></div>}
-                        {ecg.equipo && <div><p className="text-slate-400 text-xs">Equipo</p><p className="font-bold text-slate-700">{ecg.equipo}</p></div>}
-                        {ecg.tipo_estudio && <div><p className="text-slate-400 text-xs">Tipo</p><p className="font-bold text-slate-700">{ecg.tipo_estudio}</p></div>}
-                        {ecg.fecha && <div><p className="text-slate-400 text-xs">Fecha</p><p className="font-bold text-slate-700">{ecg.fecha}</p></div>}
+                        {ecg.medico && <div><p className="text-slate-400 text-xs">Médico</p><p className="font-bold text-white/90">{ecg.medico}</p></div>}
+                        {ecg.equipo && <div><p className="text-slate-400 text-xs">Equipo</p><p className="font-bold text-white/90">{ecg.equipo}</p></div>}
+                        {ecg.tipo_estudio && <div><p className="text-slate-400 text-xs">Tipo</p><p className="font-bold text-white/90">{ecg.tipo_estudio}</p></div>}
+                        {ecg.fecha && <div><p className="text-slate-400 text-xs">Fecha</p><p className="font-bold text-white/90">{ecg.fecha}</p></div>}
                     </div>
                 </div>
             )}
@@ -670,10 +670,10 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
     if (estudios.length === 0) return (
         <Card className="border-0 shadow-sm">
             <CardContent className="p-12 text-center">
-                <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <HeartPulse className="w-8 h-8 text-rose-300" />
                 </div>
-                <h3 className="text-slate-800 font-bold text-lg">Sin registros de electrocardiograma</h3>
+                <h3 className="text-white font-bold text-lg">Sin registros de electrocardiograma</h3>
                 <p className="text-slate-500 text-sm max-w-sm mx-auto mt-2 mb-8">
                     Sube el PDF del reporte de ECG y la IA extraerá automáticamente
                     todos los parámetros cardíacos para generar la réplica digital completa.
@@ -691,14 +691,14 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
         <div className="space-y-5">
 
             {/* Header — same style as Espirometria */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <div className="bg-slate-900/60 backdrop-blur-md rounded-2xl border border-white/5 shadow-sm p-5">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center shadow-lg shadow-rose-200">
                             <HeartPulse className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-black text-slate-800">Electrocardiograma</h3>
+                            <h3 className="text-lg font-black text-white">Electrocardiograma</h3>
                             <p className="text-xs text-slate-400 font-medium">
                                 {currentEcg.medico || 'GP Medical Health'} — {currentEcg.fecha || ''}
                             </p>
@@ -715,9 +715,9 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                         </button>
 
                         {/* Result badge */}
-                        <div className={`px-4 py-2 rounded-xl ${isNormalEcg ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}`}>
+                        <div className={`px-4 py-2 rounded-xl ${isNormalEcg ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-amber-500/10 border border-amber-500/30'}`}>
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Interpretación</p>
-                            <p className={`text-sm font-bold ${isNormalEcg ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            <p className={`text-sm font-bold ${isNormalEcg ? 'text-emerald-400' : 'text-amber-400'}`}>
                                 {currentEcg.resultado_global || (isNormalEcg ? 'Normal' : 'Con hallazgos')}
                             </p>
                         </div>
@@ -729,9 +729,9 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
 
                 {/* Conclusion note */}
                 {currentEcg.conclusion && (
-                    <div className={`mt-4 flex items-start gap-3 p-3 rounded-xl ${isNormalEcg ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}`}>
+                    <div className={`mt-4 flex items-start gap-3 p-3 rounded-xl ${isNormalEcg ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-amber-500/10 border border-amber-500/30'}`}>
                         <CheckCircle className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isNormalEcg ? 'text-emerald-600' : 'text-amber-600'}`} />
-                        <p className={`text-sm font-medium ${isNormalEcg ? 'text-emerald-700' : 'text-amber-700'}`}>{currentEcg.conclusion}</p>
+                        <p className={`text-sm font-medium ${isNormalEcg ? 'text-emerald-400' : 'text-amber-400'}`}>{currentEcg.conclusion}</p>
                     </div>
                 )}
             </div>
@@ -744,8 +744,8 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                             key={e.id || i}
                             onClick={() => setSelectedIdx(i)}
                             className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all ${i === selectedIdx
-                                ? 'bg-rose-500 text-white shadow-lg shadow-rose-200'
-                                : 'bg-white text-slate-600 border border-slate-200 hover:border-rose-200'
+                                ? 'bg-rose-500/100 text-white shadow-lg shadow-rose-200'
+                                : 'bg-slate-900/60 backdrop-blur-md text-slate-300 border border-white/10 hover:border-rose-200'
                             }`}
                         >
                             {e.fecha ? new Date(e.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : `Estudio ${i + 1}`}
@@ -755,12 +755,12 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
             )}
 
             {/* Tabs — same style as Espirometria */}
-            <div className="flex bg-slate-100 p-1.5 rounded-xl w-fit">
+            <div className="flex bg-black/20 p-1.5 rounded-xl w-fit">
                 <button
                     onClick={() => setActiveView('scanner')}
                     className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${activeView === 'scanner'
-                        ? 'bg-white text-rose-700 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                        ? 'bg-white/10 text-rose-400 shadow-sm'
+                        : 'text-slate-500 hover:text-white/90 hover:bg-slate-900/60 backdrop-blur-md/[0.02]'
                     }`}
                 >
                     <HeartPulse className="w-4 h-4" />
@@ -769,8 +769,8 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
                 <button
                     onClick={() => setActiveView('analisis')}
                     className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${activeView === 'analisis'
-                        ? 'bg-white text-emerald-700 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                        ? 'bg-slate-900/60 backdrop-blur-md text-emerald-400 shadow-sm'
+                        : 'text-slate-500 hover:text-white/90 hover:bg-slate-900/60 backdrop-blur-md/[0.02]'
                     }`}
                 >
                     <Activity className="w-4 h-4" />
@@ -801,3 +801,4 @@ export default function ElectrocardiogramaTab({ pacienteId, paciente }: { pacien
         </div>
     )
 }
+

@@ -14,11 +14,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     FlaskConical, Upload, Loader2, CheckCircle, AlertTriangle, RefreshCw,
     Save, X, Activity, TrendingUp, TrendingDown, Minus, Brain, Shield,
-    BarChart3, Zap, Target, FileCheck, Table2, Eye, Beaker
+    BarChart3, Zap, Target, FileCheck, Table2, Eye, Beaker, Trash2
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase'
+import { toast } from 'sonner'
 import { analyzeLabDirect } from '@/services/geminiDocumentService'
 import DocumentosAdjuntos from '@/components/expediente/DocumentosAdjuntos'
 import { secureStorageService } from '@/services/secureStorageService'
@@ -77,11 +78,11 @@ const CLINICAL_KNOWLEDGE: Record<string, { high?: string; low?: string; area: st
 
 // Clinical area labels
 const AREA_LABELS: Record<string, { name: string; icon: string; gradient: string; bg: string; border: string; text: string }> = {
-    metabolico: { name: 'Perfil Metabólico', icon: '🔬', gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700' },
-    hematologico: { name: 'Perfil Hematológico', icon: '🩸', gradient: 'from-red-500 to-rose-600', bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-700' },
-    renal: { name: 'Función Renal', icon: '💧', gradient: 'from-cyan-500 to-sky-600', bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-700' },
-    hepatico: { name: 'Función Hepática', icon: '🫁', gradient: 'from-yellow-500 to-amber-600', bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700' },
-    lipidos: { name: 'Perfil Lipídico', icon: '❤️', gradient: 'from-rose-500 to-pink-600', bg: 'bg-pink-50', border: 'border-pink-200', text: 'text-pink-700' },
+    metabolico: { name: 'Perfil Metabólico', icon: '🔬', gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-400' },
+    hematologico: { name: 'Perfil Hematológico', icon: '🩸', gradient: 'from-red-500 to-rose-600', bg: 'bg-rose-500/10', border: 'border-rose-500/20', text: 'text-rose-400' },
+    renal: { name: 'Función Renal', icon: '💧', gradient: 'from-cyan-500 to-sky-600', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', text: 'text-cyan-400' },
+    hepatico: { name: 'Función Hepática', icon: '🫁', gradient: 'from-yellow-500 to-amber-600', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', text: 'text-yellow-400' },
+    lipidos: { name: 'Perfil Lipídico', icon: '❤️', gradient: 'from-rose-500 to-pink-600', bg: 'bg-pink-500/10', border: 'border-pink-500/20', text: 'text-pink-400' },
 }
 
 // Helper: find clinical interpretation for a parameter
@@ -108,6 +109,7 @@ const getClinicalArea = (param: string): string => {
 // ─── Hook: cargar laboratorio desde Supabase (universal para todos los pacientes) ───
 const useLaboratorio = (pacienteId: string) => {
     const [data, setData] = useState<any>(null)
+    const [estudioId, setEstudioId] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
 
     const load = async () => {
@@ -125,6 +127,7 @@ const useLaboratorio = (pacienteId: string) => {
             // Opción A: datos LabClone directos
             if (estudios?.[0]?.datos_extra?.labclone_data) {
                 setData(estudios[0].datos_extra.labclone_data)
+                setEstudioId(estudios[0].id)
                 return
             }
 
@@ -134,7 +137,7 @@ const useLaboratorio = (pacienteId: string) => {
                 // Intentar convertir del formato genérico con results[]
                 if (extra.results && Array.isArray(extra.results)) {
                     const converted = convertGenericToLabClone(extra)
-                    if (converted) { setData(converted); return }
+                    if (converted) { setData(converted); setEstudioId(estudios[0].id); return }
                 }
             }
 
@@ -185,7 +188,7 @@ const useLaboratorio = (pacienteId: string) => {
     }
 
     useEffect(() => { if (pacienteId) load() }, [pacienteId])
-    return { data, loading, reload: load }
+    return { data, loading, reload: load, estudioId }
 }
 
 // ─── Converters for universal patient support ───
@@ -387,18 +390,18 @@ const useLabUpload = (
 function LabReport({ data }: { data: any }) {
     if (!data) return null
     return (
-        <div className="bg-white text-slate-800 w-full rounded-2xl overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+        <div className="bg-slate-900/60 text-white w-full rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
             {/* Header */}
-            <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-900 px-8 py-6">
+            <div className="bg-gradient-to-r from-emerald-950 via-teal-900 to-emerald-950 px-8 py-6 border-b border-emerald-500/20">
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-xl font-black text-white tracking-tight">
                             {data.patientInfo?.laboratoryName || 'REPORTE DE LABORATORIO'}
                         </h1>
-                        <p className="text-emerald-300 text-xs mt-1 font-medium uppercase tracking-widest">Resultados de Análisis Clínicos</p>
+                        <p className="text-emerald-400 text-xs mt-1 font-medium uppercase tracking-widest">Resultados de Análisis Clínicos</p>
                     </div>
                     <div className="text-right">
-                        <p className="text-white/50 text-[9px] uppercase tracking-widest">Folio</p>
+                        <p className="text-emerald-400/50 text-[9px] uppercase tracking-widest">Folio</p>
                         <p className="text-lg font-black text-white">{data.patientInfo?.folio || '—'}</p>
                     </div>
                 </div>
@@ -406,9 +409,9 @@ function LabReport({ data }: { data: any }) {
 
             <div className="p-6 sm:p-8 space-y-6">
                 {/* Patient Card */}
-                <div className="bg-gradient-to-br from-slate-50 to-emerald-50/30 rounded-2xl border border-slate-200 p-5">
+                <div className="bg-white/5 rounded-2xl border border-white/10 p-5 backdrop-blur-md">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Datos del Paciente</p>
-                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-4">{data.patientInfo?.name || '—'}</h2>
+                    <h2 className="text-xl font-black text-white uppercase tracking-tight mb-4">{data.patientInfo?.name || '—'}</h2>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {[
                             { label: 'Edad', value: data.patientInfo?.age },
@@ -418,9 +421,9 @@ function LabReport({ data }: { data: any }) {
                             { label: 'Médico', value: data.patientInfo?.doctor },
                             { label: 'Impresión', value: data.patientInfo?.printDate },
                         ].filter(f => f.value).map((f, i) => (
-                            <div key={i} className="bg-white rounded-xl border border-slate-200 px-3 py-2 shadow-sm">
+                            <div key={i} className="bg-slate-800/50 rounded-xl border border-white/10 px-3 py-2 shadow-sm">
                                 <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">{f.label}</p>
-                                <p className="text-xs font-bold text-slate-800">{f.value}</p>
+                                <p className="text-xs font-bold text-white">{f.value}</p>
                             </div>
                         ))}
                     </div>
@@ -437,8 +440,8 @@ function LabReport({ data }: { data: any }) {
                             </div>
                         </div>
 
-                        <div className="rounded-xl border border-slate-200 overflow-hidden">
-                            <div className="grid grid-cols-12 gap-0 bg-slate-100 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                        <div className="rounded-xl border border-white/10 overflow-hidden backdrop-blur-md">
+                            <div className="grid grid-cols-12 gap-0 bg-white/5 border-b border-white/10 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
                                 <span className="col-span-4">Parámetro</span>
                                 <span className="col-span-2 text-center">Resultado</span>
                                 <span className="col-span-2 text-center">Unidad</span>
@@ -450,13 +453,13 @@ function LabReport({ data }: { data: any }) {
                                 return (
                                     <div key={ri}>
                                         {showGroup && r.groupName && (
-                                            <div className="px-4 py-2 bg-slate-50 border-t border-slate-100">
-                                                <p className="text-xs font-black text-slate-700">{r.groupName}</p>
+                                            <div className="px-4 py-2 bg-white/[0.02] border-t border-white/10">
+                                                <p className="text-xs font-black text-slate-300">{r.groupName}</p>
                                             </div>
                                         )}
-                                        <div className={`grid grid-cols-12 gap-0 px-4 py-2 text-xs border-t border-slate-50 items-center ${r.isAbnormal ? 'bg-red-50/50' : 'hover:bg-slate-50/50'}`}>
-                                            <span className="col-span-4 font-medium text-slate-700">{r.parameter}</span>
-                                            <span className={`col-span-2 text-center font-black tabular-nums ${r.isAbnormal ? 'text-red-600' : 'text-slate-900'}`}>
+                                        <div className={`grid grid-cols-12 gap-0 px-4 py-2 text-xs border-t border-white/5 items-center ${r.isAbnormal ? 'bg-red-500/10' : 'hover:bg-white/[0.04]'}`}>
+                                            <span className="col-span-4 font-medium text-slate-200">{r.parameter}</span>
+                                            <span className={`col-span-2 text-center font-black tabular-nums ${r.isAbnormal ? 'text-red-400' : 'text-emerald-400'}`}>
                                                 {r.value}
                                             </span>
                                             <span className="col-span-2 text-center text-slate-400 text-[10px]">{r.unit}</span>
@@ -472,14 +475,14 @@ function LabReport({ data }: { data: any }) {
 
                 {/* Signatures */}
                 {data.signatures?.length > 0 && (
-                    <div className="mt-8 pt-6 border-t border-slate-200 flex justify-end">
+                    <div className="mt-8 pt-6 border-t border-white/10 flex justify-end">
                         {data.signatures.map((sig: any, i: number) => (
                             <div key={i} className="text-center px-8">
-                                <div className="w-48 border-b border-slate-300 mb-2 mx-auto" />
-                                <p className="text-[10px] tracking-[0.3em] text-slate-400 mb-1">A T E N T A M E N T E</p>
-                                <p className="text-xs font-bold text-slate-700">{sig.name}</p>
-                                {sig.title && <p className="text-[10px] text-slate-500">{sig.title}</p>}
-                                {sig.id && <p className="text-[10px] text-slate-500">{sig.id}</p>}
+                                <div className="w-48 border-b border-white/20 mb-2 mx-auto" />
+                                <p className="text-[10px] tracking-[0.3em] text-slate-500 mb-1">A T E N T A M E N T E</p>
+                                <p className="text-xs font-bold text-slate-200">{sig.name}</p>
+                                {sig.title && <p className="text-[10px] text-slate-400">{sig.title}</p>}
+                                {sig.id && <p className="text-[10px] text-slate-400">{sig.id}</p>}
                             </div>
                         ))}
                     </div>
@@ -564,26 +567,27 @@ function LabAnalytics({ data }: { data: any }) {
     return (
         <div className="space-y-5">
             {/* KPI Header */}
-            <div className="bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 rounded-2xl p-6 text-white">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center">
-                        <Brain className="w-6 h-6" />
+            <div className="bg-gradient-to-br from-emerald-950 via-teal-900/50 to-slate-900/80 rounded-[2rem] border border-emerald-500/20 backdrop-blur-xl p-6 text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/3" />
+                <div className="flex items-center gap-3 mb-4 relative z-10">
+                    <div className="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+                        <Brain className="w-6 h-6 text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
                     </div>
                     <div>
                         <p className="font-black text-base">Análisis Clínico de Laboratorio</p>
-                        <p className="text-emerald-200 text-xs">{data.patientInfo?.name} — {data.patientInfo?.registrationDate || ''}</p>
+                        <p className="text-emerald-400/80 text-xs font-medium">{data.patientInfo?.name} — {data.patientInfo?.registrationDate || ''}</p>
                     </div>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 relative z-10">
                     {[
-                        { label: 'Exámenes', count: data.exams?.length || 0, color: 'bg-white/10 text-white' },
-                        { label: 'Parámetros', count: totalParams, color: 'bg-cyan-500/20 text-cyan-200' },
-                        { label: 'Normales', count: normalCount, color: 'bg-emerald-500/20 text-emerald-200' },
-                        { label: 'Alterados', count: abnormalCount, color: 'bg-amber-500/20 text-amber-200' },
+                        { label: 'Exámenes', count: data.exams?.length || 0, color: 'bg-white/5 border border-white/10 text-white' },
+                        { label: 'Parámetros', count: totalParams, color: 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400' },
+                        { label: 'Normales', count: normalCount, color: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' },
+                        { label: 'Alterados', count: abnormalCount, color: 'bg-amber-500/10 border border-amber-500/20 text-amber-400' },
                     ].map(({ label, count, color }) => (
-                        <div key={label} className={`p-3 rounded-xl ${color} text-center`}>
+                        <div key={label} className={`p-3 rounded-xl ${color} text-center backdrop-blur-sm`}>
                             <p className="text-3xl font-black">{count}</p>
-                            <p className="text-xs font-bold opacity-80">{label}</p>
+                            <p className="text-xs font-bold opacity-80 uppercase tracking-wide">{label}</p>
                         </div>
                     ))}
                 </div>
@@ -592,158 +596,183 @@ function LabAnalytics({ data }: { data: any }) {
             {/* Distribution Overview: Pie + Radar */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Pie Chart */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Target className="w-5 h-5 text-emerald-600" />
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-500">Distribución Global</p>
+                <details className="group bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden">
+                    <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
+                        <div className="flex items-center gap-2 pointer-events-none">
+                            <Target className="w-4 h-4 text-emerald-400" />
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0">Distribución Global</p>
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
+                    </summary>
+                    <div className="p-5 pt-0 border-t border-white/5">
+                        <div className="h-[280px]">
+                            <ResponsiveContainer>
+                                <PieChart>
+                                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90}
+                                        paddingAngle={4} dataKey="value" stroke="none" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                        labelLine={false}>
+                                        {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                                    </Pie>
+                                    <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', color: 'white', borderRadius: '12px' }} itemStyle={{ color: 'white' }} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <div className="flex justify-center gap-6 mt-2">
+                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" /><span className="text-xs text-white font-medium">Normal ({normalCount})</span></div>
+                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]" /><span className="text-xs text-white font-medium">Alterado ({abnormalCount})</span></div>
+                        </div>
                     </div>
-                    <div className="h-[220px]">
-                        <ResponsiveContainer>
-                            <PieChart>
-                                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90}
-                                    paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                    labelLine={false}>
-                                    {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                    <div className="flex justify-center gap-6 mt-2">
-                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-xs text-slate-600 font-medium">Normal ({normalCount})</span></div>
-                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-500" /><span className="text-xs text-slate-600 font-medium">Alterado ({abnormalCount})</span></div>
-                    </div>
-                </div>
+                </details>
 
                 {/* Radar by Exam Group */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Activity className="w-5 h-5 text-blue-600" />
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-500">% Normal por Examen</p>
+                <details className="group bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden">
+                    <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
+                        <div className="flex items-center gap-2 pointer-events-none">
+                            <Activity className="w-4 h-4 text-blue-400" />
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0">% Normal por Examen</p>
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
+                    </summary>
+                    <div className="p-5 pt-0 border-t border-white/5">
+                        <div className="h-[280px]">
+                            <ResponsiveContainer>
+                                <RadarChart data={examGroups}>
+                                    <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                                    <PolarAngleAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                                    <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+                                    <Radar name="% Normal" dataKey="pctNormal" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', color: 'white', borderRadius: '12px' }} itemStyle={{ color: 'white' }} />
+                                </RadarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
-                    <div className="h-[220px]">
-                        <ResponsiveContainer>
-                            <RadarChart data={examGroups}>
-                                <PolarGrid stroke="#e2e8f0" />
-                                <PolarAngleAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
-                                <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-                                <Radar name="% Normal" dataKey="pctNormal" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
-                                <Tooltip formatter={(v: number) => `${v}%`} />
-                            </RadarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
+                </details>
             </div>
 
             {/* Bar Chart — Values vs Reference */}
             {barData.length > 0 && (
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4">
-                        <BarChart3 className="w-5 h-5 text-indigo-600" />
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-500">Valores vs Rango de Referencia</p>
+                <details className="group bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden">
+                    <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
+                        <div className="flex items-center gap-2 pointer-events-none">
+                            <BarChart3 className="w-4 h-4 text-indigo-400" />
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0">Valores vs Rango de Referencia</p>
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
+                    </summary>
+                    <div className="p-5 pt-0 border-t border-white/5">
+                        <div className="h-[320px]">
+                            <ResponsiveContainer>
+                                <BarChart data={barData} layout="vertical" margin={{ left: 10 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                    <XAxis type="number" tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                                    <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                                    <Tooltip content={({ active, payload }) => {
+                                        if (!active || !payload?.[0]) return null
+                                        const d = payload[0].payload
+                                        return (
+                                            <div className="bg-slate-900 border border-white/10 p-3 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.5)] backdrop-blur-sm text-xs">
+                                                <p className="font-bold text-white">{d.name}</p>
+                                                <p className="text-slate-300">Valor: <span className={`font-black ${d.isAbnormal ? 'text-red-400' : 'text-emerald-400'}`}>{d.value}</span></p>
+                                                <p className="text-slate-500">Ref: {d.min} – {d.max}</p>
+                                            </div>
+                                        )
+                                    }} />
+                                    <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={16}>
+                                        {barData.map((_, i) => <Cell key={i} fill={COLORS_BAR[i]} />)}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
-                    <div className="h-[320px]">
-                        <ResponsiveContainer>
-                            <BarChart data={barData} layout="vertical" margin={{ left: 10 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                                <XAxis type="number" tick={{ fontSize: 10 }} />
-                                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} />
-                                <Tooltip content={({ active, payload }) => {
-                                    if (!active || !payload?.[0]) return null
-                                    const d = payload[0].payload
-                                    return (
-                                        <div className="bg-white p-3 rounded-xl shadow-lg border text-xs">
-                                            <p className="font-bold text-slate-800">{d.name}</p>
-                                            <p>Valor: <span className="font-black">{d.value}</span></p>
-                                            <p className="text-slate-400">Ref: {d.min} – {d.max}</p>
-                                        </div>
-                                    )
-                                }} />
-                                <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={16}>
-                                    {barData.map((_, i) => <Cell key={i} fill={COLORS_BAR[i]} />)}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
+                </details>
             )}
 
             {/* Animated Value Bars for ALL numeric results */}
             {numericResults.length > 0 && (
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Zap className="w-5 h-5 text-amber-500" />
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-500">Posición dentro del Rango</p>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {numericResults.slice(0, 30).map((r: any, i: number) => {
-                            const rangeExtMin = r.refMin * 0.7
-                            const rangeExtMax = r.refMax * 1.3
-                            const totalRange = rangeExtMax - rangeExtMin
-                            const minPct = ((r.refMin - rangeExtMin) / totalRange) * 100
-                            const maxPct = ((r.refMax - rangeExtMin) / totalRange) * 100
-                            const valPct = Math.max(2, Math.min(98, ((r.numValue - rangeExtMin) / totalRange) * 100))
-                            const isHigh = r.numValue > r.refMax
-                            const isLow = r.numValue < r.refMin
-                            const isNorm = !isHigh && !isLow
+                <details className="group bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden" open>
+                    <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
+                        <div className="flex items-center gap-2 pointer-events-none">
+                            <Zap className="w-4 h-4 text-emerald-400" />
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0">Posición dentro del Rango</p>
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
+                    </summary>
+                    <div className="p-5 pt-0 border-t border-white/5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {numericResults.slice(0, 30).map((r: any, i: number) => {
+                                const rangeExtMin = r.refMin * 0.7
+                                const rangeExtMax = r.refMax * 1.3
+                                const totalRange = rangeExtMax - rangeExtMin
+                                const minPct = ((r.refMin - rangeExtMin) / totalRange) * 100
+                                const maxPct = ((r.refMax - rangeExtMin) / totalRange) * 100
+                                const valPct = Math.max(2, Math.min(98, ((r.numValue - rangeExtMin) / totalRange) * 100))
+                                const isHigh = r.numValue > r.refMax
+                                const isLow = r.numValue < r.refMin
+                                const isNorm = !isHigh && !isLow
 
-                            return (
-                                <div key={i} className={`p-3 rounded-xl border ${isNorm ? 'border-slate-100 bg-white' : isHigh ? 'border-red-100 bg-red-50' : 'border-blue-100 bg-blue-50'}`}>
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="text-xs font-bold text-slate-700 truncate max-w-[60%]">{r.parameter}</span>
-                                        <div className="text-right">
-                                            <span className={`text-sm font-black tabular-nums ${isNorm ? 'text-emerald-700' : isHigh ? 'text-red-700' : 'text-blue-700'}`}>{r.numValue}</span>
-                                            <span className="text-[9px] text-slate-400 ml-1">{r.unit}</span>
+                                return (
+                                    <div key={i} className={`p-3 rounded-xl border backdrop-blur-sm ${isNorm ? 'border-white/10 bg-white/5' : isHigh ? 'border-red-500/30 bg-red-500/10' : 'border-blue-500/30 bg-blue-500/10'}`}>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className={`text-xs font-bold truncate max-w-[60%] ${isNorm ? 'text-white' : 'text-slate-200'}`}>{r.parameter}</span>
+                                            <div className="text-right">
+                                                <span className={`text-sm font-black tabular-nums ${isNorm ? 'text-emerald-400' : isHigh ? 'text-red-400' : 'text-blue-400'}`}>{r.numValue}</span>
+                                                <span className="text-[9px] text-slate-400 ml-1">{r.unit}</span>
+                                            </div>
+                                        </div>
+                                        <div className="relative h-4 bg-slate-800 rounded-full overflow-hidden shadow-inner border border-white/5">
+                                            <div className="absolute top-0 h-full bg-slate-600/50 rounded-full border border-slate-500/30"
+                                                style={{ left: `${minPct}%`, width: `${maxPct - minPct}%` }} />
+                                            <motion.div className={`absolute top-0.5 bottom-0.5 w-2 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)] ${isNorm ? 'bg-emerald-400' : isHigh ? 'bg-red-400' : 'bg-blue-400'}`}
+                                                style={{ left: `calc(${valPct}% - 4px)` }}
+                                                initial={{ left: `calc(${minPct}% - 4px)`, opacity: 0 }}
+                                                animate={{ left: `calc(${valPct}% - 4px)`, opacity: 1 }}
+                                                transition={{ delay: i * 0.03, duration: 0.7, ease: 'easeOut' }}
+                                            />
+                                        </div>
+                                        <div className="flex justify-between text-[9px] text-slate-400 mt-1 font-medium">
+                                            <span>{r.refMin}</span>
+                                            <span className={`font-bold ${isNorm ? 'text-emerald-400' : isHigh ? 'text-red-400' : 'text-blue-400'}`}>
+                                                {isNorm ? '✓ Normal' : isHigh ? '↑ Elevado' : '↓ Bajo'}
+                                            </span>
+                                            <span>{r.refMax}</span>
                                         </div>
                                     </div>
-                                    <div className="relative h-4 bg-slate-100 rounded-full overflow-hidden">
-                                        <div className="absolute top-0 h-full bg-emerald-100 rounded-full"
-                                            style={{ left: `${minPct}%`, width: `${maxPct - minPct}%` }} />
-                                        <motion.div className={`absolute top-0.5 bottom-0.5 w-2 rounded-full shadow-sm ${isNorm ? 'bg-emerald-500' : isHigh ? 'bg-red-500' : 'bg-blue-500'}`}
-                                            style={{ left: `calc(${valPct}% - 4px)` }}
-                                            initial={{ left: `calc(${minPct}% - 4px)`, opacity: 0 }}
-                                            animate={{ left: `calc(${valPct}% - 4px)`, opacity: 1 }}
-                                            transition={{ delay: i * 0.03, duration: 0.7, ease: 'easeOut' }}
-                                        />
-                                    </div>
-                                    <div className="flex justify-between text-[9px] text-slate-400 mt-1 font-medium">
-                                        <span>{r.refMin}</span>
-                                        <span className={`font-bold ${isNorm ? 'text-emerald-600' : isHigh ? 'text-red-600' : 'text-blue-600'}`}>
-                                            {isNorm ? '✓ Normal' : isHigh ? '↑ Elevado' : '↓ Bajo'}
-                                        </span>
-                                        <span>{r.refMax}</span>
-                                    </div>
-                                </div>
-                            )
-                        })}
+                                )
+                            })}
+                        </div>
                     </div>
-                </div>
+                </details>
             )}
 
             {/* Abnormal Detail */}
             {abnormalResults.length > 0 && (
-                <div className="bg-white rounded-2xl border border-amber-200 p-5 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4">
-                        <AlertTriangle className="w-5 h-5 text-amber-500" />
-                        <p className="text-xs font-black uppercase tracking-widest text-amber-700">Parámetros Fuera de Rango — Detalle</p>
+                <details className="group bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden">
+                    <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
+                        <div className="flex items-center gap-2 pointer-events-none">
+                            <AlertTriangle className="w-4 h-4 text-amber-500" />
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0">Parámetros Fuera de Rango — Detalle</p>
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
+                    </summary>
+                    <div className="p-5 pt-0 border-t border-white/5">
+                        <div className="space-y-2">
+                            {abnormalResults.map((r: any, i: number) => (
+                                <motion.div key={i}
+                                    initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+                                    transition={{ delay: i * 0.04 }}
+                                    className="flex items-center gap-3 px-4 py-3 rounded-xl border bg-amber-500/10 border-amber-500/30 backdrop-blur-sm shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                                    <div className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)] flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold text-amber-400 truncate">{r.parameter}</p>
+                                        <p className="text-[10px] text-slate-400">{r.examName}</p>
+                                    </div>
+                                    <span className="text-sm font-black tabular-nums text-amber-300">{r.value} {r.unit}</span>
+                                    {r.referenceValue && <span className="text-[10px] text-slate-500 hidden sm:block">Ref: {r.referenceValue}</span>}
+                                </motion.div>
+                            ))}
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        {abnormalResults.map((r: any, i: number) => (
-                            <motion.div key={i}
-                                initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
-                                transition={{ delay: i * 0.04 }}
-                                className="flex items-center gap-3 px-4 py-3 rounded-xl border bg-amber-50 border-amber-200">
-                                <div className="w-3 h-3 rounded-full bg-amber-500 flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-slate-700 truncate">{r.parameter}</p>
-                                    <p className="text-[10px] text-slate-400">{r.examName}</p>
-                                </div>
-                                <span className="text-sm font-black tabular-nums text-amber-700">{r.value} {r.unit}</span>
-                                {r.referenceValue && <span className="text-[10px] text-slate-400 hidden sm:block">Ref: {r.referenceValue}</span>}
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
+                </details>
             )}
 
             {/* ══ CLINICAL RISK PROFILES ══ */}
@@ -759,34 +788,39 @@ function LabAnalytics({ data }: { data: any }) {
                 const activeRisks = Object.values(riskAreas).filter(r => r.params.length > 0)
                 if (activeRisks.length === 0) return null
                 return (
-                    <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Target className="w-5 h-5 text-purple-600" />
-                            <p className="text-xs font-black uppercase tracking-widest text-slate-500">Perfil de Riesgo Clínico</p>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {activeRisks.map(({ params, area }) => {
-                                const info = AREA_LABELS[area]
-                                if (!info) return null
-                                return (
-                                    <div key={area} className={`p-4 rounded-xl border ${info.border} ${info.bg}`}>
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-lg">{info.icon}</span>
-                                            <p className={`text-xs font-black ${info.text}`}>{info.name}</p>
+                    <details className="group bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden">
+                        <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
+                            <div className="flex items-center gap-2 pointer-events-none">
+                                <Target className="w-4 h-4 text-purple-400" />
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0">Perfil de Riesgo Clínico</p>
+                            </div>
+                            <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
+                        </summary>
+                        <div className="p-5 pt-0 border-t border-white/5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {activeRisks.map(({ params, area }) => {
+                                    const info = AREA_LABELS[area]
+                                    if (!info) return null
+                                    return (
+                                        <div key={area} className={`p-4 rounded-xl border backdrop-blur-sm ${info.border} ${info.bg}`}>
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-lg drop-shadow-md">{info.icon}</span>
+                                                <p className={`text-xs font-black ${info.text}`}>{info.name}</p>
+                                            </div>
+                                            <p className="text-2xl font-black text-white mb-1">{params.length}</p>
+                                            <p className="text-[10px] text-slate-400 font-medium tracking-wide uppercase">parámetros alterados</p>
+                                            <div className="mt-2 space-y-1">
+                                                {params.slice(0, 3).map((p: any, i: number) => (
+                                                    <p key={i} className="text-[10px] text-slate-300 truncate">• {p.parameter}: <span className="font-bold text-white">{p.value} {p.unit}</span></p>
+                                                ))}
+                                                {params.length > 3 && <p className="text-[10px] text-slate-500">+{params.length - 3} más</p>}
+                                            </div>
                                         </div>
-                                        <p className="text-2xl font-black text-slate-800 mb-1">{params.length}</p>
-                                        <p className="text-[10px] text-slate-500 font-medium">parámetros alterados</p>
-                                        <div className="mt-2 space-y-1">
-                                            {params.slice(0, 3).map((p: any, i: number) => (
-                                                <p key={i} className="text-[10px] text-slate-600 truncate">• {p.parameter}: <span className="font-bold">{p.value} {p.unit}</span></p>
-                                            ))}
-                                            {params.length > 3 && <p className="text-[10px] text-slate-400">+{params.length - 3} más</p>}
-                                        </div>
-                                    </div>
-                                )
-                            })}
+                                    )
+                                })}
+                            </div>
                         </div>
-                    </div>
+                    </details>
                 )
             })()}
 
@@ -801,118 +835,133 @@ function LabAnalytics({ data }: { data: any }) {
                 })
                 if (withInterpretation.length === 0) return null
                 return (
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50/30 rounded-2xl border border-blue-100 p-5 shadow-sm">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Brain className="w-5 h-5 text-blue-600" />
-                            <p className="text-xs font-black uppercase tracking-widest text-blue-700">Interpretación Clínica por Parámetro</p>
-                            <Badge className="bg-blue-100 text-blue-700 border-0 text-[9px] font-black ml-auto">{withInterpretation.length} hallazgos</Badge>
-                        </div>
-                        <div className="space-y-3">
-                            {withInterpretation.map((r: any, i: number) => {
-                                const val = parseFloat(String(r.value || '').replace(/[<>,]/g, ''))
-                                const refStr = String(r.referenceValue || '')
-                                const parts = refStr.replace(/–/g, '-').split('-').map((s: string) => parseFloat(s.trim()))
-                                const isHigh = parts.length === 2 && !isNaN(val) && !isNaN(parts[1]) ? val > parts[1] : true
-                                const interpretation = getClinicalInterpretation(r.parameter || '', isHigh)
-                                const area = getClinicalArea(r.parameter || '')
-                                const areaInfo = AREA_LABELS[area]
-                                return (
-                                    <motion.div key={i}
-                                        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: i * 0.06 }}
-                                        className="p-4 bg-white rounded-xl border border-blue-100">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-2">
-                                                {areaInfo && <span className="text-sm">{areaInfo.icon}</span>}
-                                                <p className="text-sm font-black text-slate-800">{r.parameter}</p>
+                    <details className="group bg-gradient-to-br from-blue-900/30 to-indigo-900/10 rounded-[2rem] border border-blue-500/20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden">
+                        <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
+                            <div className="flex items-center gap-2 pointer-events-none">
+                                <Brain className="w-4 h-4 text-blue-400" />
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0">Interpretación Clínica por Parámetro</p>
+                                <Badge className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[9px] font-black ml-auto">{withInterpretation.length} hallazgos</Badge>
+                            </div>
+                            <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
+                        </summary>
+                        <div className="p-5 pt-0 border-t border-white/5">
+                            <div className="space-y-3">
+                                {withInterpretation.map((r: any, i: number) => {
+                                    const val = parseFloat(String(r.value || '').replace(/[<>,]/g, ''))
+                                    const refStr = String(r.referenceValue || '')
+                                    const parts = refStr.replace(/–/g, '-').split('-').map((s: string) => parseFloat(s.trim()))
+                                    const isHigh = parts.length === 2 && !isNaN(val) && !isNaN(parts[1]) ? val > parts[1] : true
+                                    const interpretation = getClinicalInterpretation(r.parameter || '', isHigh)
+                                    const area = getClinicalArea(r.parameter || '')
+                                    const areaInfo = AREA_LABELS[area]
+                                    return (
+                                        <motion.div key={i}
+                                            initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: i * 0.06 }}
+                                            className="p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 shadow-sm">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    {areaInfo && <span className="text-sm drop-shadow-md">{areaInfo.icon}</span>}
+                                                    <p className="text-sm font-black text-white">{r.parameter}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-sm font-black tabular-nums ${isHigh ? 'text-red-400' : 'text-blue-400'}`}>{r.value} {r.unit}</span>
+                                                    <Badge className={`border border-white/10 text-[9px] font-black ${isHigh ? 'bg-red-500/20 text-red-300' : 'bg-blue-500/20 text-blue-300'}`}>{isHigh ? '↑ ALTO' : '↓ BAJO'}</Badge>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-sm font-black tabular-nums ${isHigh ? 'text-red-600' : 'text-blue-600'}`}>{r.value} {r.unit}</span>
-                                                <Badge className={`border-0 text-[9px] font-black ${isHigh ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{isHigh ? '↑ ALTO' : '↓ BAJO'}</Badge>
-                                            </div>
-                                        </div>
-                                        <p className="text-xs text-slate-600 leading-relaxed">
-                                            {interpretation}
-                                        </p>
-                                        {r.referenceValue && <p className="text-[10px] text-slate-400 mt-1.5">Ref: {r.referenceValue} {r.unit}</p>}
-                                    </motion.div>
-                                )
-                            })}
+                                            <p className="text-xs text-slate-300 leading-relaxed">
+                                                {interpretation}
+                                            </p>
+                                            {r.referenceValue && <p className="text-[10px] text-slate-500 mt-1.5 font-bold">Ref: {r.referenceValue} {r.unit}</p>}
+                                        </motion.div>
+                                    )
+                                })}
+                            </div>
                         </div>
-                    </div>
+                    </details>
                 )
             })()}
 
             {/* ══ PER-EXAM SUMMARY ══ */}
-            <div className="bg-gradient-to-br from-emerald-50 to-white rounded-2xl border border-emerald-100 p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                    <FileCheck className="w-5 h-5 text-emerald-600" />
-                    <p className="text-xs font-black uppercase tracking-widest text-slate-500">Interpretación por Examen</p>
-                </div>
-                <div className="space-y-3">
-                    {examGroups.map((g, i) => {
-                        // Find abnormal params with interpretation for this exam
-                        const examAbnormals = allResults.filter((r: any) => (r.examName || 'Otros') === g.fullName && r.isAbnormal)
-                        return (
-                            <div key={i} className={`p-4 bg-white rounded-xl border ${g.abnormal > 0 ? 'border-amber-100' : 'border-emerald-100'}`}>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Beaker className="w-4 h-4 text-emerald-500" />
-                                        <p className="text-xs font-black text-slate-700">{g.fullName}</p>
+            <details className="group bg-gradient-to-br from-emerald-900/30 to-teal-900/10 rounded-[2rem] border border-emerald-500/20 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden">
+                <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
+                    <div className="flex items-center gap-2 pointer-events-none">
+                        <FileCheck className="w-4 h-4 text-emerald-400" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0">Interpretación por Examen y Conclusión Global</p>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
+                </summary>
+                <div className="p-5 pt-0 border-t border-white/5">
+                    <div className="space-y-3">
+                        {examGroups.map((g, i) => {
+                            // Find abnormal params with interpretation for this exam
+                            const examAbnormals = allResults.filter((r: any) => (r.examName || 'Otros') === g.fullName && r.isAbnormal)
+                            return (
+                                <div key={i} className={`p-4 bg-white/5 backdrop-blur-sm shadow-inner rounded-xl border ${g.abnormal > 0 ? 'border-amber-500/30' : 'border-white/10'}`}>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Beaker className="w-4 h-4 text-emerald-400" />
+                                            <p className="text-xs font-black text-white">{g.fullName}</p>
+                                        </div>
+                                        {g.abnormal > 0
+                                            ? <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[9px] font-black">{g.abnormal} alterado{g.abnormal > 1 ? 's' : ''}</Badge>
+                                            : <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black">✓ Normal</Badge>}
                                     </div>
-                                    {g.abnormal > 0
-                                        ? <Badge className="bg-amber-100 text-amber-700 border-0 text-[9px] font-black">{g.abnormal} alterado{g.abnormal > 1 ? 's' : ''}</Badge>
-                                        : <Badge className="bg-emerald-100 text-emerald-700 border-0 text-[9px] font-black">✓ Normal</Badge>}
+                                    <p className="text-xs text-slate-300 mt-1.5 pl-6 leading-relaxed">
+                                        {g.abnormal === 0
+                                            ? `Todos los ${g.total} parámetros dentro de rangos de referencia establecidos. Sin hallazgos que ameriten seguimiento.`
+                                            : `${g.abnormal} de ${g.total} parámetros fuera de rango.`}
+                                    </p>
+                                    {examAbnormals.length > 0 && (
+                                        <div className="mt-2 pl-6 space-y-1">
+                                            {examAbnormals.slice(0, 4).map((r: any, ri: number) => (
+                                                <p key={ri} className="text-[10px] text-amber-400">
+                                                    • <span className="font-bold text-amber-300">{r.parameter}</span>: {r.value} {r.unit}
+                                                    {r.referenceValue && <span className="text-slate-500 font-medium"> (ref: {r.referenceValue})</span>}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                                <p className="text-xs text-slate-600 mt-1.5 pl-6 leading-relaxed">
-                                    {g.abnormal === 0
-                                        ? `Todos los ${g.total} parámetros dentro de rangos de referencia establecidos. Sin hallazgos que ameriten seguimiento.`
-                                        : `${g.abnormal} de ${g.total} parámetros fuera de rango.`}
-                                </p>
-                                {examAbnormals.length > 0 && (
-                                    <div className="mt-2 pl-6 space-y-1">
-                                        {examAbnormals.slice(0, 4).map((r: any, ri: number) => (
-                                            <p key={ri} className="text-[10px] text-amber-700">
-                                                • <span className="font-bold">{r.parameter}</span>: {r.value} {r.unit}
-                                                {r.referenceValue && <span className="text-slate-400"> (ref: {r.referenceValue})</span>}
-                                            </p>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )
-                    })}
-                </div>
+                            )
+                        })}
+                    </div>
 
-                {/* Global conclusion */}
-                <div className={`mt-4 p-4 rounded-xl border ${abnormalCount === 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
-                    <p className={`font-black text-xs uppercase tracking-widest mb-2 ${abnormalCount === 0 ? 'text-emerald-700' : 'text-amber-700'}`}>Conclusión Global</p>
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                        {abnormalCount === 0
-                            ? `Panel completo de ${totalParams} determinaciones analíticas en ${data.exams?.length || 0} exámenes. Todos los parámetros dentro de intervalos de referencia. Sin evidencia de alteraciones metabólicas, hematológicas, hepáticas, renales ni lipídicas que requieran intervención.`
-                            : `Estudio de ${totalParams} parámetros distribuidos en ${data.exams?.length || 0} exámenes. Se identificaron ${abnormalCount} resultado${abnormalCount > 1 ? 's' : ''} fuera de los rangos establecidos (${Math.round(abnormalCount / totalParams * 100)}% del panel). Los hallazgos deben correlacionarse con la clínica, antecedentes del paciente y, de ser necesario, repetirse para confirmar tendencias.`}
-                    </p>
+                    {/* Global conclusion */}
+                    <div className={`mt-4 p-4 rounded-xl border backdrop-blur-md ${abnormalCount === 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
+                        <p className={`font-black text-xs uppercase tracking-widest mb-2 ${abnormalCount === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>Conclusión Global</p>
+                        <p className="text-sm text-slate-200 leading-relaxed font-medium">
+                            {abnormalCount === 0
+                                ? `Panel completo de ${totalParams} determinaciones analíticas en ${data.exams?.length || 0} exámenes. Todos los parámetros dentro de intervalos de referencia. Sin evidencia de alteraciones metabólicas, hematológicas, hepáticas, renales ni lipídicas que requieran intervención.`
+                                : `Estudio de ${totalParams} parámetros distribuidos en ${data.exams?.length || 0} exámenes. Se identificaron ${abnormalCount} resultado${abnormalCount > 1 ? 's' : ''} fuera de los rangos establecidos (${Math.round(abnormalCount / totalParams * 100)}% del panel). Los hallazgos deben correlacionarse con la clínica, antecedentes del paciente y, de ser necesario, repetirse para confirmar tendencias.`}
+                        </p>
+                    </div>
                 </div>
-            </div>
+            </details>
 
             {/* ══ OCCUPATIONAL HEALTH ══ */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-3">
-                    <Shield className="w-5 h-5 text-emerald-500" />
-                    <p className="text-xs font-black uppercase tracking-widest text-slate-500">Relevancia para Salud Ocupacional</p>
+            <details className="group bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden">
+                <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
+                    <div className="flex items-center gap-2 pointer-events-none">
+                        <Shield className="w-4 h-4 text-emerald-400" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0">Relevancia para Salud Ocupacional</p>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
+                </summary>
+                <div className="p-5 pt-0 border-t border-white/5">
+                    <div className={`p-4 rounded-xl backdrop-blur-md border ${abnormalCount === 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
+                        <p className={`text-sm leading-relaxed font-medium ${abnormalCount === 0 ? 'text-emerald-300' : 'text-amber-300'}`}>
+                            {abnormalCount === 0
+                                ? 'Perfil hematológico y bioquímico dentro de parámetros normales. El trabajador no presenta alteraciones laboratoriales que limiten su actividad laboral actual. Sin restricción laboral de origen metabólico, hematológico, hepático, renal ni lipídico.'
+                                : (() => {
+                                    const areas = new Set(abnormalResults.map((r: any) => getClinicalArea(r.parameter || '')).filter(a => a !== 'otro'))
+                                    const areaNames = [...areas].map(a => AREA_LABELS[a]?.name || a).join(', ')
+                                    return `Se identificaron alteraciones en: ${areaNames || 'parámetros laboratoriales'}. Se recomienda: 1) Correlación clínica con sintomatología actual. 2) Control laboratorial de seguimiento en 3-6 meses. 3) Referencia a especialista si los valores persisten o se agravan. 4) Ajuste del programa de vigilancia epidemiológica según hallazgos.`
+                                })()}
+                        </p>
+                    </div>
                 </div>
-                <div className={`p-4 rounded-xl ${abnormalCount === 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}`}>
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                        {abnormalCount === 0
-                            ? 'Perfil hematológico y bioquímico dentro de parámetros normales. El trabajador no presenta alteraciones laboratoriales que limiten su actividad laboral actual. Sin restricción laboral de origen metabólico, hematológico, hepático, renal ni lipídico.'
-                            : (() => {
-                                const areas = new Set(abnormalResults.map((r: any) => getClinicalArea(r.parameter || '')).filter(a => a !== 'otro'))
-                                const areaNames = [...areas].map(a => AREA_LABELS[a]?.name || a).join(', ')
-                                return `Se identificaron alteraciones en: ${areaNames || 'parámetros laboratoriales'}. Se recomienda: 1) Correlación clínica con sintomatología actual. 2) Control laboratorial de seguimiento en 3-6 meses. 3) Referencia a especialista si los valores persisten o se agravan. 4) Ajuste del programa de vigilancia epidemiológica según hallazgos.`
-                            })()}
-                    </p>
-                </div>
-            </div>
+            </details>
         </div>
     )
 }
@@ -922,7 +971,22 @@ function LabAnalytics({ data }: { data: any }) {
 // ──────────────────────────────────────────
 export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
     const { user } = useAuth()
-    const { data, loading, reload } = useLaboratorio(pacienteId)
+    const { data, loading, reload, estudioId } = useLaboratorio(pacienteId)
+    const [deleting, setDeleting] = useState(false)
+
+    const handleDeleteLab = async () => {
+        if (!estudioId) { toast.error('No hay ID de estudio para eliminar'); return }
+        if (!confirm('¿Eliminar estos resultados de laboratorio? Esta acción no se puede deshacer.')) return
+        setDeleting(true)
+        try {
+            await supabase.from('resultados_estudio').delete().eq('estudio_id', estudioId)
+            await supabase.from('estudios_clinicos').delete().eq('id', estudioId)
+            toast.success('Laboratorio eliminado')
+            reload()
+        } catch (err: any) {
+            toast.error('Error al eliminar: ' + (err.message || ''))
+        } finally { setDeleting(false) }
+    }
     const [activeView, setActiveView] = useState<'reporte' | 'analisis'>('reporte')
     const upload = useLabUpload(
         pacienteId,
@@ -977,13 +1041,13 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
 
     // No data → empty upload state
     if (!data) return (
-        <Card className="border-0 shadow-sm">
-            <CardContent className="p-12 text-center">
-                <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <FlaskConical className="w-8 h-8 text-emerald-300" />
+        <Card className="border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] bg-slate-900/60 backdrop-blur-xl rounded-[2rem]">
+            <CardContent className="p-12 text-center text-white">
+                <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                    <FlaskConical className="w-8 h-8 text-emerald-400" />
                 </div>
-                <h3 className="text-slate-800 font-bold text-lg">Sin resultados de laboratorio</h3>
-                <p className="text-slate-500 text-sm max-w-sm mx-auto mt-2 mb-8">
+                <h3 className="text-white font-black text-lg">Sin resultados de laboratorio</h3>
+                <p className="text-slate-400 text-sm max-w-sm mx-auto mt-2 mb-8">
                     Sube el PDF del reporte de laboratorio y la IA extraerá automáticamente
                     todos los exámenes, parámetros, valores y rangos de referencia.
                 </p>
@@ -993,27 +1057,27 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
 
                 {upload.uploading ? (
                     <div className="max-w-sm mx-auto space-y-4">
-                        <div className="flex items-center justify-center gap-3 p-4 bg-emerald-50 rounded-xl border border-emerald-200">
-                            <Loader2 className="w-5 h-5 text-emerald-600 animate-spin" />
-                            <p className="text-sm font-medium text-emerald-800">{upload.progress}</p>
+                        <div className="flex items-center justify-center gap-3 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/30 backdrop-blur-sm">
+                            <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
+                            <p className="text-sm font-bold text-emerald-300">{upload.progress}</p>
                         </div>
                     </div>
                 ) : (
                     <button onClick={upload.triggerUpload}
-                        className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-200/50 hover:shadow-xl hover:scale-[1.02] transition-all">
+                        className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 text-emerald-300 rounded-xl font-black text-sm hover:bg-emerald-500/30 hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:scale-[1.02] transition-all">
                         <Upload className="w-5 h-5" />
                         Subir Reporte de Laboratorio
                     </button>
                 )}
 
                 {upload.error && (
-                    <div className="mt-6 max-w-sm mx-auto flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-200">
+                    <div className="mt-6 max-w-sm mx-auto flex items-start gap-3 p-4 bg-red-500/10 rounded-xl border border-red-500/30 backdrop-blur-sm">
                         <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                        <p className="text-sm text-red-700">{upload.error}</p>
+                        <p className="text-sm font-medium text-red-300">{upload.error}</p>
                     </div>
                 )}
 
-                <p className="text-[10px] text-slate-400 mt-6">
+                <p className="text-[10px] text-slate-500 mt-6 font-medium">
                     Powered by Gemini Pro — Extracción completa multiexamen, con detección de anormales
                 </p>
             </CardContent>
@@ -1024,52 +1088,57 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
     return (
         <div className="space-y-5">
             {/* Header */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <div className="bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl p-5">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-200">
-                            <FlaskConical className="w-6 h-6 text-white" />
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                            <FlaskConical className="w-6 h-6 text-emerald-400" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-black text-slate-800">Laboratorio</h3>
+                            <h3 className="text-lg font-black text-white">Laboratorio</h3>
                             <p className="text-xs text-slate-400 font-medium">
                                 {data.patientInfo?.laboratoryName || 'GP Medical Health'} — {data.patientInfo?.registrationDate || ''}
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <div className="px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200">
+                        <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10">
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Exámenes</p>
-                            <p className="text-sm font-bold text-emerald-700">{data.exams?.length || 0}</p>
+                            <p className="text-sm font-bold text-white">{data.exams?.length || 0}</p>
                         </div>
                         <input ref={upload.fileInputRef} type="file" accept=".pdf,application/pdf,image/*"
                             onChange={upload.onFileSelected} className="hidden" />
                         <button onClick={upload.triggerUpload} disabled={upload.uploading}
-                            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors disabled:opacity-50">
+                            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-emerald-300 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-xl transition-colors disabled:opacity-50">
                             {upload.uploading
                                 ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Procesando...</>
                                 : <><RefreshCw className="w-3.5 h-3.5" /> Actualizar Laboratorio</>}
+                        </button>
+                        <button onClick={handleDeleteLab} disabled={deleting || !estudioId}
+                            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 rounded-xl transition disabled:opacity-50">
+                            {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                            Eliminar
                         </button>
                     </div>
                 </div>
 
                 {upload.uploading && (
-                    <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
-                        <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" />
-                        <p className="text-sm font-medium text-emerald-700">{upload.progress}</p>
+                    <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 backdrop-blur-sm">
+                        <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
+                        <p className="text-sm font-medium text-emerald-300">{upload.progress}</p>
                     </div>
                 )}
             </div>
 
             {/* View Toggle */}
-            <div className="flex bg-slate-100 p-1.5 rounded-xl w-fit">
+            <div className="flex bg-black/20 border border-white/5 p-1.5 rounded-xl w-fit backdrop-blur-md">
                 <button onClick={() => setActiveView('reporte')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${activeView === 'reporte' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}>
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${activeView === 'reporte' ? 'bg-white/10 text-emerald-400 shadow-[0_0_10px_rgba(255,255,255,0.05)] border border-white/10' : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]'}`}>
                     <FlaskConical className="w-4 h-4" />
                     Reporte Extraído
                 </button>
                 <button onClick={() => setActiveView('analisis')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${activeView === 'analisis' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}>
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${activeView === 'analisis' ? 'bg-white/10 text-cyan-400 shadow-[0_0_10px_rgba(255,255,255,0.05)] border border-white/10' : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]'}`}>
                     <Activity className="w-4 h-4" />
                     Análisis Clínico
                 </button>

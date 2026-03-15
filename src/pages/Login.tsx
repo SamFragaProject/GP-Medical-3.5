@@ -270,19 +270,21 @@ export default function Login() {
                 <p className="text-slate-400 text-sm font-light mt-2">Ingrese sus credenciales de acceso</p>
               </div>
 
-              {/* Demo Profiles */}
-              <div className="grid grid-cols-5 gap-2">
-                {demoProfiles.map((profile) => (
-                  <button
-                    key={profile.id}
-                    onClick={() => selectProfile(profile)}
-                    className={`p-2 rounded-xl ${profile.bg} ${profile.border} border transition-all hover:scale-105 group/btn flex flex-col items-center gap-1`}
-                  >
-                    <profile.icon className={`w-4 h-4 ${profile.color} group-hover/btn:animate-pulse`} />
-                    <span className={`text-[7px] font-black uppercase tracking-tighter ${profile.color} leading-tight text-center`}>{profile.label}</span>
-                  </button>
-                ))}
-              </div>
+              {/* Demo Profiles — Solo visible en desarrollo o si VITE_SHOW_DEMO_ACCESS=true */}
+              {(import.meta.env.DEV || import.meta.env.VITE_SHOW_DEMO_ACCESS === 'true') && (
+                <div className="grid grid-cols-5 gap-2">
+                  {demoProfiles.map((profile) => (
+                    <button
+                      key={profile.id}
+                      onClick={() => selectProfile(profile)}
+                      className={`p-2 rounded-xl ${profile.bg} ${profile.border} border transition-all hover:scale-105 group/btn flex flex-col items-center gap-1`}
+                    >
+                      <profile.icon className={`w-4 h-4 ${profile.color} group-hover/btn:animate-pulse`} />
+                      <span className={`text-[7px] font-black uppercase tracking-tighter ${profile.color} leading-tight text-center`}>{profile.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <div className="relative flex items-center gap-4 py-2">
                 <div className="h-px flex-1 bg-white/5" />

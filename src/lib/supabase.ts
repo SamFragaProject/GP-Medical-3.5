@@ -1,13 +1,13 @@
 // Cliente de Supabase para ERP Médico
 import { createClient } from '@supabase/supabase-js'
 
-// Usar variables de entorno con fallback a valores por defecto (solo para desarrollo local)
+// Usar variables de entorno con fallback a valores por defecto (solo desarrollo local)
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kftxftikoydldcexkady.supabase.co'
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmdHhmdGlrb3lkbGRjZXhrYWR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2OTU2OTMsImV4cCI6MjA4MjI3MTY5M30.UvxYrETiFNil2eNKzJCVcgwOd-MCDBHABlql650y1NU'
 
-// Validar configuración en producción
+// Guard explícito: en producción, FALLAR si faltan variables obligatorias
 if (import.meta.env.PROD && (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY)) {
-  console.error('❌ ERROR FATAL: Variables de entorno de Supabase no configuradas en producción.')
+  throw new Error('❌ FATAL: Variables de entorno de Supabase (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) no configuradas. La app no puede arrancar sin ellas.')
 }
 
 // 🧹 Limpieza preventiva: force-clear sesiones Supabase del localStorage

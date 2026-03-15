@@ -12,10 +12,10 @@ interface ProtectedRouteProps {
 }
 
 /**
- * ProtectedRoute v3:
- * - Usa `puede()` del hook de permisos dinámicos en lugar de CASL ability directamente.
- * - Si el módulo no existe en los permisos, PERMITE el acceso (UI guard only).
- * - La seguridad real vive en RLS (Supabase), no aquí.
+ * ProtectedRoute v4 — Deny-by-Default:
+ * - Usa `puede()` del hook de permisos dinámicos.
+ * - Si el módulo NO existe en permisos → DENIEGA acceso (deny-by-default).
+ * - La seguridad real vive en RLS (Supabase), esto es el guardia de UI.
  * - Protege contra loops infinitos de redirección.
  */
 export function ProtectedRoute({ children, resource, requireAction = 'read' }: ProtectedRouteProps) {
@@ -69,9 +69,7 @@ export function ProtectedRoute({ children, resource, requireAction = 'read' }: P
     if (moduloExiste) {
       // El módulo existe — verificar permiso específico
       if (!puede(resource, accion)) {
-        // No tiene permiso para este módulo
         if (location.pathname === '/dashboard') {
-          // Ya estamos en dashboard, renderizar para evitar loop
           console.warn(`⚠️ Sin permiso para '${resource}', pero ya estamos en /dashboard.`)
           return <>{children}</>
         }
@@ -79,10 +77,14 @@ export function ProtectedRoute({ children, resource, requireAction = 'read' }: P
         return <Navigate to="/dashboard" replace />
       }
     } else {
-      // El módulo NO existe en los permisos (posible desincronización con Supabase).
-      // Como esto es solo un guardia de UI (la seguridad real es RLS en Supabase),
-      // permitimos el acceso para evitar bloqueos por datos desincronizados.
-      console.info(`ℹ️ Módulo '${resource}' no encontrado en permisos. Permitiendo acceso (UI guard).`)
+      // DENY-BY-DEFAULT: El módulo NO existe en permisos → bloquear acceso.
+      // Esto previene acceso accidental a rutas no registradas.
+      if (location.pathname === '/dashboard') {
+        console.warn(`⚠️ Módulo '${resource}' no encontrado, pero ya estamos en /dashboard.`)
+        return <>{children}</>
+      }
+      console.warn(`🚫 Deny-by-default: módulo '${resource}' no existe en permisos → redirigiendo a /dashboard`)
+      return <Navigate to="/dashboard" replace />
     }
   }
 

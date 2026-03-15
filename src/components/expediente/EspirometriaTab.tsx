@@ -117,36 +117,37 @@ const useSpirometryUpload = (pacienteId: string, empresaId: string, userId: stri
 
             // 2. Guardar archivo original en Storage (renombrado)
             if (originalFile) {
-                try {
-                    let eid = empresaId
-                    if (!eid) {
+                let eid = empresaId
+                if (!eid) {
+                    try {
                         const { data: pac } = await supabase.from('pacientes').select('empresa_id').eq('id', pacienteId).single()
                         eid = pac?.empresa_id || ''
-                    }
-                    if (!eid) eid = EMPRESA_PRINCIPAL_ID
-                    if (eid) {
-                        const patientName = previewData.patient?.name || 'Paciente'
-                        const fecha = new Date().toISOString().split('T')[0]
-                        const ext = originalFile.name.split('.').pop() || 'pdf'
-                        const renamedFile = new File(
-                            [originalFile],
-                            `Espirometria_${patientName.replace(/\s+/g, '_')}_${fecha}.${ext}`,
-                            { type: originalFile.type }
-                        )
-                        await secureStorageService.upload(renamedFile, {
-                            pacienteId,
-                            empresaId: eid,
-                            categoria: 'espirometria',
-                            subcategoria: 'reporte_original',
-                            descripcion: `Espirometría de ${patientName} — ${fecha}`,
-                            userId,
-                            userNombre: userName,
-                            userRol: userRol,
-                        })
-                        console.log('📎 Archivo espirometría guardado en Storage')
-                    }
+                    } catch { /* ignore */ }
+                }
+                if (!eid) eid = EMPRESA_PRINCIPAL_ID
+                // Always attempt storage — eid is guaranteed by EMPRESA_PRINCIPAL_ID fallback
+                const patientName = previewData.patient?.name || 'Paciente'
+                const fecha = new Date().toISOString().split('T')[0]
+                const ext = originalFile.name.split('.').pop() || 'pdf'
+                const renamedFile = new File(
+                    [originalFile],
+                    `Espirometria_${patientName.replace(/\s+/g, '_')}_${fecha}.${ext}`,
+                    { type: originalFile.type }
+                )
+                try {
+                    await secureStorageService.upload(renamedFile, {
+                        pacienteId,
+                        empresaId: eid,
+                        categoria: 'espirometria',
+                        subcategoria: 'reporte_original',
+                        descripcion: `Espirometría de ${patientName} — ${fecha}`,
+                        userId,
+                        userNombre: userName,
+                        userRol: userRol,
+                    })
+                    console.log('📎 Archivo espirometría guardado en Storage')
                 } catch (storageErr) {
-                    console.warn('⚠️ No se pudo guardar el archivo original:', storageErr)
+                    console.error('⚠️ Error guardando archivo espirometría:', storageErr)
                 }
             }
 
@@ -350,48 +351,48 @@ function SpirometryAnalytics({ data }: { data: any }) {
             {/* KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {/* FEV1/FVC Ratio */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-4 shadow-sm">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">FEV1/FVC</p>
-                    <p className="text-3xl font-black text-slate-800">
+                    <p className="text-3xl font-black text-white">
                         {ratio !== null ? (ratio * 100).toFixed(0) : '—'}
-                        <span className="text-sm font-bold text-slate-400 ml-1">%</span>
+                        <span className="text-sm font-bold text-slate-500 ml-1">%</span>
                     </p>
-                    <p className={`text-xs font-bold mt-1 ${ratio !== null && ratio >= 0.70 ? 'text-emerald-600' : 'text-red-500'}`}>
+                    <p className={`text-xs font-bold mt-1 ${ratio !== null && ratio >= 0.70 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {ratio !== null && ratio >= 0.70 ? '✅ Normal' : '⚠️ Disminuido'}
                     </p>
                 </div>
 
                 {/* FEV1 %Pred */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-4 shadow-sm">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">FEV1 %Pred</p>
-                    <p className="text-3xl font-black text-slate-800">
+                    <p className="text-3xl font-black text-white">
                         {fev1Pct !== null ? fev1Pct.toFixed(0) : '—'}
-                        <span className="text-sm font-bold text-slate-400 ml-1">%</span>
+                        <span className="text-sm font-bold text-slate-500 ml-1">%</span>
                     </p>
-                    <p className={`text-xs font-bold mt-1 ${(fev1Pct ?? 0) >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    <p className={`text-xs font-bold mt-1 ${(fev1Pct ?? 0) >= 80 ? 'text-emerald-400' : 'text-amber-400'}`}>
                         {(fev1Pct ?? 0) >= 80 ? '✅ Normal' : '⚠️ Bajo'}
                     </p>
                 </div>
 
                 {/* FVC %Pred */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-4 shadow-sm">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">FVC %Pred</p>
-                    <p className="text-3xl font-black text-slate-800">
+                    <p className="text-3xl font-black text-white">
                         {fvcPct !== null ? fvcPct.toFixed(0) : '—'}
-                        <span className="text-sm font-bold text-slate-400 ml-1">%</span>
+                        <span className="text-sm font-bold text-slate-500 ml-1">%</span>
                     </p>
-                    <p className={`text-xs font-bold mt-1 ${(fvcPct ?? 0) >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    <p className={`text-xs font-bold mt-1 ${(fvcPct ?? 0) >= 80 ? 'text-emerald-400' : 'text-amber-400'}`}>
                         {(fvcPct ?? 0) >= 80 ? '✅ Normal' : '⚠️ Bajo'}
                     </p>
                 </div>
 
                 {/* Calidad sesión */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-4 shadow-sm">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Calidad Sesión</p>
-                    <p className="text-lg font-black text-slate-800 truncate">{data.session?.quality || '—'}</p>
-                    <p className="text-xs font-bold mt-1 text-cyan-600">
-                        <CheckCircle className="w-3 h-3 inline mr-1" />
-                        {data.session?.interpretation || 'N/A'}
+                    <p className="text-sm font-black text-white break-words leading-snug">{data.session?.quality || '—'}</p>
+                    <p className="text-xs font-bold mt-1 flex items-center gap-1 text-cyan-400">
+                        <CheckCircle className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">{data.session?.interpretation || 'N/A'}</span>
                     </p>
                 </div>
             </div>
@@ -399,22 +400,22 @@ function SpirometryAnalytics({ data }: { data: any }) {
             {/* Classification Cards: GOLD + Pattern + Risk Factors */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* GOLD Classification */}
-                <div className={`rounded-2xl border p-5 ${gold.bg} ${gold.border}`}>
+                <div className={`rounded-2xl border p-5 ${gold.bg.replace('bg-', 'bg-').replace('50', '500/10')} ${gold.border.replace('border-', 'border-').replace('200', '500/30')} backdrop-blur-md`}>
                     <div className="flex items-center gap-2 mb-3">
-                        <Shield className="w-5 h-5 text-slate-600" />
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-500">Clasificación GOLD</p>
+                        <Shield className="w-5 h-5 text-white/50" />
+                        <p className="text-xs font-black uppercase tracking-widest text-slate-400">Clasificación GOLD</p>
                     </div>
-                    <p className={`text-xl font-black ${gold.color}`}>{gold.stage}</p>
-                    <p className="text-xs text-slate-500 mt-1">{gold.desc}</p>
+                    <p className={`text-xl font-black ${gold.color.replace('700', '400')}`}>{gold.stage}</p>
+                    <p className="text-xs text-slate-400 mt-1">{gold.desc}</p>
                 </div>
 
                 {/* Pattern */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5">
                     <div className="flex items-center gap-2 mb-3">
-                        <TrendingUp className="w-5 h-5 text-slate-600" />
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-500">Patrón Ventilatorio</p>
+                        <TrendingUp className="w-5 h-5 text-white/50" />
+                        <p className="text-xs font-black uppercase tracking-widest text-slate-400">Patrón Ventilatorio</p>
                     </div>
-                    <p className={`text-xl font-black ${pattern.color}`}>
+                    <p className={`text-xl font-black ${pattern.color.replace('600', '400')}`}>
                         {pattern.icon} {pattern.pattern}
                     </p>
                     <p className="text-xs text-slate-400 mt-1">
@@ -423,29 +424,29 @@ function SpirometryAnalytics({ data }: { data: any }) {
                 </div>
 
                 {/* Risk factors */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5">
                     <div className="flex items-center gap-2 mb-3">
-                        <Heart className="w-5 h-5 text-slate-600" />
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-500">Factores de Riesgo</p>
+                        <Heart className="w-5 h-5 text-white/50" />
+                        <p className="text-xs font-black uppercase tracking-widest text-slate-400">Factores de Riesgo</p>
                     </div>
                     <div className="space-y-2 text-sm">
                         <div className="flex items-center justify-between">
-                            <span className="text-slate-600">IMC</span>
-                            <span className={`font-bold ${bmiClass.color}`}>{bmiClass.icon} {data.patient?.bmi || '—'} ({bmiClass.label})</span>
+                            <span className="text-slate-400">IMC</span>
+                            <span className={`font-bold ${bmiClass.color}`}>{bmiClass.icon} {data.patient?.bmi || '—'} <span className="text-xs font-normal opacity-70">({bmiClass.label})</span></span>
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-slate-600">Fumador</span>
-                            <span className={`font-bold ${data.patient?.smoker?.toLowerCase().includes('no') ? 'text-emerald-500' : 'text-red-500'}`}>
+                            <span className="text-slate-400">Fumador</span>
+                            <span className={`font-bold ${data.patient?.smoker?.toLowerCase().includes('no') ? 'text-emerald-400' : 'text-rose-400'}`}>
                                 {data.patient?.smoker || '—'}
                             </span>
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-slate-600">Asma</span>
-                            <span className="font-bold text-slate-700">{data.patient?.asthma || '—'}</span>
+                            <span className="text-slate-400">Asma</span>
+                            <span className="font-bold text-white/90">{data.patient?.asthma || '—'}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-slate-600">EPOC</span>
-                            <span className="font-bold text-slate-700">{data.patient?.copd || '—'}</span>
+                            <span className="text-slate-400">EPOC</span>
+                            <span className="font-bold text-white/90">{data.patient?.copd || '—'}</span>
                         </div>
                     </div>
                 </div>
@@ -454,22 +455,22 @@ function SpirometryAnalytics({ data }: { data: any }) {
             {/* Charts */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Bar Chart: % Predicho */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                    <h4 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4 text-violet-500" />
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-5 shadow-sm">
+                    <h4 className="text-sm font-black text-white/90 mb-4 flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-purple-400" />
                         Porcentaje del Predicho
                     </h4>
                     <div className="h-52">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={barData} layout="vertical" margin={{ top: 5, right: 30, left: 50, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                                <XAxis type="number" domain={[0, 140]} tick={{ fontSize: 11 }} />
-                                <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fontWeight: 600 }} />
-                                <Tooltip formatter={(v: any) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 12 }} />
-                                <ReferenceLine x={80} stroke="#ef4444" strokeDasharray="3 3" strokeWidth={2} label={{ value: 'LLN 80%', position: 'top', fontSize: 10 }} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                                <XAxis type="number" domain={[0, 140]} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} />
+                                <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fontWeight: 600, fill: '#f8fafc' }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} />
+                                <Tooltip formatter={(v: any) => `${v}%`} contentStyle={{ backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 12, borderRadius: 12, backdropFilter: 'blur(8px)' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                                <ReferenceLine x={80} stroke="#A855F7" strokeDasharray="3 3" strokeWidth={2} label={{ value: 'LLN 80%', position: 'top', fill: '#A855F7', fontSize: 10, fontWeight: 'bold' }} />
                                 <Bar dataKey="pct" radius={[0, 8, 8, 0]} barSize={24}>
                                     {barData.map((entry, idx) => (
-                                        <Cell key={idx} fill={entry.fill} />
+                                        <Cell key={idx} fill={entry.pct >= 80 ? '#A855F7' : '#06b6d4'} />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -478,21 +479,21 @@ function SpirometryAnalytics({ data }: { data: any }) {
                 </div>
 
                 {/* Radar Chart */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                    <h4 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2">
-                        <Brain className="w-4 h-4 text-cyan-500" />
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-5 shadow-sm">
+                    <h4 className="text-sm font-black text-white/90 mb-4 flex items-center gap-2">
+                        <Brain className="w-4 h-4 text-cyan-400" />
                         Perfil Ventilatorio (Radar)
                     </h4>
                     <div className="h-52">
                         <ResponsiveContainer width="100%" height="100%">
                             <RadarChart outerRadius={70} data={radarData}>
-                                <PolarGrid stroke="#e2e8f0" />
-                                <PolarAngleAxis dataKey="param" tick={{ fontSize: 11, fontWeight: 600 }} />
-                                <PolarRadiusAxis angle={90} domain={[0, 150]} tick={{ fontSize: 9 }} />
-                                <Radar name="Paciente" dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.3} strokeWidth={2} />
-                                <Radar name="Normal (100%)" dataKey="fullMark" stroke="#10b981" fill="#10b981" fillOpacity={0.05} strokeWidth={1} strokeDasharray="4 4" />
-                                <Legend wrapperStyle={{ fontSize: 10 }} />
-                                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 12 }} />
+                                <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                                <PolarAngleAxis dataKey="param" tick={{ fontSize: 11, fontWeight: 600, fill: '#e2e8f0' }} />
+                                <PolarRadiusAxis angle={90} domain={[0, 150]} tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} />
+                                <Radar name="Paciente" dataKey="value" stroke="#22d3ee" fill="#22d3ee" fillOpacity={0.3} strokeWidth={2} />
+                                <Radar name="Normal (100%)" dataKey="fullMark" stroke="#A855F7" fill="#A855F7" fillOpacity={0.05} strokeWidth={1.5} strokeDasharray="4 4" />
+                                <Legend wrapperStyle={{ fontSize: 10, color: '#e2e8f0' }} />
+                                <Tooltip contentStyle={{ backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 12, borderRadius: 12 }} />
                             </RadarChart>
                         </ResponsiveContainer>
                     </div>
@@ -501,102 +502,102 @@ function SpirometryAnalytics({ data }: { data: any }) {
 
             {/* ── Z-Score Scatter ── */}
             {zScoreData.length > 0 && (
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                    <h4 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2">
-                        <Target className="w-4 h-4 text-rose-500" />
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-5 shadow-sm">
+                    <h4 className="text-sm font-black text-white/90 mb-4 flex items-center gap-2">
+                        <Target className="w-4 h-4 text-rose-400" />
                         Puntuaciones Z por Parámetro
                     </h4>
                     <div className="h-48">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={zScoreData} layout="vertical" margin={{ top: 5, right: 30, left: 60, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                                <XAxis type="number" domain={[-5, 3]} tick={{ fontSize: 10 }} />
-                                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fontWeight: 600 }} />
-                                <Tooltip formatter={(v: any) => `Z: ${v}`} contentStyle={{ fontSize: 12, borderRadius: 12 }} />
-                                <ReferenceLine x={-1.64} stroke="#ef4444" strokeDasharray="3 3" strokeWidth={2} label={{ value: 'LLN (-1.64)', position: 'top', fontSize: 9 }} />
-                                <ReferenceLine x={0} stroke="#64748b" strokeWidth={1} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                                <XAxis type="number" domain={[-5, 3]} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} />
+                                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fontWeight: 600, fill: '#f8fafc' }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} />
+                                <Tooltip formatter={(v: any) => `Z: ${v}`} contentStyle={{ backgroundColor: 'rgba(15,23,42,0.9)', borderColor: 'rgba(255,255,255,0.1)', color: '#fff', fontSize: 12, borderRadius: 12 }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                                <ReferenceLine x={-1.64} stroke="#f43f5e" strokeDasharray="3 3" strokeWidth={2} label={{ value: 'LLN (-1.64)', position: 'top', fill: '#f43f5e', fontSize: 9, fontWeight: 'bold' }} />
+                                <ReferenceLine x={0} stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
                                 <Bar dataKey="z" radius={[0, 6, 6, 0]} barSize={18}>
                                     {zScoreData.map((entry: any, idx: number) => (
-                                        <Cell key={idx} fill={entry.fill} />
+                                        <Cell key={idx} fill={entry.z < -1.64 ? '#f43f5e' : '#3b82f6'} />
                                     ))}
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-2">Valores por debajo de -1.64 (LLN) se consideran fuera del rango normal</p>
+                    <p className="text-[10px] text-slate-500 mt-2 font-medium">Valores por debajo de -1.64 (LLN) se consideran fuera del rango normal</p>
                 </div>
             )}
 
             {/* ── Variabilidad + Calidad ATS/ERS + Vía Aérea Pequeña ── */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Calidad ATS/ERS */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-5 shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
-                        <FileCheck className="w-5 h-5 text-slate-600" />
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-500">Calidad ATS/ERS</p>
+                        <FileCheck className="w-5 h-5 text-white/50" />
+                        <p className="text-xs font-black uppercase tracking-widest text-slate-400">Calidad ATS/ERS</p>
                     </div>
                     <div className="flex items-end gap-3">
-                        <span className={`text-5xl font-black ${atsGrade.color}`}>{atsGrade.grade}</span>
-                        <span className="text-xs text-slate-500 pb-2">{atsGrade.desc}</span>
+                        <span className={`text-5xl font-black ${atsGrade.color.replace('700', '400').replace('500', '400').replace('600', '400')}`}>{atsGrade.grade}</span>
+                        <span className="text-xs text-white/50 pb-2">{atsGrade.desc}</span>
                     </div>
                 </div>
 
                 {/* Variabilidad entre pruebas */}
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-5 shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
-                        <Zap className="w-5 h-5 text-slate-600" />
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-500">Variabilidad</p>
+                        <Zap className="w-5 h-5 text-white/50" />
+                        <p className="text-xs font-black uppercase tracking-widest text-slate-400">Variabilidad</p>
                     </div>
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                            <span className="text-sm text-slate-600">FVC (2 mejores)</span>
-                            <span className={`text-sm font-black ${fvcVariability !== null && fvcVariability <= 150 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            <span className="text-sm text-slate-400">FVC (2 mejores)</span>
+                            <span className={`text-sm font-black ${fvcVariability !== null && fvcVariability <= 150 ? 'text-emerald-400' : 'text-amber-400'}`}>
                                 {fvcVariability !== null ? `${fvcVariability} ml` : '—'}
                             </span>
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-sm text-slate-600">FEV1 (2 mejores)</span>
-                            <span className={`text-sm font-black ${fev1Variability !== null && fev1Variability <= 150 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            <span className="text-sm text-slate-400">FEV1 (2 mejores)</span>
+                            <span className={`text-sm font-black ${fev1Variability !== null && fev1Variability <= 150 ? 'text-emerald-400' : 'text-amber-400'}`}>
                                 {fev1Variability !== null ? `${fev1Variability} ml` : '—'}
                             </span>
                         </div>
-                        <p className="text-[10px] text-slate-400">Criterio ATS: ≤150 ml entre las 2 mejores</p>
+                        <p className="text-[10px] text-slate-500 font-medium">Criterio ATS: ≤150 ml entre las 2 mejores</p>
                     </div>
                 </div>
 
                 {/* Vía aérea pequeña */}
-                <div className={`rounded-2xl border p-5 shadow-sm ${smallAirways.affected ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-100'}`}>
+                <div className={`rounded-2xl border p-5 shadow-sm backdrop-blur-md ${smallAirways.affected ? 'bg-amber-500/10 border-amber-500/30' : 'bg-white/5 border-white/10'}`}>
                     <div className="flex items-center gap-2 mb-3">
-                        <Wind className="w-5 h-5 text-slate-600" />
-                        <p className="text-xs font-black uppercase tracking-widest text-slate-500">Vía Aérea Pequeña</p>
+                        <Wind className="w-5 h-5 text-white/50" />
+                        <p className="text-xs font-black uppercase tracking-widest text-slate-400">Vía Aérea Pequeña</p>
                     </div>
-                    <p className={`text-lg font-black ${smallAirways.affected ? 'text-amber-700' : 'text-emerald-600'}`}>
+                    <p className={`text-lg font-black ${smallAirways.affected ? 'text-amber-400' : 'text-emerald-400'}`}>
                         {smallAirways.affected ? '⚠️ Posible afectación' : '✅ Sin afectación'}
                     </p>
-                    <p className="text-xs text-slate-500 mt-1">
-                        FEF25-75: {smallAirways.pct !== null ? `${smallAirways.pct.toFixed(0)}% pred` : '—'}
+                    <p className="text-xs text-slate-400 mt-1 font-medium">
+                        FEF25-75: <span className="text-white/90">{smallAirways.pct !== null ? `${smallAirways.pct.toFixed(0)}% pred` : '—'}</span>
                         {smallAirways.zScore !== null && ` (Z: ${smallAirways.zScore.toFixed(2)})`}
                     </p>
-                    <p className="text-[10px] text-slate-400 mt-1">Indicador temprano de enfermedad obstructiva</p>
+                    <p className="text-[10px] text-slate-500 mt-1 font-medium">Indicador temprano de enfermedad obstructiva</p>
                 </div>
             </div>
 
             {/* ── Tabla detallada de parámetros ── */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm overflow-x-auto">
-                <h4 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2">
-                    <Table2 className="w-4 h-4 text-slate-500" />
+            <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-5 shadow-sm overflow-x-auto custom-scrollbar">
+                <h4 className="text-sm font-black text-white/90 mb-4 flex items-center gap-2">
+                        <Table2 className="w-4 h-4 text-purple-400" />
                     Tabla Detallada de Parámetros
                 </h4>
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="border-b-2 border-slate-200">
-                            <th className="text-left py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Parámetro</th>
-                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Predicho</th>
-                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-500">LLN</th>
-                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-blue-600">Mejor</th>
-                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-blue-600">%Pred</th>
-                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Z-Score</th>
-                            <th className="text-center py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Estado</th>
+                        <tr className="border-b-2 border-white/10">
+                            <th className="text-left py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-400">Parámetro</th>
+                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-400">Predicho</th>
+                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-400">LLN</th>
+                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-cyan-400">Mejor</th>
+                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-purple-400">%Pred</th>
+                            <th className="text-right py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-400">Z-Score</th>
+                            <th className="text-center py-2 px-2 text-[10px] font-black uppercase tracking-wider text-slate-400">Estado</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -605,18 +606,18 @@ function SpirometryAnalytics({ data }: { data: any }) {
                             const z = parseNum(row.zScore)
                             const isLow = (pct !== null && pct < 80) || (z !== null && z < -1.64)
                             return (
-                                <tr key={idx} className={`border-b border-slate-100 ${isLow ? 'bg-red-50/50' : 'hover:bg-slate-50'}`}>
-                                    <td className="py-2 px-2 font-semibold text-slate-700">{row.parameter}</td>
-                                    <td className="py-2 px-2 text-right text-slate-500">{row.pred || '—'}</td>
-                                    <td className="py-2 px-2 text-right text-slate-500">{row.lln || '—'}</td>
-                                    <td className="py-2 px-2 text-right font-bold text-blue-700">{row.mejor || '—'}</td>
-                                    <td className={`py-2 px-2 text-right font-bold ${isLow ? 'text-red-600' : 'text-emerald-600'}`}>{row.percentPred || '—'}</td>
-                                    <td className={`py-2 px-2 text-right font-medium ${z !== null && z < -1.64 ? 'text-red-600' : 'text-slate-600'}`}>{row.zScore || '—'}</td>
+                                <tr key={idx} className={`border-b border-white/5 transition-colors ${isLow ? 'bg-red-500/10 hover:bg-red-500/20' : 'hover:bg-white/5'}`}>
+                                    <td className="py-2 px-2 font-bold text-white/90">{row.parameter}</td>
+                                    <td className="py-2 px-2 text-right text-slate-400">{row.pred || '—'}</td>
+                                    <td className="py-2 px-2 text-right text-slate-400">{row.lln || '—'}</td>
+                                    <td className="py-2 px-2 text-right font-black text-cyan-300 drop-shadow-sm">{row.mejor || '—'}</td>
+                                    <td className={`py-2 px-2 text-right font-black ${isLow ? 'text-rose-400' : 'text-emerald-400'}`}>{row.percentPred || '—'}</td>
+                                    <td className={`py-2 px-2 text-right font-medium ${z !== null && z < -1.64 ? 'text-rose-400' : 'text-slate-400'}`}>{row.zScore || '—'}</td>
                                     <td className="py-2 px-2 text-center">
                                         {isLow ? (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">⚠️ Bajo</span>
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-2 py-0.5 rounded-full">⚠️ Bajo</span>
                                         ) : (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">✅ Normal</span>
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-full">✅ Normal</span>
                                         )}
                                     </td>
                                 </tr>
@@ -628,12 +629,12 @@ function SpirometryAnalytics({ data }: { data: any }) {
 
             {/* AI Interpretation */}
             {data.doctor?.notes && (
-                <div className="bg-gradient-to-r from-indigo-50 to-violet-50 rounded-2xl border border-indigo-200 p-5">
+                <div className="bg-purple-500/10 backdrop-blur-md rounded-2xl border border-purple-500/30 p-5 shadow-inner">
                     <div className="flex items-center gap-2 mb-3">
-                        <Brain className="w-5 h-5 text-indigo-600" />
-                        <p className="text-xs font-black uppercase tracking-widest text-indigo-600">Notas del Médico</p>
+                        <Brain className="w-5 h-5 text-purple-400" />
+                        <p className="text-xs font-black uppercase tracking-widest text-purple-300 shadow-sm">Notas del Médico</p>
                     </div>
-                    <p className="text-sm text-indigo-900 font-medium leading-relaxed">{data.doctor.notes}</p>
+                    <p className="text-sm text-purple-100 font-medium leading-relaxed opacity-90">{data.doctor.notes}</p>
                 </div>
             )}
         </div>
@@ -645,13 +646,14 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
     const { user } = useAuth()
     const { data, loading, reload } = useSpirometry(pacienteId)
     const [activeView, setActiveView] = useState<'espirografia' | 'analisis'>('espirografia')
+    const [docsRefreshKey, setDocsRefreshKey] = useState(0)
     const upload = useSpirometryUpload(
         pacienteId,
         user?.empresa_id || '',
         user?.id,
         user?.nombre ? `${user.nombre} ${user.apellido_paterno || ''}`.trim() : undefined,
         user?.rol,
-        reload
+        () => { reload(); setDocsRefreshKey(k => k + 1) }
     )
 
     // ── Loading ──
@@ -671,22 +673,22 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
             <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl border-2 border-amber-300 p-5 shadow-lg"
+                className="bg-gradient-to-r from-amber-500/10 to-transparent rounded-2xl border border-amber-500/30 p-5 shadow-[0_4px_24px_rgba(245,158,11,0.1)] backdrop-blur-md"
             >
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                            <AlertTriangle className="w-5 h-5 text-amber-600" />
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                            <AlertTriangle className="w-5 h-5 text-amber-400" />
                         </div>
                         <div>
-                            <h3 className="text-sm font-black text-amber-900">Vista previa — Sin guardar</h3>
-                            <p className="text-xs text-amber-700">{upload.progress}</p>
+                            <h3 className="text-sm font-black text-amber-300">Vista previa — Sin guardar</h3>
+                            <p className="text-xs text-amber-500">{upload.progress}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
                         <button
                             onClick={upload.cancelPreview}
-                            className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 rounded-xl transition-colors"
+                            className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-300 border border-white/10 bg-white/5 hover:bg-white/10 rounded-xl transition-colors backdrop-blur-sm"
                         >
                             <X className="w-4 h-4" />
                             Cancelar
@@ -694,7 +696,7 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                         <button
                             onClick={upload.confirmSave}
                             disabled={upload.saving}
-                            className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 rounded-xl shadow-lg shadow-emerald-200/50 transition-all disabled:opacity-50"
+                            className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-emerald-500/80 to-teal-600/80 border border-emerald-500/30 hover:from-emerald-500 hover:to-teal-500 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50"
                         >
                             {upload.saving ? (
                                 <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
@@ -707,14 +709,14 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
             </motion.div>
 
             {upload.error && (
-                <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-200">
-                    <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">{upload.error}</p>
+                <div className="flex items-start gap-3 p-4 bg-red-500/20 rounded-2xl border border-red-500/30 backdrop-blur-md">
+                    <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm font-medium text-red-200">{upload.error}</p>
                 </div>
             )}
 
             {/* Preview of SpirometryReport */}
-            <div className="overflow-x-auto bg-slate-50/50 p-2 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
+            <div className="overflow-x-auto bg-slate-900/50 p-2 md:p-6 rounded-3xl border border-white/5 shadow-inner custom-scrollbar">
                 <div className="min-w-[800px]">
                     <SpirometryReport data={upload.previewData} />
                 </div>
@@ -724,15 +726,15 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
 
     // ── Sin datos → Subir PDF ──
     if (!data) return (
-        <Card className="border-0 shadow-sm">
-            <CardContent className="p-12 text-center">
-                <div className="w-16 h-16 bg-cyan-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Wind className="w-8 h-8 text-cyan-300" />
+        <Card className="border border-white/10 shadow-2xl bg-white/5 backdrop-blur-md overflow-hidden">
+            <CardContent className="p-10 md:p-16 text-center">
+                <div className="w-20 h-20 bg-emerald-500/20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-500/30">
+                    <Wind className="w-10 h-10 text-emerald-400" />
                 </div>
-                <h3 className="text-slate-800 font-bold text-lg">Sin registros de espirometría</h3>
-                <p className="text-slate-500 text-sm max-w-sm mx-auto mt-2 mb-8">
+                <h3 className="text-white font-black text-2xl tracking-tight">Sin registros de espirometría</h3>
+                <p className="text-slate-400 text-sm md:text-base max-w-md mx-auto mt-3 mb-10 font-medium">
                     Sube el PDF del reporte de espirometría y la IA extraerá automáticamente
-                    todos los datos, tablas y gráficas para crear la réplica digital.
+                    todos los datos, tablas y gráficas para crear la réplica digital interactiva.
                 </p>
 
                 {/* Upload */}
@@ -746,29 +748,29 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
 
                 {upload.uploading ? (
                     <div className="max-w-sm mx-auto space-y-4">
-                        <div className="flex items-center justify-center gap-3 p-4 bg-cyan-50 rounded-xl border border-cyan-200">
-                            <Loader2 className="w-5 h-5 text-cyan-600 animate-spin" />
-                            <p className="text-sm font-medium text-cyan-800">{upload.progress}</p>
+                        <div className="flex items-center justify-center gap-3 p-4 bg-emerald-500/20 rounded-xl border border-emerald-500/30 backdrop-blur-sm">
+                            <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
+                            <p className="text-sm font-bold text-emerald-100">{upload.progress}</p>
                         </div>
                     </div>
                 ) : (
                     <button
                         onClick={upload.triggerUpload}
-                        className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-cyan-200/50 hover:shadow-xl hover:scale-[1.02] transition-all"
+                        className="inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl font-bold text-sm shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] hover:-translate-y-1 transition-all"
                     >
-                        <Upload className="w-5 h-5" />
-                        Subir Reporte de Espirometría
+                        <Upload className="w-5 h-5 flex-shrink-0" />
+                        <span>Subir Reporte de Espirometría</span>
                     </button>
                 )}
 
                 {upload.error && (
-                    <div className="mt-6 max-w-sm mx-auto flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-200">
-                        <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                        <p className="text-sm text-red-700">{upload.error}</p>
+                    <div className="mt-6 max-w-sm mx-auto flex items-start gap-3 p-4 bg-red-500/20 rounded-xl border border-red-500/30 backdrop-blur-sm">
+                        <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-red-200">{upload.error}</p>
                     </div>
                 )}
 
-                <p className="text-[10px] text-slate-400 mt-6">
+                <p className="text-xs text-slate-500 font-bold tracking-widest uppercase mt-8 opacity-60">
                     Powered by Gemini Pro — Extracción completa con gráficas, tablas y diagnóstico
                 </p>
             </CardContent>
@@ -807,19 +809,19 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
 
     // ── Con datos → SpirometryReport + Analytics ──
     return (
-        <div className="space-y-5">
+        <div className="space-y-6">
 
             {/* Header */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-200">
-                            <Wind className="w-6 h-6 text-white" />
+            <div className="bg-white/5 backdrop-blur-md rounded-3xl border border-white/10 shadow-xl p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.4)] border border-emerald-400/30">
+                            <Wind className="w-7 h-7 text-white drop-shadow-md" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-black text-slate-800">Espirometría</h3>
-                            <p className="text-xs text-slate-400 font-medium">
-                                {data.doctor?.name || 'GP Medical Health'} — {data.testDetails?.date || ''}
+                            <h3 className="text-xl font-black text-white tracking-tight">Espirometría Completa</h3>
+                            <p className="text-sm text-emerald-400/80 font-bold tracking-wide uppercase mt-1">
+                                {data.doctor?.name || 'GP Medical Health'} <span className="text-slate-600 mx-2">•</span> <span className="text-white/60">{data.testDetails?.date || ''}</span>
                             </p>
                         </div>
                     </div>
@@ -833,9 +835,9 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                             <Trash2 className="w-5 h-5" />
                         </button>
                         {/* Resultado */}
-                        <div className="px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200">
+                        <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
                             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Interpretación</p>
-                            <p className="text-sm font-bold text-emerald-700">
+                            <p className="text-sm font-bold text-emerald-400">
                                 {data.session?.interpretation || 'N/A'}
                             </p>
                         </div>
@@ -851,7 +853,7 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                         <button
                             onClick={upload.triggerUpload}
                             disabled={upload.uploading}
-                            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-cyan-700 border border-cyan-200 bg-cyan-50 hover:bg-cyan-100 rounded-xl transition-colors disabled:opacity-50"
+                            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-cyan-300 border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-xl transition-colors disabled:opacity-50 backdrop-blur-sm"
                         >
                             {upload.uploading ? (
                                 <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Procesando...</>
@@ -864,16 +866,16 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
 
                 {/* Notas del doctor */}
                 {data.doctor?.notes && (
-                    <div className="mt-4 flex items-start gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
-                        <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                        <p className="text-sm font-medium text-emerald-700">{data.doctor.notes}</p>
+                    <div className="mt-4 flex items-start gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 backdrop-blur-sm">
+                        <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm font-medium text-emerald-300">{data.doctor.notes}</p>
                     </div>
                 )}
 
                 {upload.uploading && (
-                    <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-cyan-50 border border-cyan-200">
-                        <Loader2 className="w-4 h-4 text-cyan-600 animate-spin" />
-                        <p className="text-sm font-medium text-cyan-700">{upload.progress}</p>
+                    <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 backdrop-blur-sm">
+                        <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+                        <p className="text-sm font-medium text-cyan-300">{upload.progress}</p>
                     </div>
                 )}
             </div>
@@ -881,12 +883,12 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
             {/* ═══════════════════════════════════════════════════════════ */}
             {/* SELECTION TABS                                            */}
             {/* ═══════════════════════════════════════════════════════════ */}
-            <div className="flex bg-slate-100 p-1.5 rounded-xl w-fit">
+            <div className="flex bg-black/20 border border-white/5 p-1.5 rounded-xl w-fit backdrop-blur-md">
                 <button
                     onClick={() => setActiveView('espirografia')}
                     className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${activeView === 'espirografia'
-                        ? 'bg-white text-blue-700 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                        ? 'bg-white/10 text-cyan-400 shadow-[0_0_10px_rgba(255,255,255,0.05)] border border-white/10'
+                        : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]'
                         }`}
                 >
                     <Wind className="w-4 h-4" />
@@ -895,8 +897,8 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                 <button
                     onClick={() => setActiveView('analisis')}
                     className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${activeView === 'analisis'
-                        ? 'bg-white text-emerald-700 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                        ? 'bg-white/10 text-emerald-400 shadow-[0_0_10px_rgba(255,255,255,0.05)] border border-white/10'
+                        : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]'
                         }`}
                 >
                     <Activity className="w-4 h-4" />
@@ -908,7 +910,7 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
             {activeView === 'espirografia' && (
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <p className="text-xs text-slate-400 font-medium mb-3 ml-1">Réplica digital completa del reporte original de espirometría</p>
-                    <div className="overflow-x-auto bg-gradient-to-br from-slate-50 to-slate-100/50 p-2 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
+                    <div className="overflow-x-auto bg-slate-900/50 p-2 md:p-6 rounded-3xl border border-white/5 shadow-inner custom-scrollbar">
                         <div className="w-full min-w-[800px]">
                             <SpirometryReport data={data} />
                         </div>
@@ -922,8 +924,9 @@ export default function EspirometriaTab({ pacienteId }: { pacienteId: string }) 
                 </div>
             )}
 
-            {/* Documentos adjuntos */}
+            {/* Documentos adjuntos — key forces remount after save */}
             <DocumentosAdjuntos
+                key={`espiro-docs-${docsRefreshKey}`}
                 pacienteId={pacienteId}
                 categoria="espirometria"
                 titulo="Reporte Original"

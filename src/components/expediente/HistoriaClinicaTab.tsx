@@ -48,26 +48,26 @@ function getGroup(results: any[], category: string): Array<{ name: string; value
 // ─────────────────────────────────────────────
 // Componente: Sección colapsable
 // ─────────────────────────────────────────────
-function Section({ title, icon: Icon, color, children, defaultOpen = true }: {
+function Section({ title, icon: Icon, color, children, defaultOpen = false }: {
     title: string; icon: any; color: string; children: React.ReactNode; defaultOpen?: boolean
 }) {
     const [open, setOpen] = useState(defaultOpen)
     return (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden mb-4 transition-transform hover:shadow-lg">
             <button onClick={() => setOpen(!open)}
-                className={`w-full flex items-center justify-between p-4 text-left transition-colors hover:bg-slate-50`}>
-                <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-sm`}>
-                        <Icon className="w-4 h-4 text-white" />
+                className={`w-full flex items-center justify-between p-5 text-left transition-colors hover:bg-white/[0.04] active:bg-white/[0.08]`}>
+                <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center shadow-lg`}>
+                        <Icon className="w-5 h-5 text-white drop-shadow-md" />
                     </div>
-                    <h4 className="text-sm font-black text-slate-800">{title}</h4>
+                    <h4 className="text-sm font-bold tracking-tight text-white">{title}</h4>
                 </div>
-                {open ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                {open ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
             </button>
             <AnimatePresence>
                 {open && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                        <div className="px-4 pb-4">{children}</div>
+                        <div className="px-5 pb-5">{children}</div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -79,10 +79,11 @@ function Section({ title, icon: Icon, color, children, defaultOpen = true }: {
 function Field({ label, value, unit, warn }: { label: string; value: string; unit?: string; warn?: boolean }) {
     if (!value || value === '—' || value === '') return null
     return (
-        <div className={`p-2.5 rounded-xl border ${warn ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-100'}`}>
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</p>
-            <p className={`text-xs font-bold mt-0.5 leading-relaxed ${warn ? 'text-amber-700' : 'text-slate-700'}`}>
-                {value}{unit ? ` ${unit}` : ''}
+        <div className={`p-3 rounded-2xl border ${warn ? 'bg-rose-500/10 border-rose-500/30' : 'bg-slate-800/50 border-white/10'} backdrop-blur-sm relative overflow-hidden group`}>
+            {warn && <div className="absolute top-0 right-0 w-16 h-16 bg-rose-500/20 rounded-full blur-xl -translate-y-1/2 translate-x-1/2" />}
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 relative z-10">{label}</p>
+            <p className={`text-sm font-bold mt-1 leading-relaxed relative z-10 ${warn ? 'text-rose-400' : 'text-white'}`}>
+                {value}{unit ? <span className="text-slate-500 text-xs ml-1">{unit}</span> : ''}
             </p>
         </div>
     )
@@ -92,11 +93,11 @@ function Field({ label, value, unit, warn }: { label: string; value: string; uni
 function YesNo({ label, value, isWarning }: { label: string; value: string; isWarning?: boolean }) {
     if (!value) return null
     const isSi = value.toLowerCase().startsWith('sí') || value.toLowerCase().startsWith('si') || value === 'true'
-    const color = isSi && isWarning ? 'bg-amber-50 border-amber-200 text-amber-700' : isSi ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+    const color = isSi && isWarning ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : isSi ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
     return (
-        <div className={`flex items-center justify-between px-3 py-2 rounded-xl border ${color}`}>
-            <span className="text-xs font-medium text-slate-700">{label}</span>
-            <Badge variant="outline" className={`text-[9px] font-black ${isSi ? 'bg-rose-100 border-rose-300 text-rose-700' : 'bg-emerald-100 border-emerald-300 text-emerald-700'}`}>
+        <div className={`flex items-center justify-between p-3 rounded-2xl border ${color} backdrop-blur-sm mb-2`}>
+            <span className="text-xs font-bold">{label}</span>
+            <Badge className={`text-[10px] uppercase font-black tracking-widest px-2.5 py-0.5 border shadow-sm ${isSi ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'}`}>
                 {isSi ? 'Sí' : 'No'}
             </Badge>
         </div>
@@ -175,18 +176,18 @@ export default function HistoriaClinicaTab({ pacienteId }: { pacienteId: string 
     )
 
     if (!hasData) return (
-        <Card className="border-0 shadow-sm p-12 text-center">
-            <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <ClipboardList className="w-8 h-8 text-emerald-300" />
+        <div className="bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl p-12 text-center transition-transform hover:shadow-lg">
+            <div className="w-20 h-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-500/20">
+                <ClipboardList className="w-10 h-10 text-emerald-400 drop-shadow-md" />
             </div>
-            <h3 className="text-slate-800 font-bold">Sin historia clínica registrada</h3>
-            <p className="text-slate-500 text-sm max-w-sm mx-auto mt-2 mb-6">
-                Sube el formulario de Historia Clínica / Examen Médico Ocupacional. El sistema extraerá todos los campos automáticamente.
+            <h3 className="text-xl text-white font-extrabold tracking-tight">Sin historia clínica registrada</h3>
+            <p className="text-slate-400 text-sm max-w-sm mx-auto mt-3 mb-8 leading-relaxed font-medium">
+                Sube el formulario de Historia Clínica / Examen Médico Ocupacional. El sistema extraerá todos los campos automáticamente empleando nuestro motor de Inteligencia Artificial.
             </p>
-            <div className="w-full">
+            <div className="w-full relative z-10">
                 <EstudioUploadReview pacienteId={pacienteId} tipoEstudio={'historia_clinica' as any} onSaved={loadData} />
             </div>
-        </Card>
+        </div>
     )
 
     // Extraer grupos
@@ -221,41 +222,41 @@ export default function HistoriaClinicaTab({ pacienteId }: { pacienteId: string 
         <div className="space-y-5">
 
             {/* HEADER */}
-            <div className={`bg-white rounded-2xl border shadow-sm p-5 ${alertas.length > 0 ? 'border-amber-200' : 'border-slate-100'}`}>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-200">
-                            <ClipboardList className="w-6 h-6 text-white" />
+            <div className={`bg-slate-900/60 backdrop-blur-xl rounded-[2rem] border shadow-[0_8px_32px_rgba(0,0,0,0.4)] p-6 ${alertas.length > 0 ? 'border-amber-500/30' : 'border-white/10'}`}>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-[0_0_20px_rgba(52,211,153,0.3)]">
+                            <ClipboardList className="w-7 h-7 text-white drop-shadow-md" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-black text-slate-800">Historia Clínica</h3>
-                            <p className="text-xs text-slate-400 font-medium">
-                                {nombre || 'Examen Médico Ocupacional'} {estudio?.fecha_estudio ? `• ${new Date(estudio.fecha_estudio).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}` : ''}
+                            <h3 className="text-xl font-extrabold text-white tracking-tight">Historia Clínica</h3>
+                            <p className="text-sm font-medium text-slate-400 mt-0.5">
+                                {nombre || 'Examen Médico Ocupacional'} {estudio?.fecha_estudio ? <><span className="text-emerald-400/80 mx-1.5">•</span>{new Date(estudio.fecha_estudio).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</> : ''}
                             </p>
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         <EstudioUploadReview pacienteId={pacienteId} tipoEstudio={'historia_clinica' as any} onSaved={loadData} isCompact />
                         {aptitud && (
-                            <div className={`px-4 py-2 rounded-xl border ${aptitudOk ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
-                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Aptitud Laboral</p>
+                            <div className={`px-4 py-2.5 rounded-2xl border backdrop-blur-md flex flex-col justify-center ${aptitudOk ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'}`}>
+                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Aptitud Laboral</p>
                                 <div className="flex items-center gap-1.5">
                                     {aptitudOk
-                                        ? <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
-                                        : <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />}
-                                    <p className={`text-sm font-bold ${aptitudOk ? 'text-emerald-700' : 'text-amber-700'}`}>{aptitud}</p>
+                                        ? <CheckCircle className="w-4 h-4 text-emerald-400 drop-shadow-sm" />
+                                        : <AlertTriangle className="w-4 h-4 text-amber-400 drop-shadow-sm" />}
+                                    <p className={`text-sm font-bold ${aptitudOk ? 'text-emerald-300' : 'text-amber-300'}`}>{aptitud}</p>
                                 </div>
                             </div>
                         )}
                     </div>
                 </div>
                 {alertas.length > 0 && (
-                    <div className="mt-3 space-y-1.5">
+                    <div className="mt-4 space-y-1.5">
                         {alertas.map((a, i) => (
                             <motion.div key={i} initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: i * 0.06 }}
-                                className="flex items-start gap-2 px-3 py-2 bg-amber-50 rounded-lg border border-amber-200">
-                                <Zap className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
-                                <p className="text-xs font-medium text-amber-700">{a}</p>
+                                className="flex items-start gap-2.5 px-3.5 py-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl backdrop-blur-md">
+                                <Zap className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+                                <p className="text-sm font-semibold text-amber-100/90">{a}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -298,10 +299,10 @@ export default function HistoriaClinicaTab({ pacienteId }: { pacienteId: string 
             )}
 
             {/* TABS */}
-            <div className="flex gap-1 p-1 bg-slate-100 rounded-xl w-fit">
+            <div className="flex gap-1.5 p-1.5 bg-slate-900/40 border border-white/10 rounded-2xl w-fit backdrop-blur-md">
                 {(['scanner', 'analisis'] as const).map(s => (
                     <button key={s} onClick={() => setActiveSection(s)}
-                        className={`px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${activeSection === s ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                        className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeSection === s ? 'bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
                         {s === 'scanner' ? '📋 Vista Formulario' : '🧠 Análisis IA'}
                     </button>
                 ))}
@@ -397,15 +398,16 @@ export default function HistoriaClinicaTab({ pacienteId }: { pacienteId: string 
                     <motion.div key="ai" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-5">
 
                         {/* Header IA */}
-                        <div className="bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 rounded-2xl p-5 text-white">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center"><Brain className="w-5 h-5" /></div>
+                        <div className="bg-gradient-to-br from-emerald-950 via-teal-900/50 to-slate-900/80 rounded-[2rem] border border-emerald-500/20 backdrop-blur-xl p-6 text-white shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/3" />
+                            <div className="flex items-center gap-4 mb-4 relative z-10">
+                                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center"><Brain className="w-6 h-6 text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" /></div>
                                 <div>
-                                    <p className="font-black text-sm">Análisis Integrado de Historia Clínica</p>
-                                    <p className="text-emerald-200 text-xs">Interpretación clínica — Medicina Ocupacional</p>
+                                    <p className="font-extrabold text-lg text-white tracking-tight">Análisis Integrado de Historia Clínica</p>
+                                    <p className="text-emerald-400/80 text-sm font-medium">Interpretación clínica — Medicina Ocupacional</p>
                                 </div>
                             </div>
-                            <p className="text-sm text-emerald-100 leading-relaxed">
+                            <p className="text-sm font-medium text-emerald-100/70 leading-relaxed max-w-4xl relative z-10">
                                 {getField(resultados, 'DIAGNOSTICOS') ||
                                     `Examen médico ocupacional completado. ${alertas.length === 0 ? 'Sin hallazgos clínicos de relevancia.' : `${alertas.length} hallazgos que requieren atención.`}`}
                             </p>
@@ -413,134 +415,133 @@ export default function HistoriaClinicaTab({ pacienteId }: { pacienteId: string 
 
                         {/* Alertas clínicas */}
                         {alertas.length > 0 && (
-                            <Card className="border-amber-200 bg-amber-50 shadow-sm">
-                                <CardContent className="p-5">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <AlertTriangle className="w-4 h-4 text-amber-600" />
-                                        <p className="text-sm font-black text-amber-800 uppercase">Alertas Clínicas</p>
+                            <div className="rounded-[2rem] border border-amber-500/30 bg-amber-500/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-md p-6 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent opacity-50 pointer-events-none" />
+                                <div className="flex items-center gap-3 mb-4 relative z-10">
+                                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex flex-col items-center justify-center">
+                                        <AlertTriangle className="w-4 h-4 text-amber-400" />
                                     </div>
-                                    <ul className="space-y-2">
-                                        {alertas.map((a, i) => (
-                                            <li key={i} className="flex items-start gap-2.5 text-sm text-amber-700">
-                                                <Zap className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />{a}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        {/* Análisis por sistemas */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                            {/* Metabólico */}
-                            <Card className="border-slate-100 shadow-sm">
-                                <CardContent className="p-5">
-                                    <div className="flex items-center gap-2 mb-3"><Gauge className="w-4 h-4 text-amber-500" /><p className="text-sm font-black text-slate-800 uppercase">Perfil Metabólico</p></div>
-                                    <div className="space-y-2 text-sm text-slate-700">
-                                        {(() => {
-                                            const imc = vitales.find(v => v.name === 'IMC')
-                                            const glu = vitales.find(v => v.name === 'GLUCOSA_CAPILAR')
-                                            const ta = vitales.find(v => v.name === 'TENSION_ARTERIAL')
-                                            return (
-                                                <>
-                                                    {imc && <p>• <strong>IMC {imc.value} kg/m²</strong> — {Number(imc.value) > 30 ? 'Obesidad — riesgo cardiovascular elevado' : Number(imc.value) > 25 ? 'Sobrepeso — control nutricional recomendado' : 'IMC dentro de rango normal'}</p>}
-                                                    {glu && <p>• <strong>Glucosa capilar {glu.value} mg/dL</strong> — {Number(glu.value) >= 126 ? 'Compatible con diabetes — laboratorio confirmatorio' : Number(glu.value) >= 100 ? 'Prediabetes — cambios en estilo de vida' : 'Glucemia normal en ayuno'}</p>}
-                                                    {ta && <p>• <strong>T/A {ta.value} mmHg</strong> — {Number(ta.value.split('/')[0]) >= 140 ? 'Hipertensión grado 2 — tratamiento médico' : Number(ta.value.split('/')[0]) >= 130 ? 'Hipertensión grado 1 — monitoreo' : 'Presión arterial normal'}</p>}
-                                                    {!imc && !glu && !ta && <p className="text-slate-400">Sin datos de signos vitales disponibles</p>}
-                                                </>
-                                            )
-                                        })()}
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {/* Riesgos ocupacionales */}
-                            <Card className="border-slate-100 shadow-sm">
-                                <CardContent className="p-5">
-                                    <div className="flex items-center gap-2 mb-3"><Briefcase className="w-4 h-4 text-indigo-500" /><p className="text-sm font-black text-slate-800 uppercase">Riesgo Ocupacional</p></div>
-                                    <div className="space-y-1.5">
-                                        {[
-                                            { key: 'RIESGOS_FISICOS', label: 'Físicos', color: 'blue' },
-                                            { key: 'RIESGOS_QUIMICOS', label: 'Químicos', color: 'amber' },
-                                            { key: 'RIESGOS_BIOLOGICOS', label: 'Biológicos', color: 'green' },
-                                            { key: 'RIESGOS_ERGONOMICOS', label: 'Ergonómicos', color: 'violet' },
-                                            { key: 'RIESGOS_PSICOSOCIALES', label: 'Psicosociales', color: 'rose' },
-                                        ].map(({ key, label, color }) => {
-                                            const val = getField(resultados, key)
-                                            if (!val || val.toLowerCase().includes('ninguno') || val === 'No aplica') return null
-                                            return (
-                                                <div key={key} className={`p-2 rounded-lg bg-${color}-50 border border-${color}-100`}>
-                                                    <p className={`text-[9px] font-black uppercase text-${color}-500 mb-0.5`}>{label}</p>
-                                                    <p className="text-xs text-slate-700 leading-relaxed">{val}</p>
-                                                </div>
-                                            )
-                                        }).filter(Boolean)}
-                                        {!laboral.some(l => l.name.includes('RIESGO')) && (
-                                            <p className="text-xs text-slate-400 text-center py-2">Sin riesgos registrados</p>
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* Antecedentes relevantes para salud ocupacional */}
-                        <Card className="border-slate-100 shadow-sm bg-gradient-to-br from-slate-50 to-white">
-                            <CardContent className="p-5">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Brain className="w-4 h-4 text-violet-500" />
-                                    <p className="text-sm font-black text-slate-800 uppercase">Interpretación Clínica Integral</p>
+                                    <p className="text-sm font-black text-amber-400 tracking-widest uppercase">Alertas Clínicas</p>
                                 </div>
-                                <div className="space-y-3 text-sm text-slate-700 leading-relaxed">
-                                    <p>
-                                        <strong className="text-slate-800">Antecedentes patológicos:</strong>{' '}
-                                        {appat.filter(a => a.value.toLowerCase().startsWith('sí') || a.value.toLowerCase().startsWith('si')).length === 0
-                                            ? 'Sin antecedentes patológicos de relevancia reportados.'
-                                            : `Se identifican: ${appat.filter(a => a.value.toLowerCase().startsWith('sí') || a.value.toLowerCase().startsWith('si')).map(a => a.name.replace(/_/g, ' ')).join(', ')}.`}
-                                    </p>
-                                    {tabaco && (
-                                        <p><strong className="text-slate-800">Tabaquismo:</strong> Factor de riesgo cardiovascular y respiratorio. Considerar espirometría de control y educación para cesación tabáquica.</p>
-                                    )}
-                                    {laboral.some(l => l.name === 'EPP_UTILIZADO') && (
-                                        <p><strong className="text-slate-800">EPP:</strong> {getField(resultados, 'EPP_UTILIZADO')}</p>
-                                    )}
-                                    <div className={`p-4 rounded-xl border ${aptitudOk ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
-                                        <p className={`font-black text-xs uppercase mb-1 ${aptitudOk ? 'text-emerald-700' : 'text-amber-700'}`}>Dictamen de Aptitud</p>
-                                        <p>{aptitud || (aptitudOk ? 'APTO para el puesto de trabajo sin restricciones.' : 'Pendiente de evaluación definitiva.')}</p>
-                                        {getField(resultados, 'RESTRICCIONES_LABORALES') && (
-                                            <p className="text-amber-600 mt-1"><strong>Restricciones:</strong> {getField(resultados, 'RESTRICCIONES_LABORALES')}</p>
-                                        )}
-                                    </div>
-                                    {getField(resultados, 'PLAN_SEGUIMIENTO') && (
-                                        <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
-                                            <p className="font-black text-xs text-blue-600 uppercase mb-1">Plan de Seguimiento</p>
-                                            <p className="text-slate-700">{getField(resultados, 'PLAN_SEGUIMIENTO')}</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Recomendaciones */}
-                        <Card className="border-emerald-100 shadow-sm">
-                            <CardContent className="p-5">
-                                <div className="flex items-center gap-2 mb-3"><Shield className="w-4 h-4 text-emerald-500" /><p className="text-sm font-black text-slate-800 uppercase">Recomendaciones</p></div>
-                                <ul className="space-y-2">
-                                    {[
-                                        getField(resultados, 'RECOMENDACIONES_MEDICAS'),
-                                        !aptitudOk && 'Valoración médica especializada antes de reiniciar actividades',
-                                        tabaco && 'Programa de cesación tabáquica — Clínica del tabaco',
-                                        diabDx && 'Control glucémico — HbA1c + consulta con endocrinólogo',
-                                        htaDx && 'Control de presión arterial — MAPA o automonitoreo domiciliario',
-                                        getField(resultados, 'PROXIMO_EXAMEN') ? `Próxima revisión: ${getField(resultados, 'PROXIMO_EXAMEN')}` : 'Control anual según protocolo de salud ocupacional',
-                                    ].filter(Boolean).map((r, i) => (
-                                        <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
-                                            <ArrowRight className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" /><span>{r as string}</span>
+                                <ul className="space-y-2 relative z-10">
+                                    {alertas.map((a, i) => (
+                                        <li key={i} className="flex items-start gap-3 text-sm font-semibold text-amber-100/90 bg-amber-500/5 p-3 rounded-xl border border-amber-500/20">
+                                            <Zap className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5 drop-shadow-md" />{a}
                                         </li>
                                     ))}
                                 </ul>
-                            </CardContent>
-                        </Card>
+                            </div>
+                        )}
+
+                        {/* Análisis por sistemas */}
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 z-10 relative">
+
+                            {/* Metabólico */}
+                            <div className="rounded-[2rem] border border-white/10 bg-slate-900/60 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl p-6">
+                                <div className="flex items-center gap-3 mb-5"><Gauge className="w-5 h-5 text-amber-500 drop-shadow-md" /><p className="text-sm font-black text-white uppercase tracking-widest">Perfil Metabólico</p></div>
+                                <div className="space-y-3 text-sm text-slate-300 font-medium">
+                                    {(() => {
+                                        const imc = vitales.find(v => v.name === 'IMC')
+                                        const glu = vitales.find(v => v.name === 'GLUCOSA_CAPILAR')
+                                        const ta = vitales.find(v => v.name === 'TENSION_ARTERIAL')
+                                        return (
+                                            <>
+                                                {imc && <div className="p-3 bg-white/5 border border-white/10 rounded-xl leading-relaxed"><strong>IMC {imc.value} kg/m²</strong> — {Number(imc.value) > 30 ? <span className="text-amber-400">Obesidad — riesgo cardiovascular elevado</span> : Number(imc.value) > 25 ? <span className="text-yellow-400">Sobrepeso — control nutricional recomendado</span> : <span className="text-emerald-400">IMC dentro de rango normal</span>}</div>}
+                                                {glu && <div className="p-3 bg-white/5 border border-white/10 rounded-xl leading-relaxed"><strong>Glucosa capilar {glu.value} mg/dL</strong> — {Number(glu.value) >= 126 ? <span className="text-rose-400">Compatible con diabetes — laboratorio confirmatorio</span> : Number(glu.value) >= 100 ? <span className="text-amber-400">Prediabetes — cambios en estilo de vida</span> : <span className="text-emerald-400">Glucemia normal en ayuno</span>}</div>}
+                                                {ta && <div className="p-3 bg-white/5 border border-white/10 rounded-xl leading-relaxed"><strong>T/A {ta.value} mmHg</strong> — {Number(ta.value.split('/')[0]) >= 140 ? <span className="text-rose-400">Hipertensión grado 2 — tratamiento médico</span> : Number(ta.value.split('/')[0]) >= 130 ? <span className="text-amber-400">Hipertensión grado 1 — monitoreo</span> : <span className="text-emerald-400">Presión arterial normal</span>}</div>}
+                                                {!imc && !glu && !ta && <p className="text-slate-500 py-4 text-center border border-white/5 rounded-xl border-dashed">Sin datos de signos vitales disponibles</p>}
+                                            </>
+                                        )
+                                    })()}
+                                </div>
+                            </div>
+
+                            {/* Riesgos ocupacionales */}
+                            <div className="rounded-[2rem] border border-white/10 bg-slate-900/60 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl p-6">
+                                <div className="flex items-center gap-3 mb-5"><Briefcase className="w-5 h-5 text-indigo-400 drop-shadow-md" /><p className="text-sm font-black text-white uppercase tracking-widest">Riesgo Ocupacional</p></div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {[
+                                        { key: 'RIESGOS_FISICOS', label: 'Físicos', color: 'blue' },
+                                        { key: 'RIESGOS_QUIMICOS', label: 'Químicos', color: 'amber' },
+                                        { key: 'RIESGOS_BIOLOGICOS', label: 'Biológicos', color: 'emerald' },
+                                        { key: 'RIESGOS_ERGONOMICOS', label: 'Ergonómicos', color: 'violet' },
+                                        { key: 'RIESGOS_PSICOSOCIALES', label: 'Psicosociales', color: 'rose' },
+                                    ].map(({ key, label, color }) => {
+                                        const val = getField(resultados, key)
+                                        if (!val || val.toLowerCase().includes('ninguno') || val === 'No aplica') return null
+                                        return (
+                                            <div key={key} className={`p-3 rounded-xl bg-${color}-500/10 border border-${color}-500/20`}>
+                                                <p className={`text-[10px] font-black uppercase tracking-widest text-${color}-400 mb-1`}>{label}</p>
+                                                <p className="text-xs font-medium text-white/90 leading-relaxed">{val}</p>
+                                            </div>
+                                        )
+                                    }).filter(Boolean)}
+                                    {!laboral.some(l => l.name.includes('RIESGO')) && (
+                                        <div className="col-span-full py-8 text-center border border-white/5 rounded-xl border-dashed">
+                                            <p className="text-sm font-bold text-slate-500">Sin riesgos registrados</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Antecedentes relevantes para salud ocupacional */}
+                        <div className="rounded-[2rem] border border-violet-500/30 bg-gradient-to-br from-violet-950/40 via-slate-900/60 to-slate-900/80 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl p-6 relative overflow-hidden">
+                            <div className="flex items-center gap-3 mb-5 relative z-10">
+                                <Brain className="w-5 h-5 text-violet-400 drop-shadow-[0_0_8px_rgba(167,139,250,0.6)]" />
+                                <p className="text-sm font-black text-white uppercase tracking-widest">Interpretación Clínica Integral</p>
+                            </div>
+                            <div className="space-y-4 text-sm font-medium text-slate-300 leading-relaxed relative z-10">
+                                <div className="p-4 bg-white/5 border border-white/10 rounded-2xl">
+                                    <strong className="text-white block mb-1">Antecedentes patológicos:</strong>
+                                    {appat.filter(a => a.value.toLowerCase().startsWith('sí') || a.value.toLowerCase().startsWith('si')).length === 0
+                                        ? 'Sin antecedentes patológicos de relevancia reportados.'
+                                        : <span className="text-violet-200">Se identifican: {appat.filter(a => a.value.toLowerCase().startsWith('sí') || a.value.toLowerCase().startsWith('si')).map(a => a.name.replace(/_/g, ' ')).join(', ')}.</span>}
+                                </div>
+                                {tabaco && (
+                                    <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-200/90">
+                                        <strong className="text-amber-400 block mb-1">Tabaquismo:</strong> Factor de riesgo cardiovascular y respiratorio. Considerar espirometría de control y educación para cesación tabáquica.
+                                    </div>
+                                )}
+                                {laboral.some(l => l.name === 'EPP_UTILIZADO') && (
+                                    <div className="p-4 bg-white/5 border border-white/10 rounded-2xl">
+                                        <strong className="text-white block mb-1">EPP:</strong> {getField(resultados, 'EPP_UTILIZADO')}
+                                    </div>
+                                )}
+                                <div className={`p-4 rounded-2xl border flex flex-col justify-center ${aptitudOk ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'}`}>
+                                    <p className={`font-black text-xs tracking-widest uppercase mb-1 ${aptitudOk ? 'text-emerald-400' : 'text-amber-400'}`}>Dictamen de Aptitud</p>
+                                    <p className="text-white font-semibold text-base">{aptitud || (aptitudOk ? 'APTO para el puesto de trabajo sin restricciones.' : 'Pendiente de evaluación definitiva.')}</p>
+                                    {getField(resultados, 'RESTRICCIONES_LABORALES') && (
+                                        <p className="text-amber-300 mt-2 p-2 bg-amber-500/20 rounded-lg text-xs leading-relaxed border border-amber-500/30"><strong className="text-amber-400 uppercase tracking-widest font-black text-[10px]">Restricciones:</strong><br />{getField(resultados, 'RESTRICCIONES_LABORALES')}</p>
+                                    )}
+                                </div>
+                                {getField(resultados, 'PLAN_SEGUIMIENTO') && (
+                                    <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl">
+                                        <p className="font-black text-xs text-blue-400 tracking-widest uppercase mb-1">Plan de Seguimiento</p>
+                                        <p className="text-blue-100/90 leading-relaxed font-semibold">{getField(resultados, 'PLAN_SEGUIMIENTO')}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Recomendaciones */}
+                        <div className="rounded-[2rem] border border-cyan-500/30 bg-gradient-to-br from-cyan-900/40 via-slate-900/60 to-slate-900/80 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl p-6">
+                            <div className="flex items-center gap-3 mb-5"><Shield className="w-5 h-5 text-cyan-400 drop-shadow-md" /><p className="text-sm font-black text-white uppercase tracking-widest">Recomendaciones</p></div>
+                            <ul className="space-y-3">
+                                {[
+                                    getField(resultados, 'RECOMENDACIONES_MEDICAS'),
+                                    !aptitudOk && 'Valoración médica especializada antes de reiniciar actividades',
+                                    tabaco && 'Programa de cesación tabáquica — Clínica del tabaco',
+                                    diabDx && 'Control glucémico — HbA1c + consulta con endocrinólogo',
+                                    htaDx && 'Control de presión arterial — MAPA o automonitoreo domiciliario',
+                                    getField(resultados, 'PROXIMO_EXAMEN') ? `Próxima revisión: ${getField(resultados, 'PROXIMO_EXAMEN')}` : 'Control anual según protocolo de salud ocupacional',
+                                ].filter(Boolean).map((r, i) => (
+                                    <li key={i} className="flex items-start gap-3 text-sm font-semibold text-cyan-100/90 bg-cyan-500/10 p-4 rounded-xl border border-cyan-500/20">
+                                        <ArrowRight className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5 drop-shadow-md" /><span className="leading-relaxed">{r as string}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
 
                     </motion.div>
                 )}

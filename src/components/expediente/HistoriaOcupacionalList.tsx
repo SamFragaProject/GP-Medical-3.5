@@ -85,82 +85,83 @@ export function HistoriaOcupacionalList({ expedienteId, data }: HistoriaOcupacio
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center bg-white p-4 rounded-xl border shadow-sm">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Briefcase className="w-6 h-6 text-blue-600" />
+        <div className="space-y-6 relative z-10 w-full">
+            <div className="flex justify-between items-center p-5 rounded-3xl bg-slate-900/60 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-[#0ea5e9]/10 rounded-2xl flex items-center justify-center border border-[#0ea5e9]/20 shadow-[inset_0_2px_10px_rgba(14,165,233,0.1)]">
+                        <Briefcase className="w-6 h-6 text-[#0ea5e9]" style={{ filter: 'drop-shadow(0 0 8px rgba(14,165,233,0.5))' }} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-slate-900">Historia Ocupacional</h3>
-                        <p className="text-xs text-slate-500">Cronología laboral y riesgos previstos</p>
+                        <h3 className="font-extrabold text-white text-lg tracking-tight">Historia Ocupacional</h3>
+                        <p className="text-sm font-medium text-slate-400">Cronología laboral y riesgos previstos</p>
                     </div>
                 </div>
-                <Button onClick={handleOpenAdd} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={handleOpenAdd} className="bg-gradient-to-r from-[#0ea5e9] to-[#0284c7] hover:from-[#0284c7] hover:to-[#0369a1] text-white shadow-[0_0_20px_rgba(14,165,233,0.3)] border-none rounded-xl font-bold tracking-wide">
                     <Plus className="w-4 h-4 mr-2" />
-                    Agregar Antecedente
+                    Agregar
                 </Button>
             </div>
 
-            <div className="grid gap-4">
+            <div className="grid gap-4 w-full">
                 {data.length === 0 ? (
-                    <Card className="p-12 text-center border-dashed border-2">
-                        <Briefcase className="w-12 h-12 mx-auto text-slate-300 mb-4" />
-                        <p className="text-slate-500 font-medium">No hay antecedentes laborales registrados</p>
-                        <Button variant="outline" onClick={handleOpenAdd} className="mt-4">
-                            Añadir el primero
+                    <div className="p-16 text-center rounded-3xl border border-white/5 bg-slate-900/40 backdrop-blur-md relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#0ea5e9]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                        <Briefcase className="w-16 h-16 mx-auto mb-6 text-slate-600 drop-shadow-md" />
+                        <p className="text-slate-300 font-bold text-lg mb-2">Sin registros laborales</p>
+                        <p className="text-slate-500 font-medium text-sm mb-6 max-w-sm mx-auto">Comienza añadiendo el primer empleo o antecedente de exposición ocupacional del paciente.</p>
+                        <Button variant="outline" onClick={handleOpenAdd} className="bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.2)] transition-all group-hover:border-[#0ea5e9]/30">
+                            <Plus className="w-4 h-4 mr-2" /> Añadir Primer Registro
                         </Button>
-                    </Card>
+                    </div>
                 ) : (
                     data.map((historia) => (
-                        <Card key={historia.id} className="group hover:shadow-lg transition-all border-l-4 border-l-blue-500">
-                            <CardContent className="p-6">
-                                <div className="flex justify-between items-start">
-                                    <div className="space-y-3 flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <h4 className="font-bold text-lg text-slate-900">{historia.puesto}</h4>
-                                            <Badge variant="secondary" className="bg-blue-50 text-blue-700">
-                                                {historia.antiguedad || 'Sin tiempo especificado'}
-                                            </Badge>
-                                        </div>
+                        <div key={historia.id} className="group relative rounded-3xl p-[1px] bg-gradient-to-br from-white/10 to-transparent hover:from-[#0ea5e9]/40 hover:to-transparent transition-all duration-500">
+                            <div className="bg-slate-950/80 backdrop-blur-2xl p-6 rounded-[23px] relative z-10 w-full overflow-hidden flex flex-col md:flex-row gap-6 items-start">
+                                {/* Ambient Glow */}
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-[#0ea5e9]/5 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/3 group-hover:bg-[#0ea5e9]/10 transition-colors" />
 
-                                        <div className="flex flex-wrap gap-4 text-sm text-slate-600">
-                                            <div className="flex items-center gap-1.5">
-                                                <MapPin className="w-4 h-4 text-slate-400" />
-                                                {historia.empresa_anterior}
+                                <div className="flex-1 space-y-4 relative z-10 w-full">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-1.5">
+                                                <h4 className="font-extrabold text-xl text-white tracking-tight">{historia.puesto}</h4>
+                                                <Badge className="bg-[#0ea5e9]/20 text-[#0ea5e9] border-[#0ea5e9]/30 border text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 shadow-[0_0_10px_rgba(14,165,233,0.2)] hover:bg-[#0ea5e9]/30">
+                                                    {historia.antiguedad || 'N/A'}
+                                                </Badge>
                                             </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <Calendar className="w-4 h-4 text-slate-400" />
-                                                {historia.fecha_inicio ? new Date(historia.fecha_inicio).toLocaleDateString() : 'Inicio N/A'} - {historia.fecha_fin ? new Date(historia.fecha_fin).toLocaleDateString() : 'Fin N/A'}
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm font-medium text-slate-400">
+                                                <div className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-md border border-white/5">
+                                                    <MapPin className="w-3.5 h-3.5 text-amber-500 drop-shadow-[0_0_4px_rgba(245,158,11,0.5)]" />
+                                                    <span className="text-white/90">{historia.empresa_anterior}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-slate-500">
+                                                    <Calendar className="w-3.5 h-3.5" />
+                                                    {historia.fecha_inicio ? new Date(historia.fecha_inicio).toLocaleDateString() : 'N/A'} - {historia.fecha_fin ? new Date(historia.fecha_fin).toLocaleDateString() : 'Actual'}
+                                                </div>
                                             </div>
-                                        </div>
-
-                                        <div className="flex flex-wrap gap-2 pt-2">
-                                            {historia.riesgos_fisicos && <Badge variant="outline" className="border-amber-200 text-amber-700 bg-amber-50">Físicos</Badge>}
-                                            {historia.riesgos_quimicos && <Badge variant="outline" className="border-red-200 text-red-700 bg-red-50">Químicos</Badge>}
-                                            {historia.riesgos_biologicos && <Badge variant="outline" className="border-emerald-200 text-emerald-700 bg-emerald-50">Biológicos</Badge>}
-                                            {historia.riesgos_ergonomicos && <Badge variant="outline" className="border-purple-200 text-purple-700 bg-purple-50">Ergonómicos</Badge>}
-                                            {historia.riesgos_electricos && <Badge variant="outline" className="border-yellow-200 text-yellow-700 bg-yellow-50">Eléctricos</Badge>}
                                         </div>
                                     </div>
 
-                                    <div className="flex gap-2">
-                                        <Button variant="ghost" size="icon" onClick={() => handleEdit(historia)}>
-                                            <Edit2 className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => {
-                                                if (confirm('¿Eliminar este registro?')) deleteMutation.mutate(historia.id)
-                                            }}
-                                        >
-                                            <Trash2 className="w-4 h-4 text-slate-400 group-hover:text-red-500" />
-                                        </Button>
+                                    <div className="flex flex-wrap gap-2 pt-1 border-t border-white/5 mt-3">
+                                        {historia.riesgos_fisicos && <span className="px-2 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-md text-[10px] font-bold uppercase tracking-wider drop-shadow-sm">Físicos</span>}
+                                        {historia.riesgos_quimicos && <span className="px-2 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-md text-[10px] font-bold uppercase tracking-wider drop-shadow-sm">Químicos</span>}
+                                        {historia.riesgos_biologicos && <span className="px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md text-[10px] font-bold uppercase tracking-wider drop-shadow-sm">Biológicos</span>}
+                                        {historia.riesgos_ergonomicos && <span className="px-2 py-1 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-md text-[10px] font-bold uppercase tracking-wider drop-shadow-sm">Ergonómicos</span>}
+                                        {historia.riesgos_psicosociales && <span className="px-2 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-md text-[10px] font-bold uppercase tracking-wider drop-shadow-sm">Psicosociales</span>}
+                                        {historia.riesgos_electricos && <span className="px-2 py-1 bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 rounded-md text-[10px] font-bold uppercase tracking-wider drop-shadow-sm">Eléctricos</span>}
                                     </div>
                                 </div>
-                            </CardContent>
-                        </Card>
+
+                                <div className="flex flex-row md:flex-col gap-2 relative z-10">
+                                    <Button variant="outline" size="icon" onClick={() => handleEdit(historia)} className="bg-white/5 border-white/10 hover:bg-[#0ea5e9]/20 hover:border-[#0ea5e9]/50 hover:text-[#0ea5e9] rounded-xl transition-all">
+                                        <Edit2 className="w-4 h-4 text-slate-400 hover:text-inherit" />
+                                    </Button>
+                                    <Button variant="outline" size="icon" onClick={() => { if (confirm('¿Eliminar este registro?')) deleteMutation.mutate(historia.id) }} className="bg-white/5 border-white/10 hover:bg-rose-500/20 hover:border-rose-500/50 hover:text-rose-400 rounded-xl transition-all">
+                                        <Trash2 className="w-4 h-4 text-slate-400 hover:text-inherit" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
                     ))
                 )}
             </div>

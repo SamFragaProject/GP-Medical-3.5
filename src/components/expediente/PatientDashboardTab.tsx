@@ -7,12 +7,12 @@
  * ANALYSIS: eGFR (CKD-EPI), IMC, Col/HDL, LDL (Friedewald), Glucosa, TA
  */
 import React, { useState, useEffect, useMemo } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
     Activity, Ear, Wind, Heart, FlaskConical, Eye, Bone,
     AlertTriangle, CheckCircle, Clock, TrendingUp, TrendingDown,
-    Loader2, Shield, Sparkles, Minus,
-    Thermometer, Calculator, Brain, Gauge, Droplets, Beaker
+    Loader2, Shield, Sparkles, Minus, ArrowRight, ChevronRight,
+    Thermometer, Calculator, Brain, Gauge, Droplets, Beaker, Zap
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase'
@@ -124,7 +124,7 @@ function calcEGFR(cr: number, edad: number, fem: boolean): { v: number; e: strin
     return { v: egfr, e: 'G4-G5 Severa', s: 'critical' }
 }
 
-// ── BAR INDICATOR (premium) ──
+// ── BAR INDICATOR (premium animated) ──
 function BarIndicator({ value, min, max, unit, label, bandera }: {
     value: number; min?: number | null; max?: number | null; unit: string; label: string; bandera: string
 }) {
@@ -136,16 +136,31 @@ function BarIndicator({ value, min, max, unit, label, bandera }: {
     const pos = totalRange > 0 ? Math.max(0, Math.min(100, ((value - totalMin) / totalRange) * 100)) : 50
     const refLeft = totalRange > 0 ? Math.max(0, ((rangeMin - totalMin) / totalRange) * 100) : 20
     const refWidth = totalRange > 0 ? Math.max(0, ((rangeMax - rangeMin) / totalRange) * 100) : 60
+    const dotColor = isAbnormal ? '#fbbf24' : '#34d399'
 
     return (
-        <div className="flex items-center gap-3 py-1.5 group">
-            <span className={`text-xs font-bold w-28 truncate ${isAbnormal ? 'text-amber-300' : 'text-slate-300'}`}>{label}</span>
-            <div className="flex-1 h-2.5 bg-slate-700/50 rounded-full relative overflow-hidden">
-                <div className="absolute h-full bg-emerald-500/20 rounded-full" style={{ left: `${refLeft}%`, width: `${refWidth}%` }} />
-                <div className={`absolute top-0 h-full w-2 rounded-full shadow-lg ${isAbnormal ? 'bg-amber-400 shadow-amber-400/30' : 'bg-emerald-400 shadow-emerald-400/30'}`}
-                    style={{ left: `${pos}%`, transform: 'translateX(-50%)' }} />
+        <div className="flex items-center gap-3 py-2 group hover:bg-white/5 rounded-lg px-2 -mx-2 transition-colors">
+            <span className={`text-[11px] font-bold w-28 truncate ${isAbnormal ? 'text-amber-300' : 'text-slate-300'}`}>{label}</span>
+            <div className="flex-1 h-3 bg-slate-700/60 rounded-full relative overflow-hidden">
+                {/* Normal range zone */}
+                <div className="absolute h-full bg-emerald-500/15 rounded-full" style={{ left: `${refLeft}%`, width: `${refWidth}%` }} />
+                {/* Animated fill bar */}
+                <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pos}%` }}
+                    transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+                    className={`absolute top-0 h-full rounded-full ${isAbnormal ? 'bg-gradient-to-r from-amber-500/30 to-amber-400/50' : 'bg-gradient-to-r from-emerald-500/20 to-emerald-400/40'}`}
+                />
+                {/* Indicator dot */}
+                <motion.div
+                    initial={{ left: '0%', opacity: 0 }}
+                    animate={{ left: `${pos}%`, opacity: 1 }}
+                    transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1], delay: 0.1 }}
+                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full shadow-lg -ml-1.5"
+                    style={{ backgroundColor: dotColor, boxShadow: `0 0 8px ${dotColor}80` }}
+                />
             </div>
-            <span className={`text-xs font-black tabular-nums w-16 text-right ${isAbnormal ? 'text-amber-300' : 'text-white'}`}>
+            <span className={`text-[11px] font-black tabular-nums w-20 text-right ${isAbnormal ? 'text-amber-300' : 'text-emerald-300'}`}>
                 {value} <span className="text-[8px] text-slate-500 font-medium">{unit}</span>
             </span>
         </div>
@@ -172,13 +187,25 @@ export default function PatientDashboardTab({ pacienteId, onNavigate }: { pacien
     async function load() {
         setLoading(true)
         try {
+            // Helper: query estudios_clinicos with multiple tipo_estudio variants
+            const getEstudioMulti = async (tipos: string[]) => {
+                const { data } = await supabase.from('estudios_clinicos').select('*').eq('paciente_id', pacienteId).in('tipo_estudio', tipos).order('fecha_estudio', { ascending: false }).limit(1)
+                if (!data || data.length === 0) return null
+                const est = data[0]
+                const [resRes, grafRes] = await Promise.all([
+                    supabase.from('resultados_estudio').select('*').eq('estudio_id', est.id).order('created_at'),
+                    supabase.from('graficas_estudio').select('*').eq('estudio_id', est.id),
+                ])
+                return { estudio: est, resultados: resRes.data || [], graficas: grafRes.data || [] }
+            }
+
             const [pacRes, newLab, audioE, spiroE, ecgE, rxE, optoE, svRes, jsonbRes, legacyLabRes, legacyAud, legacySpi, legacyEcg] = await Promise.all([
                 supabase.from('pacientes').select('nombre,apellido_paterno,genero,fecha_nacimiento,laboratorio').eq('id', pacienteId).single(),
-                getUltimoEstudioCompleto(pacienteId, 'laboratorio'),
+                getEstudioMulti(['laboratorio', 'labs', 'laboratorio_directo']),
                 getUltimoEstudioCompleto(pacienteId, 'audiometria'),
                 getUltimoEstudioCompleto(pacienteId, 'espirometria'),
-                getUltimoEstudioCompleto(pacienteId, 'electrocardiograma'),
-                getUltimoEstudioCompleto(pacienteId, 'radiografia'),
+                getEstudioMulti(['electrocardiograma', 'ecg']),
+                getEstudioMulti(['radiografia', 'rayosx', 'rayos_x']),
                 getUltimoEstudioCompleto(pacienteId, 'optometria'),
                 supabase.from('exploraciones_fisicas').select('*').eq('paciente_id', pacienteId).order('fecha_exploracion', { ascending: false }).limit(1),
                 supabase.from('pacientes').select('laboratorio').eq('id', pacienteId).single(),
@@ -192,14 +219,38 @@ export default function PatientDashboardTab({ pacienteId, onNavigate }: { pacien
             setSV(svRes?.data?.length ? svRes.data[0] : null)
             setAudioData(audioE || (legacyAud?.data?.length ? legacyAud.data[0] : null))
             setSpiroData(spiroE || (legacySpi?.data?.length ? legacySpi.data[0] : null))
-            setEcgData(ecgE || (legacyEcg?.data?.length ? legacyEcg.data[0] : null))
+            // Legacy ECG: normalize interpretacion_medica → interpretacion for semaphore
+            const legacyEcgRow = legacyEcg?.data?.length ? legacyEcg.data[0] : null
+            if (legacyEcgRow && !legacyEcgRow.interpretacion && legacyEcgRow.interpretacion_medica) {
+                legacyEcgRow.interpretacion = legacyEcgRow.interpretacion_medica
+            }
+            setEcgData(ecgE || legacyEcgRow)
             setRxData(rxE)
             setOptoData(optoE)
 
-            // ── LAB: prioritize new arch → JSONB with RANGOS_REF → legacy table ──
+            // ── LAB: prioritize new arch → datos_extra fallback → JSONB with RANGOS_REF → legacy table ──
             if (newLab && newLab.resultados.length > 0) {
                 setLabResults(newLab.resultados)
                 setLabFecha(newLab.estudio.fecha_estudio)
+            } else if (newLab && newLab.estudio?.datos_extra) {
+                // Study exists but results are in datos_extra JSONB (common with laboratorio_directo)
+                const extra = newLab.estudio.datos_extra as Record<string, any>
+                let extractedResults: any[] = []
+                if (extra.resultados && Array.isArray(extra.resultados)) {
+                    // Grouped format: [{grupo, resultados: [{parametro, resultado, ...}]}]
+                    extractedResults = extra.resultados.flatMap((g: any) =>
+                        g.resultados ? g.resultados.map((r: any) => ({ ...r, parametro_nombre: r.parametro || r.parametro_nombre, bandera: r.bandera || 'normal' })) :
+                        [{ ...g, parametro_nombre: g.parametro || g.parametro_nombre, bandera: g.bandera || 'normal' }]
+                    )
+                } else {
+                    // Try flat key-value extraction from datos_extra directly
+                    const withRangos = processJsonbWithRangos(extra)
+                    if (withRangos.length > 0) extractedResults = withRangos
+                }
+                if (extractedResults.length > 0) {
+                    setLabResults(extractedResults)
+                    setLabFecha(newLab.estudio.fecha_estudio)
+                }
             } else if (jsonbRes?.data?.laboratorio && typeof jsonbRes.data.laboratorio === 'object') {
                 const raw = jsonbRes.data.laboratorio as Record<string, any>
                 const withRangos = processJsonbWithRangos(raw)
@@ -210,10 +261,21 @@ export default function PatientDashboardTab({ pacienteId, onNavigate }: { pacien
             } else if (legacyLabRes?.data?.length) {
                 const rec = legacyLabRes.data[0]
                 try {
-                    const grupos = typeof rec.resultados === 'string' ? JSON.parse(rec.resultados) : (Array.isArray(rec.resultados) ? rec.resultados : [])
-                    setLabResults(grupos.flatMap((g: any) => (g.resultados || []).map((r: any) => ({ ...r, bandera: r.bandera || 'normal' }))))
+                    const raw = rec.resultados
+                    if (typeof raw === 'string') {
+                        const parsed = JSON.parse(raw)
+                        if (Array.isArray(parsed)) {
+                            setLabResults(parsed.flatMap((g: any) => (g.resultados || []).map((r: any) => ({ ...r, bandera: r.bandera || 'normal' }))))
+                        }
+                    } else if (Array.isArray(raw)) {
+                        setLabResults(raw.flatMap((g: any) => (g.resultados || []).map((r: any) => ({ ...r, bandera: r.bandera || 'normal' }))))
+                    } else if (typeof raw === 'object' && raw !== null) {
+                        // Flat JSONB object: { hemoglobina: 14.5, ... }
+                        const withRangos = processJsonbWithRangos(raw as Record<string, any>)
+                        if (withRangos.length > 0) setLabResults(withRangos)
+                    }
                 } catch { }
-                setLabFecha(rec.fecha_resultados)
+                setLabFecha(rec.fecha_resultados || rec.fecha_toma)
             }
         } catch (e) { console.error('[Dashboard] Error:', e) }
         setLoading(false)
@@ -232,7 +294,7 @@ export default function PatientDashboardTab({ pacienteId, onNavigate }: { pacien
             else { status = 'ok'; detail = `${labResults.length} normales` }
             fecha = labFecha
         } else if (st.key === 'audiometria' && audioData) {
-            const c = (audioData.estudio?.clasificacion || audioData.clasificacion || '').toLowerCase()
+            const c = (audioData.estudio?.clasificacion || audioData.clasificacion || audioData.diagnostico_general || '').toLowerCase()
             status = c.includes('normal') ? 'ok' : c.includes('leve') ? 'warning' : c.includes('moderada') ? 'alert' : 'ok'
             detail = c ? c.slice(0, 30) : 'Disponible'
             fecha = audioData.estudio?.fecha_estudio || audioData.fecha_estudio
@@ -242,8 +304,8 @@ export default function PatientDashboardTab({ pacienteId, onNavigate }: { pacien
             detail = c ? c.slice(0, 30) : 'Disponible'
             fecha = spiroData.estudio?.fecha_estudio || spiroData.fecha_estudio
         } else if (st.key === 'ecg' && ecgData) {
-            const i = (ecgData.estudio?.interpretacion || ecgData.interpretacion || '').toLowerCase()
-            status = i.includes('normal') || i.includes('sinusal') ? 'ok' : 'alert'
+            const i = (ecgData.estudio?.interpretacion || ecgData.interpretacion || ecgData.interpretacion_medica || ecgData.hallazgos || '').toLowerCase()
+            status = i.includes('normal') || i.includes('sinusal') ? 'ok' : i ? 'alert' : 'ok'
             detail = i ? i.slice(0, 30) : 'Disponible'
             fecha = ecgData.estudio?.fecha_estudio || ecgData.fecha_estudio
         } else if (st.key === 'radiografia' && rxData) {
@@ -350,33 +412,203 @@ export default function PatientDashboardTab({ pacienteId, onNavigate }: { pacien
     return (
         <div className="space-y-5">
 
-            {/* ═══ VITALES ANIMADOS ═══ */}
-            {vitalOrbs.length > 0 && (
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700/50 p-5 shadow-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Activity className="w-4 h-4 text-emerald-400" />
-                        <h3 className="text-xs font-black text-white uppercase tracking-widest">Signos Vitales</h3>
-                        <span className="text-[9px] text-slate-500 ml-auto">Última exploración física</span>
+            {/* ═══ HEALTH SCORE + VITALES ═══ */}
+            <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+                className="bg-gradient-to-br from-[#0a0e17] via-[#0d1321] to-[#0a0e17] rounded-[1.5rem] border border-slate-700/40 p-6 shadow-2xl relative overflow-hidden">
+                {/* Ambient glows */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/[0.04] rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/[0.04] rounded-full blur-[80px] pointer-events-none" />
+
+                <div className="relative flex flex-col lg:flex-row items-center gap-6">
+                    {/* Health Score Ring */}
+                    <div className="flex-shrink-0">
+                        <div className="relative w-32 h-32">
+                            <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
+                                <circle cx="60" cy="60" r="52" fill="none" stroke="#1e293b" strokeWidth="8" />
+                                <motion.circle
+                                    cx="60" cy="60" r="52" fill="none"
+                                    stroke="url(#healthGrad)" strokeWidth="8" strokeLinecap="round"
+                                    strokeDasharray={`${2 * Math.PI * 52}`}
+                                    initial={{ strokeDashoffset: 2 * Math.PI * 52 }}
+                                    animate={{ strokeDashoffset: totalActive > 0 ? (2 * Math.PI * 52) * (1 - okCount / totalActive) : 2 * Math.PI * 52 }}
+                                    transition={{ duration: 1.5, ease: [0.4, 0, 0.2, 1], delay: 0.3 }}
+                                />
+                                <defs>
+                                    <linearGradient id="healthGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stopColor="#10b981" />
+                                        <stop offset="100%" stopColor="#06b6d4" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <motion.span
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.8 }}
+                                    className="text-3xl font-black text-white tabular-nums"
+                                >
+                                    {totalActive > 0 ? Math.round((okCount / totalActive) * 100) : 0}
+                                </motion.span>
+                                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Score</span>
+                            </div>
+                        </div>
                     </div>
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                        {vitalOrbs.map((orb, i) => {
-                            const isOk = orb.ok ? orb.ok() : true
+
+                    {/* Vitals Grid */}
+                    <div className="flex-1 w-full">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Activity className="w-4 h-4 text-emerald-400" />
+                            <h3 className="text-xs font-black text-white uppercase tracking-[0.15em]">Signos Vitales</h3>
+                            <span className="text-[9px] text-slate-500 ml-auto font-medium">Última exploración</span>
+                        </div>
+                        {vitalOrbs.length > 0 ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                                {vitalOrbs.map((orb, i) => {
+                                    const isOk = orb.ok ? orb.ok() : true
+                                    return (
+                                        <motion.div key={orb.label}
+                                            initial={{ scale: 0.7, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            transition={{ delay: 0.2 + i * 0.08, type: 'spring', stiffness: 200 }}
+                                            className="flex flex-col items-center gap-2"
+                                        >
+                                            <div className="relative">
+                                                <div className={`w-[3.5rem] h-[3.5rem] rounded-2xl bg-gradient-to-br ${isOk ? orb.gradient : 'from-amber-500 to-orange-600'} flex flex-col items-center justify-center shadow-lg relative z-10`}>
+                                                    <span className="text-[11px] font-black text-white leading-none">{orb.value}</span>
+                                                    <span className="text-[7px] text-white/60 font-medium mt-0.5">{orb.unit}</span>
+                                                </div>
+                                                {orb.pulse && (
+                                                    <motion.div className="absolute inset-0 rounded-2xl z-0"
+                                                        animate={{ boxShadow: isOk
+                                                            ? ['0 0 0 0px rgba(52,211,153,0)', '0 0 0 6px rgba(52,211,153,0.2)', '0 0 0 0px rgba(52,211,153,0)']
+                                                            : ['0 0 0 0px rgba(245,158,11,0)', '0 0 0 8px rgba(245,158,11,0.3)', '0 0 0 0px rgba(245,158,11,0)']
+                                                        }}
+                                                        transition={{ duration: 1.5, repeat: Infinity }}
+                                                    />
+                                                )}
+                                                {!isOk && <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-400 rounded-full border-2 border-[#0a0e17] z-20 animate-pulse" />}
+                                            </div>
+                                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-wider">{orb.label}</p>
+                                        </motion.div>
+                                    )
+                                })}
+                            </div>
+                        ) : (
+                            <p className="text-xs text-slate-600 italic">Sin datos de exploración física</p>
+                        )}
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* ═══ SEMÁFORO CLÍNICO — Connected Pipeline ═══ */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                className="bg-gradient-to-br from-[#0a0e17] via-[#0f1525] to-[#0a0e17] rounded-[1.5rem] p-6 border border-slate-700/40 shadow-2xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.03),transparent_50%)] pointer-events-none" />
+                <div className="relative">
+                    <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                                <Shield className="w-4.5 h-4.5 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-black text-white tracking-wide">SEMÁFORO CLÍNICO</h3>
+                                <p className="text-[10px] text-slate-500 font-medium">Estado integral • Clic para navegar</p>
+                            </div>
+                        </div>
+                        {totalActive > 0 && (
+                            <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                                <span className="text-[11px] font-black text-emerald-400">{okCount}/{totalActive} OK</span>
+                            </motion.div>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5">
+                        {systems.map((sys, idx) => {
+                            const st = STATUS[sys.status]
+                            const tabMap: Record<string, string> = { laboratorio: 'laboratorio', audiometria: 'audiometria', espirometria: 'espirometria', ecg: 'electrocardiograma', radiografia: 'rayosx', optometria: 'vision' }
+                            const statusColors: Record<string, string> = { ok: '#10b981', warning: '#f59e0b', alert: '#f97316', critical: '#ef4444', pending: '#475569' }
+                            const glowColor = statusColors[sys.status] || '#475569'
                             return (
-                                <motion.div key={orb.label} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: i * 0.06 }}
-                                    className="flex flex-col items-center gap-2">
-                                    <div className="relative">
-                                        <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${isOk ? orb.gradient : 'from-amber-500 to-orange-600'} flex flex-col items-center justify-center shadow-lg`}>
-                                            <span className="text-[11px] font-black text-white leading-none">{orb.value}</span>
-                                            <span className="text-[8px] text-white/70 font-medium">{orb.unit}</span>
+                                <motion.div key={sys.key}
+                                    initial={{ opacity: 0, y: 12 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.15 + idx * 0.06 }}
+                                    whileHover={{ scale: 1.04, y: -2 }}
+                                    onClick={() => onNavigate && onNavigate(tabMap[sys.key] || sys.key)}
+                                    className={`relative rounded-2xl bg-gradient-to-br ${st.bgCard} backdrop-blur-sm border ${st.border} p-4 transition-all ${onNavigate ? 'cursor-pointer' : 'cursor-default'} group`}
+                                    style={{ boxShadow: `0 4px 24px -8px ${glowColor}20` }}
+                                >
+                                    {/* Status glow on hover */}
+                                    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                                        style={{ boxShadow: `inset 0 0 20px ${glowColor}10, 0 0 20px ${glowColor}15` }} />
+
+                                    <div className="relative flex items-center justify-between mb-3">
+                                        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${sys.color} flex items-center justify-center shadow-lg`}>
+                                            <sys.icon className="w-4 h-4 text-white" />
                                         </div>
-                                        {orb.pulse && (
-                                            <motion.div className="absolute inset-0 rounded-2xl"
-                                                animate={{ boxShadow: isOk ? ['0 0 0 0 rgba(239,68,68,0)', '0 0 0 6px rgba(239,68,68,0.15)', '0 0 0 0 rgba(239,68,68,0)'] : ['0 0 0 0 rgba(245,158,11,0)', '0 0 0 8px rgba(245,158,11,0.25)', '0 0 0 0 rgba(245,158,11,0)'] }}
-                                                transition={{ duration: 1.2, repeat: Infinity }} />
-                                        )}
-                                        {!isOk && <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full border-2 border-slate-900" />}
+                                        <div className="relative">
+                                            <div className={`w-3 h-3 rounded-full ${st.bg}`} />
+                                            {sys.status === 'critical' && (
+                                                <motion.div className="absolute inset-0 rounded-full"
+                                                    animate={{ boxShadow: [`0 0 0 0px ${glowColor}00`, `0 0 0 6px ${glowColor}40`, `0 0 0 0px ${glowColor}00`] }}
+                                                    transition={{ duration: 1, repeat: Infinity }} />
+                                            )}
+                                        </div>
                                     </div>
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{orb.label}</p>
+                                    <p className="text-[11px] font-black text-white mb-0.5 leading-tight">{sys.label}</p>
+                                    <p className={`text-[9px] font-semibold ${st.text} leading-snug`}>{sys.detail}</p>
+                                    {sys.fecha && (
+                                        <p className="text-[9px] text-slate-600 mt-1.5 flex items-center gap-1">
+                                            <Clock className="w-2.5 h-2.5" />
+                                            {new Date(sys.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
+                                        </p>
+                                    )}
+                                    {onNavigate && sys.status !== 'pending' && (
+                                        <div className="flex items-center gap-1 mt-2 text-[9px] font-bold text-slate-600 group-hover:text-slate-300 transition-colors">
+                                            <span>Ver detalle</span>
+                                            <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                                        </div>
+                                    )}
+                                </motion.div>
+                            )
+                        })}
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* ═══ CLINICAL ANALYSIS — Premium Metric Cards ═══ */}
+            {metrics.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                    <div className="flex items-center gap-2.5 mb-4">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                            <Brain className="w-4 h-4 text-white" />
+                        </div>
+                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Análisis Clínico</h3>
+                        <Badge className="bg-violet-50 text-violet-600 border-violet-200 text-[10px] font-black ml-auto">{metrics.length} métricas</Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2.5">
+                        {metrics.map((m, idx) => {
+                            const st = STATUS[m.status]
+                            const statusColors: Record<string, string> = { ok: '#10b981', warning: '#f59e0b', alert: '#f97316', critical: '#ef4444' }
+                            const color = statusColors[m.status] || '#64748b'
+                            return (
+                                <motion.div key={m.key}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 0.2 + idx * 0.05 }}
+                                    className={`rounded-2xl bg-white border ${st.border} p-4 hover:shadow-lg transition-all group relative overflow-hidden`}
+                                >
+                                    <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: `linear-gradient(90deg, ${color}60, ${color}20)` }} />
+                                    <div className="flex items-center gap-1.5 mb-2">
+                                        <m.icon className={`w-3.5 h-3.5 ${st.text}`} />
+                                        <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">{m.label}</span>
+                                    </div>
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-xl font-black text-slate-800">{m.value}</span>
+                                        <span className="text-[9px] text-slate-400 font-medium">{m.unit}</span>
+                                    </div>
+                                    <p className={`text-[10px] font-bold mt-1 ${st.text}`}>{m.interpretation}</p>
+                                    {m.formula && <p className="text-[8px] text-slate-400 mt-0.5 italic">{m.formula}</p>}
                                 </motion.div>
                             )
                         })}
@@ -384,152 +616,84 @@ export default function PatientDashboardTab({ pacienteId, onNavigate }: { pacien
                 </motion.div>
             )}
 
-            {/* ═══ SEMÁFORO CLÍNICO — Premium Dark Glass ═══ */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-5 border border-slate-700/50 shadow-2xl shadow-slate-900/50">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                            <Shield className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                            <h3 className="text-sm font-black text-white tracking-wide">SEMÁFORO CLÍNICO</h3>
-                            <p className="text-[10px] text-slate-400 font-medium">Estado integral de sistemas</p>
-                        </div>
-                    </div>
-                    {totalActive > 0 && (
-                        <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                            <span className="text-[10px] font-black text-emerald-400">{okCount}/{totalActive} OK</span>
-                        </div>
-                    )}
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-                    {systems.map((sys) => {
-                        const st = STATUS[sys.status]
-                        const tabMap: Record<string, string> = { laboratorio: 'laboratorio', audiometria: 'audiometria', espirometria: 'espirometria', ecg: 'electrocardiograma', radiografia: 'rayosx', optometria: 'vision' }
-                        return (
-                            <div key={sys.key}
-                                onClick={() => onNavigate && onNavigate(tabMap[sys.key] || sys.key)}
-                                className={`rounded-xl bg-gradient-to-br ${st.bgCard} backdrop-blur-sm border ${st.border} p-3 transition-all hover:scale-[1.02] ${onNavigate ? 'cursor-pointer' : 'cursor-default'} group`}>
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${sys.color} flex items-center justify-center shadow-md`}>
-                                        <sys.icon className="w-3.5 h-3.5 text-white" />
-                                    </div>
-                                    <div className={`w-2.5 h-2.5 rounded-full ${st.bg} ring-2 ${st.ring} ${sys.status === 'critical' ? 'animate-pulse' : ''}`} />
-                                </div>
-                                <p className="text-[11px] font-black text-white">{sys.label}</p>
-                                <p className={`text-[9px] font-semibold ${st.text} mt-0.5 truncate`}>{sys.detail}</p>
-                                {sys.fecha && (
-                                    <p className="text-[8px] text-slate-500 mt-1 flex items-center gap-0.5">
-                                        <Clock className="w-2 h-2" />
-                                        {new Date(sys.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
-                                    </p>
-                                )}
-                                {onNavigate && sys.status !== 'pending' && (
-                                    <p className="text-[8px] text-slate-600 mt-1 group-hover:text-slate-400 transition-colors">→ Ver detalle</p>
-                                )}
-                            </div>
-                        )
-                    })}
-                </div>
-            </motion.div>
-
-            {/* ═══ CLINICAL ANALYSIS — Glassmorphism Cards ═══ */}
-            {metrics.length > 0 && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}>
-                    <div className="flex items-center gap-2 mb-3">
-                        <Brain className="w-4 h-4 text-violet-500" />
-                        <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider">Análisis Clínico</h3>
-                        <Badge className="bg-violet-50 text-violet-600 border-violet-200 text-[10px] font-black ml-auto">{metrics.length} métricas</Badge>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
-                        {metrics.map(m => {
-                            const st = STATUS[m.status]
-                            return (
-                                <div key={m.key} className={`rounded-xl bg-gradient-to-br ${st.bgCard} backdrop-blur border ${st.border} p-3.5 hover:shadow-lg transition-all`}>
-                                    <div className="flex items-center gap-2 mb-1.5">
-                                        <m.icon className={`w-4 h-4 ${st.text}`} />
-                                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">{m.label}</span>
-                                    </div>
-                                    <div className="flex items-baseline gap-1.5">
-                                        <span className="text-2xl font-black text-slate-800">{m.value}</span>
-                                        <span className="text-[10px] text-slate-400 font-medium">{m.unit}</span>
-                                    </div>
-                                    <p className={`text-[10px] font-bold mt-0.5 ${st.text}`}>{m.interpretation}</p>
-                                    {m.formula && <p className="text-[8px] text-slate-400 mt-0.5 italic">{m.formula}</p>}
-                                </div>
-                            )
-                        })}
-                    </div>
-                </motion.div>
-            )}
-
             {/* ═══ ALERTS + LABS ═══ */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* Alerts Card — Dark theme */}
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
-                    className={`rounded-2xl p-4 border shadow-lg ${alerts.length > 0 ? 'bg-gradient-to-br from-red-950 via-red-900/90 to-orange-950 border-red-800/30' : 'bg-gradient-to-br from-slate-50 to-emerald-50/50 border-emerald-100'}`}>
-                    <div className="flex items-center gap-2 mb-3">
-                        {alerts.length > 0 ? <AlertTriangle className="w-4 h-4 text-red-400" /> : <CheckCircle className="w-4 h-4 text-emerald-500" />}
+            <div className="grid grid-cols-1 gap-4">
+                {/* Alerts Card */}
+                <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
+                    className={`rounded-[1.5rem] p-5 border shadow-lg ${alerts.length > 0 ? 'bg-gradient-to-br from-red-950 via-red-900/90 to-orange-950 border-red-800/30' : 'bg-gradient-to-br from-slate-50 to-emerald-50/50 border-emerald-100'}`}>
+                    <div className="flex items-center gap-2.5 mb-4">
+                        {alerts.length > 0 ? <AlertTriangle className="w-4.5 h-4.5 text-red-400" /> : <CheckCircle className="w-4.5 h-4.5 text-emerald-500" />}
                         <h3 className={`text-sm font-black ${alerts.length > 0 ? 'text-white' : 'text-slate-700'}`}>
                             {alerts.length > 0 ? `${alerts.length} Alertas Activas` : 'Sin Alertas'}
                         </h3>
                     </div>
                     {alerts.length === 0 ? (
-                        <div className="text-center py-4">
-                            <CheckCircle className="w-10 h-10 text-emerald-200 mx-auto mb-2" />
+                        <div className="text-center py-5">
+                            <CheckCircle className="w-12 h-12 text-emerald-200 mx-auto mb-2" />
                             <p className="text-xs text-emerald-600 font-semibold">Todos los valores dentro de rango normal</p>
                         </div>
                     ) : (
-                        <div className="space-y-1.5 max-h-52 overflow-y-auto">
+                        <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
                             {alerts.map((a, i) => {
                                 const flag = BANDERA_STYLES[a.level] || BANDERA_STYLES.normal
                                 return (
-                                    <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 backdrop-blur-sm border border-white/5">
-                                        <div className={`w-2 h-2 rounded-full ${a.level === 'critico' ? 'bg-red-400 animate-pulse' : a.level === 'alto' ? 'bg-orange-400' : 'bg-amber-400'}`} />
-                                        <span className="text-xs font-bold text-white/90 flex-1">{a.parametro}</span>
-                                        <span className="text-xs font-black text-white">{a.valor} <span className="text-white/50 text-[9px]">{a.unidad}</span></span>
-                                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${a.level === 'bajo' ? 'bg-blue-500/20 text-blue-300' : a.level === 'alto' ? 'bg-orange-500/20 text-orange-300' : 'bg-red-500/20 text-red-300'}`}>
+                                    <motion.div key={i}
+                                        initial={{ opacity: 0, x: -8 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.25 + i * 0.04 }}
+                                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/5 hover:bg-white/15 transition-colors"
+                                    >
+                                        <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${a.level === 'critico' ? 'bg-red-400 animate-pulse' : a.level === 'alto' ? 'bg-orange-400' : 'bg-amber-400'}`} />
+                                        <span className="text-xs font-bold text-white/90 flex-1 truncate">{a.parametro}</span>
+                                        <span className="text-xs font-black text-white tabular-nums">{a.valor} <span className="text-white/40 text-[9px]">{a.unidad}</span></span>
+                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${a.level === 'bajo' ? 'bg-blue-500/20 text-blue-300' : a.level === 'alto' ? 'bg-orange-500/20 text-orange-300' : 'bg-red-500/20 text-red-300'}`}>
                                             {flag.label}
                                         </span>
-                                    </div>
+                                    </motion.div>
                                 )
                             })}
                         </div>
                     )}
                 </motion.div>
 
-                {/* Labs Highlights — Dark theme */}
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
-                    className="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700/50 p-4 shadow-lg">
-                    <div className="flex items-center gap-2 mb-3">
-                        <FlaskConical className="w-4 h-4 text-teal-400" />
-                        <h3 className="text-sm font-black text-white">Labs Destacados</h3>
-                        {labFecha && <span className="text-[9px] text-slate-500 ml-auto">{new Date(labFecha).toLocaleDateString('es-MX')}</span>}
+                {/* Labs Highlights — Premium Dark */}
+                <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 }}
+                    className="rounded-[1.5rem] bg-gradient-to-br from-[#0a0e17] via-[#0f1525] to-[#0a0e17] border border-slate-700/40 p-5 shadow-lg relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/[0.03] rounded-full blur-[60px] pointer-events-none" />
+                    <div className="relative">
+                        <div className="flex items-center gap-2.5 mb-4">
+                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow-md">
+                                <FlaskConical className="w-3.5 h-3.5 text-white" />
+                            </div>
+                            <h3 className="text-sm font-black text-white">Labs Destacados</h3>
+                            {labFecha && <span className="text-[9px] text-slate-500 ml-auto font-medium">{new Date(labFecha).toLocaleDateString('es-MX')}</span>}
+                        </div>
+                        {highlights.length === 0 ? (
+                            <div className="text-center py-6">
+                                <FlaskConical className="w-10 h-10 text-slate-700 mx-auto mb-2" />
+                                <p className="text-xs text-slate-500">Sin resultados de laboratorio</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-0.5">
+                                {highlights.map((r, i) => (
+                                    <BarIndicator key={i} label={r.nombre_display || r.parametro_nombre || r.parametro || r.label} value={r.resultado_numerico}
+                                        min={r.rango_ref_min} max={r.rango_ref_max} unit={r.unidad || ''} bandera={r.bandera || 'normal'} />
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    {highlights.length === 0 ? (
-                        <div className="text-center py-6">
-                            <FlaskConical className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-                            <p className="text-xs text-slate-500">Sin resultados de laboratorio</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-0.5">
-                            {highlights.map((r, i) => (
-                                <BarIndicator key={i} label={r.nombre_display || r.parametro_nombre || r.parametro || r.label} value={r.resultado_numerico}
-                                    min={r.rango_ref_min} max={r.rango_ref_max} unit={r.unidad || ''} bandera={r.bandera || 'normal'} />
-                            ))}
-                        </div>
-                    )}
                 </motion.div>
             </div>
 
             {/* ═══ DISCLAIMER ═══ */}
-            <div className="bg-gradient-to-r from-violet-50 to-indigo-50 rounded-xl border border-violet-100 p-3 flex items-start gap-2">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+                className="bg-gradient-to-r from-violet-50 via-indigo-50 to-violet-50 rounded-xl border border-violet-100/60 p-3.5 flex items-start gap-2.5">
                 <Sparkles className="w-4 h-4 text-violet-400 mt-0.5 flex-shrink-0" />
                 <p className="text-[10px] text-slate-500 leading-relaxed">
                     <strong className="text-violet-600">⚕️ Herramienta de apoyo:</strong> Los análisis e interpretaciones no constituyen un diagnóstico médico.
                     La decisión diagnóstica y terapéutica es responsabilidad exclusiva del médico tratante.
                 </p>
-            </div>
+            </motion.div>
         </div>
     )
 }
