@@ -437,7 +437,7 @@ export default function OdontogramaTab() {
                         </div>
 
                         {/* Dental Arch */}
-                        <div className="bg-gradient-to-b from-slate-50 to-white rounded-2xl border border-slate-100 p-6">
+                        <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-100 p-6">
                             {/* Upper Arch */}
                             <div className="flex justify-center gap-8 mb-2">
                                 <div className="text-center">
@@ -620,7 +620,7 @@ export default function OdontogramaTab() {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                             >
-                                <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-50 to-white rounded-3xl">
+                                <Card className="border-0 shadow-lg bg-slate-900/60 backdrop-blur-xl rounded-3xl">
                                     <CardContent className="p-6 text-center">
                                         <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
                                             <span className="text-2xl">🦷</span>

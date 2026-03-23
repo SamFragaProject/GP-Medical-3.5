@@ -68,7 +68,7 @@ export default function DocumentosAdjuntos({
                 {/* ── Header colapsable ── */}
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-50 to-white rounded-xl border border-slate-100 hover:border-emerald-200 transition-all group"
+                    className="w-full flex items-center justify-between px-4 py-3 bg-white/5 border-white/10 hover:bg-white/10 rounded-xl border border-white/10 hover:border-white/30 transition-all group"
                 >
                     <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center group-hover:from-emerald-100 group-hover:to-teal-100 transition-colors">
@@ -116,7 +116,7 @@ export default function DocumentosAdjuntos({
                                                 key={doc.id}
                                                 initial={{ opacity: 0, x: -10 }}
                                                 animate={{ opacity: 1, x: 0 }}
-                                                className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white border border-slate-100 hover:border-emerald-200 hover:shadow-sm transition-all group cursor-pointer"
+                                                className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white border border-white/10 hover:border-white/30 hover:shadow-sm transition-all group cursor-pointer"
                                                 onClick={() => setSelectedDoc(doc)}
                                             >
                                                 <div className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center flex-shrink-0">

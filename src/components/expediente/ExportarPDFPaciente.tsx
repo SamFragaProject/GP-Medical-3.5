@@ -212,6 +212,7 @@ export function printCertificadoAptitud(paciente: any, notaVigente?: any, explor
                 <div class="cert-data-row"><span class="cert-data-label">Puesto de Trabajo</span><span class="cert-data-value">${paciente.puesto || '—'}</span></div>
                 <div class="cert-data-row"><span class="cert-data-label">No. Empleado</span><span class="cert-data-value">${paciente.numero_empleado || '—'}</span></div>
                 <div class="cert-data-row"><span class="cert-data-label">Tipo Examen</span><span class="cert-data-value">${paciente.tipo_examen || 'Periódico'}</span></div>
+                <div class="cert-data-row"><span class="cert-data-label">Escolaridad</span><span class="cert-data-value">${paciente.escolaridad || '—'}</span></div>
                 <div class="cert-data-row"><span class="cert-data-label">Fecha Examen</span><span class="cert-data-value">${fechaHoy}</span></div>
             </div>
 
@@ -387,17 +388,18 @@ export function printExpedienteCompleto(paciente: any, data?: any) {
                 </div>` : ''}
 
                 <!-- Audio -->
+                ${audio.diagnostico && audio.diagnostico !== 'No realizado' ? `
                 <div>
                     <div class="section-title">Audiometría</div>
                     <div class="dense-row"><span class="dense-label">Diagnóstico</span><span class="dense-value">${audio.diagnostico}</span></div>
-                    <div class="dense-row"><span class="dense-label">PTA Oído Derecho</span><span class="dense-value ${audio.promedio_tonal_od > 25 ? 'alto' : ''}">${audio.promedio_tonal_od} dB</span></div>
-                    <div class="dense-row"><span class="dense-label">PTA Oído Izquierdo</span><span class="dense-value ${audio.promedio_tonal_oi > 25 ? 'alto' : ''}">${audio.promedio_tonal_oi} dB</span></div>
+                    <div class="dense-row"><span class="dense-label">PTA Oído Derecho</span><span class="dense-value ${(audio.promedio_tonal_od || 0) > 25 ? 'alto' : ''}">${audio.promedio_tonal_od || 0} dB</span></div>
+                    <div class="dense-row"><span class="dense-label">PTA Oído Izquierdo</span><span class="dense-value ${(audio.promedio_tonal_oi || 0) > 25 ? 'alto' : ''}">${audio.promedio_tonal_oi || 0} dB</span></div>
                     <div class="dense-row"><span class="dense-label">Semáforo NOM-011</span>
                         <span class="dense-value" style="color:${(audio.semaforo_general as string) === 'verde' ? '#10b981' : (audio.semaforo_general as string) === 'amarillo' ? '#f59e0b' : '#ef4444'}">
-                            ● ${audio.semaforo_general?.toUpperCase()}
+                            ● ${audio.semaforo_general?.toUpperCase() || '—'}
                         </span>
                     </div>
-                </div>
+                </div>` : ''}
 
                 <div>
                     <div class="section-title">Hallazgos Relevantes</div>
@@ -478,4 +480,288 @@ export function printSeccionPDF(opts: {
     </div>`
 
     openPrintWindow(`${opts.titulo} - ${p.nombre} ${p.apellido_paterno}`, html)
+}
+
+// =================================================================
+// 4. EXPORTAR TODOS LOS DOCUMENTOS ADJUNTOS EN UN SOLO PDF MEMBRETADO
+// =================================================================
+import { secureStorageService, type DocumentoExpediente } from '@/services/secureStorageService'
+
+const CATEGORIA_LABELS: Record<string, { name: string; icon: string }> = {
+    laboratorio: { name: 'Laboratorio', icon: '🧪' },
+    audiometria: { name: 'Audiometría', icon: '🎧' },
+    espirometria: { name: 'Espirometría', icon: '🫁' },
+    ecg: { name: 'Electrocardiograma', icon: '❤️' },
+    radiografia: { name: 'Rayos X / Radiografía', icon: '📷' },
+    optometria: { name: 'Optometría', icon: '👁️' },
+    historia_clinica: { name: 'Historia Clínica', icon: '📋' },
+    dictamen: { name: 'Dictamen / Certificado', icon: '📄' },
+    consentimiento: { name: 'Consentimiento', icon: '✍️' },
+    otro: { name: 'Otros Documentos', icon: '📎' },
+}
+
+/**
+ * Descarga y embebe TODOS los documentos adjuntos de un paciente 
+ * en un solo PDF membretado con índice y separadores por categoría.
+ * 
+ * Flujo:
+ * 1. Obtener lista de documentos del paciente
+ * 2. Descifrar cada uno via secureStorageService.view()
+ * 3. Convertir a base64 para embeber en HTML
+ * 4. Generar HTML con membrete, índice y cada documento
+ * 5. Abrir ventana de impresión
+ */
+export async function printDocumentosAdjuntosPDF(
+    paciente: any,
+    empresaId: string,
+    userId?: string,
+    onProgress?: (msg: string) => void
+): Promise<void> {
+    if (!paciente) return
+
+    const reportProgress = (msg: string) => {
+        onProgress?.(msg)
+        console.log(`[ExportDocs] ${msg}`)
+    }
+
+    reportProgress('Obteniendo lista de documentos...')
+
+    // 1. Obtener todos los documentos del paciente
+    const documentos = await secureStorageService.getByPaciente(paciente.id)
+
+    if (!documentos || documentos.length === 0) {
+        reportProgress('⚠️ No hay documentos adjuntos para este paciente.')
+        return
+    }
+
+    reportProgress(`Encontrados ${documentos.length} documentos. Descifrando...`)
+
+    // 2. Agrupar por categoría
+    const grouped: Record<string, DocumentoExpediente[]> = {}
+    documentos.forEach(doc => {
+        const cat = doc.categoria || 'otro'
+        if (!grouped[cat]) grouped[cat] = []
+        grouped[cat].push(doc)
+    })
+
+    // 3. Descifrar y convertir cada documento a base64
+    const embeddedDocs: Array<{
+        doc: DocumentoExpediente
+        base64: string
+        mimeType: string
+        isImage: boolean
+        error?: string
+    }> = []
+
+    for (let i = 0; i < documentos.length; i++) {
+        const doc = documentos[i]
+        reportProgress(`Procesando ${i + 1}/${documentos.length}: ${doc.nombre_original}`)
+
+        try {
+            const result = await secureStorageService.view(doc, empresaId, userId)
+
+            // Convertir objectUrl a base64 para embeber en HTML
+            const response = await fetch(result.objectUrl)
+            const blob = await response.blob()
+            const base64 = await blobToBase64(blob)
+
+            result.cleanup() // Liberar objectUrl
+
+            const isImg = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(doc.extension.toLowerCase())
+
+            embeddedDocs.push({
+                doc,
+                base64,
+                mimeType: result.mimeType,
+                isImage: isImg,
+            })
+        } catch (err: any) {
+            console.error(`Error procesando ${doc.nombre_original}:`, err)
+            embeddedDocs.push({
+                doc,
+                base64: '',
+                mimeType: '',
+                isImage: false,
+                error: err.message || 'Error al descifrar',
+            })
+        }
+    }
+
+    reportProgress('Generando PDF membretado...')
+
+    // 4. Generar HTML
+    const edad = paciente.fecha_nacimiento ? calcEdad(paciente.fecha_nacimiento) : '—'
+    const fechaHoy = new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
+    const categories = Object.keys(grouped)
+
+    // Build index
+    let indexHTML = ''
+    let pageCounter = 0
+    categories.forEach(cat => {
+        const label = CATEGORIA_LABELS[cat] || CATEGORIA_LABELS['otro']
+        const docs = grouped[cat]
+        indexHTML += `
+            <div style="margin-bottom:8px;">
+                <div style="font-size:12px; font-weight:800; color:#0f172a; padding:4px 0; border-bottom:1px solid #e2e8f0;">
+                    ${label.icon} ${label.name} (${docs.length})
+                </div>
+                ${docs.map(d => {
+                    pageCounter++
+                    const fecha = new Date(d.created_at).toLocaleDateString('es-MX')
+                    return `<div style="display:flex; justify-content:space-between; padding:3px 8px; font-size:10px; color:#334155;">
+                        <span>${pageCounter}. ${d.nombre_original}</span>
+                        <span style="color:#94a3b8;">${fecha} • ${formatSize(d.tamano_bytes)}</span>
+                    </div>`
+                }).join('')}
+            </div>`
+    })
+
+    // Build document pages
+    let documentsHTML = ''
+    let docIndex = 0
+    categories.forEach(cat => {
+        const label = CATEGORIA_LABELS[cat] || CATEGORIA_LABELS['otro']
+        const docs = grouped[cat]
+
+        docs.forEach(doc => {
+            docIndex++
+            const embedded = embeddedDocs.find(e => e.doc.id === doc.id)
+            const fecha = new Date(doc.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
+
+            documentsHTML += `
+            <div class="page-break"></div>
+            <div style="max-width:900px; margin:0 auto; padding:16px;">
+                <!-- Mini header -->
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #10b981; padding-bottom:8px; margin-bottom:12px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <img src="${LOGO_GP}" style="height:30px; object-fit:contain;" onerror="this.style.display='none'" />
+                        <span style="font-size:9px; font-weight:800; color:#0f172a;">GP Medical Health</span>
+                    </div>
+                    <div style="text-align:right; font-size:8px; color:#94a3b8; font-weight:600;">
+                        <div>${paciente.nombre} ${paciente.apellido_paterno} ${paciente.apellido_materno || ''}</div>
+                        <div>CURP: ${paciente.curp || '—'} • ${paciente.empresa_nombre || ''}</div>
+                    </div>
+                </div>
+
+                <!-- Document title -->
+                <div style="background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; padding:10px 16px; margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-size:13px; font-weight:900; color:#0f172a;">${label.icon} ${doc.nombre_original}</span>
+                            <div style="font-size:9px; color:#64748b; margin-top:2px;">Categoría: ${label.name} • Documento ${docIndex} de ${documentos.length}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:9px; color:#64748b;">Subido: ${fecha}</div>
+                            <div style="font-size:8px; color:#94a3b8;">${formatSize(doc.tamano_bytes)} • ${doc.extension.toUpperCase()}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Document content -->
+                ${embedded?.error
+                    ? `<div style="padding:20px; text-align:center; color:#ef4444; font-size:12px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px;">
+                        ⚠️ Error al procesar: ${embedded.error}
+                       </div>`
+                    : embedded?.isImage
+                        ? `<div style="text-align:center; padding:8px;">
+                            <img src="${embedded.base64}" alt="${doc.nombre_original}" 
+                                 style="max-width:100%; max-height:900px; border:1px solid #e2e8f0; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.1);" />
+                           </div>`
+                        : embedded?.mimeType?.includes('pdf')
+                            ? `<div style="text-align:center; padding:8px;">
+                                <iframe src="${embedded.base64}" width="100%" height="800px" style="border:1px solid #e2e8f0; border-radius:4px;"></iframe>
+                                <p style="font-size:9px; color:#94a3b8; margin-top:4px;">Si el PDF no se visualiza, descargue el documento desde el expediente del paciente.</p>
+                               </div>`
+                            : `<div style="padding:20px; text-align:center; color:#64748b; font-size:11px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
+                                📎 Archivo adjunto: <strong>${doc.nombre_original}</strong> (${doc.extension.toUpperCase()})
+                                <br/><span style="font-size:9px;">Este tipo de archivo no puede embeberse. Descárguela desde el expediente del paciente.</span>
+                               </div>`
+                }
+
+                <!-- Micro footer per page -->
+                <div style="border-top:1px solid #e2e8f0; margin-top:12px; padding-top:6px; display:flex; justify-content:space-between; font-size:7px; color:#cbd5e1; text-transform:uppercase; letter-spacing:0.15em; font-weight:700;">
+                    <span>Confidencial — Uso Médico</span>
+                    <span>GPMedical ERP v3.5 • ${fechaHoy}</span>
+                </div>
+            </div>`
+        })
+    })
+
+    const html = `
+    <div style="max-width:900px; margin:0 auto; padding:24px;">
+        <!-- COVER PAGE -->
+        ${letterheadHTML()}
+
+        <div style="text-align:center; margin:32px 0 16px;">
+            <div style="font-size:22px; font-weight:900; text-transform:uppercase; letter-spacing:0.15em; color:#0f172a;">Expediente Documental</div>
+            <div style="font-size:12px; color:#64748b; font-weight:600;">Compilación de Documentos Adjuntos del Paciente</div>
+        </div>
+
+        <!-- Patient Data -->
+        <div class="patient-bar">
+            <div class="patient-cell" style="flex:2;">
+                <div class="patient-cell-label">Paciente</div>
+                <div class="patient-cell-value">${paciente.nombre} ${paciente.apellido_paterno} ${paciente.apellido_materno || ''}</div>
+            </div>
+            <div class="patient-cell"><div class="patient-cell-label">Edad</div><div class="patient-cell-value">${edad} años</div></div>
+            <div class="patient-cell"><div class="patient-cell-label">CURP</div><div class="patient-cell-value" style="font-family:monospace; font-size:9px;">${paciente.curp || '—'}</div></div>
+            <div class="patient-cell"><div class="patient-cell-label">Empresa</div><div class="patient-cell-value">${paciente.empresa_nombre || '—'}</div></div>
+            <div class="patient-cell"><div class="patient-cell-label">Puesto</div><div class="patient-cell-value">${paciente.puesto || '—'}</div></div>
+        </div>
+
+        <!-- Summary -->
+        <div style="display:flex; gap:12px; margin:16px 0;">
+            <div style="flex:1; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:12px; text-align:center;">
+                <div style="font-size:28px; font-weight:900; color:#10b981;">${documentos.length}</div>
+                <div style="font-size:10px; font-weight:700; color:#065f46; text-transform:uppercase;">Documentos</div>
+            </div>
+            <div style="flex:1; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px; text-align:center;">
+                <div style="font-size:28px; font-weight:900; color:#3b82f6;">${categories.length}</div>
+                <div style="font-size:10px; font-weight:700; color:#1e40af; text-transform:uppercase;">Categorías</div>
+            </div>
+            <div style="flex:1; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; text-align:center;">
+                <div style="font-size:28px; font-weight:900; color:#64748b;">${formatSize(documentos.reduce((s, d) => s + d.tamano_bytes, 0))}</div>
+                <div style="font-size:10px; font-weight:700; color:#475569; text-transform:uppercase;">Tamaño Total</div>
+            </div>
+        </div>
+
+        <!-- Index -->
+        <div style="margin-top:20px;">
+            <div class="section-title">Índice de Documentos</div>
+            <div style="padding:8px 0;">
+                ${indexHTML}
+            </div>
+        </div>
+
+        <div style="margin-top:20px; padding:12px; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; font-size:10px; color:#92400e; line-height:1.5;">
+            <strong>⚠️ Nota:</strong> Este documento es una compilación digital de los archivos originales subidos al expediente del paciente. 
+            Los documentos originales permanecen cifrados y almacenados de forma segura en el sistema GPMedical ERP.
+            Generado: ${fechaHoy}
+        </div>
+
+        ${footerHTML(paciente.empresa_nombre)}
+    </div>
+
+    <!-- Individual document pages -->
+    ${documentsHTML}`
+
+    openPrintWindow(`Documentos - ${paciente.nombre} ${paciente.apellido_paterno}`, html)
+    reportProgress('✅ PDF generado correctamente')
+}
+
+/** Helper: Blob to base64 data URL */
+function blobToBase64(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+    })
+}
+
+/** Helper: format file size */
+function formatSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }

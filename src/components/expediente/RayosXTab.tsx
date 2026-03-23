@@ -378,7 +378,7 @@ export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
 
             <motion.div {...fadeUp(1)}>
                 <Card className="border-white/5 shadow-sm overflow-hidden">
-                    <div className="bg-gradient-to-r from-slate-50 to-white border-b border-white/5 px-5 py-3">
+                    <div className="bg-white/5 border-b border-white/10 px-5 py-3">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Ficha del Estudio</p>
                     </div>
                     <div className="p-5 grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -441,7 +441,7 @@ export default function RayosXTab({ pacienteId }: { pacienteId: string }) {
                     {structureItems.length > 0 && (
                         <motion.div {...fadeUp(5)}>
                             <Card className="border-white/5 shadow-sm overflow-hidden">
-                                <div className="bg-gradient-to-r from-slate-50 to-white px-5 py-3 border-b border-white/5">
+                                <div className="bg-white/5 px-5 py-3 border-b border-white/10">
                                     <div className="flex items-center gap-2">
                                         <ImageIcon className="w-4 h-4 text-slate-500" />
                                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Evaluación por Estructura Anatómica</p>

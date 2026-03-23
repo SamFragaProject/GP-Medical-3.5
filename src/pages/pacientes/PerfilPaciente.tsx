@@ -31,7 +31,7 @@ import toast from 'react-hot-toast'
 import FotoPaciente from '@/components/expediente/FotoPaciente'
 import { supabase } from '@/lib/supabase'
 import HumanBodySVG, { usePatientAlerts, BODY_ZONES } from '@/components/expediente/HumanBodySVG'
-import { printCertificadoAptitud, printExpedienteCompleto } from '@/components/expediente/ExportarPDFPaciente'
+import { printCertificadoAptitud, printExpedienteCompleto, printDocumentosAdjuntosPDF } from '@/components/expediente/ExportarPDFPaciente'
 import {
     analyzeJobPosition,
     type OccupationalRisks, type AIJobAnalysis,
@@ -351,6 +351,7 @@ export default function PerfilPaciente() {
                 nombre_completo: `${paciente.nombre} ${paciente.apellido_paterno} ${paciente.apellido_materno || ''}`,
                 curp: paciente.curp, rfc: paciente.rfc, nss: paciente.nss,
                 fecha_nacimiento: paciente.fecha_nacimiento, genero: paciente.genero, estado_civil: paciente.estado_civil,
+                escolaridad: paciente.escolaridad,
             },
             datos_laborales: {
                 numero_empleado: paciente.numero_empleado, empresa: paciente.empresa_nombre,
@@ -413,6 +414,26 @@ export default function PerfilPaciente() {
             toast.success('Expediente PDF generado')
         } catch (err) {
             toast.error('Error al generar expediente')
+        } finally {
+            setPrinting(false)
+        }
+    }
+
+    const handlePrintDocumentos = async () => {
+        if (!paciente || !id) return
+        try {
+            setPrinting(true)
+            await printDocumentosAdjuntosPDF(
+                paciente,
+                paciente.empresa_id || '',
+                user?.id,
+                (msg) => toast.loading(msg, { id: 'doc-export' })
+            )
+            toast.dismiss('doc-export')
+            toast.success('Expediente documental generado')
+        } catch (err) {
+            toast.dismiss('doc-export')
+            toast.error('Error al generar expediente documental')
         } finally {
             setPrinting(false)
         }
@@ -488,35 +509,14 @@ export default function PerfilPaciente() {
                 </span>
             </nav>
 
-            {/* ── HERO HEADER — /samu Obsidian-Glass Premium V3 Elite ── */}
+            {/* ── HERO HEADER — Clean Elegant Dark ── */}
             <motion.div
                 initial={{ opacity: 0, y: -12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-                className="relative rounded-[2rem] z-10 mb-8 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
-                style={{ background: 'linear-gradient(135deg, rgba(6,78,59,0.4) 0%, rgba(2,6,23,0.8) 100%)' }}
+                className="bg-slate-900 border border-white/5 rounded-3xl z-10 mb-8 shadow-xl"
             >
-                {/* Gradient Mask Border */}
-                <div className="absolute inset-0 rounded-[2rem] p-[3px] pointer-events-none z-[2]"
-                    style={{
-                        background: 'linear-gradient(135deg, #00ffb2 0%, transparent 40%, transparent 60%, #00f2fe 100%)',
-                        WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                        WebkitMaskComposite: 'xor',
-                        maskComposite: 'exclude',
-                    }}
-                />
-
-                {/* Outer Glow Effect */}
-                <div className="absolute inset-0 rounded-[2rem] -z-10 opacity-15 blur-[25px] pointer-events-none"
-                    style={{ background: 'linear-gradient(135deg, #00ffb2 0%, transparent 40%, transparent 60%, #00f2fe 100%)' }}
-                />
-
-                {/* Ambient Internal Glows */}
-                <div className="absolute top-0 left-0 right-0 h-[60%] rounded-t-[2rem] pointer-events-none"
-                    style={{ background: 'radial-gradient(ellipse at top, rgba(255,255,255,0.04) 0%, transparent 70%)' }}
-                />
-
-                <div className="relative z-10 p-6 sm:p-10">
+                <div className="p-6 sm:p-10">
                     {/* Top bar: Back + Actions */}
                     <div className="flex items-center justify-between mb-8">
                         <motion.button
@@ -560,6 +560,7 @@ export default function PerfilPaciente() {
                                                     {[
                                                         { icon: FileCheck, label: 'Certificado de Aptitud', onClick: handlePrintCertificate, disabled: printing, color: 'text-emerald-400' },
                                                         { icon: Printer, label: 'Expediente PDF', onClick: handlePrintFullExpediente, disabled: printing, color: 'text-blue-400' },
+                                                        { icon: FolderOpen, label: 'Exportar Documentos', onClick: handlePrintDocumentos, disabled: printing, color: 'text-amber-400' },
                                                         { icon: Download, label: 'Exportar JSON', onClick: handleExport, disabled: false, color: 'text-slate-400' },
                                                     ].map((action, i) => (
                                                         <button key={i} onClick={() => { action.onClick(); setShowActions(false) }} disabled={action.disabled}
@@ -587,8 +588,7 @@ export default function PerfilPaciente() {
                     <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6">
                         {/* Photo with glow ring */}
                         <div className="relative">
-                            <div className="absolute inset-0 bg-[#00f2fe]/20 rounded-full blur-xl scale-110" />
-                            <div className="relative ring-2 ring-[#00ffb2]/30 ring-offset-2 ring-offset-transparent rounded-full">
+                            <div className="relative ring-2 ring-emerald-500/30 ring-offset-4 ring-offset-slate-900 rounded-full">
                                 <FotoPaciente
                                     currentUrl={paciente.foto_url}
                                     nombre={`${paciente.nombre} ${paciente.apellido_paterno}`}
@@ -688,170 +688,44 @@ export default function PerfilPaciente() {
                                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                                         {/* ═══ LEFT: Spectacular Section Cards ═══ */}
                                         <div className="lg:col-span-7 xl:col-span-8">
-                                            {/* ═══ NEBULAFORGE V4 — Cosmic Glass (Pixel-Perfect) ═══ */}
+                                            {/* ── EXPEDIENTE MENU — Clean Dark Theme ── */}
                                             <motion.div
                                                 initial={{ opacity: 0, y: 12 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 transition={{ duration: 0.6 }}
-                                                className="relative rounded-[1.5rem] overflow-hidden"
-                                                style={{
-                                                    /* CAPA 1: Background darker for max glow contrast */
-                                                    background: 'linear-gradient(145deg, #060a14 0%, #0b1120 30%, #0d0f24 60%, #080c18 100%)',
-                                                    /* CAPA 3: Container edge */
-                                                    boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 24px 80px -12px rgba(0,0,0,0.6)',
-                                                }}
+                                                className="bg-slate-900 border border-white/5 shadow-xl rounded-[1.5rem] overflow-hidden"
                                             >
-                                                {/* CAPA 2: Animated Mesh Gradient — 4 nebula orbs (Optimized for Performance) */}
-                                                <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ transform: 'translateZ(0)' }}>
-                                                    <motion.div
-                                                        className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full"
-                                                        style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.05) 35%, transparent 70%)' }}
-                                                        animate={{ x: [0, 18, 0], y: [0, -12, 0] }}
-                                                        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-                                                    />
-                                                    <motion.div
-                                                        className="absolute -bottom-24 -left-24 w-[500px] h-[500px] rounded-full"
-                                                        style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.10) 0%, rgba(59,130,246,0.04) 35%, transparent 70%)' }}
-                                                        animate={{ x: [0, -12, 0], y: [0, 14, 0] }}
-                                                        transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
-                                                    />
-                                                    <motion.div
-                                                        className="absolute top-1/4 left-1/4 w-[700px] h-[700px] rounded-full"
-                                                        style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, rgba(139,92,246,0.03) 30%, transparent 65%)' }}
-                                                        animate={{ x: [0, 10, 0], y: [0, -10, 0], scale: [1, 1.06, 1] }}
-                                                        transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut' }}
-                                                    />
-                                                    <motion.div
-                                                        className="absolute -bottom-16 right-1/4 w-[450px] h-[450px] rounded-full"
-                                                        style={{ background: 'radial-gradient(circle, rgba(236,72,153,0.07) 0%, rgba(236,72,153,0.03) 35%, transparent 70%)' }}
-                                                        animate={{ x: [0, -8, 0], y: [0, 8, 0] }}
-                                                        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-                                                    />
-                                                </div>
-
                                                 {/* Section Header */}
                                                 <div className="relative px-6 pt-6 pb-3 flex items-center gap-4">
                                                     <div className="relative">
-                                                        <div className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center"
-                                                            style={{
-                                                                boxShadow: `
-                                                                    0 0 24px -2px rgba(16,185,129,0.55),
-                                                                    0 8px 20px -6px rgba(16,185,129,0.45),
-                                                                    0 2px 6px -1px rgba(0,0,0,0.35),
-                                                                    inset 0 1px 1px rgba(255,255,255,0.25),
-                                                                    inset 0 -1px 1px rgba(0,0,0,0.15)
-                                                                `,
-                                                            }}>
-                                                            <Stethoscope className="w-5 h-5 text-white" strokeWidth={1.5} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
+                                                        <div className="w-11 h-11 rounded-[14px] bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+                                                            <Stethoscope className="w-5 h-5 text-emerald-400" strokeWidth={2} />
                                                         </div>
-                                                        <motion.div className="absolute inset-0 rounded-[14px]"
-                                                            animate={{ boxShadow: ['0 0 0 0px rgba(16,185,129,0)', '0 0 0 8px rgba(16,185,129,0.15)', '0 0 0 0px rgba(16,185,129,0)'] }}
-                                                            transition={{ duration: 2.5, repeat: Infinity }} />
                                                     </div>
                                                     <div>
                                                         <h2 className="text-[15px] font-black text-white" style={{ letterSpacing: '-0.01em' }}>Expediente del Paciente</h2>
-                                                        <p className="text-[10px] font-medium" style={{ color: 'rgba(100,116,139,0.8)', letterSpacing: '0.03em' }}>Selecciona una sección para ingresar</p>
+                                                        <p className="text-[10px] font-medium text-slate-400" style={{ letterSpacing: '0.03em' }}>Selecciona una sección para ingresar</p>
                                                     </div>
                                                 </div>
 
-                                                {/* ═══ COSMIC GLASS CARDS ═══ */}
-                                                <div className="relative px-5 pb-6 pt-2 grid grid-cols-2 sm:grid-cols-3 gap-[14px]">
+                                                {/* ── EXPEDIENTE CARDS ── */}
+                                                <div className="px-5 pb-6 pt-2 grid grid-cols-2 sm:grid-cols-3 gap-[14px]">
                                                     {EXPEDIENTE_SECTIONS.map((section, i) => (
                                                         <motion.button
                                                             key={section.value}
-                                                            /* CAPA 11: Entry animation */
                                                             initial={{ opacity: 0, y: 28, scale: 0.88 }}
                                                             animate={{ opacity: 1, y: 0, scale: 1 }}
                                                             transition={{ delay: 0.1 + i * 0.08, duration: 0.6, ease: [0.22, 0.68, 0.36, 1.0] as [number, number, number, number] }}
-                                                            /* CAPA 10: Hover — more pronounced */
-                                                            whileHover={{ y: -8, scale: 1.04, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
+                                                            whileHover={{ y: -4, scale: 1.02 }}
                                                             whileTap={{ scale: 0.97 }}
                                                             onClick={() => navigateForward(section.group, section.value)}
-                                                            className="group relative flex flex-col items-start rounded-[20px] text-left overflow-hidden cursor-pointer"
-                                                            style={{
-                                                                padding: '18px',
-                                                                /* CAPA 5: Triple-layer glass with ellipse tints */
-                                                                background: `
-                                                                    radial-gradient(ellipse at 20% 90%, ${section.glow}18 0%, transparent 55%),
-                                                                    radial-gradient(ellipse at 90% 10%, ${section.glow}0a 0%, transparent 45%),
-                                                                    linear-gradient(155deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.05) 100%)
-                                                                `,
-                                                                backdropFilter: 'blur(20px) saturate(1.6)',
-                                                                WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
-                                                                /* Border with brighter top = zenith light */
-                                                                border: '1px solid rgba(255,255,255,0.08)',
-                                                                borderTopColor: 'rgba(255,255,255,0.14)',
-                                                                /* CAPA 6: Light emission — 60px glow */
-                                                                boxShadow: `
-                                                                    0 0 60px -15px ${section.glow}35,
-                                                                    0 8px 32px -8px rgba(0,0,0,0.5),
-                                                                    inset 0 1px 0 0 rgba(255,255,255,0.12),
-                                                                    inset 0 -1px 0 0 rgba(255,255,255,0.03)
-                                                                `,
-                                                                transition: 'box-shadow 0.4s ease, border-color 0.3s ease',
-                                                            }}
+                                                            className="group flex flex-col items-start text-left p-[18px] bg-slate-800/40 hover:bg-slate-800/80 border border-white/5 rounded-[20px] transition-colors shadow-sm"
                                                         >
-                                                            {/* CAPA 6: Internal glow orbs — main (70% of card) */}
-                                                            <div className="absolute rounded-full pointer-events-none opacity-30 group-hover:opacity-65 transition-opacity duration-500"
-                                                                style={{
-                                                                    bottom: '-30%', left: '-20%',
-                                                                    width: '70%', height: '70%',
-                                                                    background: section.glow,
-                                                                    filter: 'blur(40px)',
-                                                                }} />
-                                                            {/* Secondary orb */}
-                                                            <div className="absolute rounded-full pointer-events-none opacity-[0.12] group-hover:opacity-[0.35] transition-opacity duration-500"
-                                                                style={{
-                                                                    top: '-15%', right: '-15%',
-                                                                    width: '45%', height: '45%',
-                                                                    background: section.glow,
-                                                                    filter: 'blur(30px)',
-                                                                }} />
-
-                                                            {/* CAPA 8: Glass reflection line */}
-                                                            <div className="absolute top-0 left-[12%] right-[12%] h-[1px] opacity-50 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                                                                style={{
-                                                                    background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.20) 25%, ${section.glow}50 50%, rgba(255,255,255,0.20) 75%, transparent)`,
-                                                                }} />
-
-                                                            {/* CAPA 10: Hover glow intensification overlay */}
-                                                            <div className="absolute inset-0 rounded-[20px] opacity-0 group-hover:opacity-100 transition-all duration-400 pointer-events-none"
-                                                                style={{
-                                                                    boxShadow: `
-                                                                        0 0 80px -10px ${section.glow}50,
-                                                                        0 0 120px -20px ${section.glow}20,
-                                                                        inset 0 0 0 1px ${section.glow}30,
-                                                                        inset 0 1px 0 rgba(255,255,255,0.15)
-                                                                    `,
-                                                                }} />
-
-                                                            {/* CAPA 7: Volumetric Icon — 5 shadow layers */}
-                                                            <div className="relative mb-4">
-                                                                <div className={`w-11 h-11 rounded-[14px] bg-gradient-to-br ${section.gradient} flex items-center justify-center transition-all duration-300 group-hover:scale-[1.12] group-hover:rotate-[-3deg]`}
-                                                                    style={{
-                                                                        boxShadow: `
-                                                                            0 0 24px -2px ${section.glow}55,
-                                                                            0 8px 20px -6px ${section.glow}45,
-                                                                            0 2px 6px -1px rgba(0,0,0,0.35),
-                                                                            inset 0 1px 1px rgba(255,255,255,0.25),
-                                                                            inset 0 -1px 1px rgba(0,0,0,0.15)
-                                                                        `,
-                                                                    }}>
-                                                                    <section.icon className="w-[22px] h-[22px] text-white" strokeWidth={1.5} style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
-                                                                </div>
+                                                            <div className={`p-2.5 rounded-xl mb-3 shadow-inner bg-slate-900 border border-white/5`}>
+                                                                <section.icon className="w-5 h-5 text-slate-300 group-hover:text-emerald-400 transition-colors" />
                                                             </div>
-
-                                                            {/* CAPA 9: Typography */}
-                                                            <div className="relative flex-1 w-full">
-                                                                <p className="font-extrabold text-white/95 leading-tight" style={{ fontSize: '13px', letterSpacing: '-0.02em', textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>{section.label}</p>
-                                                                <p className="leading-relaxed mt-1.5 group-hover:text-slate-300/85 transition-colors duration-300" style={{ fontSize: '10px', color: 'rgba(148,163,184,0.65)', lineHeight: 1.5 }}>{section.desc}</p>
-                                                            </div>
-
-                                                            {/* CAPA 12: CTA reveal on hover */}
-                                                            <div className="relative flex items-center gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-[6px] group-hover:translate-y-0">
-                                                                <span className="font-bold uppercase" style={{ fontSize: '9px', letterSpacing: '0.08em', color: section.glow }}>Ver sección</span>
-                                                                <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform duration-200" style={{ color: section.glow }} />
-                                                            </div>
+                                                            <h3 className="text-[13px] font-bold text-white mb-1.5 leading-tight">{section.label}</h3>
+                                                            <p className="text-[10px] font-medium text-slate-400 leading-snug">{section.desc}</p>
                                                         </motion.button>
                                                     ))}
                                                 </div>
@@ -889,16 +763,13 @@ export default function PerfilPaciente() {
                                     transition={transitionConfig}
                                     className="space-y-6"
                                 >
-                                    {/* Navigation Header — /samu Premium */}
-                                    <div className="bg-slate-950/60 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden">
+                                    {/* Navigation Header — Clean Dark Theme */}
+                                    <div className="bg-slate-900 border border-white/5 rounded-3xl shadow-xl overflow-hidden">
                                         {/* Accent line top */}
-                                        <div className={`h-1.5 shadow-[0_0_15px_currentColor] bg-gradient-to-r ${activeCategory === 'info' ? 'from-blue-400 to-indigo-500 text-blue-500' : activeCategory === 'clinico' ? 'from-emerald-400 to-teal-500 text-emerald-500' : 'from-violet-400 to-purple-500 text-violet-500'}`} />
+                                        <div className={`h-1 bg-gradient-to-r ${activeCategory === 'info' ? 'from-blue-500 to-indigo-500' : activeCategory === 'clinico' ? 'from-emerald-500 to-teal-500' : 'from-violet-500 to-purple-500'}`} />
 
                                         <div className="p-5 sm:p-7 relative z-10">
-                                            {/* Ambient Glow */}
-                                            {activeCategory === 'clinico' && <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/3" />}
-                                            {activeCategory === 'info' && <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/3" />}
-                                            {activeCategory === 'diagnostico' && <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/3" />}
+
 
                                             <div className="flex items-center gap-4 mb-6 relative z-10">
                                                 <motion.button
@@ -983,6 +854,7 @@ export default function PerfilPaciente() {
                                                         <EditableField icon={FileText} label="RFC" value={v('rfc')} field="rfc" type="mono" editing={editing} onChange={handleFieldChange} />
                                                         <EditableField icon={Shield} label="NSS (IMSS)" value={v('nss')} field="nss" type="mono" editing={editing} onChange={handleFieldChange} />
                                                         <EditableField icon={Heart} label="Estado Civil" value={v('estado_civil')} field="estado_civil" editing={editing} onChange={handleFieldChange} options={['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Unión libre']} />
+                                                        <EditableField icon={FileText} label="Escolaridad" value={v('escolaridad')} field="escolaridad" editing={editing} onChange={handleFieldChange} options={['Primaria', 'Secundaria', 'Preparatoria / Bachillerato', 'Técnico / Tecnólogo', 'Licenciatura', 'Ingeniería', 'Maestría', 'Diplomado', 'Doctorado', 'Posdoctorado', 'Otro']} />
                                                         <EditableField icon={Droplets} label="Tipo de Sangre" value={v('tipo_sangre')} field="tipo_sangre" editing={editing} onChange={handleFieldChange} options={['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']} />
                                                         <EditableField icon={AlertTriangle} label="Alergias" value={v('alergias')} field="alergias" editing={editing} onChange={handleFieldChange} />
                                                         <EditableField icon={CheckCircle} label="Estatus" value={v('estatus')} field="estatus" editing={editing} onChange={handleFieldChange} options={['activo', 'inactivo', 'baja']} />

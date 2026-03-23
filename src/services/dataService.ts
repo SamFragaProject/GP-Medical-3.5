@@ -55,6 +55,7 @@ export interface Paciente {
     contacto_emergencia_nombre?: string
     contacto_emergencia_parentesco?: string
     contacto_emergencia_telefono?: string
+    escolaridad?: string
     riesgos_ocupacionales?: any
     analisis_puesto_ai?: any
     created_at: string

@@ -390,9 +390,9 @@ const useLabUpload = (
 function LabReport({ data }: { data: any }) {
     if (!data) return null
     return (
-        <div className="bg-slate-900/60 text-white w-full rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+        <div className="bg-slate-900 text-white w-full rounded-3xl shadow-2xl overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
             {/* Header */}
-            <div className="bg-gradient-to-r from-emerald-950 via-teal-900 to-emerald-950 px-8 py-6 border-b border-emerald-500/20">
+            <div className="px-8 py-6 border-b border-slate-700/50">
                 <div className="flex justify-between items-center">
                     <div>
                         <h1 className="text-xl font-black text-white tracking-tight">
@@ -409,7 +409,7 @@ function LabReport({ data }: { data: any }) {
 
             <div className="p-6 sm:p-8 space-y-6">
                 {/* Patient Card */}
-                <div className="bg-white/5 rounded-2xl border border-white/10 p-5 backdrop-blur-md">
+                <div className="bg-slate-800/40 rounded-2xl p-5">
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Datos del Paciente</p>
                     <h2 className="text-xl font-black text-white uppercase tracking-tight mb-4">{data.patientInfo?.name || '—'}</h2>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -421,7 +421,7 @@ function LabReport({ data }: { data: any }) {
                             { label: 'Médico', value: data.patientInfo?.doctor },
                             { label: 'Impresión', value: data.patientInfo?.printDate },
                         ].filter(f => f.value).map((f, i) => (
-                            <div key={i} className="bg-slate-800/50 rounded-xl border border-white/10 px-3 py-2 shadow-sm">
+                            <div key={i} className="bg-white/[0.03] rounded-xl border border-white/10 px-3 py-2 shadow-sm">
                                 <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">{f.label}</p>
                                 <p className="text-xs font-bold text-white">{f.value}</p>
                             </div>
@@ -432,16 +432,16 @@ function LabReport({ data }: { data: any }) {
                 {/* Exams */}
                 {data.exams?.map((exam: any, idx: number) => (
                     <div key={idx} className="space-y-2">
-                        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3 rounded-xl">
+                        <div className="bg-slate-800/60 px-5 py-4 rounded-xl flex items-center justify-between">
                             <h3 className="text-sm font-black text-white">{exam.examName}</h3>
                             <div className="flex gap-4 mt-1">
-                                {exam.method && <p className="text-[10px] text-emerald-200">Método: {exam.method}</p>}
-                                {exam.sampleType && <p className="text-[10px] text-emerald-200">Muestra: {exam.sampleType}</p>}
+                                {exam.method && <p className="text-[10px] text-emerald-400 font-bold">Método: {exam.method}</p>}
+                                {exam.sampleType && <p className="text-[10px] text-emerald-400 font-bold">Muestra: {exam.sampleType}</p>}
                             </div>
                         </div>
 
-                        <div className="rounded-xl border border-white/10 overflow-hidden backdrop-blur-md">
-                            <div className="grid grid-cols-12 gap-0 bg-white/5 border-b border-white/10 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                        <div className="rounded-2xl bg-slate-800/20 overflow-hidden">
+                            <div className="grid grid-cols-12 gap-0 bg-white/5 border-b border-slate-700/50 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
                                 <span className="col-span-4">Parámetro</span>
                                 <span className="col-span-2 text-center">Resultado</span>
                                 <span className="col-span-2 text-center">Unidad</span>
@@ -457,7 +457,7 @@ function LabReport({ data }: { data: any }) {
                                                 <p className="text-xs font-black text-slate-300">{r.groupName}</p>
                                             </div>
                                         )}
-                                        <div className={`grid grid-cols-12 gap-0 px-4 py-2 text-xs border-t border-white/5 items-center ${r.isAbnormal ? 'bg-red-500/10' : 'hover:bg-white/[0.04]'}`}>
+                                        <div className={`grid grid-cols-12 gap-0 px-4 py-2 text-xs border-t border-slate-700/50 items-center ${r.isAbnormal ? 'bg-red-500/10' : 'hover:bg-white/[0.04]'}`}>
                                             <span className="col-span-4 font-medium text-slate-200">{r.parameter}</span>
                                             <span className={`col-span-2 text-center font-black tabular-nums ${r.isAbnormal ? 'text-red-400' : 'text-emerald-400'}`}>
                                                 {r.value}
@@ -596,7 +596,7 @@ function LabAnalytics({ data }: { data: any }) {
             {/* Distribution Overview: Pie + Radar */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Pie Chart */}
-                <details className="group bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden">
+                <details className="group bg-slate-900 rounded-3xl shadow-xl overflow-hidden">
                     <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
                         <div className="flex items-center gap-2 pointer-events-none">
                             <Target className="w-4 h-4 text-emerald-400" />
@@ -604,7 +604,7 @@ function LabAnalytics({ data }: { data: any }) {
                         </div>
                         <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
                     </summary>
-                    <div className="p-5 pt-0 border-t border-white/5">
+                    <div className="p-5 pt-0 border-t border-slate-700/50">
                         <div className="h-[280px]">
                             <ResponsiveContainer>
                                 <PieChart>
@@ -625,7 +625,7 @@ function LabAnalytics({ data }: { data: any }) {
                 </details>
 
                 {/* Radar by Exam Group */}
-                <details className="group bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden">
+                <details className="group bg-slate-900 rounded-3xl shadow-xl overflow-hidden">
                     <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
                         <div className="flex items-center gap-2 pointer-events-none">
                             <Activity className="w-4 h-4 text-blue-400" />
@@ -633,7 +633,7 @@ function LabAnalytics({ data }: { data: any }) {
                         </div>
                         <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
                     </summary>
-                    <div className="p-5 pt-0 border-t border-white/5">
+                    <div className="p-5 pt-0 border-t border-slate-700/50">
                         <div className="h-[280px]">
                             <ResponsiveContainer>
                                 <RadarChart data={examGroups}>
@@ -651,7 +651,7 @@ function LabAnalytics({ data }: { data: any }) {
 
             {/* Bar Chart — Values vs Reference */}
             {barData.length > 0 && (
-                <details className="group bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden">
+                <details className="group bg-slate-900 rounded-3xl shadow-xl overflow-hidden">
                     <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
                         <div className="flex items-center gap-2 pointer-events-none">
                             <BarChart3 className="w-4 h-4 text-indigo-400" />
@@ -659,7 +659,7 @@ function LabAnalytics({ data }: { data: any }) {
                         </div>
                         <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
                     </summary>
-                    <div className="p-5 pt-0 border-t border-white/5">
+                    <div className="p-5 pt-0 border-t border-slate-700/50">
                         <div className="h-[320px]">
                             <ResponsiveContainer>
                                 <BarChart data={barData} layout="vertical" margin={{ left: 10 }}>
@@ -689,7 +689,7 @@ function LabAnalytics({ data }: { data: any }) {
 
             {/* Animated Value Bars for ALL numeric results */}
             {numericResults.length > 0 && (
-                <details className="group bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden" open>
+                <details className="group bg-slate-900 rounded-3xl shadow-xl overflow-hidden" open>
                     <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
                         <div className="flex items-center gap-2 pointer-events-none">
                             <Zap className="w-4 h-4 text-emerald-400" />
@@ -697,7 +697,7 @@ function LabAnalytics({ data }: { data: any }) {
                         </div>
                         <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
                     </summary>
-                    <div className="p-5 pt-0 border-t border-white/5">
+                    <div className="p-5 pt-0 border-t border-slate-700/50">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {numericResults.slice(0, 30).map((r: any, i: number) => {
                                 const rangeExtMin = r.refMin * 0.7
@@ -746,7 +746,7 @@ function LabAnalytics({ data }: { data: any }) {
 
             {/* Abnormal Detail */}
             {abnormalResults.length > 0 && (
-                <details className="group bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden">
+                <details className="group bg-slate-900 rounded-3xl shadow-xl overflow-hidden">
                     <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
                         <div className="flex items-center gap-2 pointer-events-none">
                             <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -754,7 +754,7 @@ function LabAnalytics({ data }: { data: any }) {
                         </div>
                         <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
                     </summary>
-                    <div className="p-5 pt-0 border-t border-white/5">
+                    <div className="p-5 pt-0 border-t border-slate-700/50">
                         <div className="space-y-2">
                             {abnormalResults.map((r: any, i: number) => (
                                 <motion.div key={i}
@@ -788,7 +788,7 @@ function LabAnalytics({ data }: { data: any }) {
                 const activeRisks = Object.values(riskAreas).filter(r => r.params.length > 0)
                 if (activeRisks.length === 0) return null
                 return (
-                    <details className="group bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden">
+                    <details className="group bg-slate-900 rounded-3xl shadow-xl overflow-hidden">
                         <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
                             <div className="flex items-center gap-2 pointer-events-none">
                                 <Target className="w-4 h-4 text-purple-400" />
@@ -796,7 +796,7 @@ function LabAnalytics({ data }: { data: any }) {
                             </div>
                             <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
                         </summary>
-                        <div className="p-5 pt-0 border-t border-white/5">
+                        <div className="p-5 pt-0 border-t border-slate-700/50">
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {activeRisks.map(({ params, area }) => {
                                     const info = AREA_LABELS[area]
@@ -844,7 +844,7 @@ function LabAnalytics({ data }: { data: any }) {
                             </div>
                             <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
                         </summary>
-                        <div className="p-5 pt-0 border-t border-white/5">
+                        <div className="p-5 pt-0 border-t border-slate-700/50">
                             <div className="space-y-3">
                                 {withInterpretation.map((r: any, i: number) => {
                                     const val = parseFloat(String(r.value || '').replace(/[<>,]/g, ''))
@@ -891,7 +891,7 @@ function LabAnalytics({ data }: { data: any }) {
                     </div>
                     <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
                 </summary>
-                <div className="p-5 pt-0 border-t border-white/5">
+                <div className="p-5 pt-0 border-t border-slate-700/50">
                     <div className="space-y-3">
                         {examGroups.map((g, i) => {
                             // Find abnormal params with interpretation for this exam
@@ -940,7 +940,7 @@ function LabAnalytics({ data }: { data: any }) {
             </details>
 
             {/* ══ OCCUPATIONAL HEALTH ══ */}
-            <details className="group bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl overflow-hidden">
+            <details className="group bg-slate-900 rounded-3xl shadow-xl overflow-hidden">
                 <summary className="w-full p-5 flex items-center justify-between cursor-pointer list-none hover:bg-white/[0.02] focus:outline-none [&::-webkit-details-marker]:hidden">
                     <div className="flex items-center gap-2 pointer-events-none">
                         <Shield className="w-4 h-4 text-emerald-400" />
@@ -948,7 +948,7 @@ function LabAnalytics({ data }: { data: any }) {
                     </div>
                     <ChevronDown className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180 flex-shrink-0" />
                 </summary>
-                <div className="p-5 pt-0 border-t border-white/5">
+                <div className="p-5 pt-0 border-t border-slate-700/50">
                     <div className={`p-4 rounded-xl backdrop-blur-md border ${abnormalCount === 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
                         <p className={`text-sm leading-relaxed font-medium ${abnormalCount === 0 ? 'text-emerald-300' : 'text-amber-300'}`}>
                             {abnormalCount === 0
@@ -1031,7 +1031,7 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
                     </div>
                 </div>
             </div>
-            <div className="overflow-x-auto bg-gradient-to-br from-slate-50 to-slate-100/50 p-2 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
+            <div className="overflow-x-auto p-2 md:p-6">
                 <div className="w-full min-w-[800px]">
                     <LabReport data={upload.previewData} />
                 </div>
@@ -1088,7 +1088,7 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
     return (
         <div className="space-y-5">
             {/* Header */}
-            <div className="bg-slate-900/60 rounded-[2rem] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl p-5">
+            <div className="bg-slate-900 rounded-3xl shadow-xl p-5">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.2)]">
@@ -1115,7 +1115,7 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
                                 : <><RefreshCw className="w-3.5 h-3.5" /> Actualizar Laboratorio</>}
                         </button>
                         <button onClick={handleDeleteLab} disabled={deleting || !estudioId}
-                            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 rounded-xl transition disabled:opacity-50">
+                            className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-red-400 bg-red-500/20 hover:bg-red-500/20 rounded-xl transition disabled:opacity-50">
                             {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                             Eliminar
                         </button>
@@ -1123,7 +1123,7 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
                 </div>
 
                 {upload.uploading && (
-                    <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 backdrop-blur-sm">
+                    <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-emerald-500/20 backdrop-blur-sm">
                         <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
                         <p className="text-sm font-medium text-emerald-300">{upload.progress}</p>
                     </div>
@@ -1131,7 +1131,7 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
             </div>
 
             {/* View Toggle */}
-            <div className="flex bg-black/20 border border-white/5 p-1.5 rounded-xl w-fit backdrop-blur-md">
+            <div className="flex bg-slate-900/50 p-1.5 rounded-2xl w-fit">
                 <button onClick={() => setActiveView('reporte')}
                     className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${activeView === 'reporte' ? 'bg-white/10 text-emerald-400 shadow-[0_0_10px_rgba(255,255,255,0.05)] border border-white/10' : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.02]'}`}>
                     <FlaskConical className="w-4 h-4" />
@@ -1148,7 +1148,7 @@ export default function LaboratorioTab({ pacienteId }: { pacienteId: string }) {
             {activeView === 'reporte' && (
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <p className="text-xs text-slate-400 font-medium mb-3 ml-1">Réplica digital completa del reporte original de laboratorio</p>
-                    <div className="overflow-x-auto bg-gradient-to-br from-slate-50 to-slate-100/50 p-2 md:p-6 rounded-2xl border border-slate-200 shadow-inner">
+                    <div className="overflow-x-auto p-2 md:p-6">
                         <div className="w-full min-w-[800px]">
                             <LabReport data={data} />
                         </div>

@@ -620,7 +620,7 @@ export default function PatientDashboardTab({ pacienteId, onNavigate }: { pacien
             <div className="grid grid-cols-1 gap-4">
                 {/* Alerts Card */}
                 <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
-                    className={`rounded-[1.5rem] p-5 border shadow-lg ${alerts.length > 0 ? 'bg-gradient-to-br from-red-950 via-red-900/90 to-orange-950 border-red-800/30' : 'bg-gradient-to-br from-slate-50 to-emerald-50/50 border-emerald-100'}`}>
+                    className={`rounded-[1.5rem] p-5 border shadow-lg ${alerts.length > 0 ? 'bg-gradient-to-br from-red-950 via-red-900/90 to-orange-950 border-red-800/30' : 'bg-slate-900/60 border border-white/5 backdrop-blur-xl shadow-lg'}`}>
                     <div className="flex items-center gap-2.5 mb-4">
                         {alerts.length > 0 ? <AlertTriangle className="w-4.5 h-4.5 text-red-400" /> : <CheckCircle className="w-4.5 h-4.5 text-emerald-500" />}
                         <h3 className={`text-sm font-black ${alerts.length > 0 ? 'text-white' : 'text-slate-700'}`}>

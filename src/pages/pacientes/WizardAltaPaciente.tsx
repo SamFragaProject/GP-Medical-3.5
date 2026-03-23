@@ -18,7 +18,7 @@ import {
     Droplets, AlertTriangle, Users, Mail, Camera,
     Shield, FileText, Clock, ClipboardList,
     LogIn, LogOut, ArrowRightLeft, RotateCcw,
-    Brain, ShieldAlert, Sparkles, HardHat, TestTube, Microscope
+    Brain, ShieldAlert, Sparkles, HardHat, Microscope
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -51,6 +51,7 @@ interface PatientFormData {
     fecha_nacimiento: string
     genero: string
     estado_civil: string
+    escolaridad: string
     // Paso 2: Laborales
     empresa_id: string
     sede_id: string
@@ -78,18 +79,13 @@ interface PatientFormData {
     telefono: string
     foto_url: string
     estatus: string
-    // Paso 5: Exámenes y Laboratorios
-    examenes_fisicos_completados: boolean
-    laboratorios_completados: boolean
-    notas_examenes: string
-    examenes_no_aplica: boolean
 }
 
 const INITIAL_DATA: PatientFormData = {
     tipo_examen: '',
     nombre: '', apellido_paterno: '', apellido_materno: '',
     curp: '', rfc: '', nss: '',
-    fecha_nacimiento: '', genero: '', estado_civil: '',
+    fecha_nacimiento: '', genero: '', estado_civil: '', escolaridad: '',
     empresa_id: '', sede_id: '', numero_empleado: '',
     puesto: '', area: '', departamento: '',
     turno: '', fecha_ingreso: '', tipo_contrato: '',
@@ -100,7 +96,6 @@ const INITIAL_DATA: PatientFormData = {
     contacto_emergencia_nombre: '', contacto_emergencia_parentesco: '',
     contacto_emergencia_telefono: '',
     email: '', telefono: '', foto_url: '', estatus: 'activo',
-    examenes_fisicos_completados: false, laboratorios_completados: false, notas_examenes: '', examenes_no_aplica: false
 }
 
 const STEPS = [
@@ -108,8 +103,13 @@ const STEPS = [
     { id: 2, title: 'Datos Laborales', subtitle: 'Información de la empresa', icon: Building2, color: 'from-blue-500 to-indigo-600' },
     { id: 3, title: 'Datos Médicos', subtitle: 'Salud y emergencia', icon: Heart, color: 'from-rose-500 to-pink-600' },
     { id: 4, title: 'Contacto', subtitle: 'Email, teléfono y foto', icon: Phone, color: 'from-violet-500 to-purple-600' },
-    { id: 5, title: 'Exámenes', subtitle: 'Laboratorios y físicos', icon: Microscope, color: 'from-cyan-500 to-blue-600' },
-    { id: 6, title: 'Confirmar', subtitle: 'Revisión final', icon: CheckCircle, color: 'from-emerald-400 to-green-600' },
+    { id: 5, title: 'Confirmar', subtitle: 'Revisión final', icon: CheckCircle, color: 'from-emerald-400 to-green-600' },
+]
+
+const ESCOLARIDAD_OPTIONS = [
+    'Primaria', 'Secundaria', 'Preparatoria / Bachillerato',
+    'Técnico / Tecnólogo', 'Licenciatura', 'Ingeniería',
+    'Maestría', 'Diplomado', 'Doctorado', 'Posdoctorado', 'Otro'
 ]
 
 const GENEROS = [
@@ -245,13 +245,12 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
             case 3: return true
             case 4: return true
             case 5: return true
-            case 6: return true
             default: return false
         }
     }
 
     const handleNext = () => {
-        if (step < 6) setStep(step + 1)
+        if (step < 5) setStep(step + 1)
     }
 
     const handlePrev = () => {
@@ -265,7 +264,7 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
             const KNOWN_COLUMNS = new Set([
                 'nombre', 'apellido_paterno', 'apellido_materno', 'fecha_nacimiento',
                 'genero', 'curp', 'rfc', 'nss', 'tipo_sangre', 'alergias', 'estatus',
-                'estado_civil', 'numero_empleado', 'empresa_id', 'empresa_nombre',
+                'estado_civil', 'escolaridad', 'numero_empleado', 'empresa_id', 'empresa_nombre',
                 'sede_id', 'sede_nombre', 'puesto', 'area', 'departamento', 'turno',
                 'tipo_contrato', 'fecha_ingreso', 'jornada_horas', 'supervisor_nombre',
                 'telefono', 'email', 'foto_url', 'firma_url',
@@ -295,7 +294,7 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
         }
     }
 
-    const progress = (step / 6) * 100
+    const progress = (step / 5) * 100
 
     return (
         <div className="min-h-[80vh] flex flex-col">
@@ -528,6 +527,15 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                                 value={data.estado_civil}
                                                 onChange={v => updateField('estado_civil', v)}
                                                 options={ESTADO_CIVIL_OPTIONS}
+                                            />
+                                        </FormField>
+
+                                        <FormField label="Escolaridad">
+                                            <SelectField
+                                                value={data.escolaridad}
+                                                onChange={v => updateField('escolaridad', v)}
+                                                options={ESCOLARIDAD_OPTIONS}
+                                                placeholder="Nivel de estudios..."
                                             />
                                         </FormField>
                                     </div>
@@ -924,97 +932,8 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                             )}
 
                             {/* STEP 5: Exámenes Médicos y Laboratorios */}
+                            {/* STEP 5: Revisión */}
                             {step === 5 && (
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-3 mb-8">
-                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-                                            <Microscope className="w-6 h-6 text-white" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-xl font-black text-slate-800">Laboratorios y Exámenes</h2>
-                                            <p className="text-sm text-slate-500">Ingreso de todos los exámenes y laboratorios iniciales en la misma sesión.</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 mb-6">
-                                        <div className="flex gap-3">
-                                            <div className="bg-blue-100 rounded-lg p-2 flex-shrink-0 h-10 w-10 flex items-center justify-center">
-                                                <TestTube className="w-5 h-5 text-blue-600" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm font-bold text-blue-900">Ingreso Integral</h3>
-                                                <p className="text-xs text-blue-700 mt-1">
-                                                    Para el alta de este paciente, debes registrar tanto la exploración física como los resultados de laboratorio en este primer paso. Cualquier ajuste posterior requerirá solicitud al médico o administrador de la empresa.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="mb-6">
-                                        <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 transition-all">
-                                            <input
-                                                type="checkbox"
-                                                checked={data.examenes_no_aplica}
-                                                onChange={e => updateField('examenes_no_aplica', e.target.checked ? "true" : "false")}
-                                                className="w-5 h-5 text-amber-500 rounded border-amber-300 focus:ring-amber-500"
-                                            />
-                                            <span className="text-sm font-bold text-amber-800">No aplica — Omitir captura de exámenes y laboratorios en este momento</span>
-                                        </label>
-                                    </div>
-
-                                    {!data.examenes_no_aplica && (
-                                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                                                <div className="space-y-4 rounded-xl border border-slate-200 p-5 bg-white">
-                                                    <div className="flex items-center gap-2 text-slate-700 font-bold mb-2">
-                                                        <Heart className="w-5 h-5 text-rose-500" />
-                                                        Exploración Física
-                                                    </div>
-                                                    <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-all">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={data.examenes_fisicos_completados}
-                                                            onChange={e => updateField('examenes_fisicos_completados', e.target.checked ? "true" : "false")}
-                                                            className="w-5 h-5 text-emerald-500 rounded border-slate-300 focus:ring-emerald-500"
-                                                        />
-                                                        <span className="text-sm font-medium text-slate-700">Exploración física inicial capturada</span>
-                                                    </label>
-                                                </div>
-
-                                                <div className="space-y-4 rounded-xl border border-slate-200 p-5 bg-white">
-                                                    <div className="flex items-center gap-2 text-slate-700 font-bold mb-2">
-                                                        <TestTube className="w-5 h-5 text-indigo-500" />
-                                                        Laboratorios clínicos
-                                                    </div>
-                                                    <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-all">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={data.laboratorios_completados}
-                                                            onChange={e => updateField('laboratorios_completados', e.target.checked ? "true" : "false")}
-                                                            className="w-5 h-5 text-emerald-500 rounded border-slate-300 focus:ring-emerald-500"
-                                                        />
-                                                        <span className="text-sm font-medium text-slate-700">Muestras y resultados iniciales registrados</span>
-                                                    </label>
-                                                </div>
-                                            </div>
-
-                                            <FormField label="Notas adicionales sobre los exámenes de ingreso" hint="Cualquier observación general para el expediente integral">
-                                                <textarea
-                                                    value={data.notas_examenes}
-                                                    onChange={e => updateField('notas_examenes', e.target.value)}
-                                                    placeholder="El paciente reporta haber estado en ayuno de 12 horas. Se tomaron signos vitales..."
-                                                    rows={4}
-                                                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm resize-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all"
-                                                />
-                                            </FormField>
-                                        </motion.div>
-                                    )}
-
-                                </div>
-                            )}
-
-                            {/* STEP 6: Revisión */}
-                            {step === 6 && (
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-3 mb-8">
                                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -1041,6 +960,7 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                                 { label: 'Nacimiento', value: data.fecha_nacimiento },
                                                 { label: 'Género', value: data.genero },
                                                 { label: 'Estado Civil', value: data.estado_civil },
+                                                { label: 'Escolaridad', value: data.escolaridad },
                                             ]}
                                         />
 
@@ -1077,17 +997,27 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                                             ]}
                                         />
 
-                                        {/* Exámenes */}
+                                        {/* Contacto */}
                                         <ReviewSection
-                                            title="Exámenes Integrales"
-                                            icon={Microscope}
-                                            color="emerald"
+                                            title="Contacto"
+                                            icon={Phone}
+                                            color="violet"
                                             items={[
-                                                { label: 'Examen Físico', value: data.examenes_fisicos_completados ? 'Recabado' : 'Pendiente' },
-                                                { label: 'Laboratorios', value: data.laboratorios_completados ? 'Recabados' : 'Pendientes' },
-                                                { label: 'Notas', value: data.notas_examenes },
+                                                { label: 'Email', value: data.email },
+                                                { label: 'Teléfono', value: data.telefono },
                                             ]}
                                         />
+                                    </div>
+
+                                    {/* Nota informativa sobre exámenes */}
+                                    <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mt-4">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Microscope className="w-5 h-5 text-blue-600" />
+                                            <h4 className="text-sm font-bold text-blue-900">Sobre los Exámenes Clínicos</h4>
+                                        </div>
+                                        <p className="text-xs text-blue-700 leading-relaxed">
+                                            Los laboratorios, audiometría, espirometría, ECG y demás estudios clínicos se capturan <strong>directamente en el Expediente del paciente</strong> una vez registrado. Puede subir archivos o ingresar datos manualmente desde el perfil del paciente.
+                                        </p>
                                     </div>
                                 </div>
                             )}
@@ -1117,7 +1047,7 @@ export default function WizardAltaPaciente({ onComplete, onCancel, empresaId }: 
                     ))}
                 </div>
 
-                {step < 6 ? (
+                {step < 5 ? (
                     <Button
                         onClick={handleNext}
                         disabled={!canAdvance()}
