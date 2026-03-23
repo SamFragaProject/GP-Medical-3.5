@@ -171,13 +171,11 @@
 
 @layer components {
 
-  /* LUXURY SIDEBAR */
+  /* LUXURY SIDEBAR — Solid Dark Navy */
   .glass-sidebar {
-    background: rgba(15, 23, 42, 0.4);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(180deg, #0c1222 0%, #0a0f1a 40%, #080c16 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
   }
 
   /* FROSTED GLASS CARDS - PREMIUM */

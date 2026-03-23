@@ -277,18 +277,18 @@ export default function PacientesHub() {
                 icon={Users}
                 badge={`${stats.total} registrados`}
                 actions={
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                         <Button
                             onClick={() => setViewMode('import')}
                             variant="outline"
-                            className="h-11 px-5 rounded-xl border-white/20 bg-white/10 hover:bg-white/20 text-white font-black text-[10px] uppercase tracking-widest gap-2 backdrop-blur-sm"
+                            className="h-10 px-4 rounded-xl border-white/15 bg-white/5 hover:bg-white/10 text-white/80 font-bold text-xs gap-2"
                         >
                             <Upload className="w-4 h-4" />
                             Subir Archivos
                         </Button>
                         <Button
                             onClick={() => setViewMode('wizard')}
-                            className="h-11 px-6 rounded-xl bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-emerald-500/20 gap-2"
+                            className="h-10 px-5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-400 font-bold text-xs shadow-md shadow-emerald-500/20 gap-2"
                         >
                             <UserPlus className="w-4 h-4" />
                             Nuevo Paciente
@@ -302,24 +302,25 @@ export default function PacientesHub() {
                 {/* ── STATS STRIP ── */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                     {[
-                        { label: 'Total', value: stats.total, icon: Users, gradient: 'from-slate-700 to-slate-900', glow: '' },
-                        { label: 'Activos', value: stats.activos, icon: CheckCircle, gradient: 'from-emerald-500 to-teal-600', glow: 'shadow-emerald-500/20' },
-                        { label: 'Masculino', value: stats.masculino, icon: Users, gradient: 'from-blue-500 to-indigo-600', glow: 'shadow-blue-500/20' },
-                        { label: 'Femenino', value: stats.femenino, icon: Heart, gradient: 'from-pink-500 to-rose-600', glow: 'shadow-pink-500/20' },
-                        { label: 'Sin Email', value: stats.sinEmail, icon: AlertTriangle, gradient: 'from-amber-500 to-orange-600', glow: 'shadow-amber-500/20' },
-                        { label: 'Nuevos Hoy', value: stats.nuevosHoy, icon: TrendingUp, gradient: 'from-violet-500 to-purple-600', glow: 'shadow-violet-500/20' },
+                        { label: 'Total', value: stats.total, icon: Users, accent: 'border-l-slate-400', iconColor: 'text-slate-500', bg: 'bg-slate-50' },
+                        { label: 'Activos', value: stats.activos, icon: CheckCircle, accent: 'border-l-emerald-500', iconColor: 'text-emerald-500', bg: 'bg-emerald-50/50' },
+                        { label: 'Masculino', value: stats.masculino, icon: Users, accent: 'border-l-blue-500', iconColor: 'text-blue-500', bg: 'bg-blue-50/50' },
+                        { label: 'Femenino', value: stats.femenino, icon: Heart, accent: 'border-l-pink-500', iconColor: 'text-pink-500', bg: 'bg-pink-50/50' },
+                        { label: 'Sin Email', value: stats.sinEmail, icon: AlertTriangle, accent: 'border-l-amber-500', iconColor: 'text-amber-500', bg: 'bg-amber-50/50' },
+                        { label: 'Nuevos Hoy', value: stats.nuevosHoy, icon: TrendingUp, accent: 'border-l-violet-500', iconColor: 'text-violet-500', bg: 'bg-violet-50/50' },
                     ].map((stat, idx) => (
                         <motion.div
                             key={stat.label}
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.05 }}
-                            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-4 text-white shadow-lg ${stat.glow}`}
+                            transition={{ delay: idx * 0.04 }}
+                            className={`rounded-xl border border-slate-100 ${stat.bg} p-4 border-l-4 ${stat.accent} shadow-sm hover:shadow-md transition-shadow`}
                         >
-                            <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-                            <stat.icon className="w-5 h-5 mb-2 opacity-70" />
-                            <p className="text-2xl font-black">{stat.value}</p>
-                            <p className="text-[10px] font-bold uppercase tracking-widest opacity-70">{stat.label}</p>
+                            <div className="flex items-center justify-between mb-2">
+                                <stat.icon className={`w-4 h-4 ${stat.iconColor}`} />
+                                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{stat.label}</span>
+                            </div>
+                            <p className="text-2xl font-black text-slate-800">{stat.value}</p>
                         </motion.div>
                     ))}
                 </div>
